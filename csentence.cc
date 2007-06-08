@@ -22,7 +22,7 @@ CWord & CWord::operator=(const CWord & cw_) {
 }
 
 void fill_syns(const string & w,
-	       vector<Mcr_vertex_t> & syns,
+	       vector<string> & syns,
 	       char pos = 0) {
 
   W2Syn & w2syn = W2Syn::instance();
@@ -41,13 +41,12 @@ void fill_syns(const string & w,
     }
     tie(mcr_v, existP) = mcr.getVertexByName(*str_it);
     if (existP) {
-      syns.push_back(mcr_v);
+      syns.push_back(*str_it);
     } else {
       cerr << "W: synset " << *str_it << " of word " << w << " is not in MCR" << endl;
       // debug: synset  which is not in mcr
     }
   }
-
 }
 
 CWord::CWord(const string & w_) : 
@@ -69,11 +68,11 @@ std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
     o << "-" << cw_.pos;
   o << "#" << cw_.cw_id << "#" << cw_.distinguished;
   o << "{";
-  std::vector<Mcr_vertex_t>::const_iterator it = cw_.syns.begin();
-  std::vector<Mcr_vertex_t>::const_iterator it_end = cw_.syns.end();
+  std::vector<string>::const_iterator it = cw_.syns.begin();
+  std::vector<string>::const_iterator it_end = cw_.syns.end();
   if (it != it_end) {
     --it_end;
-    copy(it, it_end, ostream_iterator<Mcr_vertex_t>(o, ","));
+    copy(it, it_end, ostream_iterator<string>(o, ","));
     o << *it_end;
 //     while(it != it_end) {
 //       o << get(vertex_name, g, *it) << ",";
@@ -188,7 +187,7 @@ void CSentence::append(const CSentence & cs_) {
   v.swap(tenp);
 }
 
-void CSentence::distinguished_vertices(vector<Vertex_t> & res) const {
+void CSentence::distinguished_synsets(vector<string> & res) const {
 
   vector<CWord>::const_iterator cw_it, cw_end;
   cw_it = v.begin();

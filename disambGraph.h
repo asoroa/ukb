@@ -24,9 +24,8 @@ typedef adjacency_list <
   boost::listS,
   boost::vecS,
   boost::undirectedS,
-  property<vertex_name_t, std::string,                   // synset name
-	   property<vertex_wname_t, std::string,         // word name
-		    property<vertex_rank_t, float> > >,  // vertex rank
+  property<vertex_name_t, std::string,        // synset name
+	   property<vertex_rank_t, float> >,  // vertex rank
   property<edge_freq_t, size_t>
   > DisambG;
 
@@ -40,29 +39,30 @@ class DisambGraph {
 
   DisambGraph();
 
+  std::pair<Dis_vertex_t, bool> getVertexByName(const std::string & str) const;
 
   void fill_graph(Mcr_vertex_t src,
 		  Mcr_vertex_t tgt,
 		  const std::vector<Mcr_vertex_t> & parents);
   void add_disamb_edge(Dis_vertex_t u, Dis_vertex_t v);
-  void add_vertices_mcr_path(std::vector<Dis_vertex_t>::iterator v_it, 
-			     std::vector<Dis_vertex_t>::iterator v_end);
-
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);
 
   DisambG & graph() {return g;}
   void prune() {}
-  void transform_csentence(CSentence & cs) const;
-
+  //void transform_csentence(CSentence & cs) const;
+  void kk();
 private:
+
+  std::vector<Dis_vertex_t> add_vertices_mcr_path(std::vector<std::string>::iterator v_it, 
+						  std::vector<std::string>::iterator v_end);
 
   void read_from_stream (std::ifstream & is);
   std::ofstream & write_to_stream(std::ofstream & o) const;
 
   //typedef std::vector<Dis_vertex_t> VertexV;
   //std::map<std::string, VertexV> w2syns;
-  std::map<Mcr_vertex_t, Dis_vertex_t> mcr2dis;
+  std::map<std::string, Dis_vertex_t> synsetMap;
 
   DisambG g;
 };

@@ -58,36 +58,36 @@ bool disg_bfs (DisambG & g,
 
 KGraph::KGraph(DisambG & disg, CSentence & cs) {
 
-  vector<Dis_vertex_t> d_vertices;
-  map<Dis_vertex_t, Dis_vertex_t> dis_to_kg;
-  cs.distinguished_vertices(d_vertices);
+//   vector<string> d_vertices;
+//   map<Dis_vertex_t, Dis_vertex_t> dis_to_kg;
+//   cs.distinguished_synsets(d_vertices);
 
-  vector<Dis_vertex_t>::iterator it_i, end;
-  Dis_vertex_t aux;
-  it_i = d_vertices.begin();
-  end = d_vertices.end();
+//   vector<Dis_vertex_t>::iterator it_i, end;
+//   Dis_vertex_t aux;
+//   it_i = d_vertices.begin();
+//   end = d_vertices.end();
 
-  for(; it_i != end; ++it_i) {
-    aux = add_vertex(g);
-    dis_to_kg[*it_i] = aux;
-    put(vertex_name, g, aux,
-	get(vertex_name, disg, *it_i));
-    put(vertex_wname, g, aux,
-	get(vertex_wname, disg, *it_i));
-  }
+//   for(; it_i != end; ++it_i) {
+//     aux = add_vertex(g);
+//     dis_to_kg[*it_i] = aux;
+//     put(vertex_name, g, aux,
+// 	get(vertex_name, disg, *it_i));
+//     put(vertex_wname, g, aux,
+// 	get(vertex_wname, disg, *it_i));
+//   }
 
-  it_i = d_vertices.begin();
+//   it_i = d_vertices.begin();
 
-  for(; it_i != end; ++it_i) {
-    vector<Dis_vertex_t> dist;
-    disg_bfs(disg, *it_i, dist);
-    vector<Dis_vertex_t>::iterator it_j = it_i;
-    ++it_j;
-    for(; it_j != end; ++it_j) {
-      // Add edge (*it_i, *it_j) with weigth dist[*it_j]
-      assert(dist[*it_j]);
-      add_edge(dis_to_kg[*it_i], dis_to_kg[*it_j], dist[*it_j], g);
-    }
-  }
+//   for(; it_i != end; ++it_i) {
+//     vector<Dis_vertex_t> dist;
+//     disg_bfs(disg, *it_i, dist);
+//     vector<Dis_vertex_t>::iterator it_j = it_i;
+//     ++it_j;
+//     for(; it_j != end; ++it_j) {
+//       // Add edge (*it_i, *it_j) with weigth dist[*it_j]
+//       assert(dist[*it_j]);
+//       add_edge(dis_to_kg[*it_i], dis_to_kg[*it_j], dist[*it_j], g);
+//     }
+//   }
 }
 

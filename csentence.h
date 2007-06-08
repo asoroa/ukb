@@ -10,7 +10,7 @@
 
 //typedef std::vector<Mcr_vertex_t> CWord;
 
-typedef unsigned int Vertex_t; // Achtung!
+//typedef unsigned int Vertex_t; // Achtung!
 
 class CSentence; // forward declaration
 
@@ -18,12 +18,12 @@ class CWord {
 
 public:
 
-  typedef std::vector<Vertex_t>::const_iterator const_iterator;
-  typedef std::vector<Vertex_t>::iterator iterator;
-  typedef std::vector<Vertex_t>::reference reference;
-  typedef std::vector<Vertex_t>::const_reference const_reference;
-  typedef std::vector<Vertex_t>::value_type value_type;
-  typedef std::vector<Vertex_t>::size_type size_type;
+  typedef std::vector<std::string>::const_iterator const_iterator;
+  typedef std::vector<std::string>::iterator iterator;
+  typedef std::vector<std::string>::reference reference;
+  typedef std::vector<std::string>::const_reference const_reference;
+  typedef std::vector<std::string>::value_type value_type;
+  typedef std::vector<std::string>::size_type size_type;
 
   explicit CWord() {};
   CWord(const std::string & w_);
@@ -35,7 +35,7 @@ public:
   iterator end() {return syns.end();}
   const_iterator begin() const {return syns.begin();}
   const_iterator end() const {return syns.end();}
-  std::vector<Vertex_t> & get_syns_vector() { return syns; }
+  std::vector<std::string> & get_syns_vector() { return syns; }
   size_type size() const {return syns.size(); }
   std::string word() const { return w; }
   bool is_distinguished() const { return distinguished; }
@@ -52,7 +52,7 @@ private:
   std::string w;
   std::string cw_id;
   char pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
-  std::vector<Vertex_t> syns;
+  std::vector<std::string> syns;
   bool distinguished;
 };
 
@@ -86,7 +86,7 @@ public:
   size_type size() const {return v.size();}
   std::string id() const {return cs_id;}
 
-  void distinguished_vertices(std::vector<Vertex_t> & res) const;
+  void distinguished_synsets(std::vector<std::string> & res) const;
   
   std::istream & read_aw(std::istream & is);
 

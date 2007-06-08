@@ -27,6 +27,15 @@ using namespace std;
 using namespace boost;
 
 
+void DisambGraph::kk(void) {
+
+  cerr << synsetMap.size() << endl;
+  map<string, Dis_vertex_t>::iterator it;
+  for(it = synsetMap.begin(); it != synsetMap.end(); ++it) {
+    cerr << it->first << ":" << it->second << endl;
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Disamb fill functions
 
@@ -56,53 +65,50 @@ void DisambGraph::add_disamb_edge(Dis_vertex_t u, Dis_vertex_t v) {
   }
 }
 
-void DisambGraph::add_vertices_mcr_path(vector<Dis_vertex_t>::iterator v_it, 
-					vector<Dis_vertex_t>::iterator v_end) {
+vector<Dis_vertex_t> DisambGraph::add_vertices_mcr_path(vector<string>::iterator v_it, 
+							vector<string>::iterator v_end) {
 
-  map<Dis_vertex_t, Dis_vertex_t>::iterator map_it;
-  map<Dis_vertex_t, Dis_vertex_t>::iterator map_end = mcr2dis.end();
+  vector<Dis_vertex_t> res;
+
+  map<string, Dis_vertex_t>::iterator map_it;
+  map<string, Dis_vertex_t>::iterator map_end = synsetMap.end();
   bool insertedP;
 
-  McrGraph & mcr_g = Mcr::instance().graph();
-
   for(;v_it != v_end; ++v_it) {
-    tie(map_it, insertedP) = mcr2dis.insert(make_pair(*v_it, Dis_vertex_t()));
+    tie(map_it, insertedP) = synsetMap.insert(make_pair(*v_it, Dis_vertex_t()));
     if (insertedP) {
       Dis_vertex_t v = add_vertex(g);
-      put(vertex_name, g, v, get(vertex_name, mcr_g, *v_it));
-      put(vertex_wname, g, v, get(vertex_wname, mcr_g, *v_it));
-      //put(vertex_rank, g, v, numeric_limits<float>::min());
+      put(vertex_name, g, v, *v_it);
       put(vertex_rank, g, v, 0.0f);
       map_it->second = v;
     }
-    *v_it = map_it->second; // update source id
+    res.push_back(map_it->second);
   }
+  return res;
 }
-
-
 
 void DisambGraph::fill_graph(Mcr_vertex_t src,
 			     Mcr_vertex_t tgt,
 			     const std::vector<Mcr_vertex_t> & parents) {
 
-  vector<Dis_vertex_t> path;
+  vector<string> path_str;
   Mcr_vertex_t pred;
+  McrGraph & mcr_g = Mcr::instance().graph();
 
   pred = parents[tgt];
   while(tgt != pred) {
-    path.push_back(static_cast<Dis_vertex_t>(tgt));
+    path_str.push_back(get(vertex_name, mcr_g, tgt));
     tgt = pred;
     pred = parents[tgt];
   }
-  if (tgt != static_cast<Dis_vertex_t>(src)) return;
+  if (tgt != src) return;
   
-  vector<Dis_vertex_t>::iterator path_it = path.begin();
-  vector<Dis_vertex_t>::iterator path_end = path.end();
+  vector<Dis_vertex_t> path_v(add_vertices_mcr_path(path_str.begin(), path_str.end()));
+
+  vector<Dis_vertex_t>::iterator path_it = path_v.begin();
+  vector<Dis_vertex_t>::iterator path_end = path_v.end();
   vector<Dis_vertex_t>::iterator path_prev;
-
-  if (path_it == path_end) return;
-
-  add_vertices_mcr_path(path_it, path_end);
+  if(path_it == path_end) return;
 
   path_prev = path_it;
   ++path_it;
@@ -113,24 +119,45 @@ void DisambGraph::fill_graph(Mcr_vertex_t src,
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// vertex_id <-> strings 
+
+
+pair<Dis_vertex_t, bool> DisambGraph::getVertexByName(const std::string & str) const {
+  map<string, Dis_vertex_t>::const_iterator it = synsetMap.find(str);
+  if (it == synsetMap.end()) return make_pair(Dis_vertex_t(), false);
+  return make_pair(it->second, true);
+}
+
+
 ////////////////////////////////////////////////////////////////
 // Global functions
 
-void fill_disamb_synset(Mcr_vertex_t src,
+void fill_disamb_synset(const string & src_str,
 			vector<CWord>::const_iterator s_it,
 			vector<CWord>::const_iterator s_end,
 			DisambGraph & dgraph) {
 
   //bfs from src
   std::vector<Mcr_vertex_t> parents;
-  Mcr::instance().bfs(src, parents);
+  Mcr & mcr = Mcr::instance();
+  bool existP;
+  Mcr_vertex_t src, tgt;
+  
+  tie(src, existP) = mcr.getVertexByName(src_str);
+  assert(existP);
+
+  mcr.bfs(src, parents);
   
   //fill disamb graph
+
   for(;s_it != s_end; ++s_it) {
-    vector<Mcr_vertex_t>::const_iterator tg_it = s_it->begin();
-    vector<Mcr_vertex_t>::const_iterator tg_end = s_it->end();
+    vector<string>::const_iterator tg_it = s_it->begin();
+    vector<string>::const_iterator tg_end = s_it->end();
     for(;tg_it != tg_end; ++tg_it) {
-      dgraph.fill_graph(src, *tg_it, parents);
+      tie(tgt, existP) = mcr.getVertexByName(*tg_it);
+      assert(existP);
+      dgraph.fill_graph(src, tgt, parents);
     }
   }
 
@@ -144,54 +171,45 @@ void fill_disamb_graph(const CSentence &cs, DisambGraph & dgraph) {
   //if (cw_it == cw_end) return;
   //cw_end--;
   while(cw_it != cw_end) {
-    vector<Mcr_vertex_t>::const_iterator sset_it = cw_it->begin();
-    vector<Mcr_vertex_t>::const_iterator sset_end = cw_it->end();
+    vector<string>::const_iterator sset_it = cw_it->begin();
+    vector<string>::const_iterator sset_end = cw_it->end();
     ++cw_it; // point to next word
     for(;sset_it != sset_end; ++sset_it) {
+      //tie(src_v, existP) = mcr.getVertexByName(*sset_it);
+      //assert(existP);
       fill_disamb_synset(*sset_it, cw_it, cw_end, dgraph);
     }
-  }
-}
-
-
-// Given a CSentence where synsets are represented as vertices in the MCR,
-// transform the vertex-id' so they point to the dgraph
-
-
-struct MaxSynsLast {
-  int operator()(const CWord & a, const CWord & b) {
-    return a.size() < b.size();
-  }
-};
-
-void DisambGraph::transform_csentence(CSentence & cs) const {
-  
-  vector<CWord>::iterator cw_it = cs.begin();
-  vector<CWord>::iterator cw_end = cs.end();
-  for(; cw_it != cw_end; ++cw_it) {
-    vector<Mcr_vertex_t> & old_syns = cw_it->get_syns_vector();
-    vector<Mcr_vertex_t>::iterator syn_it = old_syns.begin();
-    vector<Mcr_vertex_t>::iterator syn_end = old_syns.end();
-    vector<Dis_vertex_t> new_syns;
-    for(; syn_it != syn_end; ++syn_it) {
-      map<Mcr_vertex_t, Dis_vertex_t>::const_iterator m2d_it = mcr2dis.find(*syn_it);
-      if (m2d_it != mcr2dis.end()) {
- 	new_syns.push_back(m2d_it->second);
-      }
-    }
-    old_syns.swap(new_syns);
   }
 }
 
 // Warning: Rank scores of dgraph must be previously computed.
 //
 
+struct sortCS {
+  sortCS(CWord & cw, DisambGraph & dg) {
+    Dis_vertex_t v;
+    bool P;
+    vector<string>::iterator it, end;
+    it = cw.begin();
+    end = cw.end();
+    for(;it != end; ++it) {
+      tie(v, P) = dg.getVertexByName(*it);
+      if(!P) {
+	cerr << "Error:" << *it << " synset not found" << endl;
+	exit(-1);
+      }
+      V.push_back(make_pair(&(*it), v));
+    }
+  }
+  vector<pair<string *, Dis_vertex_t> > V;
+};
+
 struct SortByRank {
   DisambG & g;
   SortByRank(DisambG & g_) : g(g_) {};
-  int operator() (const Dis_vertex_t & u, const Dis_vertex_t & v) {
+  int operator() (const pair<string *, Dis_vertex_t> & u, const pair<string *, Dis_vertex_t> & v) {
     // Descending order !
-    return get(vertex_rank, g, v) < get(vertex_rank, g, u);
+    return get(vertex_rank, g, v.second) < get(vertex_rank, g, u.second);
   }
 };
 
@@ -200,19 +218,27 @@ void disamb_csentence(CSentence & cs, DisambGraph & dgraph) {
   vector<CWord>::iterator cw_it = cs.begin();
   vector<CWord>::iterator cw_end = cs.end();
   for(; cw_it != cw_end; ++cw_it) {
-    sort(cw_it->begin(), cw_it->end(), SortByRank(dgraph.graph()));
+    sortCS scs(*cw_it, dgraph);
+    sort(scs.V.begin(), scs.V.end(), SortByRank(dgraph.graph()));
+    vector<string> new_v;
+    vector<pair<string *, Dis_vertex_t> >::iterator it, end;
+    it  = scs.V.begin();
+    end = scs.V.end();
+    for(;it != end; ++it) {
+      new_v.push_back(*(it->first));
+    }
+    cw_it->get_syns_vector().swap(new_v);
   }  
 }
 
 ostream & print_csent(ostream & o, CSentence & cs, DisambGraph & dgraph) {
-  DisambG & g = dgraph.graph();
   vector<CWord>::iterator cw_it = cs.begin();
   vector<CWord>::iterator cw_end = cs.end();
   for(; cw_it != cw_end; ++cw_it) {
     if (cw_it->size() == 0) continue;
     if (!cw_it->is_distinguished()) continue;
     o << cw_it->id() << " ";
-    o << get(vertex_name, g, *(cw_it->begin()));
+    o << *(cw_it->begin());
     o << endl;
   }
   return o;
@@ -222,16 +248,23 @@ ostream & print_complete_csent(ostream & o, CSentence & cs, DisambGraph & dgraph
   DisambG & g = dgraph.graph();
   vector<CWord>::iterator cw_it = cs.begin();
   vector<CWord>::iterator cw_end = cs.end();
+  Dis_vertex_t v;
+  bool P;
+
   for(; cw_it != cw_end; ++cw_it) {
     o << cw_it->word() << "{";
-    vector<Mcr_vertex_t>::iterator syn_it = cw_it->begin();
-    vector<Mcr_vertex_t>::iterator syn_end = cw_it->end();
+    vector<string>::iterator syn_it = cw_it->begin();
+    vector<string>::iterator syn_end = cw_it->end();
     if (syn_it != syn_end) {
       --syn_end;
       for(; syn_it != syn_end; ++syn_it) {
-	o << get(vertex_name, g, *syn_it) << ":" << get(vertex_rank, g, *syn_it) << " ,";
+	tie(v,P) = dgraph.getVertexByName(*syn_it);
+	assert(P);
+	o << *syn_it << ":" << get(vertex_rank, g, v) << " ,";
       }
-      o << get(vertex_name, g, *syn_end) << ":" << get(vertex_rank, g, *syn_it);
+      tie(v,P) = dgraph.getVertexByName(*syn_end);
+      assert(P);
+      o << *syn_end << ":" << get(vertex_rank, g, v);
     }
     o << "}" << endl;
   }
@@ -491,15 +524,12 @@ Dis_vertex_t read_vertex_from_stream(ifstream & is,
 				     DisambG & g) {
 
   string name;
-  string wname;
   float rank;
 
   read_atom_from_stream(is, name);
-  read_atom_from_stream(is, wname);
   read_atom_from_stream(is, rank);
   Dis_vertex_t v = add_vertex(g);
   put(vertex_name, g, v, name);
-  put(vertex_wname, g, v, wname);
   put(vertex_rank, g, v, rank);
 
   return v;
@@ -536,7 +566,7 @@ void DisambGraph::read_from_stream (std::ifstream & is) {
   if(id != magic_id) {
     cerr << "Error: invalid id (filename is a mcrGraph?)" << endl;
   }
-  read_map_from_stream(is, mcr2dis);
+  read_map_from_stream(is, synsetMap);
   read_atom_from_stream(is, id);
   if(id != magic_id) {
     cerr << "Error: invalid id after reading maps" << endl;
@@ -586,7 +616,6 @@ ofstream & write_vertex_to_stream(ofstream & o,
   string name;
 
   write_atom_to_stream(o, get(vertex_name, g, v));
-  write_atom_to_stream(o, get(vertex_wname, g, v));
   write_atom_to_stream(o, get(vertex_rank, g, v));
   return o;
 }
@@ -611,7 +640,7 @@ ofstream & DisambGraph::write_to_stream(ofstream & o) const {
   // First write maps
 
   write_atom_to_stream(o, magic_id);
-  write_map_to_stream(o, mcr2dis);
+  write_map_to_stream(o, synsetMap);
   write_atom_to_stream(o, magic_id);
 
   // Then the graph
@@ -662,6 +691,6 @@ void write_dgraph_graphviz(const string & fname, const DisambG & g) {
   boost::write_graphviz(fo,
                         g,
                         //boost::default_writer(),
-			make_my_writer(get(vertex_wname, g), "label"),
+			make_my_writer(get(vertex_name, g), "label"),
                         make_my_writer(get(edge_freq, g), "weigth"));
 }

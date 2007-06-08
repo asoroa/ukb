@@ -150,7 +150,6 @@ void create_dgraph(string & fullname_in,
       fout.ext = ".dgraph";
       dgraph.write_to_binfile(fout.get_fname());
       fout.ext = ".csent";
-      dgraph.transform_csentence(cs);
       cs.write_to_binfile(fout.get_fname());
       cs = CSentence();
     }
@@ -175,24 +174,20 @@ void dis_csent(string & csentence_fname) {
   pageRank(dg.graph());
   disamb_csentence(cs, dg);
   print_csent(cout, cs, dg);
+  print_complete_csent(cout, cs, dg);
 }
 
 void test (string & fullname_in) {
 
-  File_elem cs_finfo(fullname_in);
+//   File_elem cs_finfo(fullname_in);
 
-  CSentence cs;
-  cs.read_from_binfile(cs_finfo.get_fname());
+//   CSentence cs;
+//   cs.read_from_binfile(cs_finfo.get_fname());
 
-  File_elem dg_finfo(cs.id(), cs_finfo.path, ".dgraph");
+//   File_elem dg_finfo(cs.id(), cs_finfo.path, ".dgraph");
   DisambGraph dg;
-  dg.read_from_binfile(dg_finfo.get_fname());
-
-  KGraph kg(dg.graph(), cs);
-
-  DisambG & g = kg.graph();
-
-  write_dgraph_graphviz("kk.kgraph", g);
+  dg.read_from_binfile(fullname_in);
+  dg.kk();
 
 //   DisambGraph dg;
 //   CSentence cs;

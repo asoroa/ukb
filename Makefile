@@ -8,7 +8,7 @@ SOURCEMAIN = ukb_aw.cc
 SRC = w2syn.c mcrGraph.c disambGraph.c csentence.c kGraph.c
 
 # Don't change anything below
-#DEBUG = 1
+DEBUG = 1
 #PROF = 1
 
 INCLUDE_DIR = 
