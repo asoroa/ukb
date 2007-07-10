@@ -1,3 +1,5 @@
+#include "fileElem.h"
+#include "globalVars.h"
 #include "mcrGraph.h"
 #include "kGraph.h"
 #include "disambGraph.h"
@@ -25,77 +27,6 @@ using namespace boost;
 
 
 const char *mcr_default_binfile = "mcr_wnet.bin";
-
-
-/////////////////////////////////////////////////////////////
-// Filesystem stuff (paths, extensions, etc)
-
-string::const_iterator find_last(string::const_iterator sit,
-				 string::const_iterator sit_end, 
-				 char delim) {
-  string::const_iterator sit_found = sit_end;
-  for(;sit != sit_end;++sit) 
-    if (*sit == delim) sit_found = sit;
-  return sit_found;
-}
-
-struct File_elem {
-
-  File_elem(const string & fname) {
-    fill_finfo(fname);
-  }
-
-  File_elem(const string & fullname_in,
-	    const string & out_dir,
-	    const string & new_ext) {
-
-    fill_finfo(fullname_in);
-
-    size_t m = out_dir.size();
-    if (m) {
-      if(!boost::filesystem::exists(out_dir)) {
-	// Better die
-	//boost::filesystem::create_directory( out_dir_dir );
-	cerr << "Error: " << out_dir << " doesn't exist.\n" << endl;
-	exit(-1);
-      }
-      if (out_dir[m-1] == '/') --m;
-      path.assign(out_dir, 0, m);
-    }
-    
-    if (new_ext.size())
-      ext = new_ext;
-  }
-
-  void fill_finfo(const string & str) {
-
-    boost::filesystem::path p(str);
-    p.normalize();
-
-    path = p.branch_path().string();
-
-    string file_fname = p.leaf(); // name + extension
-
-    string::const_iterator beg = file_fname.begin();
-    string::const_iterator end = file_fname.end();
-    string::const_iterator it = find_last(file_fname.begin(), file_fname.end(), '.');
-
-    ext.assign(it, end);
-    fname.assign(beg, it); // without extension
-  }
-
-  string get_fname() const {
-    string res(path);
-    res.append("/");
-    res.append(fname);
-    res.append(ext);
-    return res;
-  }
-
-  string path;
-  string fname;
-  string ext;
-};
 
 // Program options stuff
 
@@ -128,8 +59,9 @@ void option_dependency(const boost::program_options::variables_map& vm,
 //Main program
 
 
-void create_dgraph(string & fullname_in,
-		   const string & out_dir) {
+void create_dgraphs_from_corpus(string & fullname_in,
+				const string & out_dir,
+				bool opt_create_kgraph = false) {
 
   File_elem fout(fullname_in, out_dir, ".dgraph");
   ifstream fh_in(fullname_in.c_str());
@@ -151,6 +83,11 @@ void create_dgraph(string & fullname_in,
       dgraph.write_to_binfile(fout.get_fname());
       fout.ext = ".csent";
       cs.write_to_binfile(fout.get_fname());
+      if (opt_create_kgraph) {
+	fout.ext="kgraph";
+	KGraph kg(cs, dgraph);
+	kg.write_to_binfile(fout.get_fname());
+      }
       cs = CSentence();
     }
   } 
@@ -160,34 +97,53 @@ void create_dgraph(string & fullname_in,
   }
 }
 
+void create_kgraph(string & cs_fname,
+		   const string & out_dir) {
 
-void dis_csent(string & csentence_fname) {
+  File_elem cs_fe(cs_fname);
+  File_elem dg_fe(cs_fe.fname, cs_fe.path, ".dgraph");
+  CSentence cs;
+  cs.read_from_binfile(cs_fe.get_fname());
+  DisambGraph dg;
+  dg.read_from_binfile(dg_fe.get_fname());
 
+  File_elem kg_fe(cs_fe.fname, cs_fe.path, ".kgraph");
+  kg_fe.set_path(out_dir);
+  KGraph kg(cs, dg);
+  kg.write_to_binfile(kg_fe.get_fname());
+  pageRank(kg.graph());
+  disamb_csentence(cs, kg);
+  print_disamb_csent(cout, cs);  
+
+  kg_fe.ext = ".dot";
+  write_dgraph_graphviz(kg_fe.get_fname(), kg.graph());
+}
+
+
+template<class G>
+void dis_csent(string & csentence_fname, const string & ext) {
+  
   File_elem cs_finfo(csentence_fname);
 
   CSentence cs;
   cs.read_from_binfile(cs_finfo.get_fname());
 
-  File_elem dg_finfo(cs.id(), cs_finfo.path, ".dgraph");
-  DisambGraph dg;
+  File_elem dg_finfo(cs.id(), cs_finfo.path, ext);
+  G dg;
   dg.read_from_binfile(dg_finfo.get_fname());
   pageRank(dg.graph());
   disamb_csentence(cs, dg);
-  print_csent(cout, cs, dg);
-  print_complete_csent(cout, cs, dg);
+  print_disamb_csent(cout, cs);
+  //print_complete_csent(cout, cs, dg);
 }
 
 void test (string & fullname_in) {
-
-//   File_elem cs_finfo(fullname_in);
-
 //   CSentence cs;
 //   cs.read_from_binfile(cs_finfo.get_fname());
 
 //   File_elem dg_finfo(cs.id(), cs_finfo.path, ".dgraph");
-  DisambGraph dg;
-  dg.read_from_binfile(fullname_in);
-  dg.kk();
+  //DisambGraph dg;
+  //dg.read_from_binfile(fullname_in);
 
 //   DisambGraph dg;
 //   CSentence cs;
@@ -246,8 +202,10 @@ int main(int argc, char *argv[]) {
   string mcr_binfile(mcr_default_binfile);
 
   bool opt_create_dgraph = false;
+  bool opt_create_kgraph = false;
   //bool opt_eval_dgraph = false;
-  bool opt_disamb_csent = false;
+  bool opt_disamb_csent_dgraph = false;
+  bool opt_disamb_csent_kgraph = false;
   bool opt_do_test = false;
 
   const char desc_header[] = "ukb_aw: perform AW with MCR KB based algorithm\n"
@@ -265,9 +223,12 @@ int main(int argc, char *argv[]) {
     po_desc.add_options()
       ("create_dgraph,c", "Create dgraph binary file(s), one per context, with extension .dgraph")
       ("dis_csent,d", "Disambiguate csentence and output result. A dgraph with same id must be in the directory.")
+      ("dis_csent_kgraph", "Disambiguate csentence and output result. A kgraph with same id must be in the directory.")
       //      ("eval_dgraph,e", "Disambiguate dgraph and output result. Input file is a dgraph file.")
       ("help,h", "This page")
+      ("create_kgraph,k", "Create kgraph binary file given one csentence (dgraph must have same name and be in same directory)")
       ("mcr_binfile,M", value<string>(), "Binary file of MCR. Create with create_mcrbin application.")
+      ("w2syn_file,W", value<string>(), "Word to synset map file. Default is mcr_source/enWN16.")
       ("out_dir,O", value<string>(), "Directory for leaving output files.")
       ("test,t", "(Internal) Do a test.")
       ("verbose,v", "Be verbose.")
@@ -303,13 +264,20 @@ int main(int argc, char *argv[]) {
       opt_create_dgraph = true;
     }
 
-    if (vm.count("dis_csent")) {
-      opt_disamb_csent = true;
+    if (vm.count("create_kgraph")) {
+      opt_create_kgraph = true;
     }
 
+    if (vm.count("dis_csent")) {
+      opt_disamb_csent_dgraph = true;
+    }
 
-    if (vm.count("dis_dgraph")) {
-      opt_disamb_csent = true;
+    if (vm.count("dis_csent_kgraph")) {
+      opt_disamb_csent_kgraph = true;
+    }
+
+    if (vm.count("w2syn_file")) {
+      glVars::w2s_filename = vm["w2syn_file"].as<string>();
     }
 
     if (vm.count("mcr_binfile")) {
@@ -343,13 +311,21 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  if(opt_create_dgraph) {
-    Mcr::create_from_binfile(mcr_binfile);
-    create_dgraph(fullname_in, out_dir);
+  if(opt_create_kgraph && !opt_create_dgraph) {
+    create_kgraph(fullname_in, out_dir);
   }
 
-  if(opt_disamb_csent) {
-    dis_csent(fullname_in);
+  if(opt_create_dgraph) {
+    Mcr::create_from_binfile(mcr_binfile);
+    create_dgraphs_from_corpus(fullname_in, out_dir, opt_create_kgraph);
+  }
+
+  if(opt_disamb_csent_dgraph) {
+    dis_csent<DisambGraph>(fullname_in, ".dgraph");
+  }
+
+  if(opt_disamb_csent_kgraph) {
+    dis_csent<KGraph>(fullname_in, ".kgraph");
   }
 
   return 0;
