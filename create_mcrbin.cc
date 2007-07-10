@@ -1,13 +1,12 @@
+#include "common.h"
+#include "globalVars.h"
+#include "configFile.h"
+#include "fileElem.h"
 #include "mcrGraph.h"
 #include "disambGraph.h"
 #include <string>
 #include <iostream>
 #include <fstream>
-
-
-// Basename & friends
-#include <boost/filesystem/operations.hpp>
-#include "boost/filesystem/path.hpp"
 
 // Program options
 
@@ -23,152 +22,163 @@
 #include <boost/pending/indirect_cmp.hpp>
 #include <boost/pending/integer_range.hpp>
 
-
 using namespace std;
 using namespace boost;
 
-std::pair<string, string> basename(const string & str) {
 
-  boost::filesystem::path p(str);
-  p.normalize();
-  return std::make_pair<string, string>(p.branch_path().string(), p.leaf());
+void read_skip_relations (const string & file,
+			  set<string> & skip_rels) {
+
+  const string delims(" \t");
+  ifstream fi(file.c_str(), ifstream::binary|ifstream::in);
+  if (!fi) {
+    cerr << "Error: can't open " << file << endl;
+    exit(-1);
+  }
+  string line;
+  while(fi) {
+    getline(fi, line);
+    vector<string> rels = split(line, delims);
+    for(vector<string>::iterator it = rels.begin(); it != rels.end(); ++it)
+      skip_rels.insert(*it);
+  }
 }
 
-string::const_iterator find_last(string::const_iterator sit,
-				 string::const_iterator sit_end, 
-				 char delim) {
-  string::const_iterator sit_found = sit_end;
-  for(;sit != sit_end;++sit) 
-    if (*sit == delim) sit_found = sit;
-  return sit_found;
-}
-
-
-//
-
-// template < typename TimeMap > class bfs_time_visitor : public default_bfs_visitor {
-//   typedef typename property_traits < TimeMap >::value_type T;
-// public:
-//   bfs_time_visitor(TimeMap tmap, T & t):m_timemap(tmap), m_time(t) { }
-//   template < typename Vertex, typename Graph >
-//   void discover_vertex(Vertex u, const Graph & g) const {
-//     put(m_timemap, u, m_time++);
-//   }
-//   TimeMap m_timemap;
-//   T & m_time;
-// };
-
-// template <typename DistanceMap>
-// class bacon_number_recorder : public default_bfs_visitor
-// {
-// public:
-//   bacon_number_recorder(DistanceMap dist) : d(dist) { }
-  
-//   template <typename Edge, typename Graph>
-//   void tree_edge(Edge e, const Graph& g) const
-//   {
-//     typename graph_traits<Graph>::vertex_descriptor
-//       u = source(e, g), v = target(e, g);
-//     d[v] = d[u] + 1;
-//   }
-// private:
-//   DistanceMap d;
-// };
-// // Convenience function
-
-// template <typename DistanceMap>
-// bacon_number_recorder<DistanceMap>
-// record_bacon_number(DistanceMap d)
-// {
-//   return bacon_number_recorder<DistanceMap>(d);
-// }
-
-
-void create_mcr_bin(const string &name) {
-
-  //Mcr wnet("../mcr_source/wei_relations.txt", "../mcr_source/MCR+TSSemcor.all");
-
-  Mcr::create_from_txt("mcr_source/wei_relations.txt", "mcr_source/MCR+TSSemcor.all");
-  Mcr::instance().write_to_binfile(name);
-  cerr << "Wrote " << num_vertices(Mcr::instance().graph()) << " vertices and " << num_edges(Mcr::instance().graph()) << " edges" << endl;
-
-}
-
-void do_bfs() {
-
-  Mcr & mcr2 = Mcr::instance();
-
-  timer bfs;
-
-  McrGraph & g = mcr2.graph();
-
-  std::vector < Mcr_vertex_size_t  > dtime;
-
-  string src("00370521-n");
-
-  cerr << src << " " << mcr2.getVertexByName(src).first << endl;
-  mcr2.bfs(src, dtime);
-  cerr << bfs.elapsed() << endl;
-  for(unsigned int i = 0; i < num_vertices(g); ++i) 
-    cout << mcr2.getVertexName(i) << " " << mcr2.getVertexName(dtime[i]) << endl;
-    //cout << mcr2.getVertexName(i) << " " << dtime[i] << endl;
-    //cout << i << " " << dtime[i] << endl;
-}
-
-
-int main() {
+int main(int argc, char *argv[]) {
 
   srand(3);
 
   timer load;
 
-  //  create_mcr_bin("mcr_wnet.bin");
-  //return 1;
+  bool opt_info = false;
 
-  Mcr::create_from_binfile("mcr_wnet.bin");
-  cerr << "Loaded:" << load.elapsed() << endl;
-  //do_bfs();
-  //return 1;
+  string fullname_out("mcr_wnet.bin");
+  string relations_file("mcr_source/wei_relations.txt");
+  string mcr_file("mcr_source/MCR+TSSemcor.all");
+  string out_dir;
 
-  char *Sent[] = {"national","gallery","choice","picture","example","problem","artist","colour","video",
-		  "talk","problem","connection","practice","painter","composition","work","artist","Poussin",
-		  "subject","master","painting"};
+  const size_t source_rels_N = 5;
+  const char *source_rels_default[source_rels_N] = {"16", "20", "xg", "xn", "xs"};
 
-  char *Sent2[] = {
-    "acquiring",
-    "acquisition",
-    "blooper",
-    "blunder",
-    "boner",
-    "boo-boo",
-    "botch",
-    "bungle",
-    "flub",
-    "foul-up",
-    "fuckup",
-    "getting",
-    "misdoing"};
-
-  vector<string> sentence(Sent, Sent + 21);
-  //vector<string> sentence(Sent2, Sent2 + 13);
-
-  DisambGraph dgraph;
-  timer dgr_timer;
-  CSentence csent(sentence);
-  cerr << csent << endl;
-  fill_disamb_graph(csent, dgraph);
-  cerr << "DisambG created " << dgr_timer.elapsed() << endl;
-  dgraph.write_to_binfile("w.dgraph");
-  dgraph.prune();
-  write_dgraph_graphviz("w.dot", dgraph.graph());
+  const char desc_header[] = "create_mcrbin: create a serialized image of the MCR\n"
+    "Usage:\n"
+    "create_mcrbin mcr_file.txt [output.bin] -> Create a MCR image.\n"
+    "Options:";
   
-  timer dis_pr;
+  try {
+    using namespace boost::program_options;
 
-  dgraph.transform_csentence(csent);
-  hits(dgraph.graph());
-  //pageRank(dgraph.graph());
-  cerr << "PageRank " << dis_pr.elapsed() << endl;
-  disamb_csentence(csent, dgraph);
-  print_csent_dgraph(cerr, csent, dgraph);
+    options_description po_desc(desc_header);
+
+    po_desc.add_options()
+      ("help,h", "This help page.")
+      ("info,i", "Give info about some Mcr binfile.")
+      ("out_dir,O", value<string>(), "Directory for leaving output files.")
+      ("relations_file,r", value<string>(), "Specify file about relations (default mcr_source/wei_relations.txt).")
+      ("w2syn_file,W", value<string>(), "Word to synset map file (default is mcr_source/enWN16).")
+      ("param,p", value<string>(), "Specify parameter file.")
+      ("verbose,v", "Be verbose.")
+      ;
+    options_description po_desc_hide("Hidden");
+    po_desc_hide.add_options()
+      ("input-file",value<string>(), "Input file.")
+      ("output-file",value<string>(), "Output file.")
+      ;
+    options_description po_desc_all("All options");
+    po_desc_all.add(po_desc).add(po_desc_hide);
+
+    positional_options_description po_optdesc;
+    po_optdesc.add("input-file", 1);
+    po_optdesc.add("output-file", 1);
+
+    variables_map vm;
+    store(command_line_parser(argc, argv).
+	  options(po_desc_all).
+	  positional(po_optdesc).
+	  run(), vm);
+    notify(vm);
+
+    // If asked for help, don't do anything more
+
+    if (vm.count("help")) {
+      cout << po_desc << endl;
+      exit(0);
+    }
+
+    // verbosity
+
+    if (vm.count("verbose")) {
+      glVars::verbose = 1;
+    }
+
+    if (vm.count("info")) {
+      opt_info = true;
+    }
+
+    // Config params first, so that they can be overriden by switch options
+
+    if (vm.count("param")) {
+      parse_config(vm["param"].as<string>());
+    }
+
+    if (vm.count("out_dir")) {
+      out_dir = vm["out_dir"].as<string>();
+    }
+
+    if (vm.count("w2syn_file")) {
+      glVars::w2s_filename = vm["w2syn_file"].as<string>();
+    }
+
+    if (vm.count("input-file")) {
+      mcr_file = vm["input-file"].as<string>();
+    }
+
+    if (vm.count("output-file")) {
+      fullname_out = vm["output-file"].as<string>();
+    }
+  }
+  catch(exception& e) {
+    cerr << e.what() << "\n";
+    throw(e);
+  }
+
+  if (opt_info) {
+    Mcr::create_from_binfile(mcr_file);
+    Mcr::instance().display_info(cout);
+    return 0;
+  }
+
+  if (!glVars::rel_source.size()) {
+    // Default relations
+    copy(source_rels_default, source_rels_default + source_rels_N, 
+	 back_inserter(glVars::rel_source));
+  }
+
+  if (glVars::verbose) {
+    show_global_variables(cerr);
+    cerr << "MCR file:" << mcr_file << "\t";
+    cerr << "Relations file:" << relations_file << endl;
+  }
+
+  set<string> source_rels(glVars::rel_source.begin(), glVars::rel_source.end());
+
+  if (glVars::verbose) 
+    cerr << "Reading relations"<< endl;
+  Mcr::create_from_txt(relations_file, mcr_file, source_rels);
+  File_elem mcr_fe(fullname_out);
+  mcr_fe.set_path(out_dir);
+  if (glVars::verbose) 
+    cerr << "Writing binary file: "<< mcr_fe.get_fname()<< endl;
+  Mcr::instance().write_to_binfile(mcr_fe.get_fname());
+  if (glVars::verbose) 
+    cerr << "Wrote " << num_vertices(Mcr::instance().graph()) << " vertices and " << num_edges(Mcr::instance().graph()) << " edges" << endl;
+
   return 1;
 }
+
+/*
+ * Local Variables:
+ * mode: c++
+ * compile-command: "make -k create_mcrbin"
+ * End:
+ */
