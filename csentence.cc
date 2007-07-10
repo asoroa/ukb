@@ -207,9 +207,12 @@ std::ostream& operator<<(std::ostream & o, const CSentence & cs_) {
 ////////////////////////////////////////////////////////
 // Streaming
 
+const size_t magic_id = 0x070704;
+
 ofstream & CSentence::write_to_stream (std::ofstream & o) const {
   size_t vSize = v.size();
 
+  write_atom_to_stream(o, magic_id);
   write_atom_to_stream(o,vSize);
   for(size_t i=0; i< vSize; ++i) {
     v[i].write_to_stream(o);
@@ -221,7 +224,14 @@ ofstream & CSentence::write_to_stream (std::ofstream & o) const {
 void CSentence::read_from_stream (std::ifstream & is) {
 
   size_t vSize;
+  size_t id;
+
   // Read a vector of CWords
+  read_atom_from_stream(is, id);
+  if (id != magic_id) {
+    cerr << "Invalid file. Not a csentence." << endl;
+    exit(-1);
+  }
   read_atom_from_stream(is, vSize);
   v.resize(vSize);
   for(size_t i=0; i<vSize; ++i) {
