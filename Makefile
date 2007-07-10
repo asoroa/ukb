@@ -5,10 +5,10 @@ SOURCEMAIN = ukb_aw.cc
 
 # Library files
 
-SRC = w2syn.c mcrGraph.c disambGraph.c csentence.c kGraph.c
+SRC = common.cc globalVars.cc configFile.cc fileElem.cc w2syn.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc
 
 # Don't change anything below
-DEBUG = 1
+#DEBUG = 1
 #PROF = 1
 
 INCLUDE_DIR = 
@@ -28,7 +28,7 @@ PROFFLAGS =
 endif
 
 CCOPTIONS = -Wall $(OPTFLAGS)
-MEMBERS = $(SRC:.c=.o)
+MEMBERS = $(SRC:.cc=.o)
 EXEC  = $(basename $(notdir $(SOURCEMAIN)))
 
 all: $(EXEC)
@@ -38,6 +38,12 @@ all: $(EXEC)
 
 $(EXEC): $(TARGET) $(MEMBERS) $(SOURCEMAIN)
 	gcc $(CCOPTIONS) $(PROFFLAGS) -o $(EXEC) $(SOURCEMAIN) $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
+
+info_ukb: $(TARGET) $(MEMBERS) info_ukb.cc
+	gcc $(CCOPTIONS) $(PROFFLAGS) -o info_ukb info_ukb.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
+
+create_mcrbin: $(TARGET) $(MEMBERS) create_mcrbin.cc
+	gcc $(CCOPTIONS) $(PROFFLAGS) -o create_mcrbin create_mcrbin.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
 
 .PHONY : all clean
 
