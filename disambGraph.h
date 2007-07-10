@@ -6,10 +6,6 @@
 #include "mcrGraph.h"
 #include "csentence.h"
 
-//Note: for the whole program to work, it is supposed that vertex
-//descriptors type in mcr graphs (Mcr_vertex_t) and disamb graphs
-//(Dis_vertex_t) are interchangeable
-
 using boost::adjacency_list;
 using boost::graph_traits;
 using boost::property;
@@ -19,14 +15,19 @@ using boost::vertex_name;
 using boost::vertex_rank_t;
 using boost::vertex_rank;
 
+enum edge_freq_t    { edge_freq };      // relation id
+
+namespace boost {
+  BOOST_INSTALL_PROPERTY(edge, freq);
+}
 
 typedef adjacency_list <
   boost::listS,
   boost::vecS,
   boost::undirectedS,
-  property<vertex_name_t, std::string,        // synset name
-	   property<vertex_rank_t, float> >,  // vertex rank
-  property<edge_freq_t, size_t>
+  property<vertex_name_t, std::string,          // the synset name (WN1.6)
+	   property<vertex_rank_t, float> >,    // vertex rank
+  property<edge_freq_t, float>
   > DisambG;
 
 typedef graph_traits<DisambG>::vertex_descriptor Dis_vertex_t;
@@ -37,6 +38,8 @@ class DisambGraph {
 
  public:
 
+  typedef DisambG boost_graph_type; // the underlying graph type
+
   DisambGraph();
 
   std::pair<Dis_vertex_t, bool> getVertexByName(const std::string & str) const;
@@ -44,14 +47,12 @@ class DisambGraph {
   void fill_graph(Mcr_vertex_t src,
 		  Mcr_vertex_t tgt,
 		  const std::vector<Mcr_vertex_t> & parents);
-  void add_disamb_edge(Dis_vertex_t u, Dis_vertex_t v);
+  void add_disamb_edge(Dis_vertex_t u, Dis_vertex_t v, size_t w = 1);
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);
 
   DisambG & graph() {return g;}
   void prune() {}
-  //void transform_csentence(CSentence & cs) const;
-  void kk();
 private:
 
   std::vector<Dis_vertex_t> add_vertices_mcr_path(std::vector<std::string>::iterator v_it, 
@@ -81,11 +82,22 @@ void hits(DisambG & g);
 
 void pageRank(DisambG & g);
 
-std::ostream & print_csent(std::ostream & o, CSentence & cs, DisambGraph & dgraph);
+std::ostream & print_disamb_csent(std::ostream & o, CSentence & cs);
 std::ostream & print_complete_csent(std::ostream & o, CSentence & cs, DisambGraph & dgraph);
 
 // export to dot format (graphviz)
 
 void write_dgraph_graphviz(const std::string & fname, const DisambG & g);
 
+// streaming functions for disambG type graphs
+Dis_vertex_t read_vertex_from_stream(std::ifstream & is, 
+				     DisambG & g);
+Dis_edge_t read_edge_from_stream(std::ifstream & is, 
+				 DisambG & g);
+std::ofstream & write_vertex_to_stream(std::ofstream & o,
+				       const DisambG & g,
+				       const Dis_vertex_t & v);
+std::ofstream & write_edge_to_stream(std::ofstream & o,
+				     const DisambG & g,
+				     const Dis_edge_t & e);
 #endif
