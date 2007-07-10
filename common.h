@@ -12,14 +12,27 @@
 #include <iterator>
 #include <map>
 #include <vector>
+#include <set>
 #include <iosfwd>
 //#include <algorithm>
 #include <numeric>
 
 #include <boost/graph/graphviz.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/property_map.hpp>
+#include <boost/graph/properties.hpp>
+
+using boost::adjacency_list;
+using boost::graph_traits;
+using boost::property;
+using boost::property_map;
 
 /////////////////////
 // Common functions
+
+/////////////////////////////////////////////////////////////////////
+// Streaming
 
 template<class T>
 void read_atom_from_stream(std::ifstream & is,
@@ -74,6 +87,21 @@ void read_vector_from_stream(std::ifstream & is, Vector & v) {
   for(i=0; i< vSize; ++i) {
     read_atom_from_stream(is, value);
     v.push_back(value);
+  }
+}
+
+template<class Set> 
+void read_set_from_stream(std::ifstream & is, Set & v) {
+
+  size_t vSize;
+  size_t i;
+  typename Set::value_type value;
+
+  read_atom_from_stream(is, vSize);
+
+  for(i=0; i< vSize; ++i) {
+    read_atom_from_stream(is, value);
+    v.insert(value);
   }
 }
 
@@ -138,8 +166,8 @@ std::ofstream & write_vector_to_stream(std::ofstream & o,
   return o;
 }
 
+/////////////////////////////////////////////////////////////////////
 // Connected vertices of undirected graphs
-
 
 template<typename G>
 struct vertex_is_connected {
@@ -173,35 +201,50 @@ size_t num_connected_vertices(const G & g) {
   return erpin_onak;
 }
 
-// Display vector
+/////////////////////////////////////////////////////////////////////
+// csentence sorting (disambiguating) functions
 
-template<class T>
-std::ostream & writeV(std::ostream & o, const std::vector<T> & v) {
-
-  typename std::vector<T>::const_iterator vIt = v.begin();
-  typename std::vector<T>::const_iterator vItEnd = v.end();
-  if (vIt != vItEnd) {
-    --vItEnd;
-    o << "(";
-    std::copy(vIt, vItEnd, std::ostream_iterator<T>(o, ","));
-    o << *vItEnd << ")";
-  }
-  return o;
-}
-
-// copy_if
-
-template <typename InputIt, typename OutputIt, typename Predicate>
-OutputIt copy_if (InputIt first, InputIt last,
-                  OutputIt result, Predicate pred)
-{
-    while (first != last) {
-        if (pred(*first))  *result++ = *first;
-        ++first;
+template<class G>
+struct Syn2vert_tie {
+  typedef typename G::boost_graph_type boost_graph_type;
+  typedef typename graph_traits<boost_graph_type>::vertex_descriptor vertex_t;
+  Syn2vert_tie(std::vector<std::string>::iterator it, 
+		std::vector<std::string>::iterator end,
+		G & dg) {
+    vertex_t v;
+    bool P;
+    for(;it != end; ++it) {
+      tie(v, P) = dg.getVertexByName(*it);
+      if(!P) {
+	std::cerr << "Error:" << *it << " synset not found" << std::endl;
+	exit(-1);
+      }
+      V.push_back(std::make_pair(&(*it), v));
     }
-    return result;
+  }
+  std::vector<std::pair<std::string *, vertex_t> > V;
+};
+
+template<typename G, typename RankMap>
+struct SortByRank {
+  typedef typename graph_traits<G>::vertex_descriptor vertex_t;
+  RankMap rank;
+  SortByRank(RankMap rank_) : rank(rank_) {};
+  int operator() (const std::pair<std::string *, vertex_t> & u, 
+		  const std::pair<std::string *, vertex_t> & v) {
+    // Descending order !
+    return get(rank, v.second) < get(rank, u.second);
+  }
+};
+
+template<typename G, typename RankMap>
+SortByRank<G, RankMap>
+make_SortByRank(G & g, const RankMap & rank) {
+  SortByRank<G, RankMap> m_(rank);
+  return m_;
 }
 
+/////////////////////////////////////////////////////////////////////
 // graphviz
 
 template < class ValType >
@@ -222,5 +265,55 @@ inline my_name_writer<ValType>
 make_my_writer(ValType n, const std::string & ize) {
   return my_name_writer<ValType>(n, ize);
 }
+
+/////////////////////////////////////////////////////////////////////
+// Display vector
+
+template<class T>
+std::ostream & writeV(std::ostream & o, const std::vector<T> & v) {
+
+  typename std::vector<T>::const_iterator vIt = v.begin();
+  typename std::vector<T>::const_iterator vItEnd = v.end();
+  if (vIt != vItEnd) {
+    --vItEnd;
+    o << "(";
+    std::copy(vIt, vItEnd, std::ostream_iterator<T>(o, ","));
+    o << *vItEnd << ")";
+  }
+  return o;
+}
+
+template<class T>
+std::ostream & writeS(std::ostream & o, const std::set<T> & v) {
+
+  typename std::set<T>::const_iterator vIt = v.begin();
+  typename std::set<T>::const_iterator vItEnd = v.end();
+  if (vIt != vItEnd) {
+    --vItEnd;
+    o << "(";
+    std::copy(vIt, vItEnd, std::ostream_iterator<T>(o, ","));
+    o << *vItEnd << ")";
+  }
+  return o;
+}
+
+/////////////////////////////////////////////////////////////////////
+// copy_if
+
+template <typename InputIt, typename OutputIt, typename Predicate>
+OutputIt copy_if (InputIt first, InputIt last,
+                  OutputIt result, Predicate pred)
+{
+    while (first != last) {
+        if (pred(*first))  *result++ = *first;
+        ++first;
+    }
+    return result;
+}
+
+//////////////////////////////////////////////////////////////////////
+// split function
+
+std::vector<std::string> split(const std::string & str, const std::string & delims);
 
 #endif
