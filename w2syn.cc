@@ -1,5 +1,6 @@
 
 #include "w2syn.h"
+#include "globalVars.h"
 
 #include <fstream>
 #include <iostream>
@@ -15,7 +16,7 @@ using namespace boost;
 
 ////////////////////////////////////////////////
 // Global variables
-const std::string w2s_filename = "mcr_source/enWN16";
+//const std::string w2s_filename = "mcr_source/enWN16";
 
 
 ////////////////////////////////////////////////
@@ -65,7 +66,7 @@ void read_w2syn_file(const string & fname,
 }
   
 W2Syn::W2Syn() {
-  read_w2syn_file(w2s_filename, m_w2syns);
+  read_w2syn_file(glVars::w2s_filename, m_w2syns);
 }
 
 W2Syn & W2Syn::instance() {
