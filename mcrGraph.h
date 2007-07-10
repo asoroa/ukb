@@ -31,14 +31,13 @@ using boost::vertex_name;
 enum vertex_wname_t { vertex_wname};  // word name
 enum edge_id_t      { edge_id };      // relation id
 enum edge_source_t  { edge_source };  // relation source
-enum edge_freq_t    { edge_freq };      // relation id
 
 // typedef std::set<size_t> EdgeId_t;
 
 namespace boost {
   BOOST_INSTALL_PROPERTY(vertex, wname);
   BOOST_INSTALL_PROPERTY(edge, id);
-  BOOST_INSTALL_PROPERTY(edge, freq);
+  //BOOST_INSTALL_PROPERTY(edge, freq);
  //  BOOST_INSTALL_PROPERTY(edge, source);
 }
 
@@ -71,7 +70,8 @@ public:
   //Singleton
   static Mcr & instance();
   static void create_from_txt(const std::string & relFile,
-			      const std::string & synsFile);
+			      const std::string & synsFile,
+			      const std::set<std::string> & rels_source);
   static void create_from_binfile(const std::string & o);
 
   // Member functions
@@ -85,6 +85,7 @@ public:
   bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;
   void write_to_binfile (const std::string & str) const;
 
+  void display_info(std::ostream & o) const;
 
 private:
   // Singleton
@@ -98,12 +99,14 @@ private:
   ~Mcr() {};
 
   void read_from_txt(const std::string & relFile,
-		     const std::string & synsFile);
+		     const std::string & synsFile,
+		     const std::set<std::string> & skip_rels);
   void read_from_stream (std::ifstream & o);
   std::ofstream & write_to_stream(std::ofstream & o) const;
 
   // Private members
   McrGraph g;
+  std::set<std::string> relsSource;
   std::map<std::string, Mcr_vertex_t> synsetMap; // synset name to vertex id
   std::map<std::string, int> relMap;     // maps from relation name to relation id
   std::map<int, std::string> relMapInv;  // maps from relation id to relation name

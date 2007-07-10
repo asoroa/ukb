@@ -75,11 +75,12 @@ Mcr & Mcr::instance() {
 }
 
 void Mcr::create_from_txt(const string & relFileName,
-			  const string & synsFileName) {
+			  const string & synsFileName,
+			  const std::set<std::string> & rels_source) {
   if (p_instance) return;
   Mcr *tenp = create();
 
-  tenp->read_from_txt(relFileName, synsFileName);
+  tenp->read_from_txt(relFileName, synsFileName, rels_source);
   p_instance = tenp;
 }
 
@@ -235,7 +236,8 @@ typename graph_traits<G>::vertex_descriptor insert_synset_vertex(G & g,
 
 void read_mcr(ifstream & mcrFile,
 	      McrGraph & g,
-	      map<std::string, Mcr_vertex_t> & synsetMap) {
+	      map<std::string, Mcr_vertex_t> & synsetMap,
+	      const set<string> & rels_source) {
   string line;
   int line_number = 0;
   bool insertedP;
@@ -243,6 +245,7 @@ void read_mcr(ifstream & mcrFile,
   map<string, string> syn2W;
   W2Syn::instance().w2syn_reverse(syn2W);  // map synset->word
 
+  set<string>::const_iterator srel_end = rels_source.end();
   while(mcrFile) {
     vector<string> fields;
     std::getline(mcrFile, line, '\n');
@@ -255,12 +258,15 @@ void read_mcr(ifstream & mcrFile,
       cerr << "read_mcr error. Bad line: " << line_number << endl;
       exit(-1);
     }
-    if (fields[3] == "su") continue; // Skip BNC selec. preferences (Diana)
-    if (fields[3] == "sc") continue; // Skip Semcor coocurrence relations
-    //if (fields[3] == "xg") continue; // Xwnet gold relations
-    //if (fields[3] == "xn") continue; // Xwnet normal relations
-    //if (fields[3] == "xs") continue; // Xwnet silver relations
-    if (fields[3] == "ek") continue; // Skip Semcor selectional preferences (Eneko)
+    if (rels_source.find(fields[3]) == srel_end) continue; // Skip this relation
+//     //if (fields[3] == "16") continue; // Skip WNet 1.6
+//     //if (fields[3] == "20") continue; // Skip WNet 2.0
+//     if (fields[3] == "ek") continue; // Skip Semcor selectional preferences (Eneko)
+//     //if (fields[3] == "xg") continue; // Skip Xwnet gold relations
+//     if (fields[3] == "su") continue; // Skip BNC selec. preferences (Diana)
+//     if (fields[3] == "sc") continue; // Skip Semcor coocurrence relations
+//     //if (fields[3] == "xn") continue; // Skip Xwnet normal relations
+//     //if (fields[3] == "xs") continue; // Skip Xwnet silver relations
 
     Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, fields[0], syn2W[fields[0]]);
     Mcr_vertex_t v = insert_synset_vertex(g, synsetMap, fields[1], syn2W[fields[1]]);
@@ -272,9 +278,10 @@ void read_mcr(ifstream & mcrFile,
 }
 
 void Mcr::read_from_txt(const string & relFileName,
-			const string & synsFileName) {
+			const string & synsFileName,
+			const set<string> & rels_source) {
 
-
+  relsSource = rels_source;
   // optimize IO
   std::ios::sync_with_stdio(false);
 
@@ -282,7 +289,15 @@ void Mcr::read_from_txt(const string & relFileName,
   std::ifstream synsFile(synsFileName.c_str(), ofstream::in);
 
   read_relations(relFile, relMap, relMapInv);
-  read_mcr(synsFile, g, synsetMap); //, relInv, sourceMap, vertexNames);
+  read_mcr(synsFile, g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);
+}
+
+void Mcr::display_info(std::ostream & o) const {
+
+  o << "Relation sources: ";
+  writeS(o, relsSource);
+  o << "\n" << num_vertices(g) << " vertices and " << num_edges(g) << " edges" << endl;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -341,7 +356,7 @@ void  Mcr::read_from_stream (std::ifstream & is) {
     cerr << "Error: invalid id (filename is a mcrGraph?)" << endl;
   }
 
-  //read_vector_from_stream<vector<string>, string> (is, vertexNames);
+  read_set_from_stream(is, relsSource);
   read_map_from_stream(is, relMap);
   create_inverse_map(relMap, relMapInv);
   //read_map(is, relType);
@@ -414,7 +429,7 @@ ofstream & Mcr::write_to_stream(ofstream & o) const {
 
   write_atom_to_stream(o, magic_id);
 
-  //write_vector_to_stream(o, vertexNames);
+  write_vector_to_stream(o, relsSource);
   write_map_to_stream(o, relMap);
   //write_map_to_stream(o, relType);
   //write_map_to_stream(o, relInv);
