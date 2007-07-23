@@ -1,3 +1,5 @@
+#include "w2syn.h"
+#include "common.h"
 #include "fileElem.h"
 #include "globalVars.h"
 #include "mcrGraph.h"
@@ -52,6 +54,43 @@ void option_dependency(const boost::program_options::variables_map& vm,
     if (vm.count(required_option) == 0 || vm[required_option].defaulted())
       throw logic_error(string("Option '") + for_what 
 			+ "' requires option '" + required_option + "'.");
+}
+
+
+
+bool extract_input_files(const string & fullname,
+			 vector<string> & input_files,
+			 const string & extension) {
+
+  namespace fs = boost::filesystem;
+
+  fs::path full_path( fs::initial_path() );
+  
+  full_path = fs::system_complete( fs::path( fullname, fs::native ) );
+
+  if ( !fs::exists( full_path ) )
+  {
+    std::cerr << "\nNot found: " << full_path.native_file_string() << std::endl;
+    return false;
+  }
+
+  if ( fs::is_directory( full_path ) ) {
+
+    fs::directory_iterator end_iter;
+    for ( fs::directory_iterator dir_itr( full_path );
+          dir_itr != end_iter;
+          ++dir_itr ) {
+      string dfile = dir_itr->native_file_string();
+      size_t ext_i = dfile.find_last_of('.');
+      if (ext_i == string::npos) continue;
+      string dext(dfile.begin() + ext_i + 1, dfile.end());
+      if (dext != extension) continue;
+      input_files.push_back(dfile);
+    }    
+  } else {
+    input_files.push_back(full_path.native_file_string());
+  }
+  return true;
 }
 
 ///////////////////////////////////////
@@ -121,19 +160,37 @@ void create_kgraph(string & cs_fname,
 
 
 template<class G>
-void dis_csent(string & csentence_fname, const string & ext) {
+void dis_csent(const vector<string> & input_files, const string & ext) {
   
-  File_elem cs_finfo(csentence_fname);
 
-  CSentence cs;
-  cs.read_from_binfile(cs_finfo.get_fname());
+  map<string, size_t> counts;
 
-  File_elem dg_finfo(cs.id(), cs_finfo.path, ext);
-  G dg;
-  dg.read_from_binfile(dg_finfo.get_fname());
-  pageRank(dg.graph());
-  disamb_csentence(cs, dg);
-  print_disamb_csent(cout, cs);
+  if (glVars::mcr_with_freqs) {
+    bool ok = W2Syn::instance().syn_counts(counts);
+    if (!ok) {
+      cerr << "Error! There are no freqs. Check file " << glVars::w2s_filename << endl;
+      exit(-1);
+    }
+  }
+
+  for(vector<string>::const_iterator fname=input_files.begin(); fname != input_files.end(); ++fname) {
+
+    File_elem cs_finfo(*fname);
+
+    CSentence cs;
+    cs.read_from_binfile(cs_finfo.get_fname());
+
+    File_elem dg_finfo(cs.id(), cs_finfo.path, ext);
+    G dg;
+    dg.read_from_binfile(dg_finfo.get_fname());
+    if (glVars::mcr_with_freqs) {
+      pageRank_ppv(dg.graph(), counts);
+    } else {
+      pageRank(dg.graph());
+    }
+    disamb_csentence(cs, dg);
+    print_disamb_csent(cout, cs);
+  }
   //print_complete_csent(cout, cs, dg);
 }
 
@@ -194,10 +251,10 @@ void test (string & fullname_in) {
 //   }
 }
 
+
+
 int main(int argc, char *argv[]) {
 
-  string fullname_in;
-  string fullname_out;
   string out_dir;
   string mcr_binfile(mcr_default_binfile);
 
@@ -208,55 +265,68 @@ int main(int argc, char *argv[]) {
   bool opt_disamb_csent_kgraph = false;
   bool opt_do_test = false;
 
+  vector<string> input_files;
+  string fullname_in;
+
+  using namespace boost::program_options;
+
   const char desc_header[] = "ukb_aw: perform AW with MCR KB based algorithm\n"
     "Usage:\n"
-    "ukb_aw file.txt -> Disambiguate words. Output key file to STDOUT.\n"
     "ukb_aw --create_dgraph file.txt -> Create a disgraph from the file (.dgraph extension).\n"
     "ukb_aw --dis_csent csentence.csent -> Disambiguate words of a csentence. A dgraph with same id must be in the directory.\n"
+    "                                      If a directory name is specified, disambiguate all found csentences.\n"
     "Options:";
 
+  
+  options_description po_desc(desc_header);
+
+  po_desc.add_options()
+    ("create_dgraph,c", "Create dgraph binary file(s), one per context, with extension .dgraph")
+    ("dis_csent,d", "Disambiguate csentence and output result. A dgraph with same id must be in the directory.")
+    ("with_freqs,f", "Use freqs when disambiguation (pageRank PPVs).")
+    ("help,h", "This page")
+    ("mcr_binfile,M", value<string>(), "Binary file of MCR (see create_mcrbin). Default is mcr_wnet.bin")
+    ("w2syn_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
+    ("out_dir,O", value<string>(), "Directory for leaving output files.")
+    ("test,t", "(Internal) Do a test.")
+    ("verbose,v", "Be verbose.")
+    ;
+
+  options_description po_desc_kgraph("KGraph options");
+  po_desc_kgraph.add_options()
+    ("create_kgraph", "Create kgraph binary file given one csentence (dgraph must have same name and be in same directory)")
+    ("dis_csent_kgraph", "Disambiguate csentence and output result. A kgraph with same id must be in the directory.")
+    ;
+  
+  options_description po_visible;
+  po_visible.add(po_desc).add(po_desc_kgraph);
+  
+  options_description po_hidden("Hidden");
+  po_hidden.add_options()
+    ("input-file",value<string>(), "Input file.")
+    ;
+  options_description po_all("All options");
+  po_all.add(po_visible).add(po_hidden);
+  
+  positional_options_description po_optdesc;
+  po_optdesc.add("input-file", 1);
+  //    po_optdesc.add("output-file", 1);
+  
   try {
-    using namespace boost::program_options;
-
-    options_description po_desc(desc_header);
-
-    po_desc.add_options()
-      ("create_dgraph,c", "Create dgraph binary file(s), one per context, with extension .dgraph")
-      ("dis_csent,d", "Disambiguate csentence and output result. A dgraph with same id must be in the directory.")
-      ("dis_csent_kgraph", "Disambiguate csentence and output result. A kgraph with same id must be in the directory.")
-      //      ("eval_dgraph,e", "Disambiguate dgraph and output result. Input file is a dgraph file.")
-      ("help,h", "This page")
-      ("create_kgraph,k", "Create kgraph binary file given one csentence (dgraph must have same name and be in same directory)")
-      ("mcr_binfile,M", value<string>(), "Binary file of MCR. Create with create_mcrbin application.")
-      ("w2syn_file,W", value<string>(), "Word to synset map file. Default is mcr_source/enWN16.")
-      ("out_dir,O", value<string>(), "Directory for leaving output files.")
-      ("test,t", "(Internal) Do a test.")
-      ("verbose,v", "Be verbose.")
-      ;
-    options_description po_desc_hide("Hidden");
-    po_desc_hide.add_options()
-      ("input-file",value<string>(), "Input file.")
-      ("output-file",value<string>(), "Output file.")
-      ;
-    options_description po_desc_all("All options");
-    po_desc_all.add(po_desc).add(po_desc_hide);
-
-    positional_options_description po_optdesc;
-    po_optdesc.add("input-file", 1);
-    po_optdesc.add("output-file", 1);
-
+    
     variables_map vm;
     store(command_line_parser(argc, argv).
-	  options(po_desc_all).
+	  options(po_all).
 	  positional(po_optdesc).
 	  run(), vm);
+    
     notify(vm);
 
 
     // If asked for help, don't do anything more
 
     if (vm.count("help")) {
-      cout << po_desc << endl;
+      cout << po_visible << endl;
       exit(0);
     }
 
@@ -288,13 +358,13 @@ int main(int argc, char *argv[]) {
       out_dir = vm["out_dir"].as<string>();
     }
 
+    if (vm.count("with_freqs")) {
+      glVars::mcr_with_freqs = true;
+    }
+
     if (vm.count("input-file")) {
       fullname_in = vm["input-file"].as<string>();
     }
-
-    if (vm.count("output-file")) {
-      fullname_out = vm["output-file"].as<string>();
-    }    
 
     if (vm.count("test")) {
       opt_do_test = true;
@@ -305,6 +375,17 @@ int main(int argc, char *argv[]) {
     cerr << e.what() << "\n";
     throw(e);
   }
+
+  extract_input_files(fullname_in, input_files, "csent");
+
+  if(input_files.empty()) {
+    cout << po_visible << endl;
+    cerr << "Error: No input files." << endl;
+    exit(0);      
+  }
+//   writeV(cout, input_files);
+//   cout << endl;
+//   return 0;
 
   if(opt_do_test) {
     test(fullname_in);
@@ -321,11 +402,11 @@ int main(int argc, char *argv[]) {
   }
 
   if(opt_disamb_csent_dgraph) {
-    dis_csent<DisambGraph>(fullname_in, ".dgraph");
+    dis_csent<DisambGraph>(input_files, ".dgraph");
   }
 
   if(opt_disamb_csent_kgraph) {
-    dis_csent<KGraph>(fullname_in, ".kgraph");
+    dis_csent<KGraph>(input_files, ".kgraph");
   }
 
   return 0;
