@@ -58,11 +58,6 @@ bool disg_bfs (DisambG & g,
 // Constructor
 
 
-struct Kg_dg_ {
-  Dis_vertex_t dg_v; // vertex id in DisambGraph
-  Dis_vertex_t kg_v; // vertex id in KGraph
-};
-
 
 Dis_vertex_t add_kg_vertex(const string & str, 
 			   DisambG & g, 
@@ -83,6 +78,16 @@ Dis_vertex_t add_kg_vertex(const string & str,
 }
 
 
+
+// Auxiliary struct for constructing KGraphs from DisambGraphs
+
+struct Kg_dg_ {
+  Dis_vertex_t dg_v; // vertex id in DisambGraph
+  Dis_vertex_t kg_v; // vertex id in KGraph
+};
+
+typedef std::vector<std::vector<Kg_dg_> > KG_SynsV;
+
 // given a csentence, do two things:
 //
 // * create a KG_Synsv structure, where the synsets of every word are
@@ -91,9 +96,11 @@ Dis_vertex_t add_kg_vertex(const string & str,
 // * add the vertices of those synsets in the newly created Kgraph
 //
 
-void KGraph::create_kgSynsV(CSentence & cs,
-			    KG_SynsV & theSyns,
-			    DisambGraph & dg) {
+void create_kgSynsV(CSentence & cs,
+		    KG_SynsV & theSyns,
+		    DisambGraph & dg,
+		    DisambG & g,
+		    std::map<std::string, Dis_vertex_t> & synsetMap) {
 
   Dis_vertex_t aux;
   bool existP;
@@ -119,11 +126,12 @@ void KGraph::create_kgSynsV(CSentence & cs,
 }
 
 
-void KGraph::fill_kg(Kg_dg_ & src, 
-		     vector<vector<Kg_dg_> >::iterator cw_it,
-		     vector<vector<Kg_dg_> >::iterator cw_end,
-		     DisambG & disg) {
-
+void fill_kg(Kg_dg_ & src, 
+	     vector<vector<Kg_dg_> >::iterator cw_it,
+	     vector<vector<Kg_dg_> >::iterator cw_end,
+	     DisambG & disg,
+	     DisambG & g) {
+  
   vector<Dis_vertex_t> dist;
   Dis_edge_t e;
   bool P;
@@ -153,7 +161,7 @@ KGraph::KGraph(CSentence & cs, DisambGraph & disg) {
 
   if (cs.size() == 0) return;
   
-  create_kgSynsV(cs, theSyns, disg); // This function also adds the vertices
+  create_kgSynsV(cs, theSyns, disg, g, synsetMap); // This function also adds the vertices
 
   // Add edges
   vector<vector<Kg_dg_> >::iterator cw_it, cw_end;
@@ -165,7 +173,7 @@ KGraph::KGraph(CSentence & cs, DisambGraph & disg) {
     syn_end = cw_it->end();
     ++cw_it; // point to next word
     for(; syn_it != syn_end; ++syn_it) {
-      fill_kg(*syn_it, cw_it, cw_end, disg.graph());
+      fill_kg(*syn_it, cw_it, cw_end, disg.graph(), g);
     }
   }
 }

@@ -15,9 +15,6 @@
 // using boost::vertex_rank_t;
 // using boost::vertex_rank;
 
-struct Kg_dg_; // forward declaration
-
-typedef std::vector<std::vector<Kg_dg_> > KG_SynsV;
 
 class KGraph {
 
@@ -39,12 +36,6 @@ private:
 
   std::map<std::string, Dis_vertex_t> synsetMap;
 
-  void create_kgSynsV(CSentence & cs, KG_SynsV & theSyns,
-		      DisambGraph & dg);
-  void fill_kg(Kg_dg_ & src, 
-	       KG_SynsV::iterator cw_it,
-	       KG_SynsV::iterator cw_end,
-	       DisambG & disg);
 
   void read_from_stream (std::ifstream & is);
   std::ofstream & write_to_stream(std::ofstream & o) const;
