@@ -244,6 +244,27 @@ make_SortByRank(G & g, const RankMap & rank) {
   return m_;
 }
 
+////////////////////////////////////////////////////////////////////
+// Useful property map for pageRank
+
+namespace boost {
+  template<typename K, typename V>
+  class constant_property_map
+    : public boost::put_get_helper<V, constant_property_map<K, V> > {
+  public:
+    typedef K key_type;
+    typedef V value_type;
+    typedef V reference;
+    typedef boost::readable_property_map_tag category;
+
+    constant_property_map(V value) : store(value) {}
+
+    inline value_type operator[](const key_type& v) const { return store; }
+  private:
+    V store;
+  };
+}
+
 /////////////////////////////////////////////////////////////////////
 // graphviz
 
