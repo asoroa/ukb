@@ -15,10 +15,12 @@ using boost::vertex_name;
 using boost::vertex_rank_t;
 using boost::vertex_rank;
 
+enum vertex_freq_t  { vertex_freq};     // vertex freq (for ppv)
 enum edge_freq_t    { edge_freq };      // relation id
 
 namespace boost {
   BOOST_INSTALL_PROPERTY(edge, freq);
+  BOOST_INSTALL_PROPERTY(vertex, freq);
 }
 
 typedef adjacency_list <
@@ -26,9 +28,10 @@ typedef adjacency_list <
   boost::vecS,
   boost::undirectedS,
   property<vertex_name_t, std::string,          // the synset name (WN1.6)
-	   property<vertex_rank_t, float> >,    // vertex rank
+	   property<vertex_rank_t, float,
+		    property<vertex_freq_t, double> > >, // synset freq
   property<edge_freq_t, float>
-  > DisambG;
+> DisambG;
 
 typedef graph_traits<DisambG>::vertex_descriptor Dis_vertex_t;
 typedef graph_traits<DisambG>::edge_descriptor Dis_edge_t;
@@ -47,7 +50,12 @@ class DisambGraph {
   void fill_graph(Mcr_vertex_t src,
 		  Mcr_vertex_t tgt,
 		  const std::vector<Mcr_vertex_t> & parents);
-  void add_disamb_edge(Dis_vertex_t u, Dis_vertex_t v, size_t w = 1);
+
+  size_t fill_freqs(const std::map<std::string, double> & syn_freqs);
+
+  Dis_vertex_t add_dgraph_vertex(const std::string & str);
+  void add_dgraph_edge(Dis_vertex_t u, Dis_vertex_t v, size_t w = 1);
+
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);
 
@@ -81,6 +89,9 @@ void disamb_csentence(CSentence & cs, DisambGraph & dgraph);
 void hits(DisambG & g);
 
 void pageRank(DisambG & g);
+
+void pageRank_ppv(DisambG & g,
+		  const std::map<std::string, size_t> & syn_n);
 
 std::ostream & print_disamb_csent(std::ostream & o, CSentence & cs);
 std::ostream & print_complete_csent(std::ostream & o, CSentence & cs, DisambGraph & dgraph);

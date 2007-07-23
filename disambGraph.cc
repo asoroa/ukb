@@ -34,7 +34,7 @@ using namespace boost;
 DisambGraph::DisambGraph() {
 }
 
-void DisambGraph::add_disamb_edge(Dis_vertex_t u, Dis_vertex_t v, size_t div) {
+void DisambGraph::add_dgraph_edge(Dis_vertex_t u, Dis_vertex_t v, size_t div) {
 
   Dis_edge_t e;
   bool existP;
@@ -54,6 +54,20 @@ void DisambGraph::add_disamb_edge(Dis_vertex_t u, Dis_vertex_t v, size_t div) {
   }
 }
 
+Dis_vertex_t DisambGraph::add_dgraph_vertex(const string & str) {
+
+  map<string, Dis_vertex_t>::iterator map_it;
+  bool insertedP;
+  tie(map_it, insertedP) = synsetMap.insert(make_pair(str, Dis_vertex_t()));
+  if (insertedP) {
+    Dis_vertex_t v = add_vertex(g);
+    put(vertex_name, g, v, str);
+    put(vertex_rank, g, v, 0.0f);
+    map_it->second = v;
+  }
+  return map_it->second;
+}
+
 vector<Dis_vertex_t> DisambGraph::add_vertices_mcr_path(vector<string>::iterator v_it, 
 							vector<string>::iterator v_end) {
 
@@ -61,17 +75,10 @@ vector<Dis_vertex_t> DisambGraph::add_vertices_mcr_path(vector<string>::iterator
 
   map<string, Dis_vertex_t>::iterator map_it;
   map<string, Dis_vertex_t>::iterator map_end = synsetMap.end();
-  bool insertedP;
 
   for(;v_it != v_end; ++v_it) {
-    tie(map_it, insertedP) = synsetMap.insert(make_pair(*v_it, Dis_vertex_t()));
-    if (insertedP) {
-      Dis_vertex_t v = add_vertex(g);
-      put(vertex_name, g, v, *v_it);
-      put(vertex_rank, g, v, 0.0f);
-      map_it->second = v;
-    }
-    res.push_back(map_it->second);
+      Dis_vertex_t u = add_dgraph_vertex(*v_it);
+      res.push_back(u);
   }
   return res;
 }
@@ -79,6 +86,11 @@ vector<Dis_vertex_t> DisambGraph::add_vertices_mcr_path(vector<string>::iterator
 void DisambGraph::fill_graph(Mcr_vertex_t src,
 			     Mcr_vertex_t tgt,
 			     const std::vector<Mcr_vertex_t> & parents) {
+
+//   if (tgt == 81369) {
+//     int deb=0;
+//     deb++;
+//   }
 
   vector<string> path_str;
   Mcr_vertex_t pred;
@@ -104,7 +116,7 @@ void DisambGraph::fill_graph(Mcr_vertex_t src,
   path_prev = path_it;
   ++path_it;
   while(path_it != path_end) {
-    add_disamb_edge(*path_prev, *path_it, l);
+    add_dgraph_edge(*path_prev, *path_it, l);
     path_prev = path_it;
     ++path_it;
   }
@@ -120,6 +132,26 @@ pair<Dis_vertex_t, bool> DisambGraph::getVertexByName(const std::string & str) c
   return make_pair(it->second, true);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// fill graph with frequencies
+
+size_t DisambGraph::fill_freqs(const std::map<std::string, double> & syn_freqs) {
+
+  std::map<std::string, double>::const_iterator it = syn_freqs.begin();
+  std::map<std::string, double>::const_iterator end = syn_freqs.end();
+
+  Mcr_vertex_t u;
+  bool aux;
+  size_t i = 0;
+  for(;it != end; ++it) {
+    tie(u, aux) = getVertexByName(it->first);
+    assert(aux);
+    put(vertex_freq, g, u, it->second);
+    ++i;
+  }
+  return i;
+}
+
 
 ////////////////////////////////////////////////////////////////
 // Global functions
@@ -129,7 +161,7 @@ void fill_disamb_synset(const string & src_str,
 			vector<CWord>::const_iterator s_end,
 			DisambGraph & dgraph) {
 
-//   if (src_str == "00039991-v") {
+//   if (src_str == "00663525-a") {
 //     int deb;
 //     cerr << "Eooo!" << endl;
 //     deb++;
@@ -145,6 +177,9 @@ void fill_disamb_synset(const string & src_str,
   assert(existP);
 
   mcr.bfs(src, parents);
+
+  // insert src vertex in dgraph (fixes a bug)
+  dgraph.add_dgraph_vertex(src_str);
   
   //fill disamb graph
 
@@ -397,10 +432,10 @@ void hits(DisambG & g) {
 //    * by now, an uniform v^{T} vector is used, which is just (1/N)*e^{T}
 
 
-template<typename G, typename map1, typename map2>
+template<typename G, typename ppv_map, typename map1, typename map2>
 void update_pRank_weight(G & g,
 			 std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-			 float Ncoef,
+			 ppv_map & ppv_V,
 			 const std::vector<float> & out_coef, // 1/N
 			 float dfactor,
 			 const map1 & rank_map1,
@@ -418,14 +453,14 @@ void update_pRank_weight(G & g,
       vertex_descriptor u = source(*e, g);
       rank += rank_map1[u] * get(edge_freq, g, *e) * out_coef[u];
     }
-    rank_map2[*v] = dfactor*rank + (1-dfactor)*Ncoef;
+    rank_map2[*v] = dfactor*rank + (1-dfactor)*ppv_V[*v];
   }
 }
 
-template<typename G, typename map1, typename map2>
+template<typename G, typename ppv_map, typename map1, typename map2>
 void pageRank_iterate(G & g,
 		      std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-		      size_t N,
+		      ppv_map & ppv_V,
 		      const std::vector<float> & out_coef,
 		      map1 & rank_map1,
 		      map2 & rank_map2,
@@ -447,9 +482,9 @@ void pageRank_iterate(G & g,
   while(iterations--) {
     // Update to the appropriate rank map
     if (to_map_2)
-      update_pRank_weight(g, V, 1.0/static_cast<float>(N), out_coef,damping, rank_map1, rank_map2);
+      update_pRank_weight(g, V, ppv_V, out_coef,damping, rank_map1, rank_map2);
     else
-      update_pRank_weight(g, V, 1.0/static_cast<float>(N), out_coef, damping, rank_map2, rank_map1);
+      update_pRank_weight(g, V, ppv_V, out_coef, damping, rank_map2, rank_map1);
     // The next iteration will reverse the update mapping
     to_map_2 = !to_map_2;
   }
@@ -491,15 +526,63 @@ void pageRank(DisambG & g) {
 
   vector<Dis_vertex_t> V(N);
 
+  constant_property_map<Dis_vertex_t, float> ppv(1.0/static_cast<float>(N)); // always return 1/N
+
   graph_traits<DisambG>::vertex_iterator vIt, vItEnd;
   tie(vIt, vItEnd) = vertices(g);
   copy_if(vIt, vItEnd, V.begin(), vertex_is_connected<DisambG>(g));
-
   init_out_coefs(g, V, out_coefs);
   property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
-  pageRank_iterate(g, V, N, out_coefs, rank_map, map_tmp, 30); // 30 iterations
+  pageRank_iterate(g, V, ppv, out_coefs, rank_map, map_tmp, 30); // 30 iterations
 }
 
+void pageRank_ppv(DisambG &g,
+		  const map<string, size_t> & syn_n) {
+
+  // Fill rank freqs
+
+  map<string, size_t>::const_iterator syn_n_end = syn_n.end();
+
+  size_t total_count = 0;
+  graph_traits<DisambG>::vertex_iterator u, end;
+  tie(u, end) = vertices(g);
+  for(; u != end; ++u) {
+    map<string, size_t>::const_iterator syn_n_it = syn_n.find(get(vertex_name, g, *u));
+    if (syn_n_it != syn_n_end) {
+      put(vertex_freq, g, *u, syn_n_it->second);
+      total_count += syn_n_it->second;
+    } else {
+      cerr << "W: " << syn_n_it->first << " synset not found in graph!" << endl;
+      put(vertex_freq, g, *u, 0.0);
+    }
+  } 
+
+  assert(total_count);
+  double factor = double(1.0) / static_cast<double>(total_count);
+
+  // Make freqs a prob. dist
+  tie(u, end) = vertices(g);
+  for(; u != end; ++u) {
+    put(vertex_freq, g, *u, 
+	get(vertex_freq, g, *u) * factor);
+  }
+
+  // usual pagerank
+
+  vector<float> map_tmp(num_vertices(g), 0.0f);
+  vector<float> out_coefs(num_vertices(g), 0);
+
+  size_t N = num_connected_vertices(g);
+
+  vector<Dis_vertex_t> V(N);
+
+  tie(u, end) = vertices(g);
+  copy_if(u, end, V.begin(), vertex_is_connected<DisambG>(g));
+  init_out_coefs(g, V, out_coefs);
+  property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
+  property_map<DisambG, vertex_freq_t>::type ppv_map = get(vertex_freq, g);
+  pageRank_iterate(g, V, ppv_map, out_coefs, rank_map, map_tmp, 30); // 30 iterations
+}
 
 ////////////////////////////////////////////////////////////////
 // Streaming
