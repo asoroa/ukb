@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
       ("info,i", "Give info about some Mcr binfile.")
       ("out_dir,O", value<string>(), "Directory for leaving output files.")
       ("relations_file,r", value<string>(), "Specify file about relations (default mcr_source/wei_relations.txt).")
-      ("w2syn_file,W", value<string>(), "Word to synset map file (default is mcr_source/enWN16).")
+      ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
       ("param,p", value<string>(), "Specify parameter file.")
       ("verbose,v", "Be verbose.")
       ;
