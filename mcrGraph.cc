@@ -99,11 +99,6 @@ void Mcr::create_from_binfile(const std::string & fname) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Constructor
-
-//Mcr::Mcr() {} ;
-
-////////////////////////////////////////////////////////////////////////////////
 // bfs
 
 struct mcr_bfs_init:public base_visitor<mcr_bfs_init> {
@@ -152,7 +147,7 @@ bool Mcr::bfs (const string & source_synset,
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// vertex_id <-> strings 
+// strings <-> vertex_id
 
 
 pair<Mcr_vertex_t, bool> Mcr::getVertexByName(const std::string & str) const {
@@ -214,8 +209,7 @@ void read_relations(ifstream & relFile,
 template <class G, class Map>
 typename graph_traits<G>::vertex_descriptor insert_synset_vertex(G & g, 
 								 Map & map,
-								 string & name,
-								 string & word) {
+								 string & name) {
   typedef typename graph_traits<G>::vertex_descriptor Vertex_Desc;  
   typename Map::iterator pos;
   bool insertedP;
@@ -226,7 +220,6 @@ typename graph_traits<G>::vertex_descriptor insert_synset_vertex(G & g,
     // new vertex
     u = add_vertex(g);
     put(vertex_name, g, u, name);
-    put(vertex_wname, g, u, word);
     pos->second = u;
   } else {
     u = pos->second;
@@ -241,9 +234,6 @@ void read_mcr(ifstream & mcrFile,
   string line;
   int line_number = 0;
   bool insertedP;
-
-  map<string, string> syn2W;
-  W2Syn::instance().w2syn_reverse(syn2W);  // map synset->word
 
   set<string>::const_iterator srel_end = rels_source.end();
   while(mcrFile) {
@@ -268,8 +258,8 @@ void read_mcr(ifstream & mcrFile,
 //     //if (fields[3] == "xn") continue; // Skip Xwnet normal relations
 //     //if (fields[3] == "xs") continue; // Skip Xwnet silver relations
 
-    Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, fields[0], syn2W[fields[0]]);
-    Mcr_vertex_t v = insert_synset_vertex(g, synsetMap, fields[1], syn2W[fields[1]]);
+    Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, fields[0]);
+    Mcr_vertex_t v = insert_synset_vertex(g, synsetMap, fields[1]);
 
     // add edge
     Mcr_edge_t e;

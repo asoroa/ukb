@@ -37,7 +37,6 @@ enum edge_source_t  { edge_source };  // relation source
 namespace boost {
   BOOST_INSTALL_PROPERTY(vertex, wname);
   BOOST_INSTALL_PROPERTY(edge, id);
-  //BOOST_INSTALL_PROPERTY(edge, freq);
  //  BOOST_INSTALL_PROPERTY(edge, source);
 }
 
@@ -46,7 +45,7 @@ typedef adjacency_list <
   boost::vecS,
   boost::undirectedS,
   property<vertex_name_t, std::string,     // synset name
-	   property<vertex_wname_t, std::string> > // synset wordname
+	   property<vertex_wname_t, std::string> >
   > McrGraph;
  
 //  property<edge_id_t, EdgeId_t> > McrGraph;
@@ -79,10 +78,13 @@ public:
   McrGraph & graph() {return g;}
 
   Mcr_vertex_t getRandomVertex() const;
+
   std::pair<Mcr_vertex_t, bool> getVertexByName(const std::string & str) const;
   std::string  getVertexName(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
+
   bool bfs (Mcr_vertex_t source_synset, std::vector<Mcr_vertex_t> & synv) const ;
   bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;
+
   void write_to_binfile (const std::string & str) const;
 
   void display_info(std::ostream & o) const;
