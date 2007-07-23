@@ -8,7 +8,9 @@ namespace glVars {
   int verbose = 0;
 
   std::vector<std::string> rel_source;
-  std::string w2s_filename = "mcr_source/enWN16";
+  std::string w2s_filename = "../Data/Preproc/wn1.6_index.sense_freq";
+
+  bool mcr_with_freqs = false;
 
 //   bool word_norep = 0;
 //   int hub_neighborhood = 0;
@@ -39,6 +41,7 @@ void show_global_variables(std::ostream & o) {
 
   o << "General options" << std::endl << "******" << std::endl;
   o << "verbose:" << verbose << '\t' ;
+  o << "PPV:" << mcr_with_freqs << std::endl;
   o << "Rels: ";
   writeV(o, rel_source);
   o << std::endl;

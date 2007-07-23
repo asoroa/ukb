@@ -31,6 +31,7 @@ void init_varMap () {
   varMap["verbose"] = 0;
   varMap["rel_sources"] = 1;
   varMap["w2syn_filename"] = 2;
+  varMap["with_freqs"] = 3;
 }
 
 
@@ -91,6 +92,9 @@ void parseVarValue(string & variable, const string & value,
     break;
   case 2: // w2syn_filename
     glVars::w2s_filename = value;
+    break;
+  case 3: // with_freqs
+    glVars::mcr_with_freqs = (is_negated == false);
     break;
   }
 }

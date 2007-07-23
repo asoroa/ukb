@@ -15,6 +15,8 @@ namespace glVars {
   extern std::vector<std::string> rel_source;
   extern std::string w2s_filename;
 
+  extern bool mcr_with_freqs;
+
   // Maiztasunak
 
   // Ezaugarriak
