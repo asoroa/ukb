@@ -28,14 +28,14 @@ void fill_syns(const string & w,
   W2Syn & w2syn = W2Syn::instance();
   Mcr & mcr = Mcr::instance();
 
-  const vector<string> & syns_stringV = w2syn.get_syns(w);
-
-  vector<string>::const_iterator str_it = syns_stringV.begin();
-  vector<string>::const_iterator str_end = syns_stringV.end();
+  vector<string>::const_iterator str_it;
+  vector<string>::const_iterator str_end;
+  tie(str_it, str_end) = w2syn.get_wsyns(w);
   for(;str_it != str_end; ++str_it) {
     bool existP;
     Mcr_vertex_t mcr_v;
     if(pos) {
+      // filter synsets by pos
       size_t m = str_it->size();
       if (str_it->at(m-1) != pos) continue;
     }
