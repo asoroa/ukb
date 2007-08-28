@@ -51,6 +51,8 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_info = false;
+  bool opt_param = false;
+  bool opt_force_param = false;
 
   string fullname_out("mcr_wnet.bin");
   string relations_file("mcr_source/wei_relations.txt");
@@ -72,6 +74,7 @@ int main(int argc, char *argv[]) {
 
     po_desc.add_options()
       ("help,h", "This help page.")
+      ("force-default-values,f", "Use default relations.")
       ("info,i", "Give info about some Mcr binfile.")
       ("out_dir,O", value<string>(), "Directory for leaving output files.")
       ("relations_file,r", value<string>(), "Specify file about relations (default mcr_source/wei_relations.txt).")
@@ -117,8 +120,13 @@ int main(int argc, char *argv[]) {
 
     // Config params first, so that they can be overriden by switch options
 
+    if (vm.count("force-default-values")) {
+      opt_force_param = true;
+    }
+
     if (vm.count("param")) {
       parse_config(vm["param"].as<string>());
+      opt_param = true;
     }
 
     if (vm.count("out_dir")) {
@@ -148,8 +156,17 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
+  if (!opt_param && !opt_force_param) {
+    cerr << "Error: no param file. For using default values, use --force-default-values" << endl;
+    return -1;
+  }
+
   if (!glVars::rel_source.size()) {
     // Default relations
+    if (!opt_force_param) {
+      cerr << "Error: no relations. For using default relations, use --force-default-values" << endl;
+      return -1;
+    }    
     copy(source_rels_default, source_rels_default + source_rels_N, 
 	 back_inserter(glVars::rel_source));
   }
