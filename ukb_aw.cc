@@ -24,6 +24,8 @@
 using namespace std;
 using namespace boost;
 
+bool opt_with_w = false;
+
 /////////////////////////////////////////////////////////////
 // Global variables
 
@@ -183,6 +185,7 @@ void dis_csent(const vector<string> & input_files, const string & ext) {
     File_elem dg_finfo(cs.id(), cs_finfo.path, ext);
     G dg;
     dg.read_from_binfile(dg_finfo.get_fname());
+    if (!opt_with_w) dg.reset_edge_weigths();
     if (glVars::mcr_with_freqs) {
       pageRank_ppv(dg.graph(), counts);
     } else {
@@ -194,7 +197,40 @@ void dis_csent(const vector<string> & input_files, const string & ext) {
   //print_complete_csent(cout, cs, dg);
 }
 
+void do_dgraph_gviz(const vector<string> & input_files,
+		    const string & out_dir) {
+
+
+  for(vector<string>::const_iterator fname=input_files.begin(); fname != input_files.end(); ++fname) {
+
+    File_elem dg_finfo(*fname);
+
+    DisambGraph dg;
+    dg.read_from_binfile(dg_finfo.get_fname());
+    dg.reset_edge_weigths();
+    dg_finfo.set_path(out_dir);
+    dg_finfo.ext = ".dot";
+
+    if (glVars::mcr_with_freqs) {
+      map<string, size_t> counts;
+      bool ok = W2Syn::instance().syn_counts(counts);
+      if (!ok) {
+	cerr << "Error! There are no freqs. Check file " << glVars::w2s_filename << endl;
+	exit(-1);
+      }
+      
+      pageRank_ppv(dg.graph(), counts);
+    } else {
+      pageRank(dg.graph());
+    }
+    write_dgraph_graphviz(dg_finfo.get_fname(), dg.graph());
+  }
+}
+
 void test (string & fullname_in) {
+
+  
+
 //   CSentence cs;
 //   cs.read_from_binfile(cs_finfo.get_fname());
 
@@ -263,6 +299,7 @@ int main(int argc, char *argv[]) {
   //bool opt_eval_dgraph = false;
   bool opt_disamb_csent_dgraph = false;
   bool opt_disamb_csent_kgraph = false;
+  bool opt_do_gviz = false;
   bool opt_do_test = false;
 
   vector<string> input_files;
@@ -284,7 +321,9 @@ int main(int argc, char *argv[]) {
     ("create_dgraph,c", "Create dgraph binary file(s), one per context, with extension .dgraph")
     ("dis_csent,d", "Disambiguate csentence and output result. A dgraph with same id must be in the directory.")
     ("with_freqs,f", "Use freqs when disambiguation (pageRank PPVs).")
+    ("with_weights,w", "Use weigths in pageRank.")
     ("help,h", "This page")
+    ("graphviz,G", "Dump disambGraph to a graphviz format. Output file has same name and extension .dot")
     ("mcr_binfile,M", value<string>(), "Binary file of MCR (see create_mcrbin). Default is mcr_wnet.bin")
     ("w2syn_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
@@ -342,6 +381,11 @@ int main(int argc, char *argv[]) {
       opt_disamb_csent_dgraph = true;
     }
 
+
+    if (vm.count("graphviz")) {
+      opt_do_gviz = true;
+    }
+
     if (vm.count("dis_csent_kgraph")) {
       opt_disamb_csent_kgraph = true;
     }
@@ -362,6 +406,11 @@ int main(int argc, char *argv[]) {
       glVars::mcr_with_freqs = true;
     }
 
+    if (vm.count("with_weights")) {
+      opt_with_w = true;
+    }
+
+
     if (vm.count("input-file")) {
       fullname_in = vm["input-file"].as<string>();
     }
@@ -376,13 +425,6 @@ int main(int argc, char *argv[]) {
     throw(e);
   }
 
-  extract_input_files(fullname_in, input_files, "csent");
-
-  if(input_files.empty()) {
-    cout << po_visible << endl;
-    cerr << "Error: No input files." << endl;
-    exit(0);      
-  }
 //   writeV(cout, input_files);
 //   cout << endl;
 //   return 0;
@@ -399,15 +441,38 @@ int main(int argc, char *argv[]) {
   if(opt_create_dgraph) {
     Mcr::create_from_binfile(mcr_binfile);
     create_dgraphs_from_corpus(fullname_in, out_dir, opt_create_kgraph);
+    return 0;
   }
 
-  if(opt_disamb_csent_dgraph) {
-    dis_csent<DisambGraph>(input_files, ".dgraph");
+  if(opt_do_gviz) {
+    extract_input_files(fullname_in, input_files, "dgraph");
+    
+    if(input_files.empty()) {
+      cout << po_visible << endl;
+      cerr << "Error: No input files." << endl;
+      exit(0);      
+    }
+    do_dgraph_gviz(input_files, out_dir);
+    return 0;
   }
 
-  if(opt_disamb_csent_kgraph) {
-    dis_csent<KGraph>(input_files, ".kgraph");
-  }
 
+  if (opt_disamb_csent_dgraph || opt_disamb_csent_kgraph) {
+    
+    extract_input_files(fullname_in, input_files, "csent");
+
+    if(input_files.empty()) {
+      cout << po_visible << endl;
+      cerr << "Error: No input files." << endl;
+      return -1;
+    }
+    if(opt_disamb_csent_dgraph) {
+      dis_csent<DisambGraph>(input_files, ".dgraph");
+    }
+    
+    if(opt_disamb_csent_kgraph) {
+      dis_csent<KGraph>(input_files, ".kgraph");
+    }
+  }
   return 0;
 }
