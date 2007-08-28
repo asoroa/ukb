@@ -24,8 +24,6 @@
 using namespace std;
 using namespace boost;
 
-bool opt_with_w = false;
-
 /////////////////////////////////////////////////////////////
 // Global variables
 
@@ -162,7 +160,8 @@ void create_kgraph(string & cs_fname,
 
 
 template<class G>
-void dis_csent(const vector<string> & input_files, const string & ext) {
+void dis_csent(const vector<string> & input_files, const string & ext,
+	       bool edge_weights) {
   
 
   map<string, size_t> counts;
@@ -185,11 +184,10 @@ void dis_csent(const vector<string> & input_files, const string & ext) {
     File_elem dg_finfo(cs.id(), cs_finfo.path, ext);
     G dg;
     dg.read_from_binfile(dg_finfo.get_fname());
-    if (!opt_with_w) dg.reset_edge_weigths();
     if (glVars::mcr_with_freqs) {
-      pageRank_ppv(dg.graph(), counts);
+      pageRank_ppv(dg.graph(), counts, edge_weights);
     } else {
-      pageRank(dg.graph());
+      pageRank(dg.graph(), edge_weights);
     }
     disamb_csentence(cs, dg);
     print_disamb_csent(cout, cs);
@@ -301,6 +299,8 @@ int main(int argc, char *argv[]) {
   bool opt_disamb_csent_kgraph = false;
   bool opt_do_gviz = false;
   bool opt_do_test = false;
+  bool opt_with_w = false;
+ 
 
   vector<string> input_files;
   string fullname_in;
@@ -467,11 +467,11 @@ int main(int argc, char *argv[]) {
       return -1;
     }
     if(opt_disamb_csent_dgraph) {
-      dis_csent<DisambGraph>(input_files, ".dgraph");
+      dis_csent<DisambGraph>(input_files, ".dgraph", opt_with_w);
     }
     
     if(opt_disamb_csent_kgraph) {
-      dis_csent<KGraph>(input_files, ".kgraph");
+      dis_csent<KGraph>(input_files, ".kgraph", opt_with_w);
     }
   }
   return 0;
