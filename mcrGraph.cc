@@ -233,7 +233,7 @@ void read_mcr(ifstream & mcrFile,
 	      const set<string> & rels_source) {
   string line;
   int line_number = 0;
-  bool insertedP;
+  bool aux;
 
   set<string>::const_iterator srel_end = rels_source.end();
   while(mcrFile) {
@@ -263,7 +263,10 @@ void read_mcr(ifstream & mcrFile,
 
     // add edge
     Mcr_edge_t e;
-    tie(e, insertedP) = add_edge(u, v, g);
+    tie(e, aux) = edge(u, v, g);
+    if(!aux) {
+      tie(e, aux) = add_edge(u, v, g);
+    }    
   }
 }
 
@@ -307,7 +310,6 @@ Mcr_vertex_t read_vertex_from_stream(ifstream & is,
   read_atom_from_stream(is, wname);
   Mcr_vertex_t v = add_vertex(g);
   put(vertex_name, g, v, name);
-  put(vertex_wname, g, v, wname);
 
   return v;
 }
@@ -391,9 +393,10 @@ ofstream & write_vertex_to_stream(ofstream & o,
 				  const McrGraph & g,
 				  const Mcr_vertex_t & v) {
   string name;
+  string wname("");
 
   write_atom_to_stream(o, get(vertex_name, g, v));
-  write_atom_to_stream(o, get(vertex_wname, g, v));
+  write_atom_to_stream(o, wname);
   return o;
 }
 
