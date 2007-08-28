@@ -32,6 +32,8 @@ class KGraph {
 
   DisambG & graph() {return g;}
 
+    void reset_edge_weigths() {};
+
 private:
 
   std::map<std::string, Dis_vertex_t> synsetMap;
