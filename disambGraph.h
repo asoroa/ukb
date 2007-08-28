@@ -51,16 +51,15 @@ class DisambGraph {
 		  Mcr_vertex_t tgt,
 		  const std::vector<Mcr_vertex_t> & parents);
 
-  size_t fill_freqs(const std::map<std::string, double> & syn_freqs);
-
   Dis_vertex_t add_dgraph_vertex(const std::string & str);
-  void add_dgraph_edge(Dis_vertex_t u, Dis_vertex_t v, size_t w = 1);
+  void add_dgraph_edge(Dis_vertex_t u, Dis_vertex_t v, float w = 1.0);
 
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);
 
   DisambG & graph() {return g;}
   void prune() {}
+  void reset_edge_weigths();
 private:
 
   std::vector<Dis_vertex_t> add_vertices_mcr_path(std::vector<std::string>::iterator v_it, 
@@ -88,10 +87,11 @@ void disamb_csentence(CSentence & cs, DisambGraph & dgraph);
 
 void hits(DisambG & g);
 
-void pageRank(DisambG & g);
+void pageRank(DisambG & g, bool use_weigths = true);
 
 void pageRank_ppv(DisambG & g,
-		  const std::map<std::string, size_t> & syn_n);
+		  const std::map<std::string, size_t> & syn_n,
+		  bool use_weigths = true);
 
 std::ostream & print_disamb_csent(std::ostream & o, CSentence & cs);
 std::ostream & print_complete_csent(std::ostream & o, CSentence & cs, DisambGraph & dgraph);
