@@ -278,13 +278,35 @@ public:
   }
 private:
   ValType val;
-  const std::string name;
+  const std::string & name;
+};
+
+template < class ValType1, class ValType2 >
+class my_name_writer2 {
+public:
+  my_name_writer2(ValType1 _val1, ValType2 _val2, const std::string & _name1, const std::string & _name2) 
+    : val1(_val1), val2(_val2), name1(_name1), name2(_name2) {}
+  template <class VertexOrEdge>
+  void operator()(std::ostream& out, const VertexOrEdge& v) const {
+    out << "["<< name1 <<"=\"" << val1[v] << "\" " << name2 << "=\"" <<  val2[v] << "\"]";
+  }
+private:
+  ValType1 val1;
+  ValType2 val2;
+  const std::string & name1;
+  const std::string & name2;
 };
 
 template <class ValType>
 inline my_name_writer<ValType>
 make_my_writer(ValType n, const std::string & ize) {
   return my_name_writer<ValType>(n, ize);
+}
+
+template <class ValType1, class ValType2>
+inline my_name_writer2<ValType1, ValType2>
+make_my_writer2(ValType1 n1, ValType2 n2, const std::string & name1, const std::string & name2) {
+  return my_name_writer2<ValType1, ValType2> (n1, n2, name1, name2);
 }
 
 /////////////////////////////////////////////////////////////////////
