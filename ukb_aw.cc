@@ -150,7 +150,7 @@ void create_kgraph(string & cs_fname,
   kg_fe.set_path(out_dir);
   KGraph kg(cs, dg);
   kg.write_to_binfile(kg_fe.get_fname());
-  pageRank(kg.graph());
+  pageRank_disg(kg.graph());
   disamb_csentence(cs, kg);
   print_disamb_csent(cout, cs);  
 
@@ -185,9 +185,9 @@ void dis_csent(const vector<string> & input_files, const string & ext,
     G dg;
     dg.read_from_binfile(dg_finfo.get_fname());
     if (glVars::mcr_with_freqs) {
-      pageRank_ppv(dg.graph(), counts, edge_weights);
+      pageRank_ppv_disg(dg.graph(), counts, edge_weights);
     } else {
-      pageRank(dg.graph(), edge_weights);
+      pageRank_disg(dg.graph(), edge_weights);
     }
     disamb_csentence(cs, dg);
     print_disamb_csent(cout, cs);
@@ -217,9 +217,9 @@ void do_dgraph_gviz(const vector<string> & input_files,
 	exit(-1);
       }
       
-      pageRank_ppv(dg.graph(), counts);
+      pageRank_ppv_disg(dg.graph(), counts);
     } else {
-      pageRank(dg.graph());
+      pageRank_disg(dg.graph());
     }
     write_dgraph_graphviz(dg_finfo.get_fname(), dg.graph());
   }
