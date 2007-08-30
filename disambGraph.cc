@@ -2,6 +2,7 @@
 #include "common.h"
 #include "w2syn.h"
 #include "csentence.h"
+#include "prank.h"
 
 #include <string>
 #include <cmath>
@@ -404,115 +405,8 @@ void hits(DisambG & g) {
 // pageRank
 //
 
-
-// PageRank iteration
-//
-// it solves pageRank with the so called power method see  
-// @article{langville04,
-// title = {{Deeper Inside PageRank}},
-// author = {A.N. Langville and C.D. Meyer},
-// journal = {Internet Mathematics},
-// number = {3},
-// pages = {335--380},
-// volume = {1},
-// year = {2004},
-// } 
-//
-// Note: 
-//    * as G is an undirected graph, there is no dangling node
-//    * by now, an uniform v^{T} vector is used, which is just (1/N)*e^{T}
-
-
-template<typename G, typename ppv_map, typename wmap_t, typename map1, typename map2>
-void update_pRank_weight(G & g,
-			 std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-			 ppv_map & ppv_V,
-			 const std::vector<float> & out_coef, // 1/N
-			 float dfactor,
-			 wmap_t & wmap,
-			 const map1 & rank_map1,
-			 map2 & rank_map2) {
-  
-  typedef typename graph_traits<G>::vertex_descriptor vertex_descriptor;
-  
-  typename std::vector<vertex_descriptor>::iterator v = V.begin();
-  typename std::vector<vertex_descriptor>::iterator end = V.end();
-  for (; v != end; ++v) {
-    float rank=0.0;
-    typename graph_traits<G>::in_edge_iterator e, e_end;
-    tie(e, e_end) = in_edges(*v, g);
-    for(; e != e_end; ++e) {
-      vertex_descriptor u = source(*e, g);
-      rank += rank_map1[u] * wmap[*e] * out_coef[u];
-    }
-    rank_map2[*v] = dfactor*rank + (1-dfactor)*ppv_V[*v];
-  }
-}
-
-template<typename G, typename ppv_map, typename wmap_t, typename map1, typename map2>
-void pageRank_iterate(G & g,
-		      std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-		      ppv_map & ppv_V,
-		      const std::vector<float> & out_coef,
-		      wmap_t & wmap,
-		      map1 & rank_map1,
-		      map2 & rank_map2,
-		      int iterations) {
-  int erpin_kop = V.size();
-  float damping = 0.85;
-
-  // Initialize rank_map1 appropriately
-  {
-    typename graph_traits<G>::vertex_iterator v, end;
-    for (tie(v, end) = vertices(g); v != end; ++v) {
-      rank_map1[*v]=1.0/(float) erpin_kop;
-    }
-  }
-
-  // Continue iterating until the termination condition is met
-  // or the algorithm converges (a vertex's rank does not change)
-  bool to_map_2 = true;
-  while(iterations--) {
-    // Update to the appropriate rank map
-    if (to_map_2)
-      update_pRank_weight(g, V, ppv_V, out_coef,damping, wmap, rank_map1, rank_map2);
-    else
-      update_pRank_weight(g, V, ppv_V, out_coef, damping, wmap, rank_map2, rank_map1);
-    // The next iteration will reverse the update mapping
-    to_map_2 = !to_map_2;
-  }
-
-  // We stopped after writing the latest results to rank_map2, so copy the
-  // results back to rank_map1 for the caller
-  if (!to_map_2) {
-    typename graph_traits<G>::vertex_iterator v, end;
-    for (tie(v, end) = vertices(g); v != end; ++v) {
-      rank_map1[*v] = rank_map2[*v];
-    }
-  }
-}
-
-template<typename G, typename wmap_t>
-void init_out_coefs(const G & g,
-		    const std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-		    std::vector<float> & W,
-		    wmap_t wmap) {
-  typedef typename graph_traits<G>::vertex_descriptor vertex_t;
-  typename std::vector<vertex_t>::const_iterator v = V.begin();
-  typename std::vector<vertex_t>::const_iterator end = V.end();
-  for (; v != end; ++v) {
-    typename graph_traits<G>::out_edge_iterator e, e_end;
-    tie(e, e_end) = out_edges(*v, g);
-    float total_w = 0.0;
-    for(; e != e_end; ++e) {
-      total_w += wmap[*e];
-    }
-    W[*v] = 1.0f / total_w;
-  }
-}
-
-void pageRank(DisambG & g,
-	      bool use_weigth) {
+void pageRank_disg(DisambG & g,
+		   bool use_weigth) {
 
   vector<float> map_tmp(num_vertices(g), 0.0f);
   vector<float> out_coefs(num_vertices(g), 0);
@@ -523,8 +417,6 @@ void pageRank(DisambG & g,
 
   // property maps
   constant_property_map<Dis_vertex_t, float> ppv(1.0/static_cast<float>(N)); // always return 1/N
-  property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
-  constant_property_map<Dis_edge_t, float> cte_weight(1); // always return 1
   property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
 
   graph_traits<DisambG>::vertex_iterator vIt, vItEnd;
@@ -532,17 +424,19 @@ void pageRank(DisambG & g,
   copy_if(vIt, vItEnd, V.begin(), vertex_is_connected<DisambG>(g));
   
   if (use_weigth) {
+    property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
     init_out_coefs(g, V, out_coefs, weight_map);
     pageRank_iterate(g, V, ppv, out_coefs, weight_map, rank_map, map_tmp, 30); // 30 iterations
   } else {
+    constant_property_map<Dis_edge_t, float> cte_weight(1); // always return 1
     init_out_coefs(g, V, out_coefs, cte_weight);
     pageRank_iterate(g, V, ppv, out_coefs, cte_weight, rank_map, map_tmp, 30); // 30 iterations    
   }
 }
 
-void pageRank_ppv(DisambG &g,
-		  const map<string, size_t> & syn_n,
-		  bool use_weigth) {
+void pageRank_ppv_disg(DisambG &g,
+		       const map<string, size_t> & syn_n,
+		       bool use_weigth) {
 
   // Fill rank freqs
 
@@ -586,15 +480,15 @@ void pageRank_ppv(DisambG &g,
 
   // property maps
 
-  property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
   property_map<DisambG, vertex_freq_t>::type ppv_map = get(vertex_freq, g);
-  property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
-  constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1
+  property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
 
   if (use_weigth) {
+    property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
     init_out_coefs(g, V, out_coefs, weight_map);
     pageRank_iterate(g, V, ppv_map, out_coefs, weight_map, rank_map, map_tmp, 30); // 30 iterations
   } else {
+    constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1  
     init_out_coefs(g, V, out_coefs, cte_weight);
     pageRank_iterate(g, V, ppv_map, out_coefs, cte_weight, rank_map, map_tmp, 30); // 30 iterations
   }
