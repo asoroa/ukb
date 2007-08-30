@@ -37,9 +37,11 @@ public:
   const_iterator end() const {return syns.end();}
   std::vector<std::string> & get_syns_vector() { return syns; }
   size_type size() const {return syns.size(); }
+
   std::string word() const { return w; }
   bool is_distinguished() const { return distinguished; }
   std::string id() const {return cw_id;}
+  char get_pos() const {return pos;}
 
   friend std::ostream& operator<<(std::ostream & o, const CWord & cw_);
   friend class CSentence;
