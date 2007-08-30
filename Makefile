@@ -45,6 +45,9 @@ info_ukb: $(TARGET) $(MEMBERS) info_ukb.cc
 create_mcrbin: $(TARGET) $(MEMBERS) create_mcrbin.cc
 	gcc $(CCOPTIONS) $(PROFFLAGS) -o create_mcrbin create_mcrbin.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
 
+ukb_sentences: $(TARGET) $(MEMBERS) ukb_sentences.cc
+	gcc $(CCOPTIONS) $(PROFFLAGS) -o ukb_sentences ukb_sentences.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
+
 .PHONY : all clean
 
 clean:
