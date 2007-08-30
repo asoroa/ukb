@@ -32,11 +32,29 @@ public:
   std::pair<std::vector<std::string>::const_iterator, std::vector<std::string>::const_iterator> 
   get_wsyns(const std::string & word) const;
   bool syn_counts(std::map<std::string, size_t> & res) const;
+
+  const std::vector<std::string> & get_wordlist() const { return words; }
+
 private:
+
   W2Syn();
   W2Syn(const W2Syn &);
   W2Syn & operator=(const W2Syn &);
-  std::map<std::string, W2Syn_item > m_w2syns;
+
+public:
+  // functor for comparing keys
+
+  struct Mycomp {
+    bool operator() (const std::string * a, const std::string * b) const {
+      return *a < *b;
+    }
+  };
+
+  typedef std::map<const std::string *, W2Syn_item, Mycomp > w2syns_t;
+
+private:
+  w2syns_t m_w2syns;
+  std::vector<std::string> words;
 };
 
 #endif
