@@ -43,7 +43,8 @@ namespace boost {
 typedef adjacency_list <
   boost::listS,
   boost::vecS,
-  boost::undirectedS,
+  //  boost::undirectedS,
+  boost::bidirectionalS,
   property<vertex_name_t, std::string,     // synset name
 	   property<vertex_wname_t, std::string> >
   > McrGraph;
@@ -77,6 +78,8 @@ public:
 
   McrGraph & graph() {return g;}
 
+  size_t size() const {return num_vertices(g); }
+
   Mcr_vertex_t getRandomVertex() const;
 
   std::pair<Mcr_vertex_t, bool> getVertexByName(const std::string & str) const;
@@ -85,9 +88,19 @@ public:
   bool bfs (Mcr_vertex_t source_synset, std::vector<Mcr_vertex_t> & synv) const ;
   bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;
 
+  void pageRank_ppv(const std::vector<float> & ppv_map,
+		    std::vector<float> & ranks);
+
   void write_to_binfile (const std::string & str) const;
 
   void display_info(std::ostream & o) const;
+
+
+  // Add tokens a la hughes&ramage
+
+  void add_tokens(const std::string & word, 
+		  std::vector<std::string>::const_iterator syns_it,
+		  std::vector<std::string>::const_iterator syns_end);
 
 private:
   // Singleton
@@ -117,5 +130,6 @@ private:
   //std::map<int, int> relInv;             // maps from relation id to inverse id
   //std::map<std::string, int> sourceMap;  // maps from source name to source id's
 };
+
 
 #endif 

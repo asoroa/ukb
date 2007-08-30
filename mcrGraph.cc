@@ -1,6 +1,7 @@
 #include "mcrGraph.h"
 #include "common.h"
 #include "w2syn.h"
+#include "prank.h"
 
 #include <string>
 #include <iostream>
@@ -179,6 +180,9 @@ Mcr_vertex_t Mcr::getRandomVertex() const {
 ////////////////////////////////////////////////////////////////////////////////
 // read from textfile and create graph
 
+
+// Read relations name, id and inverse relations
+
 void read_relations(ifstream & relFile,
 		    map<string, int> & relMap,
 		    map<int, string> & relMapInv) {
@@ -209,7 +213,7 @@ void read_relations(ifstream & relFile,
 template <class G, class Map>
 typename graph_traits<G>::vertex_descriptor insert_synset_vertex(G & g, 
 								 Map & map,
-								 string & name) {
+								 const string & name) {
   typedef typename graph_traits<G>::vertex_descriptor Vertex_Desc;  
   typename Map::iterator pos;
   bool insertedP;
@@ -226,6 +230,8 @@ typename graph_traits<G>::vertex_descriptor insert_synset_vertex(G & g,
   }
   return u;
 }
+
+// Read the actual MCR file
 
 void read_mcr(ifstream & mcrFile,
 	      McrGraph & g,
@@ -267,6 +273,11 @@ void read_mcr(ifstream & mcrFile,
     if(!aux) {
       tie(e, aux) = add_edge(u, v, g);
     }    
+    // the other way around
+    tie(e, aux) = edge(v, u, g);
+    if(!aux) {
+      tie(e, aux) = add_edge(v, u, g);
+    }    
   }
 }
 
@@ -292,6 +303,99 @@ void Mcr::display_info(std::ostream & o) const {
   o << "\n" << num_vertices(g) << " vertices and " << num_edges(g) << " edges" << endl;
 
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Add token vertices and link them to synsets
+
+void Mcr::add_tokens(const string & word, 
+		     vector<string>::const_iterator syns_it, 
+		     vector<string>::const_iterator syns_end) {
+
+  map<string, vector<string> > w2wPos;
+  map<string, vector<Mcr_vertex_t> > wPos2Syns;
+
+  // Create w2wPos and wPos2Syns maps
+
+  char_separator<char> sep("-");
+  bool insertedP;
+
+  //vector<string>::const_iterator it = syns.begin();
+  //vector<string>::const_iterator end = syns.end();
+  for(;syns_it != syns_end; ++syns_it) {
+    vector<string> fields(2);
+    tokenizer<char_separator<char> > tok(*syns_it, sep);
+    copy(tok.begin(), tok.end(), fields.begin());
+    string wpos(syns_it->size() + 2, '#');
+    string::iterator sit = copy(syns_it->begin(), syns_it->end(), wpos.begin());
+    ++sit; // '#' char
+    *sit = fields[1].at(0); // the pos
+    map<string, vector<Mcr_vertex_t> >::iterator m_it;
+
+    tie(m_it, insertedP) = wPos2Syns.insert(make_pair(wpos, vector<Mcr_vertex_t>()));
+    if (insertedP) {
+      // first appearence of word#pos
+      w2wPos[word].push_back(wpos);
+    }
+    Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, *syns_it);
+    m_it->second.push_back(u);
+  }
+
+  // Add vertices and link them in the MCR
+
+  map<string, vector<string> >::iterator w2wpos_it = w2wPos.begin();
+  map<string, vector<string> >::iterator w2wpos_end = w2wPos.end();
+  for(; w2wpos_it != w2wpos_end; ++w2wpos_it) {
+    // insert word
+    Mcr_vertex_t word_v = insert_synset_vertex(g, synsetMap, w2wpos_it->first); 
+
+    vector<string>::iterator wpos_str_it = w2wpos_it->second.begin();
+    vector<string>::iterator wpos_str_end = w2wpos_it->second.end();
+    for (; wpos_str_it != wpos_str_end; ++wpos_str_it) {
+      //insert word#pos
+      Mcr_vertex_t wpos_v = insert_synset_vertex(g, synsetMap, *wpos_str_it);
+      // link word to word#pos
+      add_edge(word_v, wpos_v, g);
+      // link word#pos to synsets
+      vector<Mcr_vertex_t> & syns = wPos2Syns[*wpos_str_it];
+      vector<Mcr_vertex_t>::iterator syns_it = syns.begin();
+      vector<Mcr_vertex_t>::iterator syns_end = syns.end();
+      for(;syns_it != syns_end; ++syns_it) {
+	add_edge(wpos_v, *syns_it, g);
+      }
+    }      
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// PageRank in MCR
+
+
+// PPV version
+
+void Mcr::pageRank_ppv(const vector<float> & ppv_map,
+		       vector<float> & ranks) {
+
+  size_t N = num_vertices(g);
+  vector<float> map_tmp(N, 0.0f);
+  vector<float> out_coefs(N, 0);
+  vector<float>(N, 0.0).swap(ranks); // Initialize rank vector
+  vector<float> rank_tmp(N, 0.0);    // auxiliary rank vector
+
+  // ugly ugly hack @@CHANGE ME !!!
+
+  vector<Mcr_vertex_t> V(N);
+
+  graph_traits<McrGraph>::vertex_iterator it, end;
+  tie(it, end) = vertices(g);
+  copy(it, end, V.begin());
+
+  constant_property_map <Mcr_edge_t, float> cte_weight(1); // always return 1  
+  init_out_coefs(g, V, out_coefs, cte_weight);
+  pageRank_iterate(g, V, &ppv_map[0], out_coefs, cte_weight, &ranks[0], &rank_tmp[0], 30); // 30 iterations
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Streaming
