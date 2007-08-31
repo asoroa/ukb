@@ -247,6 +247,8 @@ make_SortByRank(G & g, const RankMap & rank) {
 ////////////////////////////////////////////////////////////////////
 // Useful property map for pageRank
 
+// a constan property map that always returns the same value
+
 namespace boost {
   template<typename K, typename V>
   class constant_property_map
