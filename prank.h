@@ -30,7 +30,7 @@ void update_pRank(G & g,
 		  std::vector<typename graph_traits<G>::vertex_descriptor> & V,
 		  float dfactor,
 		  ppvMap_t ppv_V,
-		  const std::vector<float> & out_coef, // 1/N
+		  const std::vector<float> & out_coef,
 		  wMap_t & wmap,
 		  const map1_t rank_map1,
 		  map2_t rank_map2) {
