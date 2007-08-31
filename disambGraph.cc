@@ -356,7 +356,7 @@ void hits_init_ranks(DisambG & g,
 		     HProp hProp, AProp aProp, size_t n) {
 
   assert(n);
-  float init_v = sqrt(n) / n;
+  float init_v = sqrt(n) / static_cast<float>(n);
 
   //graph_traits<DisambG>::vertex_iterator vit, end;
   //tie(vit, end) =  vertices(g);
