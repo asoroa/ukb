@@ -1,5 +1,6 @@
 #include "mcrGraph.h"
 #include "common.h"
+#include "globalVars.h"
 #include "w2syn.h"
 #include "prank.h"
 
@@ -317,26 +318,40 @@ void Mcr::add_tokens(const string & word,
   // Create w2wPos and wPos2Syns maps
 
   char_separator<char> sep("-");
-  bool insertedP;
+  bool auxP;
 
   //vector<string>::const_iterator it = syns.begin();
   //vector<string>::const_iterator end = syns.end();
   for(;syns_it != syns_end; ++syns_it) {
+
     vector<string> fields(2);
     tokenizer<char_separator<char> > tok(*syns_it, sep);
     copy(tok.begin(), tok.end(), fields.begin());
-    string wpos(syns_it->size() + 2, '#');
-    string::iterator sit = copy(syns_it->begin(), syns_it->end(), wpos.begin());
+
+    string wpos(word.size() + 2, '#');
+    string::iterator sit = copy(word.begin(), word.end(), wpos.begin());
     ++sit; // '#' char
     *sit = fields[1].at(0); // the pos
+
+    Mcr_vertex_t u; // = insert_synset_vertex(g, synsetMap, *syns_it);
+    tie(u, auxP) = getVertexByName(*syns_it);
+    if(!auxP) {
+      if (glVars::verbose) 
+	cerr << "W: Mcr::add_tokens warning: " << *syns_it << " is not in MCR.\n";
+      // Warning! 
+      // do NOT insert node, because it becomes a dangling node and therefore
+      // PageRank can't be applied
+      // u = insert_synset_vertex(g, synsetMap, *syns_it); // NO
+      continue;
+    }
+    
     map<string, vector<Mcr_vertex_t> >::iterator m_it;
 
-    tie(m_it, insertedP) = wPos2Syns.insert(make_pair(wpos, vector<Mcr_vertex_t>()));
-    if (insertedP) {
+    tie(m_it, auxP) = wPos2Syns.insert(make_pair(wpos, vector<Mcr_vertex_t>()));
+    if (auxP) {
       // first appearence of word#pos
       w2wPos[word].push_back(wpos);
     }
-    Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, *syns_it);
     m_it->second.push_back(u);
   }
 
