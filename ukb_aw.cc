@@ -152,7 +152,7 @@ void create_kgraph(string & cs_fname,
   kg.write_to_binfile(kg_fe.get_fname());
   pageRank_disg(kg.graph());
   disamb_csentence(cs, kg);
-  print_disamb_csent(cout, cs);  
+  cs.print_csent_aw(cout);
 
   kg_fe.ext = ".dot";
   write_dgraph_graphviz(kg_fe.get_fname(), kg.graph());
@@ -190,7 +190,8 @@ void dis_csent(const vector<string> & input_files, const string & ext,
       pageRank_disg(dg.graph(), edge_weights);
     }
     disamb_csentence(cs, dg);
-    print_disamb_csent(cout, cs);
+    //print_disamb_csent(cout, cs);
+    cs.print_csent_aw(cout);
   }
   //print_complete_csent(cout, cs, dg);
 }
