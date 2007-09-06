@@ -16,13 +16,20 @@ using namespace boost;
 CWord & CWord::operator=(const CWord & cw_) {
   if (&cw_ != this) {
     w = cw_.w;
+    cw_id = cw_.cw_id;
+    pos = cw_.pos;
     syns = cw_.syns;
+    ranks = cw_.ranks;
+    distinguished = cw_.distinguished;
+    distinguished = cw_.ranks_equal;
+    disamb = cw_.disamb;
   }
   return *this;
 }
 
 void fill_syns(const string & w,
 	       vector<string> & syns,
+	       vector<float> & ranks,
 	       char pos = 0) {
 
   W2Syn & w2syn = W2Syn::instance();
@@ -42,6 +49,7 @@ void fill_syns(const string & w,
     tie(mcr_v, existP) = mcr.getVertexByName(*str_it);
     if (existP) {
       syns.push_back(*str_it);
+      ranks.push_back(0.0f);
     } else {
       cerr << "W: synset " << *str_it << " of word " << w << " is not in MCR" << endl;
       // debug: synset  which is not in mcr
@@ -50,14 +58,46 @@ void fill_syns(const string & w,
 }
 
 CWord::CWord(const string & w_) : 
-  w(w_), cw_id(string()), pos(0), distinguished(true) {
-  fill_syns(w_, syns, 0);
+  w(w_), cw_id(string()), pos(0), distinguished(true), ranks_equal(true), disamb(false) {
+  fill_syns(w_, syns, ranks, 0);
 }
 
 CWord::CWord(const string & w_, const string & id_, char pos_, bool dist_) 
-  : w(w_), cw_id(id_), pos(pos_), distinguished(dist_) {
-  fill_syns(w_, syns, pos_);
+  : w(w_), cw_id(id_), pos(pos_), distinguished(dist_), ranks_equal(true), disamb(false) {
+  fill_syns(w_, syns, ranks, pos_);
 }
+
+
+struct CWSort {
+
+  CWSort(const vector<float> & _v) : v(_v) {}
+  int operator () (const int & i, const int & j) {
+    // Descending order
+    return v[i] < v[j];
+  }
+  const vector<float> & v;
+};
+
+void CWord::disamb_cword() {
+  if (ranks_equal) return;
+  size_t n = syns.size();
+  vector<string> n_syns(n);
+  vector<float> n_ranks(n);
+  vector<int> idx(n);
+
+  for(size_t i=0; i < n; ++i)
+    idx[i] = i;
+  sort(idx.begin(), idx.end(), CWSort(ranks));
+
+  for(size_t i=0; i < n; ++i) {
+    n_syns[i]  = syns[idx[i]];
+    n_ranks[i] = ranks[idx[i]];
+  }
+  n_syns.swap(syns);
+  n_ranks.swap(ranks);
+  disamb = true;
+}
+
 
 std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
 
@@ -84,6 +124,25 @@ std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
   return o;
 }
 
+ostream & CWord::print_cword_aw(ostream & o) const {
+
+  if (!disamb) return o;
+
+  vector<string> id_fields(split(cw_id, "."));
+  assert(id_fields.size() > 0);
+  o << id_fields[0] << " " << cw_id << " ";
+  size_t n = syns.size();
+  float aux = ranks[0];
+  o << syns[0];
+  for(size_t i = 1; i != n; ++i) {
+    if (ranks[i] != aux) break;
+    aux = ranks[i];
+    o << " " << syns[i];
+  }
+  o << " !! " << w << "\n";
+  return o;
+}
+
 ////////////////////////////////////////////////////////
 // Streaming
 
@@ -104,6 +163,7 @@ void CWord::read_from_stream(std::ifstream & i) {
   read_atom_from_stream(i,cw_id);
   read_atom_from_stream(i,pos);
   read_vector_from_stream(i,syns);
+  vector<float>(syns.size()).swap(ranks); // Init ranks vector
   read_atom_from_stream(i,distinguished);
 };
 
@@ -147,7 +207,7 @@ istream & CSentence::read_aw(istream & is) {
 	v.push_back(new_cw);
       } else {
 	// No synset for that word. 
-	cerr << "W: no synset for word " << fields[0] << "-" << fields[1] << endl;
+	cerr << "W: " << fields[0] << "-" << fields[1] << " can't be mapped to MCR." << endl;
       }
     }
   }
@@ -201,6 +261,20 @@ void CSentence::distinguished_synsets(vector<string> & res) const {
 std::ostream& operator<<(std::ostream & o, const CSentence & cs_) {
   o << cs_.cs_id << endl;
   copy(cs_.begin(), cs_.end(), ostream_iterator<CWord>(o, "\n"));
+  return o;
+}
+
+std::ostream & CSentence::print_csent_aw(std::ostream & o) const {
+
+  vector<CWord>::const_iterator cw_it = v.begin();
+  vector<CWord>::const_iterator cw_end = v.end();
+
+  for(; cw_it != cw_end; ++cw_it) {
+    if (cw_it->size() == 0) continue;
+    if (!cw_it->is_distinguished()) continue;
+    if (!cw_it->is_disambiguated()) continue;
+    cw_it->print_cword_aw(o);
+  }
   return o;
 }
 

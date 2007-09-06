@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <iosfwd>
+#include <boost/graph/graph_traits.hpp>
 
 //typedef std::vector<Mcr_vertex_t> CWord;
 
@@ -25,7 +26,7 @@ public:
   typedef std::vector<std::string>::value_type value_type;
   typedef std::vector<std::string>::size_type size_type;
 
-  explicit CWord() {};
+  explicit CWord() : distinguished(false), ranks_equal(true), disamb(false) {};
   CWord(const std::string & w_);
   CWord(const std::string & w_, const std::string & id, char pos, bool is_dist);
   CWord & operator=(const CWord & cw_);
@@ -35,15 +36,41 @@ public:
   iterator end() {return syns.end();}
   const_iterator begin() const {return syns.begin();}
   const_iterator end() const {return syns.end();}
-  std::vector<std::string> & get_syns_vector() { return syns; }
   size_type size() const {return syns.size(); }
 
   std::string word() const { return w; }
-  bool is_distinguished() const { return distinguished; }
   std::string id() const {return cw_id;}
   char get_pos() const {return pos;}
 
+  bool is_distinguished() const { return distinguished; }
+  bool is_disambiguated() const { return disamb; }
+
+  void empty_synsets() { 
+    std::vector<std::string>().swap(syns); 
+    std::vector<float>().swap(ranks); 
+  }
+  std::vector<std::string> & get_syns_vector() { return syns; }
+
+  template <typename G, typename Map> 
+  void rank_synsets(G & g, Map rankMap) {
+    size_t n = syns.size();
+    size_t i;
+    if (!n) return; // No synsets
+    for(i = 0; i != n; ++i) 
+      ranks[i] = rankMap[g.getVertexByName(syns[i]).first];
+    
+    for(i = 1; i != n; ++i) {
+      if(ranks[i] != ranks[i-1]) {
+	ranks_equal = false;
+	break;
+      }
+    }
+  }
+
+  void disamb_cword();
+
   friend std::ostream& operator<<(std::ostream & o, const CWord & cw_);
+  std::ostream & print_cword_aw(std::ostream & o) const;
   friend class CSentence;
   
 private:
@@ -55,7 +82,11 @@ private:
   std::string cw_id;
   char pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
   std::vector<std::string> syns;
+  std::vector<float> ranks;
   bool distinguished;
+  bool ranks_equal; // If all ranks have the same value (for disambiguating)
+  bool disamb;      // If word is disambiguated, that is, if the synset
+		    // are ordered according to their ranks
 };
 
 class CSentence {
@@ -95,6 +126,7 @@ public:
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);
   friend std::ostream& operator<<(std::ostream & o, const CSentence & cs_);
+  std::ostream & print_csent_aw(std::ostream & o) const;
   
 private:  
 
