@@ -93,7 +93,6 @@ void pageRank_ppv_disg(DisambG & g,
 		       const std::map<std::string, size_t> & syn_n,
 		       bool use_weigths = true);
 
-std::ostream & print_disamb_csent(std::ostream & o, CSentence & cs);
 std::ostream & print_complete_csent(std::ostream & o, CSentence & cs, DisambGraph & dgraph);
 
 // export to dot format (graphviz)

@@ -209,57 +209,66 @@ void fill_disamb_graph(const CSentence &cs, DisambGraph & dgraph) {
 // Warning: Rank scores of dgraph must be previously computed.
 //
 
-
 void disamb_csentence(CSentence & cs, DisambGraph & dgraph) {
 
   vector<CWord>::iterator cw_it = cs.begin();
   vector<CWord>::iterator cw_end = cs.end();
   for(; cw_it != cw_end; ++cw_it) {
-    Syn2vert_tie<DisambGraph> scs(cw_it->begin(), cw_it->end(), dgraph);
-    sort(scs.V.begin(), 
-	 scs.V.end(), 
-	 make_SortByRank(dgraph.graph(),
-			 get(vertex_rank, dgraph.graph())));
-    vector<string> new_v;
-    vector<pair<string *, Dis_vertex_t> >::iterator it, end;
-    it  = scs.V.begin();
-    end = scs.V.end();
-    float prev_rank = -1.0;
-    size_t uniq_rank = 0;
-    for(;it != end; ++it) {
-      new_v.push_back(*(it->first));
-      float curr_rank = get(vertex_rank, dgraph.graph(), it->second);
-      if (curr_rank == prev_rank) {
-	uniq_rank++;
-      }
-      prev_rank = curr_rank;
-    }
-
-    if(uniq_rank == scs.V.size()) {
-      // All ranks equal. Don't store anything!
-      vector<string>().swap(cw_it->get_syns_vector()); // empty synset vector
-    } else {
-      cw_it->get_syns_vector().swap(new_v);
-    }
+    cw_it->rank_synsets(dgraph, get(vertex_rank, dgraph.graph()));
+    cw_it->disamb_cword();
   }
 }
 
-ostream & print_disamb_csent(ostream & o, CSentence & cs) {
-  vector<CWord>::iterator cw_it = cs.begin();
-  vector<CWord>::iterator cw_end = cs.end();
+// void disamb_csentence2(CSentence & cs, DisambGraph & dgraph) {
 
-  for(; cw_it != cw_end; ++cw_it) {
-    if (cw_it->size() == 0) continue;
-    if (!cw_it->is_distinguished()) continue;
+//   vector<CWord>::iterator cw_it = cs.begin();
+//   vector<CWord>::iterator cw_end = cs.end();
+//   for(; cw_it != cw_end; ++cw_it) {
+//     Syn2vert_tie<DisambGraph> scs(cw_it->begin(), cw_it->end(), dgraph);
+//     sort(scs.V.begin(), 
+//  	 scs.V.end(), 
+//  	 make_SortByRank(dgraph.graph(),
+//  			 get(vertex_rank, dgraph.graph())));
+//     vector<string> new_v;
+//     vector<pair<string *, Dis_vertex_t> >::iterator it, end;
+//     it  = scs.V.begin();
+//     end = scs.V.end();
+//     float prev_rank = -1.0;
+//     size_t uniq_rank = 0;
+//     for(;it != end; ++it) {
+//       new_v.push_back(*(it->first));
+//       float curr_rank = get(vertex_rank, dgraph.graph(), it->second);
+//       if (curr_rank == prev_rank) {
+//  	uniq_rank++;
+//       }
+//       prev_rank = curr_rank;
+//     }
+    
+//     if(uniq_rank == scs.V.size()) {
+//       // All ranks equal. Don't store anything!
+//        cw_it->empty_synsets();
+//     } else {
+//       cw_it->get_syns_vector().swap(new_v);
+//      }
+//   }
+// }
 
-    vector<string> id_fields(split(cw_it->id(), "."));
-    assert(id_fields.size() > 0);
-    o << id_fields[0] << " " << cw_it->id() << " ";
-    o << *(cw_it->begin());
-    o << " !! " << cw_it->word() << "\n";
-  }
-  return o;
-}
+// ostream & print_disamb_csent(ostream & o, CSentence & cs) {
+//   vector<CWord>::iterator cw_it = cs.begin();
+//   vector<CWord>::iterator cw_end = cs.end();
+
+//   for(; cw_it != cw_end; ++cw_it) {
+//     if (cw_it->size() == 0) continue;
+//     if (!cw_it->is_distinguished()) continue;
+
+//     vector<string> id_fields(split(cw_it->id(), "."));
+//     assert(id_fields.size() > 0);
+//     o << id_fields[0] << " " << cw_it->id() << " ";
+//     o << *(cw_it->begin());
+//     o << " !! " << cw_it->word() << "\n";
+//   }
+//   return o;
+// }
 
 ostream & print_complete_csent(ostream & o, CSentence & cs, DisambGraph & dgraph) {
   DisambG & g = dgraph.graph();
@@ -426,11 +435,16 @@ void pageRank_disg(DisambG & g,
   if (use_weigth) {
     property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
     init_out_coefs(g, V, out_coefs, weight_map);
-    pageRank_iterate(g, V, ppv, out_coefs, weight_map, rank_map, map_tmp, 30); // 30 iterations
+    pageRank_iterate(g, V, ppv, out_coefs, weight_map, rank_map, &map_tmp[0], 30); // 30 iterations
   } else {
     constant_property_map<Dis_edge_t, float> cte_weight(1); // always return 1
     init_out_coefs(g, V, out_coefs, cte_weight);
-    pageRank_iterate(g, V, ppv, out_coefs, cte_weight, rank_map, map_tmp, 30); // 30 iterations    
+    pageRank_iterate(g, V, ppv, out_coefs, cte_weight, rank_map, &map_tmp[0], 30); // 30 iterations
+
+//     vector<float> ranks(num_vertices(g), 0.0f);
+//     pageRank_iterate(g, V, ppv, out_coefs, cte_weight, &ranks[0], map_tmp, 30); // 30 iterations
+//     int debug = 0;
+//     ++debug;
   }
 }
 
