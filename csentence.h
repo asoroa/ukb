@@ -120,7 +120,7 @@ public:
   std::string id() const {return cs_id;}
 
   void distinguished_synsets(std::vector<std::string> & res) const;
-  
+
   std::istream & read_aw(std::istream & is);
 
   void write_to_binfile (const std::string & fName) const;
@@ -129,13 +129,16 @@ public:
   std::ostream & print_csent_aw(std::ostream & o) const;
   
 private:  
-
   void read_from_stream (std::ifstream & is);
   std::ofstream & write_to_stream(std::ofstream & o) const;
-
-
   std::vector<CWord> v;
   std::string cs_id;
 };
+
+bool calculate_mcr_ranks(const CSentence & cs,
+			 std::vector<float> & res);
+
+void disamb_csentence_mcr(CSentence & cs,
+                          std::vector<float> & ranks);
 
 #endif

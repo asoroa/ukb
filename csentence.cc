@@ -58,13 +58,15 @@ void fill_syns(const string & w,
 }
 
 CWord::CWord(const string & w_) : 
-  w(w_), cw_id(string()), pos(0), distinguished(true), ranks_equal(true), disamb(false) {
+  w(w_), cw_id(string()), pos(0), distinguished(true), ranks_equal(true) {
   fill_syns(w_, syns, ranks, 0);
+  disamb = (1 == syns.size()); // monosemous words are disambiguated
 }
 
 CWord::CWord(const string & w_, const string & id_, char pos_, bool dist_) 
-  : w(w_), cw_id(id_), pos(pos_), distinguished(dist_), ranks_equal(true), disamb(false) {
+  : w(w_), cw_id(id_), pos(pos_), distinguished(dist_), ranks_equal(true) {
   fill_syns(w_, syns, ranks, pos_);
+  disamb = (1 == syns.size()); // monosemous words are disambiguated
 }
 
 
@@ -73,7 +75,7 @@ struct CWSort {
   CWSort(const vector<float> & _v) : v(_v) {}
   int operator () (const int & i, const int & j) {
     // Descending order
-    return v[i] < v[j];
+    return v[i] > v[j];
   }
   const vector<float> & v;
 };
@@ -132,11 +134,9 @@ ostream & CWord::print_cword_aw(ostream & o) const {
   assert(id_fields.size() > 0);
   o << id_fields[0] << " " << cw_id << " ";
   size_t n = syns.size();
-  float aux = ranks[0];
   o << syns[0];
   for(size_t i = 1; i != n; ++i) {
-    if (ranks[i] != aux) break;
-    aux = ranks[i];
+    if (ranks[i] != ranks[0]) break;
     o << " " << syns[i];
   }
   o << " !! " << w << "\n";
@@ -164,6 +164,7 @@ void CWord::read_from_stream(std::ifstream & i) {
   read_atom_from_stream(i,pos);
   read_vector_from_stream(i,syns);
   vector<float>(syns.size()).swap(ranks); // Init ranks vector
+  disamb = (1 == syns.size());
   read_atom_from_stream(i,distinguished);
 };
 
@@ -272,10 +273,65 @@ std::ostream & CSentence::print_csent_aw(std::ostream & o) const {
   for(; cw_it != cw_end; ++cw_it) {
     if (cw_it->size() == 0) continue;
     if (!cw_it->is_distinguished()) continue;
-    if (!cw_it->is_disambiguated()) continue;
     cw_it->print_cword_aw(o);
   }
   return o;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 
+// PageRank in Mcr
+
+
+// Given a CSentence obtain it's PageRank vector
+// Initial PPV is computed a la hughes&ramage97
+
+bool calculate_mcr_ranks(const CSentence & cs,
+			 vector<float> & res) {
+
+  Mcr & mcr = Mcr::instance();
+
+  // Initialize result vector
+  vector<float> (mcr.size(), 0.0).swap(res);
+
+  // Initialize PPV vector
+  vector<float> ppv(mcr.size(), 0.0);
+  CSentence::const_iterator it = cs.begin();
+  CSentence::const_iterator end = cs.end();
+  size_t K = 0;
+  for(;it != end; ++it) {
+    //if(!it->is_distinguished()) continue;
+    
+    string wpos(it->word());
+    wpos.append("#");
+    char pos = it->get_pos();
+    wpos.append(1,pos);
+    Mcr_vertex_t u = mcr.getVertexByName(wpos).first;
+    ppv[u] = 1;
+    ++K;
+  }
+  if (!K) return false;
+  // Normalize PPV vector
+  float div = 1.0 / static_cast<float>(K);
+  for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit) 
+    *rit *= div;
+
+  // Execute PageRank
+  mcr.pageRank_ppv(ppv, res);
+  return true;
+}
+
+void disamb_csentence_mcr(CSentence & cs,
+			  vector<float> & ranks) {
+
+  Mcr & mcr = Mcr::instance();
+  
+  vector<CWord>::iterator cw_it = cs.begin();
+  vector<CWord>::iterator cw_end = cs.end();
+  for(; cw_it != cw_end; ++cw_it) {
+    cw_it->rank_synsets(mcr, ranks);
+    cw_it->disamb_cword();
+  }
 }
 
 ////////////////////////////////////////////////////////
