@@ -1,6 +1,7 @@
 #include "disambGraph.h"
 #include "common.h"
 #include "w2syn.h"
+#include "mcrGraph.h"
 #include "csentence.h"
 #include "prank.h"
 
@@ -148,10 +149,10 @@ void DisambGraph::reset_edge_weigths() {
 ////////////////////////////////////////////////////////////////
 // Global functions
 
-void fill_disamb_synset(const string & src_str,
-			vector<CWord>::const_iterator s_it,
-			vector<CWord>::const_iterator s_end,
-			DisambGraph & dgraph) {
+void fill_disamb_synset_bfs(const string & src_str,
+			    vector<CWord>::const_iterator s_it,
+			    vector<CWord>::const_iterator s_end,
+			    DisambGraph & dgraph) {
 
 //   if (src_str == "00663525-a") {
 //     int deb;
@@ -187,6 +188,39 @@ void fill_disamb_synset(const string & src_str,
 
 }
 
+void fill_disamb_synset_dijkstra(const string & src_str,
+				 vector<CWord>::const_iterator s_it,
+				 vector<CWord>::const_iterator s_end,
+				 DisambGraph & dgraph) {
+
+  std::vector<Mcr_vertex_t> parents;
+  Mcr & mcr = Mcr::instance();
+  bool existP;
+  Mcr_vertex_t src, tgt;
+  
+  tie(src, existP) = mcr.getVertexByName(src_str);
+  assert(existP);
+
+  mcr.dijkstra(src, parents);
+
+  // insert src vertex in dgraph (fixes a bug)
+  dgraph.add_dgraph_vertex(src_str);
+  
+  //fill disamb graph
+
+  for(;s_it != s_end; ++s_it) {
+    vector<string>::const_iterator tg_it = s_it->begin();
+    vector<string>::const_iterator tg_end = s_it->end();
+    for(;tg_it != tg_end; ++tg_it) {
+      tie(tgt, existP) = mcr.getVertexByName(*tg_it);
+      assert(existP);
+      dgraph.fill_graph(src, tgt, parents);
+    }
+  }
+
+}
+
+
 void fill_disamb_graph(const CSentence &cs, DisambGraph & dgraph) {
 
   vector<CWord>::const_iterator cw_it = cs.begin();
@@ -201,7 +235,34 @@ void fill_disamb_graph(const CSentence &cs, DisambGraph & dgraph) {
     for(;sset_it != sset_end; ++sset_it) {
       //tie(src_v, existP) = mcr.getVertexByName(*sset_it);
       //assert(existP);
-      fill_disamb_synset(*sset_it, cw_it, cw_end, dgraph);
+      fill_disamb_synset_bfs(*sset_it, cw_it, cw_end, dgraph);
+    }
+  }
+}
+
+// fill dgraph with ppv ranks
+// using edge weights in mcr derived from ppv_rank
+
+void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
+		       const vector<float> & ppv_ranks) {
+
+  
+  // First, update mcr's edge weights
+  Mcr::instance().ppv_weights(ppv_ranks);  
+
+  vector<CWord>::const_iterator cw_it = cs.begin();
+  vector<CWord>::const_iterator cw_end = cs.end();
+
+  //if (cw_it == cw_end) return;
+  //cw_end--;
+  while(cw_it != cw_end) {
+    vector<string>::const_iterator sset_it = cw_it->begin();
+    vector<string>::const_iterator sset_end = cw_it->end();
+    ++cw_it; // point to next word
+    for(;sset_it != sset_end; ++sset_it) {
+      //tie(src_v, existP) = mcr.getVertexByName(*sset_it);
+      //assert(existP);
+      fill_disamb_synset_dijkstra(*sset_it, cw_it, cw_end, dgraph);
     }
   }
 }
@@ -296,6 +357,12 @@ ostream & print_complete_csent(ostream & o, CSentence & cs, DisambGraph & dgraph
   }
   return o;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Dijsktra stuff
+
+
 
 // HITS
 
