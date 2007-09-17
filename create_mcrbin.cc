@@ -1,4 +1,5 @@
 #include "common.h"
+#include "w2syn.h"
 #include "globalVars.h"
 #include "configFile.h"
 #include "fileElem.h"
@@ -51,12 +52,13 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_info = false;
+  bool opt_words = false;
   bool opt_param = false;
   bool opt_force_param = false;
 
   string fullname_out("mcr_wnet.bin");
-  string relations_file("mcr_source/wei_relations.txt");
-  string mcr_file("mcr_source/MCR+TSSemcor.all");
+  string relations_file("mcr_16_source/wei_relations.txt");
+  string mcr_file;
   string out_dir;
 
   const size_t source_rels_N = 5;
@@ -67,34 +69,36 @@ int main(int argc, char *argv[]) {
     "create_mcrbin mcr_file.txt [output.bin] -> Create a MCR image.\n"
     "Options:";
   
+  using namespace boost::program_options;
+
+  options_description po_desc(desc_header);
+
+  po_desc.add_options()
+    ("help,h", "This help page.")
+    ("force-default-values,f", "Use default relations.")
+    ("info,i", "Give info about some Mcr binfile.")
+    ("words", "Insert word and word#pos nodes in the MCR.")
+    ("out_dir,O", value<string>(), "Directory for leaving output files.")
+    ("relations_file,r", value<string>(), "Specify file about relations (default mcr_16_source/wei_relations.txt).")
+    ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
+    ("param,p", value<string>(), "Specify parameter file.")
+    ("verbose,v", "Be verbose.")
+    ;
+  options_description po_desc_hide("Hidden");
+  po_desc_hide.add_options()
+    ("input-file",value<string>(), "Input file.")
+    ("output-file",value<string>(), "Output file.")
+    ;
+  options_description po_desc_all("All options");
+  po_desc_all.add(po_desc).add(po_desc_hide);
+  
+  positional_options_description po_optdesc;
+  po_optdesc.add("input-file", 1);
+  po_optdesc.add("output-file", 1);
+  
+  variables_map vm;
+  
   try {
-    using namespace boost::program_options;
-
-    options_description po_desc(desc_header);
-
-    po_desc.add_options()
-      ("help,h", "This help page.")
-      ("force-default-values,f", "Use default relations.")
-      ("info,i", "Give info about some Mcr binfile.")
-      ("out_dir,O", value<string>(), "Directory for leaving output files.")
-      ("relations_file,r", value<string>(), "Specify file about relations (default mcr_source/wei_relations.txt).")
-      ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
-      ("param,p", value<string>(), "Specify parameter file.")
-      ("verbose,v", "Be verbose.")
-      ;
-    options_description po_desc_hide("Hidden");
-    po_desc_hide.add_options()
-      ("input-file",value<string>(), "Input file.")
-      ("output-file",value<string>(), "Output file.")
-      ;
-    options_description po_desc_all("All options");
-    po_desc_all.add(po_desc).add(po_desc_hide);
-
-    positional_options_description po_optdesc;
-    po_optdesc.add("input-file", 1);
-    po_optdesc.add("output-file", 1);
-
-    variables_map vm;
     store(command_line_parser(argc, argv).
 	  options(po_desc_all).
 	  positional(po_optdesc).
@@ -120,13 +124,17 @@ int main(int argc, char *argv[]) {
 
     // Config params first, so that they can be overriden by switch options
 
+    if (vm.count("param")) {
+      parse_config(vm["param"].as<string>());
+      opt_param = true;
+    }
+
     if (vm.count("force-default-values")) {
       opt_force_param = true;
     }
 
-    if (vm.count("param")) {
-      parse_config(vm["param"].as<string>());
-      opt_param = true;
+    if (vm.count("words")) {
+      opt_words = true;
     }
 
     if (vm.count("out_dir")) {
@@ -148,6 +156,12 @@ int main(int argc, char *argv[]) {
   catch(exception& e) {
     cerr << e.what() << "\n";
     throw(e);
+  }
+
+  if (mcr_file.size()==0) {
+    cout << po_desc << endl;
+    cout << "No input files" << endl;
+    exit(0);
   }
 
   if (opt_info) {
@@ -181,7 +195,26 @@ int main(int argc, char *argv[]) {
 
   if (glVars::verbose) 
     cerr << "Reading relations"<< endl;
+
   Mcr::create_from_txt(relations_file, mcr_file, source_rels);
+
+  if (!opt_words) {
+    if (glVars::verbose) 
+      cerr << "Skipping words"<< endl;
+  } else {
+    if (glVars::verbose) 
+      cerr << "Adding word nodes to MCR"<< endl;
+
+    W2Syn & w2syn = W2Syn::instance();
+    vector<string>::const_iterator word_it = w2syn.get_wordlist().begin();
+    vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
+    for(; word_it != word_end; ++word_it) {
+      vector<string>::const_iterator syn_it, syn_end;
+      tie(syn_it, syn_end) = w2syn.get_wsyns(*word_it);
+      Mcr::instance().add_tokens(*word_it, syn_it, syn_end);
+    }
+  }
+
   File_elem mcr_fe(fullname_out);
   mcr_fe.set_path(out_dir);
   if (glVars::verbose) 
