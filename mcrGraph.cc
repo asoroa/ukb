@@ -32,6 +32,10 @@
 #include <boost/pending/integer_range.hpp>
 #include <boost/graph/graph_utility.hpp> // for boost::make_list
 
+// dijkstra
+
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+
 using namespace std;
 using namespace boost;
 
@@ -138,15 +142,33 @@ bool Mcr::bfs (Mcr_vertex_t src,
   return true;
 }
 
-bool Mcr::bfs (const string & source_synset, 
-	       std::vector<Mcr_vertex_t> & parents) const {
 
-  std::map<std::string, Mcr_vertex_t>::const_iterator src_it = synsetMap.find(source_synset);
-  if (src_it == synsetMap.end()) return false;
-  bfs(src_it->second, parents);
+bool Mcr::dijkstra (Mcr_vertex_t src, 
+		    std::vector<Mcr_vertex_t> & parents) const {
+
+  vector<Mcr_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
+  vector<float> dist(num_vertices(g));
+  
+
+  // From Inet
+//   boost::dijkstra_shortest_paths(g, s, weight_map(weight).
+// 				 visitor(boost::make_dijkstra_visitor(std::make_pair(
+// 										     boost::record_distances(node_distance, boost::on_edge_relaxed()),
+// 										     update_position))));
+
+  dijkstra_shortest_paths(g, 
+			  src,
+			  predecessor_map(&parents[0]).
+			  distance_map(&dist[0]));
+
+// 			  boost::visitor(boost::make_dijkstra_visitor
+// 					 (boost::make_list(mcr_bfs_init(&parents[0]),
+// 							   mcr_bfs_pred(&parents[0])))));
+
+			  //			  predecessor_map(&parents[0]).
+			  //			  boost::visitor(boost::make_dijkstra_visitor(mcr_bfs_init(&parents[0]))));
   return true;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // strings <-> vertex_id
@@ -162,15 +184,6 @@ pair<Mcr_vertex_t, bool> Mcr::getVertexByName(const std::string & str) const {
 ////////////////////////////////////////////////////////////////////////////////
 // Random
 
-boost::minstd_rand global_mersenne;
-
-int g_randTarget(int Target) {
-   // Return rand up to, but not including, Target
-   boost::uniform_int<> local_int_dist(0, Target-1);
-   //boost::variate_generator<boost::mt19937&, boost::uniform_int<> > local_uni_int(global_mersenne, local_int_dist);
-   boost::variate_generator<boost::minstd_rand, boost::uniform_int<> > local_uni_int(global_mersenne, local_int_dist);
-   return local_uni_int();
-}
 Mcr_vertex_t Mcr::getRandomVertex() const {
 
   int r = g_randTarget(num_vertices(g));
@@ -291,7 +304,15 @@ void Mcr::read_from_txt(const string & relFileName,
   std::ios::sync_with_stdio(false);
 
   std::ifstream relFile(relFileName.c_str(), ofstream::in);
+  if (!relFile) {
+    cerr << "Can't open " << relFileName << endl;
+    throw;
+  }
   std::ifstream synsFile(synsFileName.c_str(), ofstream::in);
+  if (!synsFile) {
+    cerr << "Can't open " << synsFileName << endl;
+    throw;
+  }
 
   read_relations(relFile, relMap, relMapInv);
   read_mcr(synsFile, g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);
@@ -308,14 +329,14 @@ void Mcr::display_info(std::ostream & o) const {
 ////////////////////////////////////////////////////////////////////////////////
 // Add token vertices and link them to synsets
 
-void Mcr::add_tokens(const string & word, 
-		     vector<string>::const_iterator syns_it, 
-		     vector<string>::const_iterator syns_end) {
 
-  map<string, vector<string> > w2wPos;
-  map<string, vector<Mcr_vertex_t> > wPos2Syns;
+void create_w2wpos_maps(const string & word,
+			vector<string>::const_iterator syns_it, 
+			vector<string>::const_iterator syns_end,
+			map<string, vector<string> > & w2wPos,
+			map<string, vector<Mcr_vertex_t> > & wPos2Syns) {
 
-  // Create w2wPos and wPos2Syns maps
+  Mcr & mcr = Mcr::instance();
 
   char_separator<char> sep("-");
   bool auxP;
@@ -334,7 +355,7 @@ void Mcr::add_tokens(const string & word,
     *sit = fields[1].at(0); // the pos
 
     Mcr_vertex_t u; // = insert_synset_vertex(g, synsetMap, *syns_it);
-    tie(u, auxP) = getVertexByName(*syns_it);
+    tie(u, auxP) = mcr.getVertexByName(*syns_it);
     if(!auxP) {
       if (glVars::verbose) 
 	cerr << "W: Mcr::add_tokens warning: " << *syns_it << " is not in MCR.\n";
@@ -354,8 +375,13 @@ void Mcr::add_tokens(const string & word,
     }
     m_it->second.push_back(u);
   }
+}
 
-  // Add vertices and link them in the MCR
+
+void insert_wpos(McrGraph & g,
+		 std::map<std::string, Mcr_vertex_t> & synsetMap,
+		 map<string, vector<string> > & w2wPos,
+		 map<string, vector<Mcr_vertex_t> > & wPos2Syns) {
 
   map<string, vector<string> >::iterator w2wpos_it = w2wPos.begin();
   map<string, vector<string> >::iterator w2wpos_end = w2wPos.end();
@@ -381,6 +407,39 @@ void Mcr::add_tokens(const string & word,
   }
 }
 
+void Mcr::add_words() {
+
+  W2Syn & w2syn = W2Syn::instance();
+
+  vector<string>::const_iterator word_it = w2syn.get_wordlist().begin();
+  vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
+
+  for(; word_it != word_end; ++word_it) {
+    vector<string>::const_iterator syn_it, syn_end;
+    tie(syn_it, syn_end) = w2syn.get_wsyns(*word_it);
+    map<string, vector<string> > w2wPos;
+    map<string, vector<Mcr_vertex_t> > wPos2Syns;
+
+    // Create w2wPos and wPos2Syns maps
+
+    create_w2wpos_maps(*word_it, syn_it, syn_end, w2wPos, wPos2Syns);
+
+    // Add vertices and link them in the MCR
+    insert_wpos(g, synsetMap, w2wPos, wPos2Syns);
+  }
+}
+
+
+void Mcr::ppv_weights(const vector<float> & ppv) {
+
+  graph_traits<McrGraph>::edge_iterator it, end;
+
+  tie(it, end) = edges(g);
+  for(; it != end; ++it) {
+    put(edge_weight, g, *it,
+	ppv[target(*it, g)]);
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // PageRank in MCR
@@ -393,7 +452,7 @@ void Mcr::pageRank_ppv(const vector<float> & ppv_map,
 
   size_t N = num_vertices(g);
   vector<float> map_tmp(N, 0.0f);
-  vector<float> out_coefs(N, 0);
+  vector<float> out_coefs(N, 0.0f);
   vector<float>(N, 0.0).swap(ranks); // Initialize rank vector
   vector<float> rank_tmp(N, 0.0);    // auxiliary rank vector
 
@@ -423,10 +482,8 @@ Mcr_vertex_t read_vertex_from_stream(ifstream & is,
 				     McrGraph & g) {
 
   string name;
-  string wname;
 
   read_atom_from_stream(is, name);
-  read_atom_from_stream(is, wname);
   Mcr_vertex_t v = add_vertex(g);
   put(vertex_name, g, v, name);
 
@@ -512,10 +569,8 @@ ofstream & write_vertex_to_stream(ofstream & o,
 				  const McrGraph & g,
 				  const Mcr_vertex_t & v) {
   string name;
-  string wname("");
 
   write_atom_to_stream(o, get(vertex_name, g, v));
-  write_atom_to_stream(o, wname);
   return o;
 }
 

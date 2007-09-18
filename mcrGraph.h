@@ -25,6 +25,8 @@ using boost::property;
 using boost::property_map;
 using boost::vertex_name_t;
 using boost::vertex_name;
+using boost::edge_weight_t;
+using boost::edge_weight;
 
 // Properties for graphs
 
@@ -45,8 +47,8 @@ typedef adjacency_list <
   boost::vecS,
   //  boost::undirectedS,
   boost::bidirectionalS,
-  property<vertex_name_t, std::string,     // synset name
-	   property<vertex_wname_t, std::string> >
+  property<vertex_name_t, std::string>,
+  property<edge_weight_t, float>
   > McrGraph;
  
 //  property<edge_id_t, EdgeId_t> > McrGraph;
@@ -86,7 +88,9 @@ public:
   std::string  getVertexName(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
 
   bool bfs (Mcr_vertex_t source_synset, std::vector<Mcr_vertex_t> & synv) const ;
-  bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;
+  //bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;
+
+  bool dijkstra (Mcr_vertex_t src, std::vector<Mcr_vertex_t> & parents) const;
 
   void pageRank_ppv(const std::vector<float> & ppv_map,
 		    std::vector<float> & ranks);
@@ -95,12 +99,11 @@ public:
 
   void display_info(std::ostream & o) const;
 
+  void ppv_weights(const std::vector<float> & ppv);
 
   // Add tokens a la hughes&ramage
 
-  void add_tokens(const std::string & word, 
-		  std::vector<std::string>::const_iterator syns_it,
-		  std::vector<std::string>::const_iterator syns_end);
+  void add_words();
 
 private:
   // Singleton
