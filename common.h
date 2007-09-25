@@ -23,6 +23,14 @@
 #include <boost/property_map.hpp>
 #include <boost/graph/properties.hpp>
 
+// Stuff for generating random numbers
+
+#include <boost/random.hpp>
+#include <boost/random/linear_congruential.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/mersenne_twister.hpp>
+
 using boost::adjacency_list;
 using boost::graph_traits;
 using boost::property;
@@ -202,47 +210,29 @@ size_t num_connected_vertices(const G & g) {
 }
 
 /////////////////////////////////////////////////////////////////////
-// csentence sorting (disambiguating) functions
+// Random
 
-template<class G>
-struct Syn2vert_tie {
-  typedef typename G::boost_graph_type boost_graph_type;
-  typedef typename graph_traits<boost_graph_type>::vertex_descriptor vertex_t;
-  Syn2vert_tie(std::vector<std::string>::iterator it, 
-		std::vector<std::string>::iterator end,
-		G & dg) {
-    vertex_t v;
-    bool P;
-    for(;it != end; ++it) {
-      tie(v, P) = dg.getVertexByName(*it);
-      if(!P) {
-	std::cerr << "Error:" << *it << " synset not found" << std::endl;
-	exit(-1);
-      }
-      V.push_back(std::make_pair(&(*it), v));
-    }
+extern boost::minstd_rand global_mersenne;
+
+template <typename Generator>
+struct random_functor {
+  random_functor(Generator& g) : g(g) { }
+  std::size_t operator()(std::size_t n) {
+    boost::uniform_int<std::size_t> distrib(0, n-1);
+    boost::variate_generator<boost::mt19937&, boost::uniform_int<std::size_t> >
+      x(g, distrib);
+    return x();
   }
-  std::vector<std::pair<std::string *, vertex_t> > V;
+  Generator& g;
 };
 
-template<typename G, typename RankMap>
-struct SortByRank {
-  typedef typename graph_traits<G>::vertex_descriptor vertex_t;
-  RankMap rank;
-  SortByRank(RankMap rank_) : rank(rank_) {};
-  int operator() (const std::pair<std::string *, vertex_t> & u, 
-		  const std::pair<std::string *, vertex_t> & v) {
-    // Descending order !
-    return get(rank, v.second) < get(rank, u.second);
-  }
-};
-
-template<typename G, typename RankMap>
-SortByRank<G, RankMap>
-make_SortByRank(G & g, const RankMap & rank) {
-  SortByRank<G, RankMap> m_(rank);
-  return m_;
+template<typename Generator> 
+inline random_functor <Generator>
+make_random_functor(Generator & g) {
+  return random_functor<Generator>(g);
 }
+
+int g_randTarget(int Target);
 
 ////////////////////////////////////////////////////////////////////
 // Useful property map for pageRank
@@ -283,20 +273,22 @@ private:
   const std::string & name;
 };
 
-template < class ValType1, class ValType2 >
-class my_name_writer2 {
+template < class ValType1, class ValType2, class ValType3 >
+class my_name_writer3 {
 public:
-  my_name_writer2(ValType1 _val1, ValType2 _val2, const std::string & _name1, const std::string & _name2) 
-    : val1(_val1), val2(_val2), name1(_name1), name2(_name2) {}
+  my_name_writer3(ValType1 _val1, ValType2 _val2, ValType3 _val3, const std::string & _name1, const std::string & _name2, const std::string & _name3) 
+    : val1(_val1), val2(_val2), val3(_val3), name1(_name1), name2(_name2), name3(_name3) {}
   template <class VertexOrEdge>
   void operator()(std::ostream& out, const VertexOrEdge& v) const {
-    out << "["<< name1 <<"=\"" << val1[v] << "\" " << name2 << "=\"" <<  val2[v] << "\"]";
+    out << "["<< name1 <<"=\"" << val1[v] << "\" " << name2 << "=\"" <<  val2[v] << "\" " << name3 << "=\"" <<  val3[v] << "\"]";
   }
 private:
   ValType1 val1;
   ValType2 val2;
+  ValType3 val3;
   const std::string & name1;
   const std::string & name2;
+  const std::string & name3;
 };
 
 template <class ValType>
@@ -305,10 +297,10 @@ make_my_writer(ValType n, const std::string & ize) {
   return my_name_writer<ValType>(n, ize);
 }
 
-template <class ValType1, class ValType2>
-inline my_name_writer2<ValType1, ValType2>
-make_my_writer2(ValType1 n1, ValType2 n2, const std::string & name1, const std::string & name2) {
-  return my_name_writer2<ValType1, ValType2> (n1, n2, name1, name2);
+template <class ValType1, class ValType2, class ValType3>
+inline my_name_writer3<ValType1, ValType2, ValType3>
+make_my_writer3(ValType1 n1, ValType2 n2, ValType3 n3, const std::string & name1, const std::string & name2, const std::string & name3) {
+  return my_name_writer3<ValType1, ValType2, ValType3> (n1, n2, n3, name1, name2, name3);
 }
 
 /////////////////////////////////////////////////////////////////////

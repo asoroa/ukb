@@ -1,5 +1,18 @@
 #include "common.h"
 
+/////////////////////////////////////////////////////////////////////
+// Random
+
+boost::minstd_rand global_mersenne;
+
+int g_randTarget(int Target) {
+   // Return rand up to, but not including, Target
+   boost::uniform_int<> local_int_dist(0, Target-1);
+   //boost::variate_generator<boost::mt19937&, boost::uniform_int<> > local_uni_int(global_mersenne, local_int_dist);
+   boost::variate_generator<boost::minstd_rand, boost::uniform_int<> > local_uni_int(global_mersenne, local_int_dist);
+   return local_uni_int();
+}
+
 //////////////////////////////////////////////////////7
 // split
 
