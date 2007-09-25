@@ -48,6 +48,9 @@ create_mcrbin: $(TARGET) $(MEMBERS) create_mcrbin.cc
 ukb_sentences: $(TARGET) $(MEMBERS) ukb_sentences.cc
 	gcc $(CCOPTIONS) $(PROFFLAGS) -o ukb_sentences ukb_sentences.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
 
+dgraph_info: $(TARGET) $(MEMBERS) dgraph_info.cc
+	gcc $(CCOPTIONS) $(PROFFLAGS) -o dgraph_info dgraph_info.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
+
 .PHONY : all clean
 
 clean:
