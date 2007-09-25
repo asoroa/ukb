@@ -8,6 +8,10 @@
 #include<string>
 #include<vector>
 
+// For srand & friends 
+
+#include <boost/random/mersenne_twister.hpp>
+
 namespace glVars {
   // debug
   extern int verbose;
@@ -16,6 +20,9 @@ namespace glVars {
   extern std::string w2s_filename;
 
   extern bool mcr_with_freqs;
+  extern bool output_monosemous;
+
+  extern boost::mt19937 rand_generator;
 
   // Maiztasunak
 

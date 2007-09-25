@@ -1,6 +1,7 @@
 #include "globalVars.h"
 #include "common.h"
 #include <iostream>
+#include <ctime>
 
 using namespace glVars;
 
@@ -11,6 +12,9 @@ namespace glVars {
   std::string w2s_filename = "../Data/Preproc/wn1.6_index.sense_freq";
 
   bool mcr_with_freqs = false;
+  bool output_monosemous = true;
+
+  boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
 //   bool word_norep = 0;
 //   int hub_neighborhood = 0;
