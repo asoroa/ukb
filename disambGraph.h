@@ -16,11 +16,13 @@ using boost::vertex_rank_t;
 using boost::vertex_rank;
 
 enum vertex_freq_t  { vertex_freq};     // vertex freq (for ppv)
+enum vertex_mcrSource_t   { vertex_mcrSource };     // original MCR vertex index
 enum edge_freq_t    { edge_freq };      // relation id
 
 namespace boost {
   BOOST_INSTALL_PROPERTY(edge, freq);
   BOOST_INSTALL_PROPERTY(vertex, freq);
+  BOOST_INSTALL_PROPERTY(vertex, mcrSource);
 }
 
 typedef adjacency_list <
@@ -29,7 +31,8 @@ typedef adjacency_list <
   boost::undirectedS,
   property<vertex_name_t, std::string,          // the synset name (WN1.6)
 	   property<vertex_rank_t, float,
-		    property<vertex_freq_t, double> > >, // synset freq
+		    property<vertex_freq_t, double, 
+			     property<vertex_mcrSource_t, Mcr_vertex_t> > > >, 
   property<edge_freq_t, float>
 > DisambG;
 
