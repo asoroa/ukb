@@ -56,9 +56,9 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
   Mcr & mcr = Mcr::instance();
   if (glVars::verbose) 
     cerr << "Reading words ...\n";
-  W2Syn & w2syn = W2Syn::instance();
 
   ifstream fh_in(fullname_in.c_str());
+  File_elem fout(fullname_in, out_dir, ".ppv");
 
   if (!fh_in) {
     cerr << "Can't open " << fullname_in << endl;
@@ -70,21 +70,10 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 
   // add words and word#pos into Mcr
 
-  vector<string>::const_iterator word_it = w2syn.get_wordlist().begin();
-  vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
-
   if (glVars::verbose) 
     cerr << "Adding words to Mcr ...";
 
-  size_t word_i = 0;
-  for(; word_it != word_end; ++word_it) {
-    vector<string>::const_iterator syn_it, syn_end;
-    tie(syn_it, syn_end) = w2syn.get_wsyns(*word_it);
-    mcr.add_tokens(*word_it, syn_it, syn_end);
-    ++word_i;
-    if (glVars::verbose && (word_i % 1000 == 0))
-      cerr << word_i << " ... ";
-  }
+  mcr.add_words();
 
   if (glVars::verbose) 
     Mcr::instance().display_info(cerr);
@@ -99,34 +88,12 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
       // Initialize rank vector
       vector<float> ranks;
 
-      // Initialize PPV vector
-      vector<float> ppv(mcr.size(), 0.0);
-      CSentence::iterator it = cs.begin();
-      CSentence::iterator end = cs.end();
-      size_t K = 0;
-      for(;it != end; ++it) {
-	if(!it->is_distinguished()) continue;
-	
-	string wpos(it->word());
-	wpos.append("#");
-	char pos = it->get_pos();
-	wpos.append(1,pos);
-	bool aux;
-	Mcr_vertex_t u;
-	tie(u, aux) = mcr.getVertexByName(wpos);
-	ppv[u] = 1;
-	++K;
+      bool ok = calculate_mcr_ranks(cs,ranks);
+      if (!ok) {
+	cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
+	continue;
       }
-      if (!K) continue;
-      // Normalize PPV vector
-      float div = 1.0 / static_cast<float>(K);
-      for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit) 
-	*rit *= div;      
 
-      // Execute PageRank
-      mcr.pageRank_ppv(ppv, ranks);
-
-      File_elem fout(fullname_in, out_dir, ".ppv");
       fout.fname = cs.id();
 
       ofstream fo(fout.get_fname().c_str(),  ofstream::out);
@@ -143,7 +110,6 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
     throw(e);    
   }
 }
-
 
 int main(int argc, char *argv[]) {
 
