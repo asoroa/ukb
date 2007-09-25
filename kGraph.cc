@@ -189,22 +189,25 @@ pair<Dis_vertex_t, bool> KGraph::getVertexByName(const std::string & str) const 
 
 void disamb_csentence(CSentence & cs, KGraph & kgraph) {
 
-  vector<CWord>::iterator cw_it = cs.begin();
-  vector<CWord>::iterator cw_end = cs.end();
-  for(; cw_it != cw_end; ++cw_it) {
-    Syn2vert_tie<KGraph> scs(cw_it->begin(), cw_it->end(), kgraph);
-    sort(scs.V.begin(), scs.V.end(), 
-	 make_SortByRank(kgraph.graph(),
-			 get(vertex_rank, kgraph.graph())));
-    vector<string> new_v;
-    vector<pair<string *, Dis_vertex_t> >::iterator it, end;
-    it  = scs.V.begin();
-    end = scs.V.end();
-    for(;it != end; ++it) {
-      new_v.push_back(*(it->first));
-    }
-    cw_it->get_syns_vector().swap(new_v);
-  }  
+  cerr << "kgraph.cc:disamb_csentence Not implemented!!" <<endl;
+  exit(-1);
+
+//   vector<CWord>::iterator cw_it = cs.begin();
+//   vector<CWord>::iterator cw_end = cs.end();
+//   for(; cw_it != cw_end; ++cw_it) {
+//     Syn2vert_tie<KGraph> scs(cw_it->begin(), cw_it->end(), kgraph);
+//     sort(scs.V.begin(), scs.V.end(), 
+// 	 make_SortByRank(kgraph.graph(),
+// 			 get(vertex_rank, kgraph.graph())));
+//     vector<string> new_v;
+//     vector<pair<string *, Dis_vertex_t> >::iterator it, end;
+//     it  = scs.V.begin();
+//     end = scs.V.end();
+//     for(;it != end; ++it) {
+//       new_v.push_back(*(it->first));
+//     }
+//     cw_it->get_syns_vector().swap(new_v);
+//   }  
 }
 
 ////////////////////////////////////////////////////////////////
