@@ -1,5 +1,6 @@
 #include "csentence.h"
 #include "common.h"
+#include "globalVars.h"
 #include "mcrGraph.h"
 #include "w2syn.h"
 
@@ -57,16 +58,24 @@ void fill_syns(const string & w,
   }
 }
 
+void CWord::shuffle_synsets() {
+  boost::random_number_generator<boost::mt19937, long int> rand_dist(glVars::rand_generator);
+  //std::random_shuffle(syns.begin(), syns.end(), rand_dist);
+  std::random_shuffle(syns.begin(), syns.end(), rand_dist);
+}
+
 CWord::CWord(const string & w_) : 
   w(w_), cw_id(string()), pos(0), distinguished(true), ranks_equal(true) {
   fill_syns(w_, syns, ranks, 0);
   disamb = (1 == syns.size()); // monosemous words are disambiguated
+  shuffle_synsets();
 }
 
 CWord::CWord(const string & w_, const string & id_, char pos_, bool dist_) 
   : w(w_), cw_id(id_), pos(pos_), distinguished(dist_), ranks_equal(true) {
   fill_syns(w_, syns, ranks, pos_);
   disamb = (1 == syns.size()); // monosemous words are disambiguated
+  shuffle_synsets();
 }
 
 
@@ -129,6 +138,7 @@ std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
 ostream & CWord::print_cword_aw(ostream & o) const {
 
   if (!disamb) return o;
+  if ((1 == syns.size()) && !glVars::output_monosemous) return o; // Don't output monosemous words
 
   vector<string> id_fields(split(cw_id, "."));
   assert(id_fields.size() > 0);
@@ -164,8 +174,10 @@ void CWord::read_from_stream(std::ifstream & i) {
   read_atom_from_stream(i,pos);
   read_vector_from_stream(i,syns);
   vector<float>(syns.size()).swap(ranks); // Init ranks vector
-  disamb = (1 == syns.size());
   read_atom_from_stream(i,distinguished);
+
+  disamb = (1 == syns.size());
+  shuffle_synsets();
 };
 
 ////////////////////////////////////////////////////////////////

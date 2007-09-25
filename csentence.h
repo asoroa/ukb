@@ -77,6 +77,7 @@ private:
 
   void read_from_stream (std::ifstream & is);
   std::ofstream & write_to_stream(std::ofstream & o) const;
+  void shuffle_synsets();
 
   std::string w;
   std::string cw_id;
