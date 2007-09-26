@@ -66,26 +66,14 @@ Dis_vertex_t DisambGraph::add_dgraph_vertex(const string & str) {
   if (insertedP) {
     Dis_vertex_t v = add_vertex(g);
     put(vertex_name, g, v, str);
-    put(vertex_rank, g, v, 0.0f);
+    put(vertex_freq, g, v, 0.0);
     put(vertex_mcrSource, g, v, Mcr::instance().getVertexByName(str).first);
     map_it->second = v;
+  } else {
+    put(vertex_freq, g, map_it->second, 
+	get(vertex_freq, g, map_it->second) + 1.0);
   }
   return map_it->second;
-}
-
-vector<Dis_vertex_t> DisambGraph::add_vertices_mcr_path(vector<string>::iterator v_it, 
-							vector<string>::iterator v_end) {
-
-  vector<Dis_vertex_t> res;
-
-  map<string, Dis_vertex_t>::iterator map_it;
-  map<string, Dis_vertex_t>::iterator map_end = synsetMap.end();
-
-  for(;v_it != v_end; ++v_it) {
-      Dis_vertex_t u = add_dgraph_vertex(*v_it);
-      res.push_back(u);
-  }
-  return res;
 }
 
 void DisambGraph::fill_graph(Mcr_vertex_t src,
@@ -110,18 +98,24 @@ void DisambGraph::fill_graph(Mcr_vertex_t src,
   if (tgt != src) return;
   path_str.push_back(get(vertex_name, mcr_g, src));
   
-  vector<Dis_vertex_t> path_v(add_vertices_mcr_path(path_str.begin(), path_str.end()));
+  vector<Dis_vertex_t> path_v;
+  size_t length = 0;
+  for(vector<string>::iterator v_it = path_str.begin(); 
+      v_it != path_str.end(); 
+      ++v_it) {
+      Dis_vertex_t u = add_dgraph_vertex(*v_it);
+      path_v.push_back(u);
+      ++length;
+  }
 
   vector<Dis_vertex_t>::iterator path_it = path_v.begin();
   vector<Dis_vertex_t>::iterator path_end = path_v.end();
   vector<Dis_vertex_t>::iterator path_prev;
-  if(path_it == path_end) return;
 
-  size_t l = path_v.size();
   path_prev = path_it;
   ++path_it;
   while(path_it != path_end) {
-    add_dgraph_edge(*path_prev, *path_it, 1.0 / static_cast<float>(l));
+    add_dgraph_edge(*path_it, *path_prev, 1.0 / static_cast<float>(length));
     path_prev = path_it;
     ++path_it;
   }
@@ -557,8 +551,8 @@ Dis_edge_t read_edge_from_stream(ifstream & is,
   bool insertedP;
   Dis_edge_t e;
 
-  read_atom_from_stream(is, sIdx);
   read_atom_from_stream(is, tIdx);
+  read_atom_from_stream(is, sIdx);
   read_atom_from_stream(is, freq);
   tie(e, insertedP) = add_edge(sIdx, tIdx, g);
   assert(insertedP);
@@ -641,8 +635,8 @@ ofstream & write_edge_to_stream(ofstream & o,
   size_t vIdx = get(vertex_index, g, target(e,g));
   float freq = get(edge_freq, g, e);
 
-  o.write(reinterpret_cast<const char *>(&uIdx), sizeof(uIdx));
   o.write(reinterpret_cast<const char *>(&vIdx), sizeof(vIdx));
+  o.write(reinterpret_cast<const char *>(&uIdx), sizeof(uIdx));
   o.write(reinterpret_cast<const char *>(&freq), sizeof(freq));
 
   return o;

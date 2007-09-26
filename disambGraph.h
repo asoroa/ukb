@@ -29,6 +29,7 @@ typedef adjacency_list <
   boost::listS,
   boost::vecS,
   boost::undirectedS,
+  //  boost::bidirectionalS,
   property<vertex_name_t, std::string,          // the synset name (WN1.6)
 	   property<vertex_rank_t, float,
 		    property<vertex_freq_t, double, 
@@ -64,9 +65,6 @@ class DisambGraph {
   void prune() {}
   void reset_edge_weigths();
 private:
-
-  std::vector<Dis_vertex_t> add_vertices_mcr_path(std::vector<std::string>::iterator v_it, 
-						  std::vector<std::string>::iterator v_end);
 
   void read_from_stream (std::ifstream & is);
   std::ofstream & write_to_stream(std::ofstream & o) const;
