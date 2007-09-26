@@ -3,6 +3,8 @@
 #ifndef PRANK_H
 #define PRANK_H
 
+#include <boost/graph/graph_concepts.hpp>
+#include <iosfwd>
 /////////////////////////////////////////////////////////////////////
 // pageRank
 //
@@ -21,14 +23,12 @@
 // year = {2004},
 // } 
 //
-// Note: 
-//    * as G is an undirected graph, there is no dangling node
-
+// Note: it correctly handles dangling nodes
 
 template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
 void update_pRank(G & g,
 		  std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-		  float dfactor,
+		  float damping,
 		  ppvMap_t ppv_V,
 		  const std::vector<float> & out_coef,
 		  wMap_t & wmap,
@@ -47,7 +47,13 @@ void update_pRank(G & g,
       vertex_descriptor u = source(*e, g);
       rank += rank_map1[u] * wmap[*e] * out_coef[u];
     }
-    rank_map2[*v] = dfactor*rank + (1-dfactor)*ppv_V[*v];
+    float dangling_factor = 0.0;
+    if (0.0 == out_coef[*v]) {
+      // dangling link
+      std::cerr << ".";
+      dangling_factor = damping*rank_map1[*v];
+    }
+    rank_map2[*v] = damping*rank + (dangling_factor + 1.0 - damping )*ppv_V[*v];
   }
 }
 
@@ -60,6 +66,7 @@ void pageRank_iterate(G & g,
 		      map1_t rank_map1,
 		      map2_t rank_map2,
 		      int iterations) {
+
   int erpin_kop = V.size();
   float damping = 0.85;
   // Initialize rank_map1 appropriately
