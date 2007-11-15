@@ -16,6 +16,8 @@ namespace glVars {
 
   boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
+  RankAlg rAlg = pageRank;
+
 //   bool word_norep = 0;
 //   int hub_neighborhood = 0;
 //   float context_threshold = 0;
@@ -39,7 +41,17 @@ namespace glVars {
 //   int    PrankParam::siblingsCannotBeHubs = 0;
 
 //   float MclParam::Inflate = 0.0f;
+
+  RankAlg get_algEnum(const std::string & alg) {
+
+    if ("pageRank" == alg) return pageRank;
+    if ("degree" == alg) return degree;
+    return no_alg;
+  }
+
 }
+
+
 
 void show_global_variables(std::ostream & o) {
 
@@ -115,4 +127,5 @@ void show_global_variables(std::ostream & o) {
 //   if (hubsAlg == mcl) {
 //     o << "MclParam::Inflate: " << MclParam::Inflate << std::endl;
 //   }
+
 }

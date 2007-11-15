@@ -28,6 +28,16 @@ namespace glVars {
 
   // Ezaugarriak
 
+  enum RankAlg {
+    no_alg, // error
+    pageRank,
+    degree
+  };
+
+  extern RankAlg rAlg;
+
+  RankAlg get_algEnum(const std::string & alg);
+
 //   enum VertexRelate { // How to compute relateness between vertices in cooc. graph
 //     freq,
 //     chsq,         // Chi square
