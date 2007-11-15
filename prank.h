@@ -4,7 +4,9 @@
 #define PRANK_H
 
 #include <boost/graph/graph_concepts.hpp>
+#include<boost/tuple/tuple.hpp> // for "tie"
 #include <iosfwd>
+
 /////////////////////////////////////////////////////////////////////
 // pageRank
 //
@@ -101,10 +103,10 @@ void pageRank_iterate(G & g,
   }
 }
 
-template<typename G, typename wmap_t>
+template<typename G, typename coefmap_t, typename wmap_t>
 void init_out_coefs(const G & g,
 		    const std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-		    std::vector<float> & W,
+		    coefmap_t W,
 		    wmap_t wmap) {
   typedef typename graph_traits<G>::vertex_descriptor vertex_t;
   typename std::vector<vertex_t>::const_iterator v = V.begin();
@@ -117,6 +119,19 @@ void init_out_coefs(const G & g,
       total_w += wmap[*e];
     }
     W[*v] = 1.0f / total_w;
+  }
+}
+
+template<typename G, typename coefmap_t, typename wmap_t>
+void init_degree(const G & g,
+		 coefmap_t In,
+		 wmap_t wmap) {
+
+  typename graph_traits<G>::vertex_iterator v, v_end;
+
+  tie(v, v_end) = vertices(g);
+  for(; v != v_end; ++v) {
+    In[*v] = out_degree(*v, g);
   }
 }
 
