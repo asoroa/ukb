@@ -441,11 +441,11 @@ void pageRank_disg(DisambG & g,
   
   if (use_weigth) {
     property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
-    init_out_coefs(g, V, out_coefs, weight_map);
+    init_out_coefs(g, V, &out_coefs[0], weight_map);
     pageRank_iterate(g, V, ppv, out_coefs, weight_map, rank_map, &map_tmp[0], 30); // 30 iterations
   } else {
     constant_property_map<Dis_edge_t, float> cte_weight(1); // always return 1
-    init_out_coefs(g, V, out_coefs, cte_weight);
+    init_out_coefs(g, V, &out_coefs[0], cte_weight);
     pageRank_iterate(g, V, ppv, out_coefs, cte_weight, rank_map, &map_tmp[0], 30); // 30 iterations
 
 //     vector<float> ranks(num_vertices(g), 0.0f);
@@ -506,13 +506,23 @@ void pageRank_ppv_disg(DisambG &g,
 
   if (use_weigth) {
     property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
-    init_out_coefs(g, V, out_coefs, weight_map);
+    init_out_coefs(g, V, &out_coefs[0], weight_map);
     pageRank_iterate(g, V, ppv_map, out_coefs, weight_map, rank_map, map_tmp, 30); // 30 iterations
   } else {
     constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1  
-    init_out_coefs(g, V, out_coefs, cte_weight);
+    init_out_coefs(g, V, &out_coefs[0], cte_weight);
     pageRank_iterate(g, V, ppv_map, out_coefs, cte_weight, rank_map, map_tmp, 30); // 30 iterations
   }
+}
+
+
+
+
+void degreeRank(DisambG & g) {
+  constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1  
+  property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
+
+  init_degree(g, rank_map, cte_weight);
 }
 
 ////////////////////////////////////////////////////////////////

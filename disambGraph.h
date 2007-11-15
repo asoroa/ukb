@@ -88,13 +88,21 @@ void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
 
 void disamb_csentence(CSentence & cs, DisambGraph & dgraph);
 
+// HITS ranking
+
 void hits(DisambG & g);
+
+// PageRank ranking
 
 void pageRank_disg(DisambG & g, bool use_weigths = true);
 
 void pageRank_ppv_disg(DisambG & g,
 		       const std::map<std::string, size_t> & syn_n,
 		       bool use_weigths = true);
+
+// Degree ranking
+
+void degreeRank(DisambG & g);
 
 std::ostream & print_complete_csent(std::ostream & o, CSentence & cs, DisambGraph & dgraph);
 
