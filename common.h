@@ -155,6 +155,26 @@ std::ofstream & write_map_to_stream(std::ofstream & o,
   return o;
 }
 
+template<class Set>
+std::ofstream & write_set_to_stream(std::ofstream & o,
+				    const Set & s) {
+
+  typename Set::const_iterator set_it, set_end;
+  size_t setSize;
+
+  setSize = s.size();
+
+  o.write(reinterpret_cast<const char *>(&setSize), sizeof(setSize));
+  if(setSize) {
+    set_end = s.end();
+    for(set_it = s.begin(); set_it != set_end; ++set_it) {
+      typename Set::value_type aux = *set_it;
+      write_atom_to_stream(o, aux);
+    }
+  }
+  return o;
+}
+
 template<class Vector>
 std::ofstream & write_vector_to_stream(std::ofstream & o,
 				       const Vector & v) {
