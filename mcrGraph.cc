@@ -180,6 +180,35 @@ pair<Mcr_vertex_t, bool> Mcr::getVertexByName(const std::string & str) const {
   return make_pair(it->second, true);
 }
 
+Mcr_vertex_t Mcr::findOrInsertNode(const string & str) {
+  Mcr_vertex_t u;
+  map<string, Mcr_vertex_t>::iterator it;
+  bool insertedP;
+
+  tie(it, insertedP) = synsetMap.insert(make_pair(str, Mcr_vertex_t()));
+  if(insertedP) {
+    // new vertex
+    u = add_vertex(g);
+    put(vertex_name, g, u, str);
+    it->second = u;
+  }
+  return it->second;
+}
+
+Mcr_edge_t Mcr::findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v,
+				 float w) {
+
+  Mcr_edge_t e;
+  bool existsP;
+
+  tie(e, existsP) = edge(u, v, g);
+  if(!existsP) {
+    e = add_edge(u, v, g).first;
+    put(edge_weight, g, e, w);
+  }
+  return e;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Random
@@ -331,18 +360,18 @@ void Mcr::display_info(std::ostream & o) const {
 
 
 void create_w2wpos_maps(const string & word,
-			vector<string>::const_iterator syns_it, 
-			vector<string>::const_iterator syns_end,
 			map<string, vector<string> > & w2wPos,
 			map<string, vector<Mcr_vertex_t> > & wPos2Syns) {
 
-  Mcr & mcr = Mcr::instance();
+  const Mcr & mcr = Mcr::instance();
+  W2Syn & w2syn = W2Syn::instance();
+
+  vector<string>::const_iterator syns_it, syns_end;
+  tie(syns_it, syns_end) = w2syn.get_wsyns(word);
 
   char_separator<char> sep("-");
   bool auxP;
 
-  //vector<string>::const_iterator it = syns.begin();
-  //vector<string>::const_iterator end = syns.end();
   for(;syns_it != syns_end; ++syns_it) {
 
     vector<string> fields(2);
@@ -378,30 +407,29 @@ void create_w2wpos_maps(const string & word,
 }
 
 
-void insert_wpos(McrGraph & g,
-		 std::map<std::string, Mcr_vertex_t> & synsetMap,
-		 map<string, vector<string> > & w2wPos,
+void insert_wpos(map<string, vector<string> > & w2wPos,
 		 map<string, vector<Mcr_vertex_t> > & wPos2Syns) {
+
+  Mcr & mcr = Mcr::instance();
 
   map<string, vector<string> >::iterator w2wpos_it = w2wPos.begin();
   map<string, vector<string> >::iterator w2wpos_end = w2wPos.end();
   for(; w2wpos_it != w2wpos_end; ++w2wpos_it) {
     // insert word
-    Mcr_vertex_t word_v = insert_synset_vertex(g, synsetMap, w2wpos_it->first); 
+    Mcr_vertex_t word_v = mcr.findOrInsertNode(w2wpos_it->first); 
 
     vector<string>::iterator wpos_str_it = w2wpos_it->second.begin();
     vector<string>::iterator wpos_str_end = w2wpos_it->second.end();
     for (; wpos_str_it != wpos_str_end; ++wpos_str_it) {
       //insert word#pos
-      Mcr_vertex_t wpos_v = insert_synset_vertex(g, synsetMap, *wpos_str_it);
+      Mcr_vertex_t wpos_v = mcr.findOrInsertNode(*wpos_str_it);
       // link word to word#pos
-      add_edge(word_v, wpos_v, g);
+      mcr.findOrInsertEdge(word_v, wpos_v);
       // link word#pos to synsets
-      vector<Mcr_vertex_t> & syns = wPos2Syns[*wpos_str_it];
-      vector<Mcr_vertex_t>::iterator syns_it = syns.begin();
-      vector<Mcr_vertex_t>::iterator syns_end = syns.end();
+      vector<Mcr_vertex_t>::iterator syns_it = wPos2Syns[*wpos_str_it].begin();
+      vector<Mcr_vertex_t>::iterator syns_end = wPos2Syns[*wpos_str_it].end();
       for(;syns_it != syns_end; ++syns_it) {
-	add_edge(wpos_v, *syns_it, g);
+	mcr.findOrInsertEdge(wpos_v, *syns_it);
       }
     }      
   }
@@ -415,20 +443,32 @@ void Mcr::add_words() {
   vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
 
   for(; word_it != word_end; ++word_it) {
-    vector<string>::const_iterator syn_it, syn_end;
-    tie(syn_it, syn_end) = w2syn.get_wsyns(*word_it);
     map<string, vector<string> > w2wPos;
     map<string, vector<Mcr_vertex_t> > wPos2Syns;
 
     // Create w2wPos and wPos2Syns maps
 
-    create_w2wpos_maps(*word_it, syn_it, syn_end, w2wPos, wPos2Syns);
+    create_w2wpos_maps(*word_it, w2wPos, wPos2Syns);
 
     // Add vertices and link them in the MCR
-    insert_wpos(g, synsetMap, w2wPos, wPos2Syns);
+    insert_wpos(w2wPos, wPos2Syns);
   }
 }
 
+void Mcr::add_token(const string & token) {
+
+  map<string, vector<string> > w2wPos;
+  map<string, vector<Mcr_vertex_t> > wPos2Syns;
+
+    // Create w2wPos and wPos2Syns maps
+
+  create_w2wpos_maps(token, w2wPos, wPos2Syns);
+
+    // Add vertices and link them in the MCR
+  insert_wpos(w2wPos, wPos2Syns);
+
+
+}
 
 void Mcr::ppv_weights(const vector<float> & ppv) {
 
@@ -465,7 +505,7 @@ void Mcr::pageRank_ppv(const vector<float> & ppv_map,
   copy(it, end, V.begin());
 
   constant_property_map <Mcr_edge_t, float> cte_weight(1); // always return 1  
-  init_out_coefs(g, V, out_coefs, cte_weight);
+  init_out_coefs(g, V, &out_coefs[0], cte_weight);
   pageRank_iterate(g, V, &ppv_map[0], out_coefs, cte_weight, &ranks[0], &rank_tmp[0], 30); // 30 iterations
 }
 

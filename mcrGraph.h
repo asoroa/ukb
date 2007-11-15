@@ -87,6 +87,10 @@ public:
   std::pair<Mcr_vertex_t, bool> getVertexByName(const std::string & str) const;
   std::string  getVertexName(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
 
+  Mcr_vertex_t findOrInsertNode(const std::string & str);
+  Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w = 1.0 );
+
+
   bool bfs (Mcr_vertex_t source_synset, std::vector<Mcr_vertex_t> & synv) const ;
   //bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;
 
@@ -103,7 +107,8 @@ public:
 
   // Add tokens a la hughes&ramage
 
-  void add_words();
+  void add_words(); // Adds all words of w2syn file
+  void add_token(const std::string & str); // Add a word
 
 private:
   // Singleton
