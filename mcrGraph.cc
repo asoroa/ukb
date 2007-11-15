@@ -333,17 +333,16 @@ void Mcr::read_from_txt(const string & relFileName,
   std::ios::sync_with_stdio(false);
 
   std::ifstream relFile(relFileName.c_str(), ofstream::in);
-  if (!relFile) {
-    cerr << "Can't open " << relFileName << endl;
-    throw;
+  if (relFile) {
+    read_relations(relFile, relMap, relMapInv);
   }
+
   std::ifstream synsFile(synsFileName.c_str(), ofstream::in);
   if (!synsFile) {
     cerr << "Can't open " << synsFileName << endl;
     throw;
   }
 
-  read_relations(relFile, relMap, relMapInv);
   read_mcr(synsFile, g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);
 }
 
