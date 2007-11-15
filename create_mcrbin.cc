@@ -4,7 +4,8 @@
 #include "configFile.h"
 #include "fileElem.h"
 #include "mcrGraph.h"
-#include "disambGraph.h"
+//#include "disambGraph.h"
+#include "coocGraph.h"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -45,6 +46,31 @@ void read_skip_relations (const string & file,
   }
 }
 
+void merge_cooc(string & fName) {
+  
+  Mcr & mcr = Mcr::instance();
+
+  CoocGraph coog;
+  coog.read_from_binfile(fName);
+  map<CoocGraph::vertex_descriptor, Mcr_vertex_t> uMap;
+
+  CoocGraph::vertex_iterator v_it, v_end;
+  for(tie(v_it, v_end) = vertices(coog.graph()); v_it != v_end; ++v_it) {
+    Mcr_vertex_t u = mcr.findOrInsertNode(get(vertex_name, coog.graph(), *v_it));
+    uMap[*v_it] = u;
+  }
+
+  CoocGraph::edge_iterator e_it, e_end;
+  for(tie(e_it, e_end) = edges(coog.graph()); e_it != e_end; ++e_it) {
+    Mcr_vertex_t u = uMap[source(*e_it, coog.graph())];
+    Mcr_vertex_t v = uMap[target(*e_it, coog.graph())];
+    float w = get(edge_freq, coog.graph(), *e_it);
+    mcr.findOrInsertEdge(u, v, w);
+    mcr.findOrInsertEdge(v, u, w);			 
+  }
+
+}
+
 int main(int argc, char *argv[]) {
 
   srand(3);
@@ -52,10 +78,12 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_info = false;
+  bool opt_merge = false;
   bool opt_words = false;
   bool opt_param = false;
   bool opt_force_param = false;
 
+  string cograph_filename;
   string fullname_out("mcr_wnet.bin");
   string relations_file("mcr_16_source/wei_relations.txt");
   string mcr_file;
@@ -67,6 +95,7 @@ int main(int argc, char *argv[]) {
   const char desc_header[] = "create_mcrbin: create a serialized image of the MCR\n"
     "Usage:\n"
     "create_mcrbin mcr_file.txt [output.bin] -> Create a MCR image.\n"
+    "create_mcrbin -m coocgraph.bin mcr.bin output.bin -> Merge a mcr serialization with a coocurrence graph.\n"
     "Options:";
   
   using namespace boost::program_options;
@@ -78,6 +107,7 @@ int main(int argc, char *argv[]) {
     ("force-default-values,f", "Use default relations.")
     ("info,i", "Give info about some Mcr binfile.")
     ("words", "Insert word and word#pos nodes in the MCR.")
+    ("merge,m", value<string>(), "Merge a coocurrence graph to a serialization graph.")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("relations_file,r", value<string>(), "Specify file about relations (default mcr_16_source/wei_relations.txt).")
     ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
@@ -129,6 +159,12 @@ int main(int argc, char *argv[]) {
       opt_param = true;
     }
 
+    if (vm.count("merge")) {
+      opt_merge = true;
+      cograph_filename = vm["merge"].as<string>();
+    }
+
+
     if (vm.count("force-default-values")) {
       opt_force_param = true;
     }
@@ -168,6 +204,13 @@ int main(int argc, char *argv[]) {
     Mcr::create_from_binfile(mcr_file);
     Mcr::instance().display_info(cout);
     return 0;
+  }
+
+  if (opt_merge) {
+    Mcr::create_from_binfile(mcr_file);
+    merge_cooc(cograph_filename);
+    Mcr::instance().write_to_binfile(fullname_out);
+    return 1;
   }
 
   if (!opt_param && !opt_force_param) {
@@ -211,7 +254,7 @@ int main(int argc, char *argv[]) {
     for(; word_it != word_end; ++word_it) {
       vector<string>::const_iterator syn_it, syn_end;
       tie(syn_it, syn_end) = w2syn.get_wsyns(*word_it);
-      Mcr::instance().add_tokens(*word_it, syn_it, syn_end);
+      Mcr::instance().add_words();
     }
   }
 
