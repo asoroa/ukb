@@ -302,6 +302,7 @@ bool calculate_mcr_ranks(const CSentence & cs,
 			 vector<float> & res) {
 
   Mcr & mcr = Mcr::instance();
+  bool aux;
 
   // Initialize result vector
   vector<float> (mcr.size(), 0.0).swap(res);
@@ -318,9 +319,12 @@ bool calculate_mcr_ranks(const CSentence & cs,
     wpos.append("#");
     char pos = it->get_pos();
     wpos.append(1,pos);
-    Mcr_vertex_t u = mcr.getVertexByName(wpos).first;
-    ppv[u] = 1;
-    ++K;
+    Mcr_vertex_t u;
+    tie(u, aux) = mcr.getVertexByName(wpos);
+    if (aux) {
+      ppv[u] = 1;
+      ++K;
+    }
   }
   if (!K) return false;
   // Normalize PPV vector
