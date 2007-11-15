@@ -235,11 +235,24 @@ void dis_csent(const vector<string> & input_files, const string & ext,
     File_elem dg_finfo(cs.id(), cs_finfo.path, ext);
     G dg;
     dg.read_from_binfile(dg_finfo.get_fname());
-    if (glVars::mcr_with_freqs) {
-      pageRank_ppv_disg(dg.graph(), counts, edge_weights);
-    } else {
-      pageRank_disg(dg.graph(), edge_weights);
+
+    switch (glVars::rAlg) {
+
+    case glVars::pageRank:
+      if (glVars::mcr_with_freqs) {
+	pageRank_ppv_disg(dg.graph(), counts, edge_weights);
+      } else {
+	pageRank_disg(dg.graph(), edge_weights);
+      }
+      break;
+    case glVars::degree:
+      degreeRank(dg.graph());
+      break;
+    default:
+      cerr << "Error: invalid ranking algorithm"<< endl;
+      exit(-1);
     }
+
     disamb_csentence(cs, dg);
     //print_disamb_csent(cout, cs);
     cs.print_csent_aw(cout);
@@ -269,7 +282,8 @@ void dis_csent_hr(const string & input_file) {
       vector<float> ranks;
       bool ok = calculate_mcr_ranks(cs,ranks);
       if (!ok) {
-	cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
+	cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+	cerr << "(No word links to MCR ?)\n";
 	continue;
       }
 
@@ -330,18 +344,29 @@ void do_dgraph_gviz(const vector<string> & input_files,
     dg_finfo.set_path(out_dir);
     dg_finfo.ext = ".dot";
 
-    if (glVars::mcr_with_freqs) {
-      map<string, size_t> counts;
-      bool ok = W2Syn::instance().syn_counts(counts);
-      if (!ok) {
-	cerr << "Error! There are no freqs. Check file " << glVars::w2s_filename << endl;
-	exit(-1);
+    switch (glVars::rAlg) {
+
+    case glVars::pageRank:
+      if (glVars::mcr_with_freqs) {
+	map<string, size_t> counts;
+	bool ok = W2Syn::instance().syn_counts(counts);
+	if (!ok) {
+	  cerr << "Error! There are no freqs. Check file " << glVars::w2s_filename << endl;
+	  exit(-1);
+	}
+	pageRank_ppv_disg(dg.graph(), counts);
+      } else {
+	pageRank_disg(dg.graph());
       }
-      
-      pageRank_ppv_disg(dg.graph(), counts);
-    } else {
-      pageRank_disg(dg.graph());
+      break;
+    case glVars::degree:
+      degreeRank(dg.graph());
+      break;
+    default:
+      cerr << "Error: invalid ranking algorithm"<< endl;
+      exit(-1);
     }
+
     write_dgraph_graphviz(dg_finfo.get_fname(), dg.graph());
   }
 }
@@ -511,7 +536,8 @@ int main(int argc, char *argv[]) {
     ("mcr_binfile,M", value<string>(), "Binary file of MCR (see create_mcrbin). Default is mcr_wnet.bin")
     ("w2syn_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
-    ("mcr_prank", "Given a text input file, disambiguate context using static pageRank over mcr (no dgraph required).")    
+    ("mcr_prank", "Given a text input file, disambiguate context using static pageRank over mcr (no dgraph required).")
+    ("rank_alg,R", value<string>(), "Ranking algorithm for DGraphs. Options are: pageRank, degree. Default is pageRank.")
     ("test,t", "(Internal) Do a test.")
     ("verbose,v", "Be verbose.")
     ("no-monosemous", "Don't output anything for monosemous words.")
@@ -611,6 +637,15 @@ int main(int argc, char *argv[]) {
       out_dir = vm["out_dir"].as<string>();
     }
 
+    if (vm.count("rank_alg")) {
+      glVars::RankAlg alg = glVars::get_algEnum(vm["rank_alg"].as<string>());
+      if (alg == glVars::no_alg) {
+	cerr << "Error: Undefined rank algorithm " << vm["rank_alg"].as<string>() << endl;
+	exit(-1);
+      }
+      glVars::rAlg = alg;
+    }
+    
     if (vm.count("with_freqs")) {
       glVars::mcr_with_freqs = true;
     }
@@ -686,6 +721,7 @@ int main(int argc, char *argv[]) {
     do_dgraph_gviz(input_files, out_dir);
     return 0;
   }
+
 
   if (opt_disamb_csent_dgraph || opt_disamb_csent_kgraph || opt_disamb_csent_wdgraph) {
     
