@@ -5,7 +5,7 @@ SOURCEMAIN = ukb_aw.cc
 
 # Library files
 
-SRC = common.cc globalVars.cc configFile.cc fileElem.cc w2syn.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc
+SRC = common.cc globalVars.cc configFile.cc fileElem.cc w2syn.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc coocGraph.cc
 
 # Don't change anything below
 #DEBUG = 1
