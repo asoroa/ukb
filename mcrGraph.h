@@ -69,6 +69,8 @@ class Mcr {
 
 public:
 
+  typedef McrGraph boost_graph_t; // the underlying graph type
+
   //Singleton
   static Mcr & instance();
   static void create_from_txt(const std::string & relFile,
@@ -97,7 +99,8 @@ public:
   bool dijkstra (Mcr_vertex_t src, std::vector<Mcr_vertex_t> & parents) const;
 
   void pageRank_ppv(const std::vector<float> & ppv_map,
-		    std::vector<float> & ranks);
+		    std::vector<float> & ranks,
+		    bool use_weight = false);
 
   void write_to_binfile (const std::string & str) const;
 

@@ -252,37 +252,13 @@ void read_relations(ifstream & relFile,
   create_inverse_map(relMap, relMapInv);
 }
 
-
-template <class G, class Map>
-typename graph_traits<G>::vertex_descriptor insert_synset_vertex(G & g, 
-								 Map & map,
-								 const string & name) {
-  typedef typename graph_traits<G>::vertex_descriptor Vertex_Desc;  
-  typename Map::iterator pos;
-  bool insertedP;
-  Vertex_Desc u;
-
-  tie(pos, insertedP) = map.insert(make_pair(name, Vertex_Desc()));
-  if (insertedP) {
-    // new vertex
-    u = add_vertex(g);
-    put(vertex_name, g, u, name);
-    pos->second = u;
-  } else {
-    u = pos->second;
-  }
-  return u;
-}
-
 // Read the actual MCR file
 
-void read_mcr(ifstream & mcrFile,
-	      McrGraph & g,
-	      map<std::string, Mcr_vertex_t> & synsetMap,
-	      const set<string> & rels_source) {
+void read_mcr(ifstream & mcrFile, 
+	      const set<string> & rels_source,
+	      Mcr * mcr) {
   string line;
   int line_number = 0;
-  bool aux;
 
   set<string>::const_iterator srel_end = rels_source.end();
   while(mcrFile) {
@@ -307,20 +283,14 @@ void read_mcr(ifstream & mcrFile,
 //     //if (fields[3] == "xn") continue; // Skip Xwnet normal relations
 //     //if (fields[3] == "xs") continue; // Skip Xwnet silver relations
 
-    Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, fields[0]);
-    Mcr_vertex_t v = insert_synset_vertex(g, synsetMap, fields[1]);
+    Mcr_vertex_t u = mcr->findOrInsertNode(fields[0]);
+    Mcr_vertex_t v = mcr->findOrInsertNode(fields[1]);
+    //Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, fields[0]);
+    //Mcr_vertex_t v = insert_synset_vertex(g, synsetMap, fields[1]);
 
     // add edge
-    Mcr_edge_t e;
-    tie(e, aux) = edge(u, v, g);
-    if(!aux) {
-      tie(e, aux) = add_edge(u, v, g);
-    }    
-    // the other way around
-    tie(e, aux) = edge(v, u, g);
-    if(!aux) {
-      tie(e, aux) = add_edge(v, u, g);
-    }    
+    mcr->findOrInsertEdge(u, v);
+    mcr->findOrInsertEdge(v, u);
   }
 }
 
@@ -343,7 +313,7 @@ void Mcr::read_from_txt(const string & relFileName,
     throw;
   }
 
-  read_mcr(synsFile, g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);
+  read_mcr(synsFile, rels_source, this); // g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);
 }
 
 void Mcr::display_info(std::ostream & o) const {
@@ -359,7 +329,7 @@ void Mcr::display_info(std::ostream & o) const {
 
 
 void create_w2wpos_maps(const string & word,
-			map<string, vector<string> > & w2wPos,
+			vector<string> & wPosV,
 			map<string, vector<Mcr_vertex_t> > & wPos2Syns) {
 
   const Mcr & mcr = Mcr::instance();
@@ -399,39 +369,36 @@ void create_w2wpos_maps(const string & word,
     tie(m_it, auxP) = wPos2Syns.insert(make_pair(wpos, vector<Mcr_vertex_t>()));
     if (auxP) {
       // first appearence of word#pos
-      w2wPos[word].push_back(wpos);
+      wPosV.push_back(wpos);
     }
     m_it->second.push_back(u);
   }
 }
 
 
-void insert_wpos(map<string, vector<string> > & w2wPos,
+void insert_wpos(const string & word,
+		 vector<string> & wPosV,
 		 map<string, vector<Mcr_vertex_t> > & wPos2Syns) {
 
   Mcr & mcr = Mcr::instance();
 
-  map<string, vector<string> >::iterator w2wpos_it = w2wPos.begin();
-  map<string, vector<string> >::iterator w2wpos_end = w2wPos.end();
-  for(; w2wpos_it != w2wpos_end; ++w2wpos_it) {
-    // insert word
-    Mcr_vertex_t word_v = mcr.findOrInsertNode(w2wpos_it->first); 
+  // insert word
+  Mcr_vertex_t word_v = mcr.findOrInsertNode(word); 
 
-    vector<string>::iterator wpos_str_it = w2wpos_it->second.begin();
-    vector<string>::iterator wpos_str_end = w2wpos_it->second.end();
-    for (; wpos_str_it != wpos_str_end; ++wpos_str_it) {
-      //insert word#pos
-      Mcr_vertex_t wpos_v = mcr.findOrInsertNode(*wpos_str_it);
-      // link word to word#pos
-      mcr.findOrInsertEdge(word_v, wpos_v);
-      // link word#pos to synsets
-      vector<Mcr_vertex_t>::iterator syns_it = wPos2Syns[*wpos_str_it].begin();
-      vector<Mcr_vertex_t>::iterator syns_end = wPos2Syns[*wpos_str_it].end();
-      for(;syns_it != syns_end; ++syns_it) {
-	mcr.findOrInsertEdge(wpos_v, *syns_it);
-      }
-    }      
-  }
+  vector<string>::iterator wpos_str_it = wPosV.begin();
+  vector<string>::iterator wpos_str_end = wPosV.end();
+  for (; wpos_str_it != wpos_str_end; ++wpos_str_it) {
+    //insert word#pos
+    Mcr_vertex_t wpos_v = mcr.findOrInsertNode(*wpos_str_it);
+    // link word to word#pos
+    mcr.findOrInsertEdge(word_v, wpos_v);
+    // link word#pos to synsets
+    vector<Mcr_vertex_t>::const_iterator syns_it = wPos2Syns[*wpos_str_it].begin();
+    vector<Mcr_vertex_t>::const_iterator syns_end = wPos2Syns[*wpos_str_it].end();
+    for(;syns_it != syns_end; ++syns_it) {
+      mcr.findOrInsertEdge(wpos_v, *syns_it);
+    }
+  }      
 }
 
 void Mcr::add_words() {
@@ -442,29 +409,29 @@ void Mcr::add_words() {
   vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
 
   for(; word_it != word_end; ++word_it) {
-    map<string, vector<string> > w2wPos;
+    vector<string> wPosV;
     map<string, vector<Mcr_vertex_t> > wPos2Syns;
 
     // Create w2wPos and wPos2Syns maps
 
-    create_w2wpos_maps(*word_it, w2wPos, wPos2Syns);
+    create_w2wpos_maps(*word_it, wPosV, wPos2Syns);
 
     // Add vertices and link them in the MCR
-    insert_wpos(w2wPos, wPos2Syns);
+    insert_wpos(*word_it, wPosV, wPos2Syns);
   }
 }
 
 void Mcr::add_token(const string & token) {
 
-  map<string, vector<string> > w2wPos;
+  vector<string> wPosV;
   map<string, vector<Mcr_vertex_t> > wPos2Syns;
 
     // Create w2wPos and wPos2Syns maps
 
-  create_w2wpos_maps(token, w2wPos, wPos2Syns);
+  create_w2wpos_maps(token, wPosV, wPos2Syns);
 
     // Add vertices and link them in the MCR
-  insert_wpos(w2wPos, wPos2Syns);
+  insert_wpos(token, wPosV, wPos2Syns);
 
 
 }
@@ -487,7 +454,8 @@ void Mcr::ppv_weights(const vector<float> & ppv) {
 // PPV version
 
 void Mcr::pageRank_ppv(const vector<float> & ppv_map,
-		       vector<float> & ranks) {
+		       vector<float> & ranks,
+		       bool use_weight) {
 
   size_t N = num_vertices(g);
   vector<float> map_tmp(N, 0.0f);
@@ -503,9 +471,15 @@ void Mcr::pageRank_ppv(const vector<float> & ppv_map,
   tie(it, end) = vertices(g);
   copy(it, end, V.begin());
 
-  constant_property_map <Mcr_edge_t, float> cte_weight(1); // always return 1  
-  init_out_coefs(g, V, &out_coefs[0], cte_weight);
-  pageRank_iterate(g, V, &ppv_map[0], out_coefs, cte_weight, &ranks[0], &rank_tmp[0], 30); // 30 iterations
+  if (use_weight) {
+    property_map<Mcr::boost_graph_t, edge_weight_t>::type weight_map = get(edge_weight, g);
+    init_out_coefs(g, V, &out_coefs[0], weight_map);
+    pageRank_iterate(g, V, &ppv_map[0], out_coefs, weight_map, &ranks[0], &rank_tmp[0], 30); // 30 iterations    
+  } else {
+    constant_property_map <Mcr_edge_t, float> cte_weight(1); // always return 1
+    init_out_coefs(g, V, &out_coefs[0], cte_weight);
+    pageRank_iterate(g, V, &ppv_map[0], out_coefs, cte_weight, &ranks[0], &rank_tmp[0], 30); // 30 iterations
+  }
 }
 
 
@@ -534,18 +508,19 @@ Mcr_edge_t read_edge_from_stream(ifstream & is,
 
   size_t sIdx;
   size_t tIdx; 
-  //size_t id;
+  float w;
   //size_t source;
   bool insertedP;
   Mcr_edge_t e;
 
   read_atom_from_stream(is, sIdx);
   read_atom_from_stream(is, tIdx);
+  read_atom_from_stream(is, w);
   //read_atom_from_stream(is, id);
   //read_atom_from_stream(is, source);
   tie(e, insertedP) = add_edge(sIdx, tIdx, g);
   assert(insertedP);
-  //put(edge_id, g, e, id);
+  put(edge_weight, g, e, w);
   //put(edge_source, g, e, source);
 
   return e;
@@ -619,12 +594,12 @@ ofstream & write_edge_to_stream(ofstream & o,
 
   size_t uIdx = get(vertex_index, g, source(e,g));
   size_t vIdx = get(vertex_index, g, target(e,g));
-  //size_t id = get(edge_id, g, e);
+  float w = get(edge_weight, g, e);
   //size_t source = get(edge_source, g, e);
 
   o.write(reinterpret_cast<const char *>(&uIdx), sizeof(uIdx));
   o.write(reinterpret_cast<const char *>(&vIdx), sizeof(vIdx));
-  //o.write(reinterpret_cast<const char *>(&id), sizeof(id));
+  o.write(reinterpret_cast<const char *>(&w), sizeof(w));
   //o.write(reinterpret_cast<const char *>(&source), sizeof(source));
   return o;
 }
