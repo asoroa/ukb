@@ -68,8 +68,31 @@ void merge_cooc(string & fName) {
     mcr.findOrInsertEdge(u, v, w);
     mcr.findOrInsertEdge(v, u, w);			 
   }
-
 }
+
+void query (const string & str) {
+
+  Mcr & mcr = Mcr::instance();
+  McrGraph & g = mcr.graph();
+
+  bool aux;
+  Mcr_vertex_t u;
+  
+  tie(u, aux) = mcr.getVertexByName(str);
+  if (aux) {
+    cout << get(vertex_name, g, u);
+    cout << "\n";
+    graph_traits<Mcr::boost_graph_t>::out_edge_iterator it , end;
+    tie(it, end) = out_edges(u, g);
+    for(;it != end; ++it) {
+      cout << "  ";
+      cout << get(vertex_name, g, target(*it, g));
+      cout << ":" << get(edge_weight, g, *it) << "\n";
+    }
+  }
+}
+
+
 
 int main(int argc, char *argv[]) {
 
@@ -82,12 +105,14 @@ int main(int argc, char *argv[]) {
   bool opt_words = false;
   bool opt_param = false;
   bool opt_force_param = false;
+  bool opt_query = false;
 
   string cograph_filename;
   string fullname_out("mcr_wnet.bin");
   string relations_file("mcr_16_source/wei_relations.txt");
   string mcr_file;
   string out_dir;
+  string query_vertex;
 
   const size_t source_rels_N = 5;
   const char *source_rels_default[source_rels_N] = {"16", "20", "xg", "xn", "xs"};
@@ -112,6 +137,7 @@ int main(int argc, char *argv[]) {
     ("relations_file,r", value<string>(), "Specify file about relations (default mcr_16_source/wei_relations.txt).")
     ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
     ("param,p", value<string>(), "Specify parameter file.")
+    ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
     ("verbose,v", "Be verbose.")
     ;
   options_description po_desc_hide("Hidden");
@@ -157,6 +183,11 @@ int main(int argc, char *argv[]) {
     if (vm.count("param")) {
       parse_config(vm["param"].as<string>());
       opt_param = true;
+    }
+
+    if (vm.count("query")) {
+      opt_query = true;
+      query_vertex = vm["query"].as<string>();
     }
 
     if (vm.count("merge")) {
@@ -213,6 +244,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  if (opt_query) {
+    Mcr::create_from_binfile(mcr_file);
+    query(query_vertex);
+    return 1;
+  }
+
   if (!opt_param && !opt_force_param) {
     cerr << "Error: no param file. For using default values, use --force-default-values" << endl;
     return -1;
@@ -266,7 +303,7 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose) 
     cerr << "Wrote " << num_vertices(Mcr::instance().graph()) << " vertices and " << num_edges(Mcr::instance().graph()) << " edges" << endl;
 
-  return 1;
+  return 0;
 }
 
 /*
