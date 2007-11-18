@@ -260,7 +260,8 @@ void dis_csent(const vector<string> & input_files, const string & ext,
   //print_complete_csent(cout, cs, dg);
 }
 
-void dis_csent_hr(const string & input_file) {
+void dis_csent_hr(const string & input_file,
+		  bool with_weight = false) {
   
   ifstream fh_in(input_file.c_str());
 
@@ -276,6 +277,8 @@ void dis_csent_hr(const string & input_file) {
 
   Mcr::instance().add_words();
 
+  //Mcr::instance().write_to_binfile("kk.bin");
+  //return;
   try {
     while (cs.read_aw(fh_in)) {
 
@@ -700,7 +703,7 @@ int main(int argc, char *argv[]) {
 
   if (opt_do_hr) {
     Mcr::create_from_binfile(mcr_binfile);
-    dis_csent_hr(fullname_in);
+    dis_csent_hr(fullname_in, opt_with_w);
     return 0;
   }
 
