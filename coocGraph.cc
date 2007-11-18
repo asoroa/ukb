@@ -43,7 +43,7 @@ CoocGraph::edge_descriptor CoocGraph::findOrInsertEdge(CoocGraph::vertex_descrip
   if(!exists) {
     e = add_edge(u, v, g).first;
     // Initialize new edge
-    put(edge_freq, g, e, 0);
+    put(edge_freq, g, e, 0.0);
   }
   return e;
 }
@@ -66,6 +66,7 @@ CoocGraph::getVertexByName(const std::string & str) const {
 CoocGraph::CoocGraph(CoocGraph & cooc) {
 
   map<CoocGraph::vertex_descriptor, CoocGraph::vertex_descriptor> nMap;
+
   CoocGraph::vertex_iterator v_it, v_end;
   for(tie(v_it, v_end) = vertices(cooc.g); v_it != v_end; ++v_it) {
     if (out_degree(*v_it, cooc.g) > 0) {
@@ -83,6 +84,35 @@ CoocGraph::CoocGraph(CoocGraph & cooc) {
 	get(edge_freq, cooc.g, *e_it));
   }
   _docN = cooc._docN;
+}
+
+void CoocGraph::remove_isolated_vertices() {
+
+  CoocGraph coog;
+  map<CoocGraph::vertex_descriptor, CoocGraph::vertex_descriptor> nMap;
+
+  CoocGraph::vertex_iterator v_it, v_end;
+  for(tie(v_it, v_end) = vertices(g); v_it != v_end; ++v_it) {
+    if (out_degree(*v_it, g) > 0) {
+      CoocGraph::vertex_descriptor u = coog.findOrInsertNode(get(vertex_name, g, *v_it));
+      put(vertex_cfreq, coog.g, u,
+	  get(vertex_cfreq, g, *v_it));
+      nMap[*v_it] = u;
+    }
+  }
+  CoocGraph::edge_iterator e_it, e_end;
+  for(tie(e_it, e_end) = edges(g); e_it != e_end; ++e_it) {
+    CoocGraph::edge_descriptor e = coog.findOrInsertEdge(nMap[source(*e_it, g)],
+							 nMap[target(*e_it, g)]);
+    put(edge_freq, coog.g, e,
+	get(edge_freq, g, *e_it));
+  }
+
+  // swap cooGraphs
+
+  g.swap(coog.g);
+  _nodeMap.swap(coog._nodeMap);
+
 }
 
 //______________________________________________________________________________
@@ -122,7 +152,6 @@ string next_notempty(ifstream & fh) {
 void CoocGraph::fill_cograph(ifstream & fh) {
 
   string line;
-  string docId;
   char_separator<char> sep(" ");
 
   while(fh) {
@@ -233,8 +262,7 @@ ofstream & write_edge_to_stream(ofstream & o,
 }
 
 
-std::ofstream & CoocGraph::write_to_stream(std::ofstream & o, 
-					   bool remove_isolated_vertices) const {
+std::ofstream & CoocGraph::write_to_stream(std::ofstream & o) const {
 
   write_atom_to_stream(o, magic_id);
 
@@ -251,8 +279,7 @@ std::ofstream & CoocGraph::write_to_stream(std::ofstream & o,
   CoocGraph::vertex_iterator v_it, v_end;
   tie(v_it, v_end) = vertices(g);
   for(; v_it != v_end; ++v_it) {
-    if (remove_isolated_vertices && out_degree(*v_it, g) > 0)
-      write_vertex_to_stream(o, g, *v_it);
+    write_vertex_to_stream(o, g, *v_it);
   }
 
   write_atom_to_stream(o, magic_id);

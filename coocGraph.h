@@ -62,6 +62,8 @@ class CoocGraph {
 
   ~CoocGraph() {};
 
+  void remove_isolated_vertices();
+
   // Accessors
 
   boost_graph_t & graph() { return g; }
@@ -75,7 +77,7 @@ class CoocGraph {
 
   size_t num_vertices() { return boost::num_vertices(g); }
   size_t num_edges() { return boost::num_edges(g); }
-  size_t num_docs() { return _docSet.size(); }
+  size_t num_docs() { return _docN; }
 
   // fill graph
 
@@ -95,7 +97,7 @@ private:
 			     std::vector<vertex_descriptor> & doc);
 
   void read_from_stream (std::ifstream & is);
-  std::ofstream & write_to_stream(std::ofstream & o, bool remove_isolated_vertices = true) const;
+  std::ofstream & write_to_stream(std::ofstream & o) const;
 
   std::map<std::string, vertex_descriptor> _nodeMap;
   boost_graph_t g;
