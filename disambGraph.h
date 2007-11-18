@@ -45,7 +45,7 @@ class DisambGraph {
 
  public:
 
-  typedef DisambG boost_graph_type; // the underlying graph type
+  typedef DisambG boost_graph_t; // the underlying graph type
 
   DisambGraph();
 

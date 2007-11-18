@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   DisambGraph dg;
   dg.read_from_binfile(argv[1]);
 
-  DisambGraph::boost_graph_type & g = dg.graph();
+  DisambGraph::boost_graph_t & g = dg.graph();
 
   size_t N = num_vertices(g);
 
