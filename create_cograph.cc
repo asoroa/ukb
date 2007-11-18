@@ -77,8 +77,8 @@ void chsq (const string & input_name,
 
   coog.read_from_binfile(input_name);
   coog.chisq_prune(threshold);
-  CoocGraph coog2(coog); // Remove isolated vertices
-  coog2.write_to_binfile(output_name);
+  coog.remove_isolated_vertices();
+  coog.write_to_binfile(output_name);
 }
 
 
