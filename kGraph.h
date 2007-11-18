@@ -20,7 +20,7 @@ class KGraph {
 
  public:
 
-  typedef DisambG boost_graph_type; // the underlying graph type
+  typedef DisambG boost_graph_t; // the underlying graph type
 
   KGraph() {};
   KGraph(CSentence & cs, DisambGraph & disg);
