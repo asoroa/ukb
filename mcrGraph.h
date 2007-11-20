@@ -100,7 +100,7 @@ public:
 
   void pageRank_ppv(const std::vector<float> & ppv_map,
 		    std::vector<float> & ranks,
-		    bool use_weight = false);
+		    bool use_weight);
 
   void write_to_binfile (const std::string & str) const;
 
