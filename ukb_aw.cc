@@ -160,7 +160,7 @@ void create_wgraph_from_corpus (const string & fullname_in,
       // PPVs here
       vector<float> ranks;
 
-      bool ok = calculate_mcr_ranks(cs,ranks);
+      bool ok = calculate_mcr_ranks(cs,ranks, false);
       if (!ok) {
 	cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 	continue;
@@ -261,7 +261,7 @@ void dis_csent(const vector<string> & input_files, const string & ext,
 }
 
 void dis_csent_hr(const string & input_file,
-		  bool with_weight = false) {
+		  bool with_weight) {
   
   ifstream fh_in(input_file.c_str());
 
@@ -283,7 +283,7 @@ void dis_csent_hr(const string & input_file,
     while (cs.read_aw(fh_in)) {
 
       vector<float> ranks;
-      bool ok = calculate_mcr_ranks(cs,ranks);
+      bool ok = calculate_mcr_ranks(cs,ranks, with_weight);
       if (!ok) {
 	cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
 	cerr << "(No word links to MCR ?)\n";
@@ -292,6 +292,7 @@ void dis_csent_hr(const string & input_file,
 
       disamb_csentence_mcr(cs, ranks);
       cs.print_csent_aw(cout);
+      //cout << cs << '\n';
       cs = CSentence();
     }
   } 
@@ -301,7 +302,8 @@ void dis_csent_hr(const string & input_file,
   }
 }
 
-void dis_csent_classic_prank(const string & input_file) {
+void dis_csent_classic_prank(const string & input_file, 
+			     bool with_w) {
   
   ifstream fh_in(input_file.c_str());
 
@@ -316,7 +318,7 @@ void dis_csent_classic_prank(const string & input_file) {
   size_t N = Mcr::instance().size();
   vector<float> ppv(N, 1.0/static_cast<float>(N));
   vector<float> ranks;
-  Mcr::instance().pageRank_ppv(ppv, ranks);
+  Mcr::instance().pageRank_ppv(ppv, ranks, with_w);
 
   try {
     while (cs.read_aw(fh_in)) {
@@ -426,7 +428,7 @@ void do_dgraph_gviz(const vector<string> & input_files,
 
 void test (const string & fullname_in, const string & out_dir) {
 
-  dis_csent_hr(fullname_in);
+  dis_csent_hr(fullname_in, false);
 }
 
 
@@ -709,7 +711,7 @@ int main(int argc, char *argv[]) {
 
   if (opt_do_mcr_prank) {
     Mcr::create_from_binfile(mcr_binfile);
-    dis_csent_classic_prank(fullname_in);
+    dis_csent_classic_prank(fullname_in, opt_with_w);
     return 0;
   }
 
