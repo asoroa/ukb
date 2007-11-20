@@ -52,7 +52,7 @@ void update_pRank(G & g,
     float dangling_factor = 0.0;
     if (0.0 == out_coef[*v]) {
       // dangling link
-      std::cerr << ".";
+      //std::cerr << ".";
       dangling_factor = damping*rank_map1[*v];
     }
     rank_map2[*v] = damping*rank + (dangling_factor + 1.0 - damping )*ppv_V[*v];
