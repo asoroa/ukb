@@ -39,6 +39,9 @@ public:
   size_type size() const {return syns.size(); }
 
   std::string word() const { return w; }
+
+  std::string wpos() const;
+
   std::string id() const {return cw_id;}
   char get_pos() const {return pos;}
 
@@ -137,7 +140,8 @@ private:
 };
 
 bool calculate_mcr_ranks(const CSentence & cs,
-			 std::vector<float> & res);
+			 std::vector<float> & res,
+			 bool with_weight);
 
 void disamb_csentence_mcr(CSentence & cs,
                           std::vector<float> & ranks);

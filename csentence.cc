@@ -78,6 +78,15 @@ CWord::CWord(const string & w_, const string & id_, char pos_, bool dist_)
   shuffle_synsets();
 }
 
+string CWord::wpos() const {
+
+  string wpos(w);
+  wpos.append("#");
+  char pos = get_pos();
+  wpos.append(1,pos);
+  return wpos;
+};
+
 
 struct CWSort {
 
@@ -117,21 +126,12 @@ std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
   o << cw_.w;
   if (cw_.pos) 
     o << "-" << cw_.pos;
-  o << "#" << cw_.cw_id << "#" << cw_.distinguished;
-  o << "{";
-  std::vector<string>::const_iterator it = cw_.syns.begin();
-  std::vector<string>::const_iterator it_end = cw_.syns.end();
-  if (it != it_end) {
-    --it_end;
-    copy(it, it_end, ostream_iterator<string>(o, ","));
-    o << *it_end;
-//     while(it != it_end) {
-//       o << get(vertex_name, g, *it) << ",";
-//       ++it;
-//     }
-//     o << get(vertex_name, g, *it_end);
+  o << "#" << cw_.cw_id << "#" << cw_.distinguished << " " << cw_.ranks_equal << " " << cw_.disamb;
+  o << '\n';
+  for(size_t i = 0; i < cw_.syns.size(); ++i) {
+    assert(i < cw_.ranks.size());
+    o << cw_.syns[i] << ":" << cw_.ranks[i] << '\n';
   }
-  o << "}";
   return o;
 }
 
@@ -299,7 +299,8 @@ std::ostream & CSentence::print_csent_aw(std::ostream & o) const {
 // Initial PPV is computed a la hughes&ramage97
 
 bool calculate_mcr_ranks(const CSentence & cs,
-			 vector<float> & res) {
+			 vector<float> & res,
+			 bool with_weight) {
 
   Mcr & mcr = Mcr::instance();
   bool aux;
@@ -315,10 +316,9 @@ bool calculate_mcr_ranks(const CSentence & cs,
   for(;it != end; ++it) {
     //if(!it->is_distinguished()) continue;
     
-    string wpos(it->word());
-    wpos.append("#");
-    char pos = it->get_pos();
-    wpos.append(1,pos);
+    //string wpos = it->wpos();
+    string wpos = it->word();
+
     Mcr_vertex_t u;
     tie(u, aux) = mcr.getVertexByName(wpos);
     if (aux) {
@@ -333,7 +333,7 @@ bool calculate_mcr_ranks(const CSentence & cs,
     *rit *= div;
 
   // Execute PageRank
-  mcr.pageRank_ppv(ppv, res);
+  mcr.pageRank_ppv(ppv, res, with_weight);
   return true;
 }
 
