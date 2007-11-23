@@ -1,4 +1,5 @@
 #include "common.h"
+#include "globalVars.h"
 #include "fileElem.h"
 #include "coocGraph.h"
 
@@ -70,13 +71,12 @@ bool extract_input_files(const string & fullname,
 }
 
 void chsq (const string & input_name,
-	   const string & output_name,
-	   float threshold) {
+	   const string & output_name) {
 
   CoocGraph coog;
 
   coog.read_from_binfile(input_name);
-  coog.chisq_prune(threshold);
+  coog.chisq_prune();
   coog.remove_isolated_vertices();
   coog.write_to_binfile(output_name);
 }
@@ -99,7 +99,7 @@ void query (const string & coName, const string & str) {
     for(;it != end; ++it) {
       cout << "  ";
       write_vertex(cout, target(*it, coog.graph()), coog.graph());
-      cout << ":" << get(edge_freq, coog.graph(), *it) << "\n";
+      cout << " " << get(edge_freq, coog.graph(), *it) << "\n";
     }
   }
 }
@@ -109,7 +109,9 @@ void info (string & coName) {
   CoocGraph coog;
 
   coog.read_from_binfile(coName);
-  cout << "V:" << coog.num_vertices() << " E:" << coog.num_edges() << " Docs:" << coog.num_docs() << endl;
+  size_t edge_n = coog.num_edges();
+  if (edge_n & 2) edge_n++; 
+  cout << "V:" << coog.num_vertices() << " E:" << edge_n/2 << " Docs:" << coog.num_docs() << endl;
 }
 
 void histogram (string & coName) {
@@ -132,7 +134,12 @@ void test(string & coName) {
 
   coog.read_from_binfile(coName);
 
-  coog.write_to_binfile(coName);
+  CoocGraph::vertex_iterator it, end;
+  for(tie(it, end) = vertices(coog.graph()); it != end; ++it) {
+    if(out_degree(*it, coog.graph()) == 0) {
+      cout << get(vertex_name, coog.graph(), *it) << '\n';
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -153,10 +160,12 @@ int main(int argc, char *argv[]) {
   string fullname_in;
   string graph_binfile("coocgraph.bin");
 
+
+  float threshold = 0.0; // 95.0% confidence
   //float threshold = 3.84146; // 95.0% confidence
   //float threshold = 5.41189; // 98.0% confidence
   //float threshold = 6.6349;  // 99.0% confidence
-  float threshold = 10.827;  // 99.99% confidence
+  //float threshold = 10.827;  // 99.99% confidence
 
 
 
@@ -229,7 +238,7 @@ int main(int argc, char *argv[]) {
 
     // verbosity
     if (vm.count("verbose")) {
-      opt_verbose = 1;
+      glVars::verbose = 1;
     }
 
     if (vm.count("test")) {
@@ -239,6 +248,10 @@ int main(int argc, char *argv[]) {
     if (vm.count("query")) {
       opt_query = true;
       query_vertex = vm["query"].as<string>();
+    }
+
+    if (vm.count("threshold")) {
+      glVars::chsq::threshold = vm["threshold"].as<float>();
     }
 
     if (vm.count("input-file")) {
@@ -289,11 +302,14 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_chsq) {
-    if (threshold < 0.0) {
+    if (glVars::chsq::threshold < 0.0) {
       cerr << "Error: negative threshold\n";
       return -1;
     }
-    chsq(input_files[0], graph_binfile, threshold);
+    if (glVars::verbose) {
+      cout << "Cooc min: " << glVars::chsq::cooc_min << " Threshold: " << glVars::chsq::threshold << '\n';
+    }
+    chsq(input_files[0], graph_binfile);
     return 0;
   }
 
