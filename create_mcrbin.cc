@@ -56,7 +56,7 @@ void merge_cooc(string & fName) {
 
   CoocGraph::vertex_iterator v_it, v_end;
   for(tie(v_it, v_end) = vertices(coog.graph()); v_it != v_end; ++v_it) {
-    Mcr_vertex_t u = mcr.findOrInsertNode(get(vertex_name, coog.graph(), *v_it));
+    Mcr_vertex_t u = mcr.findOrInsertWord(get(vertex_name, coog.graph(), *v_it));
     uMap[*v_it] = u;
   }
 
