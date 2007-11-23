@@ -5,7 +5,7 @@ SOURCEMAIN = create_cograph.cc
 
 # Library files
 
-SRC = common.cc fileElem.cc coocGraph.cc
+SRC = common.cc fileElem.cc coocGraph.cc globalVars.cc
 
 # Don't change anything below
 #DEBUG = 1
