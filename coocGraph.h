@@ -85,7 +85,7 @@ class CoocGraph {
 
   // Chi square and prunning
 
-  void CoocGraph::chisq_prune(float threshold);
+  void CoocGraph::chisq_prune();
 
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);

@@ -1,5 +1,6 @@
 #include "coocGraph.h"
 #include "common.h"
+#include "globalVars.h" // min number of coocurrences
 
 #include<boost/tuple/tuple.hpp> // for "tie"
 
@@ -193,17 +194,20 @@ struct EdgeZeroChsq {
 };
 
 
-void CoocGraph::chisq_prune(float threshold) {
+void CoocGraph::chisq_prune() {
 
    CoocGraph::edge_iterator e, end;
    tie(e, end) = edges(g);
    for(; e != end; ++e) {
 
      CoocGraph::vertex_descriptor vi = source(*e, g);
-     CoocGraph::vertex_descriptor vj = target(*e, g);
+     CoocGraph::vertex_descriptor vj = target(*e, g);     
 
      // Confusion matrix O
-     size_t o11 = static_cast<size_t>(get(edge_freq, g, *e));
+     size_t o11 = static_cast<size_t>(get(edge_freq, g, *e));     
+     put(edge_freq, g , *e, 0.0); // Reset edge weigth
+     if (o11 < glVars::chsq::cooc_min) continue;
+
      size_t o12 = get(vertex_cfreq, g, vi) - o11;
      size_t o21 = get(vertex_cfreq, g, vj) - o11;
      size_t o22 = _docN - (get(vertex_cfreq, g, vi) + get(vertex_cfreq, g, vj) - o11);
@@ -212,8 +216,10 @@ void CoocGraph::chisq_prune(float threshold) {
      size_t b = (o11 + o12) * (o11 + o21) * (o12 + o22) + (o21 + o22);
   
      double chsq = static_cast<double>(_docN*a*a) / static_cast<double>(b);
-     if (chsq < threshold) put(edge_freq, g , *e, 0.0);
-     else put(edge_freq, g , *e, static_cast<float>(chsq));     
+     if (chsq > glVars::chsq::threshold) {
+       // Only update weigth if confident enough
+       put(edge_freq, g , *e, static_cast<float>(chsq));
+     }
    }
    remove_edge_if(EdgeZeroChsq(g, 0.0), g);
 }
@@ -224,7 +230,7 @@ void CoocGraph::chisq_prune(float threshold) {
 void write_vertex(ostream & o, const CoocGraph::vertex_descriptor & v,
 		  const CoocGraph::boost_graph_t & g) {
 
-  o << get(vertex_name, g, v) << ":" << get(vertex_cfreq, g, v) << ":";
+  o << get(vertex_name, g, v) << " " << get(vertex_cfreq, g, v) << " ";
 }
 
 //______________________________________________________________________________
