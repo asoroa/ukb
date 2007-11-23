@@ -175,17 +175,38 @@ bool Mcr::dijkstra (Mcr_vertex_t src,
 
 
 pair<Mcr_vertex_t, bool> Mcr::getVertexByName(const std::string & str) const {
-  map<string, Mcr_vertex_t>::const_iterator it = synsetMap.find(str);
-  if (it == synsetMap.end()) return make_pair(Mcr_vertex_t(), false);
+  map<string, Mcr_vertex_t>::const_iterator it;
+
+  it = synsetMap.find(str);
+  if (it != synsetMap.end()) return make_pair(it->second, true);
+
+  // is it a word ?
+  it = wordMap.find(str);
+  if (it == wordMap.end()) return make_pair(Mcr_vertex_t(), false);
   return make_pair(it->second, true);
 }
 
-Mcr_vertex_t Mcr::findOrInsertNode(const string & str) {
+Mcr_vertex_t Mcr::findOrInsertSynset(const string & str) {
   Mcr_vertex_t u;
   map<string, Mcr_vertex_t>::iterator it;
   bool insertedP;
 
   tie(it, insertedP) = synsetMap.insert(make_pair(str, Mcr_vertex_t()));
+  if(insertedP) {
+    // new vertex
+    u = add_vertex(g);
+    put(vertex_name, g, u, str);
+    it->second = u;
+  }
+  return it->second;
+}
+
+Mcr_vertex_t Mcr::findOrInsertWord(const string & str) {
+  Mcr_vertex_t u;
+  map<string, Mcr_vertex_t>::iterator it;
+  bool insertedP;
+
+  tie(it, insertedP) = wordMap.insert(make_pair(str, Mcr_vertex_t()));
   if(insertedP) {
     // new vertex
     u = add_vertex(g);
@@ -283,8 +304,8 @@ void read_mcr(ifstream & mcrFile,
 //     //if (fields[3] == "xn") continue; // Skip Xwnet normal relations
 //     //if (fields[3] == "xs") continue; // Skip Xwnet silver relations
 
-    Mcr_vertex_t u = mcr->findOrInsertNode(fields[0]);
-    Mcr_vertex_t v = mcr->findOrInsertNode(fields[1]);
+    Mcr_vertex_t u = mcr->findOrInsertSynset(fields[0]);
+    Mcr_vertex_t v = mcr->findOrInsertSynset(fields[1]);
     //Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, fields[0]);
     //Mcr_vertex_t v = insert_synset_vertex(g, synsetMap, fields[1]);
 
@@ -320,7 +341,10 @@ void Mcr::display_info(std::ostream & o) const {
 
   o << "Relation sources: ";
   writeS(o, relsSource);
-  o << "\n" << num_vertices(g) << " vertices and " << num_edges(g) << " edges" << endl;
+  size_t edge_n = num_edges(g);
+  if (edge_n & 2) edge_n++; 
+
+  o << "\n" << num_vertices(g) << " vertices and " << edge_n/2 << " edges" << endl;
 
 }
 
@@ -383,13 +407,13 @@ void insert_wpos(const string & word,
   Mcr & mcr = Mcr::instance();
 
   // insert word
-  Mcr_vertex_t word_v = mcr.findOrInsertNode(word); 
+  Mcr_vertex_t word_v = mcr.findOrInsertWord(word); 
 
   vector<string>::iterator wpos_str_it = wPosV.begin();
   vector<string>::iterator wpos_str_end = wPosV.end();
   for (; wpos_str_it != wpos_str_end; ++wpos_str_it) {
     //insert word#pos
-    Mcr_vertex_t wpos_v = mcr.findOrInsertNode(*wpos_str_it);
+    Mcr_vertex_t wpos_v = mcr.findOrInsertSynset(*wpos_str_it);
     // link word to word#pos
     mcr.findOrInsertEdge(word_v, wpos_v);
     // link word#pos to synsets
@@ -541,8 +565,9 @@ void  Mcr::read_from_stream (std::ifstream & is) {
   read_set_from_stream(is, relsSource);
   read_map_from_stream(is, relMap);
   create_inverse_map(relMap, relMapInv);
-  //read_map(is, relType);
-  //read_map(is, relInv);
+
+  read_map_from_stream(is, synsetMap);
+  read_map_from_stream(is, wordMap);
   //read_map_from_stream(is, sourceMap);
 
   read_atom_from_stream(is, id);
@@ -612,8 +637,9 @@ ofstream & Mcr::write_to_stream(ofstream & o) const {
 
   write_vector_to_stream(o, relsSource);
   write_map_to_stream(o, relMap);
-  //write_map_to_stream(o, relType);
-  //write_map_to_stream(o, relInv);
+
+  write_map_to_stream(o, synsetMap);
+  write_map_to_stream(o, wordMap);
   //write_map_to_stream(o, sourceMap);
 
   write_atom_to_stream(o, magic_id);

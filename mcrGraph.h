@@ -89,7 +89,9 @@ public:
   std::pair<Mcr_vertex_t, bool> getVertexByName(const std::string & str) const;
   std::string  getVertexName(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
 
-  Mcr_vertex_t findOrInsertNode(const std::string & str);
+  Mcr_vertex_t findOrInsertSynset(const std::string & str);
+  Mcr_vertex_t findOrInsertWord(const std::string & str);
+
   Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w = 1.0 );
 
 
@@ -134,6 +136,7 @@ private:
   McrGraph g;
   std::set<std::string> relsSource;
   std::map<std::string, Mcr_vertex_t> synsetMap; // synset name to vertex id
+  std::map<std::string, Mcr_vertex_t> wordMap; // synset name to vertex id
   std::map<std::string, int> relMap;     // maps from relation name to relation id
   std::map<int, std::string> relMapInv;  // maps from relation id to relation name
 
