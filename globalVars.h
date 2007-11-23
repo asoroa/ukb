@@ -22,6 +22,11 @@ namespace glVars {
   extern bool mcr_with_freqs;
   extern bool output_monosemous;
 
+  namespace chsq {
+    extern size_t cooc_min;
+    extern float threshold;
+  }
+
   extern boost::mt19937 rand_generator;
 
   // Maiztasunak

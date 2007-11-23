@@ -16,6 +16,11 @@ namespace glVars {
 
   boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
+  namespace chsq {
+    size_t cooc_min = 5;
+    float threshold = 3.84146; // 95.0% confidence;
+  }
+
   RankAlg rAlg = pageRank;
 
 //   bool word_norep = 0;
