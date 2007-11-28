@@ -214,7 +214,7 @@ istream & CSentence::read_aw(istream & is) {
       tokenizer<char_separator<char> > wtok(*it, wsep);
       copy(wtok.begin(), wtok.end(), back_inserter(fields));
       if (fields.size() != 4) 
-	throw "Bad word " + lexical_cast<string>(i);
+	throw "Bad word " + *it + " " + lexical_cast<string>(i);
       CWord new_cw(fields[0], fields[2], fields[1].at(0), lexical_cast<bool>(fields[3]));
       if (new_cw.size()) {
 	v.push_back(new_cw);
