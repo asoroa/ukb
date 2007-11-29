@@ -3,11 +3,13 @@ To create a branch
 
 1) make sure all changes are commited
 
-2) create a directory under Mcr_main (via emacs), or
+2) update the repository, so all files have same revision number (U key in svn-status)
+
+3) create a directory under Mcr_main (via emacs), or
 
 % svn mkdir svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main_tags/s2aw_exp
 
-3) make a copy (branch) of current HEAD directories Main, Preproc to new created directory
+4) make a copy (branch) of current HEAD directories Main, Preproc to new created directory
 
 % svn copy svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main_tags/s2aw_exp -m "s2aw experiments branch"
 % svn copy svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Preproc svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main_tags/s2aw_exp -m "s2aw experiments branch"
