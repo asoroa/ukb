@@ -9,8 +9,8 @@ To create a branch
 
 3) make a copy (branch) of current HEAD directories Main, Preproc to new created directory
 
-% svn copy svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main_tags/s2aw_exp
-% svn copy svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Preproc svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main_tags/s2aw_exp
+% svn copy svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main_tags/s2aw_exp -m "s2aw experiments branch"
+% svn copy svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Preproc svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main_tags/s2aw_exp -m "s2aw experiments branch"
 
 
 ///////////////////////////
