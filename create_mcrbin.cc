@@ -70,6 +70,19 @@ void merge_cooc(string & fName) {
   }
 }
 
+void merge_ts() {
+
+  W2Syn & w2syn = W2Syn::instance(); // filename previously assigned
+
+  vector<string>::const_iterator word_it = w2syn.get_wordlist().begin();
+  vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
+  for(; word_it != word_end; ++word_it) {
+    vector<string>::const_iterator syn_it, syn_end;
+    tie(syn_it, syn_end) = w2syn.get_wsyns(*word_it);
+    Mcr::instance().add_words(true); // with weights!
+  }
+}
+
 void query (const string & str) {
 
   Mcr & mcr = Mcr::instance();
@@ -101,8 +114,8 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_info = false;
-  bool opt_merge = false;
-  bool opt_words = false;
+  bool opt_cooc = false;
+  bool opt_ts = false;
   bool opt_param = false;
   bool opt_force_param = false;
   bool opt_query = false;
@@ -131,8 +144,8 @@ int main(int argc, char *argv[]) {
     ("help,h", "This help page.")
     ("force-default-values,f", "Use default relations.")
     ("info,i", "Give info about some Mcr binfile.")
-    ("words", "Insert word and word#pos nodes in the MCR.")
-    ("merge,m", value<string>(), "Merge a coocurrence graph to a serialization graph.")
+    ("cooc,c", value<string>(), "Merge a coocurrence graph to a serialization graph.")
+    ("ts,t", value<string>(), "Merge topic signatures in a serialization graph. Asks for the textfile with ts info.")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("relations_file,r", value<string>(), "Specify file about relations (default mcr_16_source/wei_relations.txt).")
     ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
@@ -190,18 +203,18 @@ int main(int argc, char *argv[]) {
       query_vertex = vm["query"].as<string>();
     }
 
-    if (vm.count("merge")) {
-      opt_merge = true;
-      cograph_filename = vm["merge"].as<string>();
+    if (vm.count("cooc")) {
+      opt_cooc = true;
+      cograph_filename = vm["cooc"].as<string>();
     }
 
+    if (vm.count("ts")) {
+      opt_ts = true;
+      glVars::w2s_filename = vm["ts"].as<string>(); // use w2s to read ts file
+    }
 
     if (vm.count("force-default-values")) {
       opt_force_param = true;
-    }
-
-    if (vm.count("words")) {
-      opt_words = true;
     }
 
     if (vm.count("out_dir")) {
@@ -237,9 +250,10 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  if (opt_merge) {
+  if (opt_cooc || opt_ts) {
     Mcr::create_from_binfile(mcr_file);
-    merge_cooc(cograph_filename);
+    if (opt_cooc) merge_cooc(cograph_filename);
+    if (opt_ts) merge_ts();
     Mcr::instance().write_to_binfile(fullname_out);
     return 1;
   }
@@ -277,23 +291,6 @@ int main(int argc, char *argv[]) {
     cerr << "Reading relations"<< endl;
 
   Mcr::create_from_txt(relations_file, mcr_file, source_rels);
-
-  if (!opt_words) {
-    if (glVars::verbose) 
-      cerr << "Skipping words"<< endl;
-  } else {
-    if (glVars::verbose) 
-      cerr << "Adding word nodes to MCR"<< endl;
-
-    W2Syn & w2syn = W2Syn::instance();
-    vector<string>::const_iterator word_it = w2syn.get_wordlist().begin();
-    vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
-    for(; word_it != word_end; ++word_it) {
-      vector<string>::const_iterator syn_it, syn_end;
-      tie(syn_it, syn_end) = w2syn.get_wsyns(*word_it);
-      Mcr::instance().add_words();
-    }
-  }
 
   File_elem mcr_fe(fullname_out);
   mcr_fe.set_path(out_dir);
