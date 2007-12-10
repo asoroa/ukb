@@ -149,7 +149,7 @@ void create_wgraph_from_corpus (const string & fullname_in,
   if (glVars::verbose) 
     cerr << "Adding words to Mcr ...\n";
 
-  Mcr::instance().add_words();
+  Mcr::instance().add_words(false);
 
   vector<CSentence> vcs;
   CSentence cs;
@@ -275,7 +275,7 @@ void dis_csent_hr(const string & input_file,
   if (glVars::verbose) 
     cerr << "Adding words to Mcr ...\n";
 
-  Mcr::instance().add_words();
+  Mcr::instance().add_words(false);
 
   //Mcr::instance().write_to_binfile("kk.bin");
   //return;
