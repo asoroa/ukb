@@ -18,7 +18,7 @@ extern const std::string w2s_filename;
 
 struct W2Syn_item {
   std::vector<std::string> wsyns;
-  std::vector<size_t> syns_count;
+  std::vector<float> syns_count;
   bool has_freq;
 };
 
@@ -31,6 +31,10 @@ public:
 
   std::pair<std::vector<std::string>::const_iterator, std::vector<std::string>::const_iterator> 
   get_wsyns(const std::string & word) const;
+
+  std::pair<std::vector<float>::const_iterator, std::vector<float>::const_iterator>
+  get_weights(const std::string & word) const;
+
   bool syn_counts(std::map<std::string, size_t> & res) const;
 
   const std::vector<std::string> & get_wordlist() const { return words; }

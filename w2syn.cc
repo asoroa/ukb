@@ -76,46 +76,52 @@ void read_w2syn_file(const string & fname,
   bool insertedP;
   int words_I = 0;
 
-  while(fh) {
-    vector<string> fields;
-    std::getline(fh, line, '\n');
-    line_number++;
-    char_separator<char> sep(" ");
-    tokenizer<char_separator<char> > tok(line, sep);
-    copy(tok.begin(), tok.end(), back_inserter(fields));
-    if (fields.size() == 0) continue; // blank line
-    if (fields.size() < 2) {
-      cerr << "read_w2syn_file error. Bad line: " << line_number << endl;
-      exit(-1);
-    }
-    vector<string>::const_iterator fields_it = fields.begin();
-    vector<string>::const_iterator fields_end = fields.end();
-    ++fields_it;
-    W2Syn::w2syns_t::iterator map_value_it;
-
-    words[words_I] = fields[0]; // insert word
-    tie(map_value_it, insertedP) = w2syns.insert(make_pair(&words[words_I], W2Syn_item()));
-    words_I++;
-
-    W2Syn_item & item = map_value_it->second;
-
-    for(; fields_it != fields_end; ++fields_it) {
-      char_separator<char> sf_sep(":");
-      tokenizer<char_separator<char> > sf_tok(*fields_it, sf_sep);
-      vector<string> syn_freq;
-      copy(sf_tok.begin(), sf_tok.end(), back_inserter(syn_freq));
-      if (syn_freq.size() == 0) {
+  try {
+    while(fh) {
+      vector<string> fields;
+      std::getline(fh, line, '\n');
+      line_number++;
+      char_separator<char> sep(" ");
+      tokenizer<char_separator<char> > tok(line, sep);
+      copy(tok.begin(), tok.end(), back_inserter(fields));
+      if (fields.size() == 0) continue; // blank line
+      if (fields.size() < 2) {
 	cerr << "read_w2syn_file error. Bad line: " << line_number << endl;
 	exit(-1);
       }
-      item.wsyns.push_back(syn_freq[0]);
-      if (syn_freq.size() > 1) {
-	item.has_freq = true;
-	item.syns_count.push_back(lexical_cast<size_t>(syn_freq[1]));
-      } else {
-	item.has_freq = false;
+      vector<string>::const_iterator fields_it = fields.begin();
+      vector<string>::const_iterator fields_end = fields.end();
+      ++fields_it;
+      W2Syn::w2syns_t::iterator map_value_it;
+
+      words[words_I] = fields[0]; // insert word
+      tie(map_value_it, insertedP) = w2syns.insert(make_pair(&words[words_I], W2Syn_item()));
+      words_I++;
+
+      W2Syn_item & item = map_value_it->second;
+
+      for(; fields_it != fields_end; ++fields_it) {
+	char_separator<char> sf_sep(":");
+	tokenizer<char_separator<char> > sf_tok(*fields_it, sf_sep);
+	vector<string> syn_freq;
+	copy(sf_tok.begin(), sf_tok.end(), back_inserter(syn_freq));
+	if (syn_freq.size() == 0) {
+	  cerr << "read_w2syn_file error. Bad line: " << line_number << endl;
+	  exit(-1);
+	}
+	item.wsyns.push_back(syn_freq[0]);
+	if (syn_freq.size() > 1) {
+	  item.has_freq = true;
+	  item.syns_count.push_back(lexical_cast<float>(syn_freq[1]));
+	} else {
+	  item.has_freq = false;
+	}
       }
-    }    
+    }
+  } catch (boost::bad_lexical_cast & e) {
+    cerr << "Error in " << fname << " line " << line_number << endl;;
+    cerr << e.what();
+    exit(-1);
   }
 }
   
@@ -136,6 +142,16 @@ W2Syn::get_wsyns(const std::string & word) const {
   return make_pair(map_value_it->second.wsyns.begin(),map_value_it->second.wsyns.end());
 }
 
+
+std::pair<vector<float>::const_iterator, vector<float>::const_iterator>
+W2Syn::get_weights(const std::string & word) const {
+  vector<float>::const_iterator null_it;
+  w2syns_t::const_iterator map_value_it = m_w2syns.find(&word);
+  if (map_value_it == m_w2syns.end()) return make_pair(null_it, null_it); // null
+  return make_pair(map_value_it->second.syns_count.begin(),map_value_it->second.syns_count.end());
+};
+
+
 bool W2Syn::syn_counts(map<string, size_t> & res) const {
 
   map<string, size_t>().swap(res); // empty res
@@ -150,9 +166,10 @@ bool W2Syn::syn_counts(map<string, size_t> & res) const {
     for(size_t i = 0; i != m; ++i) {
       bool insertedP;
       map<string, size_t>::iterator map_it;
-      tie(map_it, insertedP) = res.insert(make_pair(item.wsyns[i], item.syns_count[i]));
+      size_t synset_n = lexical_cast<size_t>(item.syns_count[i]);
+      tie(map_it, insertedP) = res.insert(make_pair(item.wsyns[i], synset_n));
       if(!insertedP) {
-	map_it->second += item.syns_count[i];
+	map_it->second += synset_n;
       }
     }
   }
