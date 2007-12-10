@@ -352,21 +352,26 @@ void Mcr::display_info(std::ostream & o) const {
 // Add token vertices and link them to synsets
 
 
+
+typedef pair<Mcr_vertex_t, float> Syn_elem;
+
 void create_w2wpos_maps(const string & word,
 			vector<string> & wPosV,
-			map<string, vector<Mcr_vertex_t> > & wPos2Syns) {
+			map<string, vector<Syn_elem> > & wPos2Syns) {
 
   const Mcr & mcr = Mcr::instance();
   W2Syn & w2syn = W2Syn::instance();
 
   vector<string>::const_iterator syns_it, syns_end;
+  vector<float>::const_iterator weight_it, weight_end;
   tie(syns_it, syns_end) = w2syn.get_wsyns(word);
+  tie (weight_it, weight_end) = w2syn.get_weights(word);
 
   char_separator<char> sep("-");
   bool auxP;
 
-  for(;syns_it != syns_end; ++syns_it) {
-
+  for(;syns_it != syns_end; ++syns_it, ++weight_it) {
+    assert(weight_it != weight_end);
     vector<string> fields(2);
     tokenizer<char_separator<char> > tok(*syns_it, sep);
     copy(tok.begin(), tok.end(), fields.begin());
@@ -388,21 +393,22 @@ void create_w2wpos_maps(const string & word,
       continue;
     }
     
-    map<string, vector<Mcr_vertex_t> >::iterator m_it;
+    map<string, vector<Syn_elem> >::iterator m_it;
 
-    tie(m_it, auxP) = wPos2Syns.insert(make_pair(wpos, vector<Mcr_vertex_t>()));
+    tie(m_it, auxP) = wPos2Syns.insert(make_pair(wpos, vector<Syn_elem>()));
     if (auxP) {
       // first appearence of word#pos
       wPosV.push_back(wpos);
     }
-    m_it->second.push_back(u);
+    m_it->second.push_back(make_pair(u, *weight_it));
   }
 }
 
 
 void insert_wpos(const string & word,
 		 vector<string> & wPosV,
-		 map<string, vector<Mcr_vertex_t> > & wPos2Syns) {
+		 map<string, vector<Syn_elem> > & wPos2Syns,
+		 bool use_weights) {
 
   Mcr & mcr = Mcr::instance();
 
@@ -417,15 +423,19 @@ void insert_wpos(const string & word,
     // link word to word#pos
     mcr.findOrInsertEdge(word_v, wpos_v);
     // link word#pos to synsets
-    vector<Mcr_vertex_t>::const_iterator syns_it = wPos2Syns[*wpos_str_it].begin();
-    vector<Mcr_vertex_t>::const_iterator syns_end = wPos2Syns[*wpos_str_it].end();
+    vector<Syn_elem>::const_iterator syns_it = wPos2Syns[*wpos_str_it].begin();
+    vector<Syn_elem>::const_iterator syns_end = wPos2Syns[*wpos_str_it].end();
     for(;syns_it != syns_end; ++syns_it) {
-      mcr.findOrInsertEdge(wpos_v, *syns_it);
+      if (use_weights) {
+	mcr.findOrInsertEdge(wpos_v, syns_it->first, syns_it->second);
+      } else {
+	mcr.findOrInsertEdge(wpos_v, syns_it->first);
+      }
     }
   }      
 }
 
-void Mcr::add_words() {
+void Mcr::add_words(bool with_weight) {
 
   W2Syn & w2syn = W2Syn::instance();
 
@@ -433,29 +443,21 @@ void Mcr::add_words() {
   vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
 
   for(; word_it != word_end; ++word_it) {
-    vector<string> wPosV;
-    map<string, vector<Mcr_vertex_t> > wPos2Syns;
-
-    // Create w2wPos and wPos2Syns maps
-
-    create_w2wpos_maps(*word_it, wPosV, wPos2Syns);
-
-    // Add vertices and link them in the MCR
-    insert_wpos(*word_it, wPosV, wPos2Syns);
+    add_token(*word_it, with_weight);
   }
 }
 
-void Mcr::add_token(const string & token) {
+void Mcr::add_token(const string & token, bool with_weight) {
 
   vector<string> wPosV;
-  map<string, vector<Mcr_vertex_t> > wPos2Syns;
+  map<string, vector<Syn_elem> > wPos2Syns;
 
     // Create w2wPos and wPos2Syns maps
 
   create_w2wpos_maps(token, wPosV, wPos2Syns);
 
     // Add vertices and link them in the MCR
-  insert_wpos(token, wPosV, wPos2Syns);
+  insert_wpos(token, wPosV, wPos2Syns, with_weight);
 
 
 }
