@@ -1,7 +1,8 @@
 
 # The source file where the main() function is
 
-SOURCEMAIN = ukb_aw.cc
+SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc ukb_sentences.cc
+#SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc
 
 # Library files
 
@@ -29,24 +30,24 @@ endif
 
 CCOPTIONS = -Wall $(OPTFLAGS)
 MEMBERS = $(SRC:.cc=.o)
-EXEC  = $(basename $(notdir $(SOURCEMAIN)))
+EXEC  = $(notdir $(basename $(SRCS)))
 
 all: $(EXEC)
 
 %.o : %.cc
 	g++ -c $(CCOPTIONS) $(PROFFLAGS) -o $@  $(INCLUDE_DIR) $< 
 
-$(EXEC): $(TARGET) $(MEMBERS) $(SOURCEMAIN)
-	gcc $(CCOPTIONS) $(PROFFLAGS) -o $(EXEC) $(SOURCEMAIN) $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
+$(EXEC): $(TARGET) $(MEMBERS) $(SRCS)
+	gcc $(CCOPTIONS) $(PROFFLAGS) -o $@ $@.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
 
 info_ukb: $(TARGET) $(MEMBERS) info_ukb.cc
 	gcc $(CCOPTIONS) $(PROFFLAGS) -o info_ukb info_ukb.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
 
-create_mcrbin: $(TARGET) $(MEMBERS) create_mcrbin.cc
-	gcc $(CCOPTIONS) $(PROFFLAGS) -o create_mcrbin create_mcrbin.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
+#create_mcrbin: $(TARGET) $(MEMBERS) create_mcrbin.cc
+#	gcc $(CCOPTIONS) $(PROFFLAGS) -o create_mcrbin create_mcrbin.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
 
-ukb_sentences: $(TARGET) $(MEMBERS) ukb_sentences.cc
-	gcc $(CCOPTIONS) $(PROFFLAGS) -o ukb_sentences ukb_sentences.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
+#ukb_sentences: $(TARGET) $(MEMBERS) ukb_sentences.cc
+#	gcc $(CCOPTIONS) $(PROFFLAGS) -o ukb_sentences ukb_sentences.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
 
 dgraph_info: $(TARGET) $(MEMBERS) dgraph_info.cc
 	gcc $(CCOPTIONS) $(PROFFLAGS) -o dgraph_info dgraph_info.cc $(MEMBERS) $(INCLUDE_DIR) $(LIBDIR) $(LIBS)
