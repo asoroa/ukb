@@ -73,7 +73,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
   if (glVars::verbose) 
     cerr << "Adding words to Mcr ...";
 
-  mcr.add_words();
+  mcr.add_words(false);
 
   if (glVars::verbose) 
     Mcr::instance().display_info(cerr);
@@ -88,7 +88,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
       // Initialize rank vector
       vector<float> ranks;
 
-      bool ok = calculate_mcr_ranks(cs,ranks);
+      bool ok = calculate_mcr_ranks(cs,ranks, false);
       if (!ok) {
 	cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 	continue;
