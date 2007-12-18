@@ -72,15 +72,8 @@ void merge_cooc(string & fName) {
 
 void merge_ts() {
 
-  W2Syn & w2syn = W2Syn::instance(); // filename previously assigned
+  Mcr::instance().add_words(true); // with weights!
 
-  vector<string>::const_iterator word_it = w2syn.get_wordlist().begin();
-  vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
-  for(; word_it != word_end; ++word_it) {
-    vector<string>::const_iterator syn_it, syn_end;
-    tie(syn_it, syn_end) = w2syn.get_wsyns(*word_it);
-    Mcr::instance().add_words(true); // with weights!
-  }
 }
 
 void query (const string & str) {
