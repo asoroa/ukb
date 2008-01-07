@@ -515,6 +515,12 @@ int main(int argc, char *argv[]) {
   bool opt_with_w = false;
  
 
+  string cmdline("!!");
+  for (int i=0; i < argc; ++i) {
+    cmdline += " ";
+    cmdline += argv[i];
+  }
+
   vector<string> input_files;
   string fullname_in;
 
@@ -705,12 +711,14 @@ int main(int argc, char *argv[]) {
 
   if (opt_do_hr) {
     Mcr::create_from_binfile(mcr_binfile);
+    cout << cmdline << "\n";
     dis_csent_hr(fullname_in, opt_with_w);
     return 0;
   }
 
   if (opt_do_mcr_prank) {
     Mcr::create_from_binfile(mcr_binfile);
+    cout << cmdline << "\n";
     dis_csent_classic_prank(fullname_in, opt_with_w);
     return 0;
   }
@@ -737,6 +745,8 @@ int main(int argc, char *argv[]) {
       cerr << "Error: No input files." << endl;
       return -1;
     }
+    cout << cmdline << "\n";
+
     if(opt_disamb_csent_dgraph) {
       dis_csent<DisambGraph>(input_files, ".dgraph", opt_with_w);
     }
