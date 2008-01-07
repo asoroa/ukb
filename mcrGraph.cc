@@ -222,6 +222,7 @@ Mcr_edge_t Mcr::findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v,
   Mcr_edge_t e;
   bool existsP;
 
+  if (w != 1.0) ++w; // minimum weight is 1
   tie(e, existsP) = edge(u, v, g);
   if(!existsP) {
     e = add_edge(u, v, g).first;
