@@ -46,7 +46,7 @@ void read_skip_relations (const string & file,
   }
 }
 
-void merge_cooc(string & fName) {
+void merge_cooc(string & fName, bool store_w) {
   
   Mcr & mcr = Mcr::instance();
 
@@ -64,15 +64,15 @@ void merge_cooc(string & fName) {
   for(tie(e_it, e_end) = edges(coog.graph()); e_it != e_end; ++e_it) {
     Mcr_vertex_t u = uMap[source(*e_it, coog.graph())];
     Mcr_vertex_t v = uMap[target(*e_it, coog.graph())];
-    float w = get(edge_freq, coog.graph(), *e_it);
+    float w = store_w ? 1.0 : get(edge_freq, coog.graph(), *e_it); 
     mcr.findOrInsertEdge(u, v, w);
     mcr.findOrInsertEdge(v, u, w);			 
   }
 }
 
-void merge_ts() {
+void merge_ts(bool store_w) {
 
-  Mcr::instance().add_words(true); // with weights!
+  Mcr::instance().add_words(store_w); // with weights!
 
 }
 
@@ -113,6 +113,9 @@ int main(int argc, char *argv[]) {
   bool opt_force_param = false;
   bool opt_query = false;
 
+  bool opt_weight_ts = true;    // use weights for TS
+  bool opt_weight_cooc = false; // don't use weights for cooc
+
   string cograph_filename;
   string fullname_out("mcr_wnet.bin");
   string relations_file("mcr_16_source/wei_relations.txt");
@@ -144,6 +147,8 @@ int main(int argc, char *argv[]) {
     ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
     ("param,p", value<string>(), "Specify parameter file.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
+    ("ts_now", "Don't use weights when linking TS words to synsets (default is yes).")
+    ("cooc_w", "Use weights when linking cooc words (default is don't).")
     ("verbose,v", "Be verbose.")
     ;
   options_description po_desc_hide("Hidden");
@@ -218,6 +223,17 @@ int main(int argc, char *argv[]) {
       glVars::w2s_filename = vm["w2syn_file"].as<string>();
     }
 
+    // weights
+
+    if (vm.count("ts_now")) {
+      opt_weight_ts = false;
+    }
+
+    if (vm.count("cooc_w")) {
+      opt_weight_cooc = true;
+    }
+
+
     if (vm.count("input-file")) {
       mcr_file = vm["input-file"].as<string>();
     }
@@ -245,8 +261,8 @@ int main(int argc, char *argv[]) {
 
   if (opt_cooc || opt_ts) {
     Mcr::create_from_binfile(mcr_file);
-    if (opt_cooc) merge_cooc(cograph_filename);
-    if (opt_ts) merge_ts();
+    if (opt_cooc) merge_cooc(cograph_filename, opt_weight_cooc);
+    if (opt_ts) merge_ts(opt_weight_ts);
     Mcr::instance().write_to_binfile(fullname_out);
     return 1;
   }
