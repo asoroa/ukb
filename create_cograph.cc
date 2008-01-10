@@ -162,6 +162,7 @@ int main(int argc, char *argv[]) {
 
 
   //float threshold = 0.0; // 95.0% confidence
+  //float threshold = 2.706; // 80.0% confidence
   //float threshold = 3.84146; // 95.0% confidence
   //float threshold = 5.41189; // 98.0% confidence
   //float threshold = 6.6349;  // 99.0% confidence
@@ -174,7 +175,7 @@ int main(int argc, char *argv[]) {
     "create_cograph [-f] file_or_dir [coocgraph.bin] \n"
     "\t file_or_dir: input textfile or directory. If directory given, all input files are read.\n"
     "\t coocgraph.bin: Name of serialization graph. Default is coocgraph.bin.\n"
-    "create_cograph -c pruned_cograph.bin [-t threshold] cograph.bin"
+    "create_cograph -c pruned_cograph.bin [-t threshold] cograph.bin\n"
     "Options:";
   
   using namespace boost::program_options;
@@ -192,6 +193,9 @@ int main(int argc, char *argv[]) {
     ("threshold,t", value<float>(), 
      "Set a threshold for prunning the graph (use with -c option).\n"
      "\tTypical threshold values:\n"
+     "\t  0.708   -- 60.0%  confidence\n"
+     "\t  1.642   -- 80.0%  confidence\n"
+     "\t  2.706   -- 90.0%  confidence\n"
      "\t  3.84146 -- 95.0%  confidence\n"
      "\t  5.41189 -- 98.0%  confidence\n "
      "\t  6.6349  -- 99.0%  confidence\n"
