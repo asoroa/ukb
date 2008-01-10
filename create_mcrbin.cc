@@ -68,12 +68,13 @@ void merge_cooc(string & fName, bool store_w) {
     mcr.findOrInsertEdge(u, v, w);
     mcr.findOrInsertEdge(v, u, w);			 
   }
+  mcr.add_relSource("Cooc: " + fName);
 }
 
 void merge_ts(bool store_w) {
 
   Mcr::instance().add_words(store_w); // with weights!
-
+  Mcr::instance().add_relSource("TS: " + glVars::w2s_filename);
 }
 
 void query (const string & str) {
@@ -129,7 +130,7 @@ int main(int argc, char *argv[]) {
   const char desc_header[] = "create_mcrbin: create a serialized image of the MCR\n"
     "Usage:\n"
     "create_mcrbin mcr_file.txt [output.bin] -> Create a MCR image.\n"
-    "create_mcrbin -m coocgraph.bin mcr.bin output.bin -> Merge a mcr serialization with a coocurrence graph.\n"
+    "create_mcrbin -c coocgraph.bin mcr.bin output.bin -> Merge a mcr serialization with a coocurrence graph.\n"
     "Options:";
   
   using namespace boost::program_options;
@@ -220,6 +221,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("w2syn_file")) {
+      if (opt_ts) {
+	cerr << "Error, --ts and --w2syns_file options conflict!\n";
+	exit(-1);
+      }
       glVars::w2s_filename = vm["w2syn_file"].as<string>();
     }
 
