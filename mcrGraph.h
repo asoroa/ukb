@@ -94,6 +94,8 @@ public:
 
   Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w = 1.0 );
 
+  void add_relSource(const std::string & str) { relsSource.insert(str); }
+
 
   bool bfs (Mcr_vertex_t source_synset, std::vector<Mcr_vertex_t> & synv) const ;
   //bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;
