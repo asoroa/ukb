@@ -85,7 +85,7 @@ void parseVarValue(string & variable, const string & value,
   case 0: // verbose
     glVars::verbose = (is_negated == false);
     break;
-  case 1: // hub_neighborhood
+  case 1: // rel_sources
     if (!parse_csv(value, glVars::rel_source)) {
       c_warn("zero-sized vector");
     }
