@@ -220,6 +220,10 @@ int main(int argc, char *argv[]) {
       out_dir = vm["out_dir"].as<string>();
     }
 
+    if (vm.count("relations_file")) {
+      relations_file = vm["relations_file"].as<string>();
+    }
+
     if (vm.count("w2syn_file")) {
       if (opt_ts) {
 	cerr << "Error, --ts and --w2syns_file options conflict!\n";
