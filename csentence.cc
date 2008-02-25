@@ -350,6 +350,55 @@ void disamb_csentence_mcr(CSentence & cs,
   }
 }
 
+
+// Second method for hughes & ramage
+// given a word, 
+// 1. put a ppv in the synsets of the rest of words. 
+// 2. Pagerank
+// 3. use rank for disambiguating word
+
+void calculate_mcr_ranks_by_word_and_disamb(CSentence & cs,
+					    bool with_weight) {
+
+  Mcr & mcr = Mcr::instance();
+  bool aux;
+
+  vector<CWord>::iterator cw_it = cs.begin();
+  vector<CWord>::iterator cw_end = cs.end();
+  for(; cw_it != cw_end; ++cw_it) {
+
+    vector<float> ranks (mcr.size(), 0.0);
+    // Initialize PPV vector
+    vector<float> ppv(mcr.size(), 0.0);
+    size_t K = 0;
+    // put ppv to the synsets of words except cw_it
+    for(CSentence::const_iterator it = cs.begin(); it != cw_end; ++it) {
+      if(it == cw_it) continue;
+      
+      string wpos = it->word();
+      
+      Mcr_vertex_t u;
+      tie(u, aux) = mcr.getVertexByName(wpos);
+      if (aux) {
+	ppv[u] = 1;
+	++K;
+      }
+    }
+    if (!K) continue;
+    // Normalize PPV vector
+    float div = 1.0 / static_cast<float>(K);
+    for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit) 
+      *rit *= div;
+    
+    // Execute PageRank
+    mcr.pageRank_ppv(ppv, ranks, with_weight);
+    // disambiguate cw_it
+    cw_it->rank_synsets(mcr, ranks);
+    cw_it->disamb_cword();
+  }
+}
+
+
 ////////////////////////////////////////////////////////
 // Streaming
 

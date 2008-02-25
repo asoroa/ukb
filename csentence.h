@@ -146,4 +146,6 @@ bool calculate_mcr_ranks(const CSentence & cs,
 void disamb_csentence_mcr(CSentence & cs,
                           std::vector<float> & ranks);
 
+void calculate_mcr_ranks_by_word_and_disamb(CSentence & cs,
+					    bool with_weight);
 #endif
