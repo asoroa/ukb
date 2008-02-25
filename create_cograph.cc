@@ -199,6 +199,7 @@ int main(int argc, char *argv[]) {
      "\t  3.84146 -- 95.0%  confidence\n"
      "\t  5.41189 -- 98.0%  confidence\n "
      "\t  6.6349  -- 99.0%  confidence\n"
+     "\t  7.883   -- 99.5%  confidence\n"
      "\t  10.827  -- 99.99% confidence\n")
     ("test,T", "Internal test.")
     ;
