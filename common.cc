@@ -31,8 +31,11 @@ std::vector<std::string> split(const std::string & str, const std::string & deli
       end_index = str.find_first_of(delims, start_index);
 
       // If this is the end of the std::string                                                                 
-      if (end_index == std::string::npos)
-	end_index = str.length();
+      // If this is the end of the string                                                                     
+      if (end_index == std::string::npos) {
+        ret.push_back(str.substr(start_index, str.size() - start_index));
+        break;
+      }
 
       ret.push_back(str.substr(start_index, end_index - start_index));
 
