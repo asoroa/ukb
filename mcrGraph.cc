@@ -291,10 +291,12 @@ void read_mcr(ifstream & mcrFile,
     tokenizer<char_separator<char> > tok(line, sep);
     copy(tok.begin(), tok.end(), back_inserter(fields));
     if (fields.size() == 0) continue; // blank line
-    if (fields.size() != 4) {
+    if (fields.size() < 4) {
       cerr << "read_mcr error. Bad line: " << line_number << endl;
       exit(-1);
     }
+    // last element says if relation is directed
+    bool directed = (fields.size() > 4 && lexical_cast<int>(fields[4]) != 0);
     if (rels_source.find(fields[3]) == srel_end) continue; // Skip this relation
 //     //if (fields[3] == "16") continue; // Skip WNet 1.6
 //     //if (fields[3] == "20") continue; // Skip WNet 2.0
@@ -312,7 +314,8 @@ void read_mcr(ifstream & mcrFile,
 
     // add edge
     mcr->findOrInsertEdge(u, v);
-    mcr->findOrInsertEdge(v, u);
+    if (!directed)
+      mcr->findOrInsertEdge(v, u);
   }
 }
 
