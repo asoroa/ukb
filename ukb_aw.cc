@@ -302,6 +302,39 @@ void dis_csent_hr(const string & input_file,
   }
 }
 
+void dis_csent_hr_by_word(const string & input_file,
+			  bool with_weight) {
+  
+  ifstream fh_in(input_file.c_str());
+
+  if (!fh_in) {
+    cerr << "Can't open " << input_file << endl;
+    exit(-1);
+  }
+
+  CSentence cs;
+
+  if (glVars::verbose) 
+    cerr << "Adding words to Mcr ...\n";
+
+  Mcr::instance().add_words(false);
+
+  try {
+    while (cs.read_aw(fh_in)) {
+
+      vector<float> ranks;
+      calculate_mcr_ranks_by_word_and_disamb(cs, with_weight);
+      cs.print_csent_aw(cout);
+      //cout << cs << '\n';
+      cs = CSentence();
+    }
+  } 
+  catch (string & e) {
+    cerr << "Errore reading " << input_file << ":" << e << "\n";
+    throw(e);    
+  }
+}
+
 void dis_csent_classic_prank(const string & input_file, 
 			     bool with_w) {
   
@@ -510,6 +543,7 @@ int main(int argc, char *argv[]) {
   bool opt_disamb_csent_wdgraph = false;
   bool opt_do_gviz = false;
   bool opt_do_hr = false;
+  bool opt_do_hr_w2w = false;
   bool opt_do_mcr_prank = false;
   bool opt_do_test = false;
   bool opt_with_w = false;
@@ -543,6 +577,7 @@ int main(int argc, char *argv[]) {
     ("with_weights,w", "Use weigths in pageRank.")
     ("help,h", "This page")
     ("hr", "Given a text input file, disambiguate context using only hughes & ramage technique (no dgraph required).")
+    ("w2w_hr", "Given a text input file, disambiguate context using hughes & ramage technique word by word.")
     ("graphviz,G", "Dump disambGraph to a graphviz format. Output file has same name and extension .dot")
     ("mcr_binfile,M", value<string>(), "Binary file of MCR (see create_mcrbin). Default is mcr_wnet.bin")
     ("w2syn_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
@@ -600,6 +635,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("hr")) {
       opt_do_hr= true;
+    }
+
+    if (vm.count("w2w_hr")) {
+      opt_do_hr_w2w= true;
     }
 
     if (vm.count("mcr_prank")) {
@@ -713,6 +752,13 @@ int main(int argc, char *argv[]) {
     Mcr::create_from_binfile(mcr_binfile);
     cout << cmdline << "\n";
     dis_csent_hr(fullname_in, opt_with_w);
+    return 0;
+  }
+
+  if (opt_do_hr_w2w) {
+    Mcr::create_from_binfile(mcr_binfile);
+    cout << cmdline << "\n";
+    dis_csent_hr_by_word(fullname_in, opt_with_w);
     return 0;
   }
 
