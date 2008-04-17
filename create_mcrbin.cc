@@ -127,6 +127,12 @@ int main(int argc, char *argv[]) {
   const size_t source_rels_N = 5;
   const char *source_rels_default[source_rels_N] = {"16", "20", "xg", "xn", "xs"};
 
+  string cmdline("cmd:");
+  for (int i=0; i < argc; ++i) {
+    cmdline += " ";
+    cmdline += argv[i];
+  }
+
   const char desc_header[] = "create_mcrbin: create a serialized image of the MCR\n"
     "Usage:\n"
     "create_mcrbin mcr_file.txt [output.bin] -> Create a MCR image.\n"
@@ -314,6 +320,7 @@ int main(int argc, char *argv[]) {
   mcr_fe.set_path(out_dir);
   if (glVars::verbose) 
     cerr << "Writing binary file: "<< mcr_fe.get_fname()<< endl;
+  Mcr::instance().add_comment(cmdline);
   Mcr::instance().write_to_binfile(mcr_fe.get_fname());
   if (glVars::verbose) 
     cerr << "Wrote " << num_vertices(Mcr::instance().graph()) << " vertices and " << num_edges(Mcr::instance().graph()) << " edges" << endl;

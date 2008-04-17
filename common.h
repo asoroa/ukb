@@ -75,7 +75,7 @@ void read_map_from_stream(std::ifstream & is, Map & map) {
   size_t i;
 
   read_atom_from_stream(is, mapSize);
-
+  if (!is) return;
   for(i=0; i< mapSize; ++i) {
     read_atom_from_stream(is, key);
     read_atom_from_stream(is, value);
@@ -91,7 +91,7 @@ void read_vector_from_stream(std::ifstream & is, Vector & v) {
   typename Vector::value_type value;
 
   read_atom_from_stream(is, vSize);
-
+  if (!is) return;
   for(i=0; i< vSize; ++i) {
     read_atom_from_stream(is, value);
     v.push_back(value);
@@ -106,7 +106,7 @@ void read_set_from_stream(std::ifstream & is, Set & v) {
   typename Set::value_type value;
 
   read_atom_from_stream(is, vSize);
-
+  if (!is) return;
   for(i=0; i< vSize; ++i) {
     read_atom_from_stream(is, value);
     v.insert(value);

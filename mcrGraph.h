@@ -117,6 +117,11 @@ public:
   void add_words(bool with_weight); // Adds all words of w2syn file
   void add_token(const std::string & str, bool with_weight); // Add a word
 
+  // Add a comment to graph
+
+  void add_comment(const std::string & str);
+  const std::vector<std::string> & get_comments() const;
+
 private:
   // Singleton
   static Mcr * p_instance;
@@ -141,7 +146,7 @@ private:
   std::map<std::string, Mcr_vertex_t> wordMap; // synset name to vertex id
   std::map<std::string, int> relMap;     // maps from relation name to relation id
   std::map<int, std::string> relMapInv;  // maps from relation id to relation name
-
+  std::vector<std::string> notes;
   //std::map<int, int> relType;            // maps from relation id to relation type id
   //std::map<int, int> relInv;             // maps from relation id to inverse id
   //std::map<std::string, int> sourceMap;  // maps from source name to source id's

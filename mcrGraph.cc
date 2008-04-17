@@ -105,6 +105,17 @@ void Mcr::create_from_binfile(const std::string & fname) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+void Mcr::add_comment(const string & str) {
+  notes.push_back(str);
+}
+
+const vector<string> & Mcr::get_comments() const {
+  return notes;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // bfs
 
 struct mcr_bfs_init:public base_visitor<mcr_bfs_init> {
@@ -345,6 +356,10 @@ void Mcr::display_info(std::ostream & o) const {
 
   o << "Relation sources: ";
   writeS(o, relsSource);
+  if (notes.size()) {
+    o << "\nNotes: ";
+    writeV(o, notes);
+  }
   size_t edge_n = num_edges(g);
   if (edge_n & 2) edge_n++; 
 
@@ -538,7 +553,7 @@ Mcr_edge_t read_edge_from_stream(ifstream & is,
 
   size_t sIdx;
   size_t tIdx; 
-  float w;
+  float w = 0.0;
   //size_t source;
   bool insertedP;
   Mcr_edge_t e;
@@ -600,6 +615,7 @@ void  Mcr::read_from_stream (std::ifstream & is) {
   if(id != magic_id) {
     cerr << "Error: invalid id after reading edges" << endl;
   }
+  read_vector_from_stream(is, notes);
 
   graph_traits<McrGraph>::vertex_iterator v_it, v_end;
   tie(v_it, v_end) = vertices(g);
@@ -671,6 +687,8 @@ ofstream & Mcr::write_to_stream(ofstream & o) const {
   for(; e_it != e_end; ++e_it) {
     write_edge_to_stream(o, g, *e_it);
   }
+  write_atom_to_stream(o, magic_id);
+  if(notes.size()) write_vector_to_stream(o, notes);
   return o;
 }
 
