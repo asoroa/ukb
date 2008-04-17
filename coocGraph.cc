@@ -213,7 +213,7 @@ void CoocGraph::chisq_prune() {
      size_t o22 = _docN - (get(vertex_cfreq, g, vi) + get(vertex_cfreq, g, vj) - o11);
 
      size_t a = o11 * o22 - o12 * o21;
-     size_t b = (o11 + o12) * (o11 + o21) * (o12 + o22) + (o21 + o22);
+     size_t b = (o11 + o12) * (o11 + o21) * (o12 + o22) * (o21 + o22);
   
      double chsq = static_cast<double>(_docN*a*a) / static_cast<double>(b);
      if (chsq > glVars::chsq::threshold) {
