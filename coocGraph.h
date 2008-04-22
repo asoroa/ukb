@@ -78,6 +78,7 @@ class CoocGraph {
   size_t num_vertices() { return boost::num_vertices(g); }
   size_t num_edges() { return boost::num_edges(g); }
   size_t num_docs() { return _docN; }
+  std::pair<float, float> minmax() const;
 
   // fill graph
 
@@ -86,6 +87,9 @@ class CoocGraph {
   // Chi square and prunning
 
   void chisq_prune();
+
+  // Normalize freqs. so they fit in [0,1] interval
+  bool normalize_edge_freqs();
 
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);

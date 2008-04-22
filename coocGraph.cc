@@ -204,7 +204,7 @@ void CoocGraph::chisq_prune() {
      CoocGraph::vertex_descriptor vj = target(*e, g);     
 
      // Confusion matrix O
-     size_t o11 = static_cast<size_t>(get(edge_freq, g, *e));     
+     size_t o11 = static_cast<size_t>(get(edge_freq, g, *e));
      put(edge_freq, g , *e, 0.0); // Reset edge weigth
      if (o11 < glVars::chsq::cooc_min) continue;
 
@@ -224,8 +224,61 @@ void CoocGraph::chisq_prune() {
    remove_edge_if(EdgeZeroChsq(g, 0.0), g);
 }
 
+
+bool CoocGraph::normalize_edge_freqs() {
+
+  float cutValue = 20.00;
+
+  CoocGraph::edge_iterator e, end;
+
+  float min, max;
+
+  //1st pass: get min, max
+  tie(e, end) = edges(g);
+  if (e == end) return true; // empty graph
+  max = min = get(edge_freq, g, *e);
+  ++e;
+  for(; e != end; ++e) {
+    float aux = get(edge_freq, g, *e);
+    if (aux < min) min = aux;
+    if (aux > max) max = aux;
+  }
+
+  max = (max < cutValue) ? max : cutValue;
+
+  // 2nd pass: move to [0,1]
+  float denom = max - min;
+  if (denom <= 0) return false;
+
+  tie(e, end) = edges(g);
+  for(; e != end; ++e) {
+    float aux = get(edge_freq, g, *e);
+    if (aux > max) aux = max;
+    put(edge_freq, g, *e,
+	(aux - min)/denom);
+  }
+  return true;
+}
+
 //______________________________________________________________________________
 // Display
+
+std::pair<float, float> CoocGraph::minmax() const {
+
+  CoocGraph::edge_iterator e, end;
+  float min, max;
+
+  tie(e, end) = edges(g);
+  if (e == end) return make_pair<float, float>(0.0, 0.0); // empty graph
+  max = min = get(edge_freq, g, *e);
+  ++e;
+  for(; e != end; ++e) {
+    float aux = get(edge_freq, g, *e);
+    if (aux < min) min = aux;
+    if (aux > max) max = aux;
+  }
+  return make_pair(min, max);
+}
 
 void write_vertex(ostream & o, const CoocGraph::vertex_descriptor & v,
 		  const CoocGraph::boost_graph_t & g) {
