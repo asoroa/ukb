@@ -71,12 +71,18 @@ bool extract_input_files(const string & fullname,
 }
 
 void chsq (const string & input_name,
-	   const string & output_name) {
+	   const string & output_name,
+	   bool normalize) {
 
   CoocGraph coog;
 
   coog.read_from_binfile(input_name);
   coog.chisq_prune();
+  if(normalize) {
+    if (!coog.normalize_edge_freqs()) {
+      cerr << "Error: can't normalize freqs." << endl;
+    }
+  }
   coog.remove_isolated_vertices();
   coog.write_to_binfile(output_name);
 }
@@ -107,11 +113,14 @@ void query (const string & coName, const string & str) {
 void info (string & coName) {
 
   CoocGraph coog;
+  float min, max;
 
   coog.read_from_binfile(coName);
   size_t edge_n = coog.num_edges();
+  tie(min, max) = coog.minmax();
   if (edge_n & 2) edge_n++; 
   cout << "V:" << coog.num_vertices() << " E:" << edge_n/2 << " Docs:" << coog.num_docs() << endl;
+  cout << "min freq:" << min << " max freq:" << max << endl;
 }
 
 void histogram (string & coName) {
@@ -125,6 +134,20 @@ void histogram (string & coName) {
   tie(it, end) = vertices(g);
   for(;it != end; ++it) {
     cout << out_degree(*it, g) << "\n";
+  }
+}
+
+void edge_histogram (string & coName) {
+
+  CoocGraph coog;
+
+  coog.read_from_binfile(coName);
+  CoocGraph::boost_graph_t & g = coog.graph();
+
+  CoocGraph::edge_iterator it, end;
+  tie(it, end) = edges(g);
+  for(;it != end; ++it) {
+    cout << get(edge_freq, g, *it) << "\n";
   }
 }
 
@@ -152,8 +175,10 @@ int main(int argc, char *argv[]) {
   bool opt_query = false;
   bool opt_info = false;
   bool opt_histo = false;
+  bool opt_edge_histo = false;
   bool opt_test = false;
   bool opt_chsq = false;
+  bool opt_normalize = false;
 
   string query_vertex;
 
@@ -184,8 +209,10 @@ int main(int argc, char *argv[]) {
 
   po_desc.add_options()
     ("chsq,c", value<string>(), "Given a serialized graph, create another with chisq information. Prune it according threshold (see -t).")
+    ("edge_histogram,E", "Output edge freq. values.")
     ("help,h", "This help page.")
     ("histogram,H", "Output vertex degrees.")
+    ("normalize,N", "Normalize chisq. values, so they fit in [0,1] interval.")
     ("info,i", "Get info of a serielized cograph.")
     ("force,f", "Don't use previous coocgraph.bin if exists.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
@@ -242,6 +269,14 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("histogram")) {
       opt_histo = true;
+    }
+
+    if (vm.count("normalize")) {
+      opt_normalize = true;
+    }
+
+    if (vm.count("edge_histogram")) {
+      opt_edge_histo = true;
     }
 
     if (vm.count("force")) {
@@ -308,6 +343,11 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
+  if (opt_edge_histo) {
+    edge_histogram(input_files[0]);
+    return 0;
+  }
+
   if (opt_query) {
     query(input_files[0], query_vertex);
     return 0;
@@ -321,7 +361,7 @@ int main(int argc, char *argv[]) {
     if (glVars::verbose) {
       cout << "Cooc min: " << glVars::chsq::cooc_min << " Threshold: " << glVars::chsq::threshold << '\n';
     }
-    chsq(input_files[0], graph_binfile);
+    chsq(input_files[0], graph_binfile, opt_normalize);
     return 0;
   }
 
