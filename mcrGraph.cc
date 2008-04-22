@@ -233,7 +233,7 @@ Mcr_edge_t Mcr::findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v,
   Mcr_edge_t e;
   bool existsP;
 
-  if (w != 1.0) ++w; // minimum weight is 1
+  //if (w != 1.0) ++w; // minimum weight is 1
   tie(e, existsP) = edge(u, v, g);
   if(!existsP) {
     e = add_edge(u, v, g).first;
@@ -324,9 +324,9 @@ void read_mcr(ifstream & mcrFile,
     //Mcr_vertex_t v = insert_synset_vertex(g, synsetMap, fields[1]);
 
     // add edge
-    mcr->findOrInsertEdge(u, v);
+    mcr->findOrInsertEdge(u, v, 1.0);
     if (!directed)
-      mcr->findOrInsertEdge(v, u);
+      mcr->findOrInsertEdge(v, u, 1.0);
   }
 }
 
@@ -440,7 +440,7 @@ void insert_wpos(const string & word,
     //insert word#pos
     Mcr_vertex_t wpos_v = mcr.findOrInsertSynset(*wpos_str_it);
     // link word to word#pos
-    mcr.findOrInsertEdge(word_v, wpos_v);
+    mcr.findOrInsertEdge(word_v, wpos_v, 1.0);
     // link word#pos to synsets
     vector<Syn_elem>::const_iterator syns_it = wPos2Syns[*wpos_str_it].begin();
     vector<Syn_elem>::const_iterator syns_end = wPos2Syns[*wpos_str_it].end();
@@ -448,7 +448,7 @@ void insert_wpos(const string & word,
       if (use_weights) {
 	mcr.findOrInsertEdge(wpos_v, syns_it->first, syns_it->second);
       } else {
-	mcr.findOrInsertEdge(wpos_v, syns_it->first);
+	mcr.findOrInsertEdge(wpos_v, syns_it->first, 1.0);
       }
     }
   }      

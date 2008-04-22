@@ -18,7 +18,7 @@
 
 #include <boost/timer.hpp>
 
-// bfs 
+// bfs
 
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/pending/indirect_cmp.hpp>
@@ -47,7 +47,7 @@ void read_skip_relations (const string & file,
 }
 
 void merge_cooc(string & fName, bool store_w) {
-  
+
   Mcr & mcr = Mcr::instance();
 
   CoocGraph coog;
@@ -64,9 +64,9 @@ void merge_cooc(string & fName, bool store_w) {
   for(tie(e_it, e_end) = edges(coog.graph()); e_it != e_end; ++e_it) {
     Mcr_vertex_t u = uMap[source(*e_it, coog.graph())];
     Mcr_vertex_t v = uMap[target(*e_it, coog.graph())];
-    float w = store_w ? 1.0 : get(edge_freq, coog.graph(), *e_it); 
+    float w = store_w ? get(edge_freq, coog.graph(), *e_it) : 1.0;
     mcr.findOrInsertEdge(u, v, w);
-    mcr.findOrInsertEdge(v, u, w);			 
+    mcr.findOrInsertEdge(v, u, w);
   }
   mcr.add_relSource("Cooc: " + fName);
 }
@@ -84,7 +84,7 @@ void query (const string & str) {
 
   bool aux;
   Mcr_vertex_t u;
-  
+
   tie(u, aux) = mcr.getVertexByName(str);
   if (aux) {
     cout << get(vertex_name, g, u);
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     "create_mcrbin mcr_file.txt [output.bin] -> Create a MCR image.\n"
     "create_mcrbin -c coocgraph.bin mcr.bin output.bin -> Merge a mcr serialization with a coocurrence graph.\n"
     "Options:";
-  
+
   using namespace boost::program_options;
 
   options_description po_desc(desc_header);
@@ -165,13 +165,13 @@ int main(int argc, char *argv[]) {
     ;
   options_description po_desc_all("All options");
   po_desc_all.add(po_desc).add(po_desc_hide);
-  
+
   positional_options_description po_optdesc;
   po_optdesc.add("input-file", 1);
   po_optdesc.add("output-file", 1);
-  
+
   variables_map vm;
-  
+
   try {
     store(command_line_parser(argc, argv).
 	  options(po_desc_all).
@@ -278,6 +278,7 @@ int main(int argc, char *argv[]) {
     Mcr::create_from_binfile(mcr_file);
     if (opt_cooc) merge_cooc(cograph_filename, opt_weight_cooc);
     if (opt_ts) merge_ts(opt_weight_ts);
+    Mcr::instance().add_comment(cmdline);
     Mcr::instance().write_to_binfile(fullname_out);
     return 1;
   }
@@ -298,8 +299,8 @@ int main(int argc, char *argv[]) {
     if (!opt_force_param) {
       cerr << "Error: no relations. For using default relations, use --force-default-values" << endl;
       return -1;
-    }    
-    copy(source_rels_default, source_rels_default + source_rels_N, 
+    }
+    copy(source_rels_default, source_rels_default + source_rels_N,
 	 back_inserter(glVars::rel_source));
   }
 
@@ -311,18 +312,18 @@ int main(int argc, char *argv[]) {
 
   set<string> source_rels(glVars::rel_source.begin(), glVars::rel_source.end());
 
-  if (glVars::verbose) 
+  if (glVars::verbose)
     cerr << "Reading relations"<< endl;
 
   Mcr::create_from_txt(relations_file, mcr_file, source_rels);
 
   File_elem mcr_fe(fullname_out);
   mcr_fe.set_path(out_dir);
-  if (glVars::verbose) 
+  if (glVars::verbose)
     cerr << "Writing binary file: "<< mcr_fe.get_fname()<< endl;
   Mcr::instance().add_comment(cmdline);
   Mcr::instance().write_to_binfile(mcr_fe.get_fname());
-  if (glVars::verbose) 
+  if (glVars::verbose)
     cerr << "Wrote " << num_vertices(Mcr::instance().graph()) << " vertices and " << num_edges(Mcr::instance().graph()) << " edges" << endl;
 
   return 0;

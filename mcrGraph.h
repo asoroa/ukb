@@ -92,7 +92,7 @@ public:
   Mcr_vertex_t findOrInsertSynset(const std::string & str);
   Mcr_vertex_t findOrInsertWord(const std::string & str);
 
-  Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w = 1.0 );
+  Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w );
 
   void add_relSource(const std::string & str) { relsSource.insert(str); }
 
