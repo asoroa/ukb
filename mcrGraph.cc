@@ -503,8 +503,6 @@ void Mcr::pageRank_ppv(const vector<float> & ppv_map,
 		       bool use_weight) {
 
   size_t N = num_vertices(g);
-  vector<float> map_tmp(N, 0.0f);
-  vector<float> out_coefs(N, 0.0f);
   vector<float>(N, 0.0).swap(ranks); // Initialize rank vector
   vector<float> rank_tmp(N, 0.0);    // auxiliary rank vector
 
@@ -518,12 +516,15 @@ void Mcr::pageRank_ppv(const vector<float> & ppv_map,
 
   if (use_weight) {
     property_map<Mcr::boost_graph_t, edge_weight_t>::type weight_map = get(edge_weight, g);
-    init_out_coefs(g, V, &out_coefs[0], weight_map);
-    pageRank_iterate(g, V, &ppv_map[0], out_coefs, weight_map, &ranks[0], &rank_tmp[0], 30); // 30 iterations    
+    //init_out_coefs(g, V, &out_coefs[0], weight_map);
+    prank::pageRank_iterate(g, V, &ppv_map[0],
+			    weight_map, &ranks[0], &rank_tmp[0], 
+			    glVars::prank::num_iterations);
   } else {
-    constant_property_map <Mcr_edge_t, float> cte_weight(1); // always return 1
-    init_out_coefs(g, V, &out_coefs[0], cte_weight);
-    pageRank_iterate(g, V, &ppv_map[0], out_coefs, cte_weight, &ranks[0], &rank_tmp[0], 30); // 30 iterations
+    //init_out_coefs(g, V, &out_coefs[0], cte_weight);
+    prank::pageRank_iterate_now(g, V, &ppv_map[0],
+				&ranks[0], &rank_tmp[0], 
+				glVars::prank::num_iterations);
   }
 }
 
