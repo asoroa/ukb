@@ -1,12 +1,12 @@
 
 # The source file where the main() function is
 
-SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc ukb_sentences.cc
+SRCS = ukb_aw.cc create_mcrbin.cc create_cograph2.cc ukb_sentences.cc
 #SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc
 
 # Library files
 
-SRC = common.cc globalVars.cc configFile.cc fileElem.cc w2syn.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc coocGraph.cc
+SRC = common.cc globalVars.cc configFile.cc fileElem.cc w2syn.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc coocGraph.cc coocGraph2.cc hlex_agtree.cc
 
 # Don't change anything below
 #DEBUG = 1
