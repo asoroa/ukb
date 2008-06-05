@@ -2,6 +2,8 @@
 #include "globalVars.h"
 #include "fileElem.h"
 #include "coocGraph.h"
+#include "coocGraph2.h"
+#include "hlex_agtree.h"
 
 #include <string>
 #include <iostream>
@@ -77,13 +79,13 @@ void chsq (const string & input_name,
   CoocGraph coog;
 
   coog.read_from_binfile(input_name);
-  coog.chisq_prune();
+  coog.calculate_chisq();
   if(normalize) {
     if (!coog.normalize_edge_freqs()) {
       cerr << "Error: can't normalize freqs." << endl;
     }
   }
-  coog.remove_isolated_vertices();
+  coog.prune_zero_edges();
   coog.write_to_binfile(output_name);
 }
 
@@ -402,6 +404,5 @@ int main(int argc, char *argv[]) {
 /*
  * Local Variables:
  * mode: c++
- * compile-command: "make -f makefile_cooc"
  * End:
  */
