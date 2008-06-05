@@ -255,27 +255,26 @@ make_random_functor(Generator & g) {
 int g_randTarget(int Target);
 
 ////////////////////////////////////////////////////////////////////
-// Useful property map for pageRank
+// Remove isolated vertices of a graph
 
-// a constan property map that always returns the same value
+// template<class G>
+// void remove_isolated_vertices(G & g) {
 
-namespace boost {
-  template<typename K, typename V>
-  class constant_property_map
-    : public boost::put_get_helper<V, constant_property_map<K, V> > {
-  public:
-    typedef K key_type;
-    typedef V value_type;
-    typedef V reference;
-    typedef boost::readable_property_map_tag category;
+//   typedef typename boost::graph_traits<G>::vertex_descriptor vertex_descriptor;
+//   typedef typename boost::graph_traits<G>::vertex_iterator vertex_iterator;
+//   typedef typename boost::graph_traits<G>::edge_iterator edge_iterator;
 
-    constant_property_map(V value) : store(value) {}
+//   G newg;
+//   std::map<vertex_decriptor, vertex_descriptor> nMap;
+//   vertex_iterator v_it, v_end;
+//   for(boost::tie(v_it, v_end) = vertices(g); v_it != v_end; ++v_it) {
+//     if (boost::out_degree(*v_it, g) || boost::in_degree(*v_it, g)) {
+      
+//     }
+//   }
 
-    inline value_type operator[](const key_type& v) const { return store; }
-  private:
-    V store;
-  };
-}
+// }
+
 
 /////////////////////////////////////////////////////////////////////
 // graphviz
