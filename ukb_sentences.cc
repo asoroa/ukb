@@ -88,7 +88,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
       // Initialize rank vector
       vector<float> ranks;
 
-      bool ok = calculate_mcr_ranks(cs,ranks, false);
+      bool ok = calculate_mcr_hr(cs,ranks, false);
       if (!ok) {
 	cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 	continue;
