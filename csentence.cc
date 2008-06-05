@@ -135,23 +135,61 @@ std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
   return o;
 }
 
-ostream & CWord::print_cword_aw(ostream & o) const {
-
-  if (!disamb) return o;
-  if ((1 == syns.size()) && !glVars::output_monosemous) return o; // Don't output monosemous words
-
-  vector<string> id_fields(split(cw_id, "."));
-  assert(id_fields.size() > 0);
-  o << id_fields[0] << " " << cw_id << " ";
+ostream & cw_aw_print_best(ostream & o, 
+			   const vector<string> & syns,
+			   const vector<float> & ranks) {
   size_t n = syns.size();
   o << syns[0];
   for(size_t i = 1; i != n; ++i) {
     if (ranks[i] != ranks[0]) break;
     o << " " << syns[i];
   }
+  return o;
+}
+
+ostream & cw_aw_print_all(ostream & o, 
+			  const vector<string> & syns,
+			  const vector<float> & ranks) {
+  float rsum = 0.0;
+  for(size_t i = 0; i != syns.size(); ++i) {
+    rsum += ranks[i];
+  }
+  float norm_factor = 1.0 / rsum;
+  for(size_t i = 0; i != syns.size(); ++i) {
+    o << " " << syns[i] << "/" << ranks[i]*norm_factor;
+  }
+  return o;
+}
+
+ostream & CWord::print_cword_aw(ostream & o) const {
+
+  if (!disamb) return o;
+  if ((1 == syns.size()) && !glVars::output::monosemous) return o; // Don't output monosemous words
+
+  vector<string> id_fields(split(cw_id, "."));
+  assert(id_fields.size() > 0);
+  o << id_fields[0] << " " << cw_id << " ";
+  if(!glVars::output::allranks) cw_aw_print_best(o, syns, ranks);
+  else cw_aw_print_all(o, syns, ranks);
   o << " !! " << w << "\n";
   return o;
 }
+
+ostream & CWord::print_cword_semcor_aw(ostream & o) const {
+
+  if (!disamb) return o;
+  if ((1 == syns.size()) && !glVars::output::monosemous) return o; // Don't output monosemous words
+
+  vector<string> id_fields(split(cw_id, "."));
+  assert(id_fields.size() > 0);
+  o << id_fields[0] << "." << id_fields[1] << " " << cw_id << " ";
+  if(!glVars::output::allranks) cw_aw_print_best(o, syns, ranks);
+  else cw_aw_print_all(o, syns, ranks);
+  o << " !! " << w << "\n";
+  return o;
+}
+
+
 
 ////////////////////////////////////////////////////////
 // Streaming
@@ -290,6 +328,19 @@ std::ostream & CSentence::print_csent_aw(std::ostream & o) const {
   return o;
 }
 
+std::ostream & CSentence::print_csent_semcor_aw(std::ostream & o) const {
+
+  vector<CWord>::const_iterator cw_it = v.begin();
+  vector<CWord>::const_iterator cw_end = v.end();
+
+  for(; cw_it != cw_end; ++cw_it) {
+    if (cw_it->size() == 0) continue;
+    if (!cw_it->is_distinguished()) continue;
+    cw_it->print_cword_semcor_aw(o);
+  }
+  return o;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // 
 // PageRank in Mcr
@@ -298,9 +349,9 @@ std::ostream & CSentence::print_csent_aw(std::ostream & o) const {
 // Given a CSentence obtain it's PageRank vector
 // Initial PPV is computed a la hughes&ramage97
 
-bool calculate_mcr_ranks(const CSentence & cs,
-			 vector<float> & res,
-			 bool with_weight) {
+bool calculate_mcr_hr(const CSentence & cs,
+		      vector<float> & res,
+		      bool with_weight) {
 
   Mcr & mcr = Mcr::instance();
   bool aux;
@@ -337,28 +388,14 @@ bool calculate_mcr_ranks(const CSentence & cs,
   return true;
 }
 
-void disamb_csentence_mcr(CSentence & cs,
-			  vector<float> & ranks) {
-
-  Mcr & mcr = Mcr::instance();
-  
-  vector<CWord>::iterator cw_it = cs.begin();
-  vector<CWord>::iterator cw_end = cs.end();
-  for(; cw_it != cw_end; ++cw_it) {
-    cw_it->rank_synsets(mcr, ranks);
-    cw_it->disamb_cword();
-  }
-}
-
-
 // Second method for hughes & ramage
 // given a word, 
 // 1. put a ppv in the synsets of the rest of words. 
 // 2. Pagerank
 // 3. use rank for disambiguating word
 
-void calculate_mcr_ranks_by_word_and_disamb(CSentence & cs,
-					    bool with_weight) {
+void calculate_mcr_hr_by_word_and_disamb(CSentence & cs,
+					 bool with_weight) {
 
   Mcr & mcr = Mcr::instance();
   bool aux;
@@ -366,6 +403,9 @@ void calculate_mcr_ranks_by_word_and_disamb(CSentence & cs,
   vector<CWord>::iterator cw_it = cs.begin();
   vector<CWord>::iterator cw_end = cs.end();
   for(; cw_it != cw_end; ++cw_it) {
+
+    // Target word must be distinguished.
+    if(!cw_it->is_distinguished()) continue; 
 
     vector<float> ranks (mcr.size(), 0.0);
     // Initialize PPV vector
@@ -393,6 +433,67 @@ void calculate_mcr_ranks_by_word_and_disamb(CSentence & cs,
     // Execute PageRank
     mcr.pageRank_ppv(ppv, ranks, with_weight);
     // disambiguate cw_it
+    cw_it->rank_synsets(mcr, ranks);
+    cw_it->disamb_cword();
+  }
+}
+
+//
+// Given a previously disambiguated CSentence (all synsets of words
+// have a rank), calculate a mcr prgaRank where PPV is formed by
+// 'activating' just the synsets of CWords with appropiate
+// (normalized) rank
+//
+
+bool calculate_mcr_ppv_csentence(CSentence & cs, vector<float> & res) {
+
+  Mcr & mcr = Mcr::instance();
+  bool aux;
+
+  // Initialize result vector
+  vector<float> (mcr.size(), 0.0).swap(res);
+
+  // Initialize PPV vector
+  vector<float> ppv(mcr.size(), 0.0);
+
+  vector<CWord>::iterator cw_it = cs.begin();
+  vector<CWord>::iterator cw_end = cs.end();
+  float K = 0.0;
+  for(; cw_it != cw_end; ++cw_it) {
+    for(size_t i = 0; i != cw_it->size(); ++i) {
+      Mcr_vertex_t u;
+      tie(u, aux) = mcr.getVertexByName(cw_it->syn(i));
+      if (aux) {
+	ppv[u] = cw_it->rank(i);
+	K += cw_it->rank(i);
+      }
+    }
+  }
+
+  if (K == 0.0) return false;
+  // Normalize PPV vector
+  float div = 1.0 / K;
+  for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit) 
+    *rit *= div;
+    
+  // Execute PageRank
+  mcr.pageRank_ppv(ppv, res, false);
+  return true;
+}
+
+
+//
+// Disambiguate a CSentence given a vector of ranks
+//
+
+void disamb_csentence_mcr(CSentence & cs,
+			  vector<float> & ranks) {
+
+  Mcr & mcr = Mcr::instance();
+  
+  vector<CWord>::iterator cw_it = cs.begin();
+  vector<CWord>::iterator cw_end = cs.end();
+  for(; cw_it != cw_end; ++cw_it) {
     cw_it->rank_synsets(mcr, ranks);
     cw_it->disamb_cword();
   }

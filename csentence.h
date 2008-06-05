@@ -38,6 +38,9 @@ public:
   const_iterator end() const {return syns.end();}
   size_type size() const {return syns.size(); }
 
+  const std::string & syn(size_t i) const { return syns[i];}
+  float rank(size_t i) const { return ranks[i];}
+
   std::string word() const { return w; }
 
   std::string wpos() const;
@@ -74,6 +77,7 @@ public:
 
   friend std::ostream& operator<<(std::ostream & o, const CWord & cw_);
   std::ostream & print_cword_aw(std::ostream & o) const;
+  std::ostream & print_cword_semcor_aw(std::ostream & o) const;
   friend class CSentence;
   
 private:
@@ -131,6 +135,7 @@ public:
   void read_from_binfile (const std::string & fName);
   friend std::ostream& operator<<(std::ostream & o, const CSentence & cs_);
   std::ostream & print_csent_aw(std::ostream & o) const;
+  std::ostream & print_csent_semcor_aw(std::ostream & o) const;
   
 private:  
   void read_from_stream (std::ifstream & is);
@@ -139,13 +144,16 @@ private:
   std::string cs_id;
 };
 
-bool calculate_mcr_ranks(const CSentence & cs,
-			 std::vector<float> & res,
-			 bool with_weight);
+bool calculate_mcr_hr(const CSentence & cs,
+		      std::vector<float> & res,
+		      bool with_weight);
+
+void calculate_mcr_hr_by_word_and_disamb(CSentence & cs,
+					 bool with_weight);
+
+bool calculate_mcr_ppv_csentence(CSentence & cs, std::vector<float> & res);
 
 void disamb_csentence_mcr(CSentence & cs,
                           std::vector<float> & ranks);
 
-void calculate_mcr_ranks_by_word_and_disamb(CSentence & cs,
-					    bool with_weight);
 #endif
