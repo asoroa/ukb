@@ -62,8 +62,6 @@ class CoocGraph {
 
   ~CoocGraph() {};
 
-  void remove_isolated_vertices();
-
   // Accessors
 
   boost_graph_t & graph() { return g; }
@@ -86,10 +84,16 @@ class CoocGraph {
 
   // Chi square and prunning
 
-  void chisq_prune();
+  void calculate_chisq();
 
   // Normalize freqs. so they fit in [0,1] interval
-  bool normalize_edge_freqs();
+  bool normalize_edge_freqs(  float cutValue = 190.00);
+
+
+  void remove_isolated_vertices();
+
+  // Remove edges below theshold
+  void prune_zero_edges(float threshold = 0.0);
 
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);

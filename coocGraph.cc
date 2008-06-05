@@ -34,9 +34,9 @@ CoocGraph::vertex_descriptor CoocGraph::findOrInsertNode(const string & str) {
   return u;
 }
 
-CoocGraph::edge_descriptor CoocGraph::findOrInsertEdge(CoocGraph::vertex_descriptor u, 
+CoocGraph::edge_descriptor CoocGraph::findOrInsertEdge(CoocGraph::vertex_descriptor u,
 						       CoocGraph::vertex_descriptor v ) {
-  
+
   CoocGraph::edge_descriptor e;
   bool exists;
 
@@ -49,7 +49,7 @@ CoocGraph::edge_descriptor CoocGraph::findOrInsertEdge(CoocGraph::vertex_descrip
   return e;
 }
 
-std::pair<CoocGraph::vertex_descriptor, bool> 
+std::pair<CoocGraph::vertex_descriptor, bool>
 CoocGraph::getVertexByName(const std::string & str) const {
 
 
@@ -120,7 +120,7 @@ void CoocGraph::remove_isolated_vertices() {
 // Functions for reading files
 
 void CoocGraph::insert_doc(vector<CoocGraph::vertex_descriptor> & doc) {
-  vector<CoocGraph::vertex_descriptor>::iterator w = doc.begin(); 
+  vector<CoocGraph::vertex_descriptor>::iterator w = doc.begin();
   vector<CoocGraph::vertex_descriptor>::iterator end = doc.end();
   for(; w != end; ++w) {
 
@@ -128,17 +128,17 @@ void CoocGraph::insert_doc(vector<CoocGraph::vertex_descriptor> & doc) {
 	get(vertex_cfreq, g, *w) + 1);
 
     vector<CoocGraph::vertex_descriptor>::iterator it = w;
-    ++it;    
+    ++it;
     for(; it != end; ++it) {
       CoocGraph::edge_descriptor e = findOrInsertEdge(*w, *it);
       put(edge_freq, g, e,
-	  get(edge_freq, g, e) + 1);      
+	  get(edge_freq, g, e) + 1);
     }
   }
 }
 
 
-string next_notempty(ifstream & fh) {
+static string next_notempty(ifstream & fh) {
   string l;
   while(fh) {
     getline(fh, l, '\n');
@@ -170,7 +170,7 @@ void CoocGraph::fill_cograph(ifstream & fh) {
     set<string> docWords;
     for(vector<string>::iterator it_ = fields.begin(); it_ != fields.end(); ++it_)
       docWords.insert(*it_);
-    
+
     vector<CoocGraph::vertex_descriptor> V;
     for(set<string>::const_iterator sit = docWords.begin(); sit != docWords.end(); ++sit) {
       V.push_back(findOrInsertNode(*sit));
@@ -194,28 +194,37 @@ struct EdgeZeroChsq {
 };
 
 
-void CoocGraph::chisq_prune() {
+void CoocGraph::calculate_chisq() {
 
    CoocGraph::edge_iterator e, end;
    tie(e, end) = edges(g);
    for(; e != end; ++e) {
 
      CoocGraph::vertex_descriptor vi = source(*e, g);
-     CoocGraph::vertex_descriptor vj = target(*e, g);     
+     CoocGraph::vertex_descriptor vj = target(*e, g);
 
      // Confusion matrix O
-     size_t o11 = static_cast<size_t>(get(edge_freq, g, *e));
+     double o11 = static_cast<double>(get(edge_freq, g, *e));
      put(edge_freq, g , *e, 0.0); // Reset edge weigth
      if (o11 < glVars::chsq::cooc_min) continue;
 
-     size_t o12 = get(vertex_cfreq, g, vi) - o11;
-     size_t o21 = get(vertex_cfreq, g, vj) - o11;
-     size_t o22 = _docN - (get(vertex_cfreq, g, vi) + get(vertex_cfreq, g, vj) - o11);
+     double docn = static_cast<double>(_docN);
 
-     size_t a = o11 * o22 - o12 * o21;
-     size_t b = (o11 + o12) * (o11 + o21) * (o12 + o22) * (o21 + o22);
-  
-     double chsq = static_cast<double>(_docN*a*a) / static_cast<double>(b);
+     double o12 = static_cast<double>(get(vertex_cfreq, g, vj)) - o11;
+     double o21 = static_cast<double>(get(vertex_cfreq, g, vi)) - o11;
+     double o22 = docn - (o12 + o21 + o11);
+
+     double a = o11 * o22 - o12 * o21;
+     double b = (o11 + o12) * (o11 + o21) * (o12 + o22) * (o21 + o22);
+
+     double chsq = docn*a*a / b;
+//      if (chsq == 163774) {
+//        string s1 = get(vertex_name, g, vi);
+//        string s2 = get(vertex_name, g, vj);
+//        int deb;
+//        deb = 0;
+//      }
+
      if (chsq > glVars::chsq::threshold) {
        // Only update weigth if confident enough
        put(edge_freq, g , *e, static_cast<float>(chsq));
@@ -225,9 +234,12 @@ void CoocGraph::chisq_prune() {
 }
 
 
-bool CoocGraph::normalize_edge_freqs() {
+void CoocGraph::prune_zero_edges(float threshold) {
+  remove_edge_if(EdgeZeroChsq(g, threshold), g);
+  remove_isolated_vertices();
+}
 
-  float cutValue = 20.00;
+bool CoocGraph::normalize_edge_freqs(float cutValue) {
 
   CoocGraph::edge_iterator e, end;
 
@@ -329,7 +341,7 @@ std::ofstream & CoocGraph::write_to_stream(std::ofstream & o) const {
   write_set_to_stream(o, _docSet);
   write_map_to_stream(o, _nodeMap);
 
-  write_atom_to_stream(o, magic_id);  
+  write_atom_to_stream(o, magic_id);
 
   // The graph
   size_t vertex_n = boost::num_vertices(g);
@@ -360,8 +372,8 @@ std::ofstream & CoocGraph::write_to_stream(std::ofstream & o) const {
 
 // Read
 
-CoocGraph::vertex_descriptor 
-read_vertex_from_stream(ifstream & is, 
+CoocGraph::vertex_descriptor
+read_vertex_from_stream(ifstream & is,
 			CoocGraph::boost_graph_t & g) {
 
   string name;
@@ -376,12 +388,12 @@ read_vertex_from_stream(ifstream & is,
   return v;
 }
 
-CoocGraph::edge_descriptor 
-read_edge_from_stream(ifstream & is, 
+CoocGraph::edge_descriptor
+read_edge_from_stream(ifstream & is,
 		      CoocGraph::boost_graph_t & g) {
 
   size_t uIdx;
-  size_t vIdx; 
+  size_t vIdx;
   float freq;
   bool insertedP;
   CoocGraph::edge_descriptor e;
