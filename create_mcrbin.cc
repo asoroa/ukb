@@ -6,6 +6,7 @@
 #include "mcrGraph.h"
 //#include "disambGraph.h"
 #include "coocGraph.h"
+#include "coocGraph2.h"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -71,6 +72,30 @@ void merge_cooc(string & fName, bool store_w) {
   mcr.add_relSource("Cooc: " + fName);
 }
 
+void merge_hlex(string & fName, bool store_w) {
+
+  Mcr & mcr = Mcr::instance();
+
+  CoocGraph2 coog;
+  coog.read_from_binfile(fName);
+  map<CoocGraph2::vertex_descriptor, Mcr_vertex_t> uMap;
+
+  CoocGraph2::vertex_iterator v_it, v_end;
+  for(tie(v_it, v_end) = vertices(coog.graph()); v_it != v_end; ++v_it) {
+    Mcr_vertex_t u = mcr.findOrInsertWord(get(vertex_name, coog.graph(), *v_it));
+    uMap[*v_it] = u;
+  }
+
+  CoocGraph2::edge_iterator e_it, e_end;
+  for(tie(e_it, e_end) = edges(coog.graph()); e_it != e_end; ++e_it) {
+    Mcr_vertex_t u = uMap[source(*e_it, coog.graph())];
+    Mcr_vertex_t v = uMap[target(*e_it, coog.graph())];
+    float w = store_w ? get(edge_freq, coog.graph(), *e_it) : 1.0;
+    mcr.findOrInsertEdge(u, v, w);
+  }
+  mcr.add_relSource("Hlex cooc: " + fName);
+}
+
 void merge_ts(bool store_w) {
 
   Mcr::instance().add_words(store_w); // with weights!
@@ -117,6 +142,8 @@ int main(int argc, char *argv[]) {
   bool opt_weight_ts = true;    // use weights for TS
   bool opt_weight_cooc = false; // don't use weights for cooc
 
+  bool opt_hlex = false;
+
   string cograph_filename;
   string fullname_out("mcr_wnet.bin");
   string relations_file("mcr_16_source/wei_relations.txt");
@@ -148,6 +175,7 @@ int main(int argc, char *argv[]) {
     ("force-default-values,f", "Use default relations.")
     ("info,i", "Give info about some Mcr binfile.")
     ("cooc,c", value<string>(), "Merge a coocurrence graph to a serialization graph.")
+    ("hlex", value<string>(), "Merge a hyperlex coocurrence graph to a serialization graph.")
     ("ts,t", value<string>(), "Merge topic signatures in a serialization graph. Asks for the textfile with ts info.")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("relations_file,r", value<string>(), "Specify file about relations (default mcr_16_source/wei_relations.txt).")
@@ -211,6 +239,12 @@ int main(int argc, char *argv[]) {
     if (vm.count("cooc")) {
       opt_cooc = true;
       cograph_filename = vm["cooc"].as<string>();
+    }
+
+    if (vm.count("hlex")) {
+      opt_hlex = true;
+      cograph_filename = vm["hlex"].as<string>();
+      opt_weight_cooc = true;
     }
 
     if (vm.count("ts")) {
@@ -278,6 +312,14 @@ int main(int argc, char *argv[]) {
     Mcr::create_from_binfile(mcr_file);
     if (opt_cooc) merge_cooc(cograph_filename, opt_weight_cooc);
     if (opt_ts) merge_ts(opt_weight_ts);
+    Mcr::instance().add_comment(cmdline);
+    Mcr::instance().write_to_binfile(fullname_out);
+    return 1;
+  }
+
+  if (opt_hlex) {
+    Mcr::create_from_binfile(mcr_file);
+    merge_hlex(cograph_filename, opt_weight_cooc);
     Mcr::instance().add_comment(cmdline);
     Mcr::instance().write_to_binfile(fullname_out);
     return 1;
