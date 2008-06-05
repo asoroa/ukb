@@ -20,11 +20,20 @@ namespace glVars {
   extern std::string w2s_filename;
 
   extern bool mcr_with_freqs;
-  extern bool output_monosemous;
 
   namespace chsq {
     extern size_t cooc_min;
     extern float threshold;
+  }
+
+  namespace prank {
+    extern size_t num_iterations;
+  }
+
+  // Output stuff
+  namespace output {
+    extern bool allranks; // print all ranks (with weights or just best ranks)
+    extern bool monosemous; // print monosemous words
   }
 
   extern boost::mt19937 rand_generator;
@@ -38,6 +47,7 @@ namespace glVars {
     pageRank,
     degree
   };
+
 
   extern RankAlg rAlg;
 

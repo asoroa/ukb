@@ -12,7 +12,6 @@ namespace glVars {
   std::string w2s_filename = "../Data/Preproc/wn1.6_index.sense_freq";
 
   bool mcr_with_freqs = false;
-  bool output_monosemous = true;
 
   boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
@@ -20,6 +19,16 @@ namespace glVars {
     size_t cooc_min = 5;
     float threshold = 3.84146; // 95.0% confidence;
   }
+
+  namespace prank {
+    size_t num_iterations = 30; // @@better 50
+  }
+
+  namespace output {
+    bool allranks = false;
+    bool monosemous = true;
+  }
+
 
   RankAlg rAlg = pageRank;
 
