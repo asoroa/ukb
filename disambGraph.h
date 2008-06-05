@@ -108,7 +108,7 @@ std::ostream & print_complete_csent(std::ostream & o, CSentence & cs, DisambGrap
 
 // export to dot format (graphviz)
 
-void write_dgraph_graphviz(const std::string & fname, const DisambG & g);
+void write_dgraph_graphviz(const std::string & fname, DisambG & g);
 
 // streaming functions for disambG type graphs
 Dis_vertex_t read_vertex_from_stream(std::ifstream & is, 

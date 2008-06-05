@@ -4,6 +4,7 @@
 #include "mcrGraph.h"
 #include "csentence.h"
 #include "prank.h"
+#include "globalVars.h"
 
 #include <string>
 #include <cmath>
@@ -20,6 +21,7 @@
 // graphviz
 
 #include <boost/graph/graphviz.hpp>
+#include <boost/graph/filtered_graph.hpp>
 
 // bfs 
 
@@ -423,14 +425,13 @@ void pageRank_disg(DisambG & g,
 		   bool use_weigth) {
 
   vector<float> map_tmp(num_vertices(g), 0.0f);
-  vector<float> out_coefs(num_vertices(g), 0);
 
   size_t N = num_connected_vertices(g);
 
   vector<Dis_vertex_t> V(N);
 
   // property maps
-  constant_property_map<Dis_vertex_t, float> ppv(1.0/static_cast<float>(N)); // always return 1/N
+  prank::constant_property_map<Dis_vertex_t, float> ppv(1.0/static_cast<float>(N)); // always return 1/N
   property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
 
   graph_traits<DisambG>::vertex_iterator vIt, vItEnd;
@@ -441,17 +442,14 @@ void pageRank_disg(DisambG & g,
   
   if (use_weigth) {
     property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
-    init_out_coefs(g, V, &out_coefs[0], weight_map);
-    pageRank_iterate(g, V, ppv, out_coefs, weight_map, rank_map, &map_tmp[0], 30); // 30 iterations
+    //init_out_coefs(g, V, &out_coefs[0], weight_map);
+    prank::pageRank_iterate(g, V, ppv, 
+			    weight_map, rank_map, &map_tmp[0], glVars::prank::num_iterations);
   } else {
-    constant_property_map<Dis_edge_t, float> cte_weight(1); // always return 1
-    init_out_coefs(g, V, &out_coefs[0], cte_weight);
-    pageRank_iterate(g, V, ppv, out_coefs, cte_weight, rank_map, &map_tmp[0], 30); // 30 iterations
+    prank::pageRank_iterate_now(g, V, ppv, 
+				rank_map, &map_tmp[0], 
+				glVars::prank::num_iterations); 
 
-//     vector<float> ranks(num_vertices(g), 0.0f);
-//     pageRank_iterate(g, V, ppv, out_coefs, cte_weight, &ranks[0], map_tmp, 30); // 30 iterations
-//     int debug = 0;
-//     ++debug;
   }
 }
 
@@ -490,7 +488,6 @@ void pageRank_ppv_disg(DisambG &g,
   // usual pagerank
 
   vector<float> map_tmp(num_vertices(g), 0.0f);
-  vector<float> out_coefs(num_vertices(g), 0);
 
   size_t N = num_connected_vertices(g);
 
@@ -506,12 +503,12 @@ void pageRank_ppv_disg(DisambG &g,
 
   if (use_weigth) {
     property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
-    init_out_coefs(g, V, &out_coefs[0], weight_map);
-    pageRank_iterate(g, V, ppv_map, out_coefs, weight_map, rank_map, map_tmp, 30); // 30 iterations
+    //init_out_coefs(g, V, &out_coefs[0], weight_map);
+    prank::pageRank_iterate(g, V, ppv_map, weight_map, 
+			    rank_map, map_tmp, glVars::prank::num_iterations);
   } else {
-    constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1  
-    init_out_coefs(g, V, &out_coefs[0], cte_weight);
-    pageRank_iterate(g, V, ppv_map, out_coefs, cte_weight, rank_map, map_tmp, 30); // 30 iterations
+    prank::pageRank_iterate_now(g, V, ppv_map, 
+				rank_map, map_tmp, glVars::prank::num_iterations);
   }
 }
 
@@ -519,7 +516,7 @@ void pageRank_ppv_disg(DisambG &g,
 
 
 void degreeRank(DisambG & g) {
-  constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1  
+  prank::constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1  
   property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
 
   init_degree(g, rank_map, cte_weight);
@@ -718,17 +715,38 @@ public:
 };
 
 
+//
+// Predicate to make a filtered graph
+//
 
-void write_dgraph_graphviz(const string & fname, const DisambG & g) {
+template<class G>
+struct connected_vertex {
+   G * g;
+  connected_vertex( G & g_) : g(&g_) {};
+  connected_vertex( ) {};
+  typedef typename boost::graph_traits<G>::vertex_descriptor vertex_descriptor;
+  bool operator ()(vertex_descriptor u) const {
+    return out_degree(u, *g) || in_degree(u, *g);
+  }
+};
+
+
+void write_dgraph_graphviz(const string & fname, DisambG & g) {
 
   ofstream fo(fname.c_str(), ofstream::out);
   if (!fo) {
     cerr << "Can't create " << fname << endl;
     exit(-1);
   }
+  connected_vertex<DisambG> vp(g);
+//   boost::filtered_graph<DisambG, keep_all, keep_all >
+//     fg(g, keep_all(), keep_all());
+
+  boost::filtered_graph<DisambG, keep_all, connected_vertex<DisambG> >
+    fg(g, keep_all(), vp);
 
   boost::write_graphviz(fo,
-			g,
+			fg,
 			//boost::default_writer(),
  			//make_my_writer(get(vertex_name, g), "label"),
 			make_my_writer3(get(vertex_name, g), 
