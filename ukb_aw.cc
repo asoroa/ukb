@@ -160,7 +160,7 @@ void create_wgraph_from_corpus (const string & fullname_in,
       // PPVs here
       vector<float> ranks;
 
-      bool ok = calculate_mcr_ranks(cs,ranks, false);
+      bool ok = calculate_mcr_hr(cs,ranks, false);
       if (!ok) {
 	cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 	continue;
@@ -261,7 +261,9 @@ void dis_csent(const vector<string> & input_files, const string & ext,
 }
 
 void dis_csent_hr(const string & input_file,
-		  bool with_weight) {
+		  bool with_weight,
+		  bool hr_2pass,
+		  bool out_semcor) {
   
   ifstream fh_in(input_file.c_str());
 
@@ -283,7 +285,7 @@ void dis_csent_hr(const string & input_file,
     while (cs.read_aw(fh_in)) {
 
       vector<float> ranks;
-      bool ok = calculate_mcr_ranks(cs,ranks, with_weight);
+      bool ok = calculate_mcr_hr(cs,ranks, with_weight);
       if (!ok) {
 	cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
 	cerr << "(No word links to MCR ?)\n";
@@ -291,7 +293,13 @@ void dis_csent_hr(const string & input_file,
       }
 
       disamb_csentence_mcr(cs, ranks);
-      cs.print_csent_aw(cout);
+      if(hr_2pass) {
+	calculate_mcr_ppv_csentence(cs, ranks);
+	disamb_csentence_mcr(cs, ranks);
+      }
+      if (out_semcor) cs.print_csent_semcor_aw(cout);
+      else cs.print_csent_aw(cout);
+      //cout << cs << '\n';
       //cout << cs << '\n';
       cs = CSentence();
     }
@@ -303,7 +311,9 @@ void dis_csent_hr(const string & input_file,
 }
 
 void dis_csent_hr_by_word(const string & input_file,
-			  bool with_weight) {
+			  bool with_weight,
+			  bool hr_2pass,
+			  bool out_semcor) {
   
   ifstream fh_in(input_file.c_str());
 
@@ -322,16 +332,28 @@ void dis_csent_hr_by_word(const string & input_file,
   try {
     while (cs.read_aw(fh_in)) {
 
-      vector<float> ranks;
-      calculate_mcr_ranks_by_word_and_disamb(cs, with_weight);
-      cs.print_csent_aw(cout);
+      calculate_mcr_hr_by_word_and_disamb(cs, with_weight);
+      if(hr_2pass) {
+	//
+	// 2nd pass
+	//
+	// use previous ranks of CSentence for PPV and pageRank again
+	//
+	vector<float> ranks;
+	calculate_mcr_ppv_csentence(cs, ranks);
+	disamb_csentence_mcr(cs, ranks);
+      }
+      //      cout << cs << endl;
+      //      exit(-1);
+      if (out_semcor) cs.print_csent_semcor_aw(cout);
+      else cs.print_csent_aw(cout);
       //cout << cs << '\n';
       cs = CSentence();
     }
   } 
   catch (string & e) {
     cerr << "Errore reading " << input_file << ":" << e << "\n";
-    throw(e);    
+    throw(e);
   }
 }
 
@@ -404,7 +426,7 @@ void do_dgraph_gviz(const vector<string> & input_files,
       cerr << "Error: invalid ranking algorithm"<< endl;
       exit(-1);
     }
-
+    
     write_dgraph_graphviz(dg_finfo.get_fname(), dg.graph());
   }
 }
@@ -461,7 +483,7 @@ void do_dgraph_gviz(const vector<string> & input_files,
 
 void test (const string & fullname_in, const string & out_dir) {
 
-  dis_csent_hr(fullname_in, false);
+  dis_csent_hr(fullname_in, false, false, false);
 }
 
 
@@ -544,10 +566,12 @@ int main(int argc, char *argv[]) {
   bool opt_do_gviz = false;
   bool opt_do_hr = false;
   bool opt_do_hr_w2w = false;
+  bool opt_hr_2pass = false;
   bool opt_do_mcr_prank = false;
   bool opt_do_test = false;
   bool opt_with_w = false;
- 
+  bool opt_out_semcor = false; 
+
 
   string cmdline("!!");
   for (int i=0; i < argc; ++i) {
@@ -582,13 +606,25 @@ int main(int argc, char *argv[]) {
     ("mcr_binfile,M", value<string>(), "Binary file of MCR (see create_mcrbin). Default is mcr_wnet.bin")
     ("w2syn_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
+    ("allranks", "Write key file with all synsets associated with ranks.")
     ("mcr_prank", "Given a text input file, disambiguate context using static pageRank over mcr (no dgraph required).")
     ("rank_alg,R", value<string>(), "Ranking algorithm for DGraphs. Options are: pageRank, degree. Default is pageRank.")
     ("test,t", "(Internal) Do a test.")
+    ("semcor", "Output Semcor key file.")
     ("verbose,v", "Be verbose.")
     ("no-monosemous", "Don't output anything for monosemous words.")
     ;
 
+  options_description po_desc_prank("pageRank options");
+  po_desc_prank.add_options()
+    ("prank_iter", value<string>(), "Number of iterations in pageRank. Default is 30.")
+    ;
+
+  options_description po_desc_hr("HR options");
+  po_desc_hr.add_options()
+    ("2pass", "Use ranks of 1st pass to PPV and pageRank again.")
+    ;
+  
   options_description po_desc_kgraph("KGraph options");
   po_desc_kgraph.add_options()
     ("create_kgraph", "Create kgraph binary file given one csentence (dgraph must have same name and be in same directory)")
@@ -602,7 +638,7 @@ int main(int argc, char *argv[]) {
     ;
   
   options_description po_visible;
-  po_visible.add(po_desc).add(po_desc_kgraph).add(po_desc_wdgraph);
+  po_visible.add(po_desc).add(po_desc_prank).add(po_desc_hr).add(po_desc_kgraph).add(po_desc_wdgraph);
   
   options_description po_hidden("Hidden");
   po_hidden.add_options()
@@ -641,10 +677,17 @@ int main(int argc, char *argv[]) {
       opt_do_hr_w2w= true;
     }
 
+    if (vm.count("2pass")) {
+      opt_hr_2pass= true;
+    }
+
     if (vm.count("mcr_prank")) {
       opt_do_mcr_prank = true;
     }
 
+    if (vm.count("prank_iter")) {
+      glVars::prank::num_iterations = vm["prank_iter"].as<size_t>();
+    }
 
     if (vm.count("create_dgraph")) {
       opt_create_dgraph = true;
@@ -713,11 +756,20 @@ int main(int argc, char *argv[]) {
       glVars::verbose = 1;
     }
 
+    if (vm.count("allranks")) {
+      glVars::output::allranks = 1;
+    }
+
+    if (vm.count("semcor")) {
+      opt_out_semcor = 1;
+      glVars::output::allranks = 1; // Output all ranks
+    }
+
     if (vm.count("test")) {
       opt_do_test = true;
     }
     if (vm.count("no-monosemous")) {
-      glVars::output_monosemous = false;
+      glVars::output::monosemous = false;
     }
 
     conflicting_options(vm, "create_dgraph", "dis_csent");
@@ -730,6 +782,12 @@ int main(int argc, char *argv[]) {
   //   writeV(cout, input_files);
   //   cout << endl;
   //   return 0;
+
+  if (!fullname_in.size()) {
+    cout << po_visible << endl;
+    cout << "Error: No input" << endl;
+    exit(0);
+  }
 
   if(opt_create_kgraph ) {
     create_kgraph(fullname_in, out_dir);
@@ -751,14 +809,14 @@ int main(int argc, char *argv[]) {
   if (opt_do_hr) {
     Mcr::create_from_binfile(mcr_binfile);
     cout << cmdline << "\n";
-    dis_csent_hr(fullname_in, opt_with_w);
+    dis_csent_hr(fullname_in, opt_with_w, opt_hr_2pass, opt_out_semcor);
     return 0;
   }
 
   if (opt_do_hr_w2w) {
     Mcr::create_from_binfile(mcr_binfile);
     cout << cmdline << "\n";
-    dis_csent_hr_by_word(fullname_in, opt_with_w);
+    dis_csent_hr_by_word(fullname_in, opt_with_w, opt_hr_2pass, opt_out_semcor);
     return 0;
   }
 
