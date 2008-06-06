@@ -1,7 +1,8 @@
 #include "mcrGraph.h"
 #include "common.h"
 #include "globalVars.h"
-#include "w2syn.h"
+//#include "w2syn.h"
+#include "wdict.h"
 #include "prank.h"
 
 #include <string>
@@ -378,33 +379,23 @@ void create_w2wpos_maps(const string & word,
 			vector<string> & wPosV,
 			map<string, vector<Syn_elem> > & wPos2Syns) {
 
-  const Mcr & mcr = Mcr::instance();
-  W2Syn & w2syn = W2Syn::instance();
-
-  vector<string>::const_iterator syns_it, syns_end;
-  vector<float>::const_iterator weight_it, weight_end;
-  tie(syns_it, syns_end) = w2syn.get_wsyns(word);
-  tie (weight_it, weight_end) = w2syn.get_weights(word);
-
-  char_separator<char> sep("-");
   bool auxP;
+  const Mcr & mcr = Mcr::instance();
 
-  for(;syns_it != syns_end; ++syns_it, ++weight_it) {
-    assert(weight_it != weight_end);
-    vector<string> fields(2);
-    tokenizer<char_separator<char> > tok(*syns_it, sep);
-    copy(tok.begin(), tok.end(), fields.begin());
+  WDict_entries syns = WDict::instance().get_entries(word);
+
+  for(size_t i = 0; i < syns.size(); ++i) {
 
     string wpos(word.size() + 2, '#');
     string::iterator sit = copy(word.begin(), word.end(), wpos.begin());
     ++sit; // '#' char
-    *sit = fields[1].at(0); // the pos
+    *sit = syns.get_pos(i); // the pos
 
     Mcr_vertex_t u; // = insert_synset_vertex(g, synsetMap, *syns_it);
-    tie(u, auxP) = mcr.getVertexByName(*syns_it);
+    tie(u, auxP) = mcr.getVertexByName(syns.get_entry(i));
     if(!auxP) {
       if (glVars::verbose) 
-	cerr << "W: Mcr::add_tokens warning: " << *syns_it << " is not in MCR.\n";
+	cerr << "W: Mcr::add_tokens warning: " << syns.get_entry(i) << " is not in MCR.\n";
       // Warning! 
       // do NOT insert node, because it becomes a dangling node and therefore
       // PageRank can't be applied
@@ -419,9 +410,58 @@ void create_w2wpos_maps(const string & word,
       // first appearence of word#pos
       wPosV.push_back(wpos);
     }
-    m_it->second.push_back(make_pair(u, *weight_it));
+    m_it->second.push_back(make_pair(u, syns.get_freq(i)));
   }
 }
+
+// void create_w2wpos_maps(const string & word,
+// 			vector<string> & wPosV,
+// 			map<string, vector<Syn_elem> > & wPos2Syns) {
+
+//   const Mcr & mcr = Mcr::instance();
+//   W2Syn & w2syn = W2Syn::instance();
+
+//   vector<string>::const_iterator syns_it, syns_end;
+//   vector<float>::const_iterator weight_it, weight_end;
+//   tie(syns_it, syns_end) = w2syn.get_wsyns(word);
+//   tie (weight_it, weight_end) = w2syn.get_weights(word);
+
+//   char_separator<char> sep("-");
+//   bool auxP;
+
+//   for(;syns_it != syns_end; ++syns_it, ++weight_it) {
+//     assert(weight_it != weight_end);
+//     vector<string> fields(2);
+//     tokenizer<char_separator<char> > tok(*syns_it, sep);
+//     copy(tok.begin(), tok.end(), fields.begin());
+
+//     string wpos(word.size() + 2, '#');
+//     string::iterator sit = copy(word.begin(), word.end(), wpos.begin());
+//     ++sit; // '#' char
+//     *sit = fields[1].at(0); // the pos
+
+//     Mcr_vertex_t u; // = insert_synset_vertex(g, synsetMap, *syns_it);
+//     tie(u, auxP) = mcr.getVertexByName(*syns_it);
+//     if(!auxP) {
+//       if (glVars::verbose) 
+// 	cerr << "W: Mcr::add_tokens warning: " << *syns_it << " is not in MCR.\n";
+//       // Warning! 
+//       // do NOT insert node, because it becomes a dangling node and therefore
+//       // PageRank can't be applied
+//       // u = insert_synset_vertex(g, synsetMap, *syns_it); // NO
+//       continue;
+//     }
+    
+//     map<string, vector<Syn_elem> >::iterator m_it;
+
+//     tie(m_it, auxP) = wPos2Syns.insert(make_pair(wpos, vector<Syn_elem>()));
+//     if (auxP) {
+//       // first appearence of word#pos
+//       wPosV.push_back(wpos);
+//     }
+//     m_it->second.push_back(make_pair(u, *weight_it));
+//   }
+// }
 
 
 void insert_wpos(const string & word,
@@ -454,9 +494,9 @@ void insert_wpos(const string & word,
   }      
 }
 
-void Mcr::add_words(bool with_weight) {
+void Mcr::add_dictionary(bool with_weight) {
 
-  W2Syn & w2syn = W2Syn::instance();
+  WDict & w2syn = WDict::instance();
 
   vector<string>::const_iterator word_it = w2syn.get_wordlist().begin();
   vector<string>::const_iterator word_end = w2syn.get_wordlist().end();

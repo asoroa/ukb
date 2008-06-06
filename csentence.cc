@@ -2,7 +2,7 @@
 #include "common.h"
 #include "globalVars.h"
 #include "mcrGraph.h"
-#include "w2syn.h"
+#include "wdict.h"
 
 // Tokenizer
 #include <boost/tokenizer.hpp>
@@ -33,26 +33,35 @@ void fill_syns(const string & w,
 	       vector<float> & ranks,
 	       char pos = 0) {
 
-  W2Syn & w2syn = W2Syn::instance();
+  //W2Syn & w2syn = W2Syn::instance();
   Mcr & mcr = Mcr::instance();
 
   vector<string>::const_iterator str_it;
   vector<string>::const_iterator str_end;
-  tie(str_it, str_end) = w2syn.get_wsyns(w);
-  for(;str_it != str_end; ++str_it) {
+
+  WDict_entries entries = WDict::instance().get_entries(w);
+
+  for(size_t i= 0; i < entries.size(); ++i) {
+
+    const string & syn_str = entries.get_entry(i);
+
     bool existP;
     Mcr_vertex_t mcr_v;
     if(pos) {
       // filter synsets by pos
-      size_t m = str_it->size();
-      if (str_it->at(m-1) != pos) continue;
+      char synpos = entries.get_pos(i);
+      if(!synpos) {
+	cerr << "CWord: Error reading context. " << syn_str << " has no POS\n";
+	exit(-1);
+      }
+      if (pos != synpos) continue;
     }
-    tie(mcr_v, existP) = mcr.getVertexByName(*str_it);
+    tie(mcr_v, existP) = mcr.getVertexByName(syn_str);
     if (existP) {
-      syns.push_back(*str_it);
+      syns.push_back(syn_str);
       ranks.push_back(0.0f);
     } else {
-      cerr << "W: synset " << *str_it << " of word " << w << " is not in MCR" << endl;
+      cerr << "CWord: synset " << syn_str << " of word " << w << " is not in MCR" << endl;
       // debug: synset  which is not in mcr
     }
   }

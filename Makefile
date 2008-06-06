@@ -6,10 +6,10 @@ SRCS = ukb_aw.cc create_mcrbin.cc create_cograph2.cc ukb_sentences.cc
 
 # Library files
 
-SRC = common.cc globalVars.cc configFile.cc fileElem.cc w2syn.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc coocGraph.cc coocGraph2.cc hlex_agtree.cc
+SRC = common.cc globalVars.cc configFile.cc fileElem.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc coocGraph.cc coocGraph2.cc hlex_agtree.cc wdict.cc
 
 # Don't change anything below
-#DEBUG = 1
+DEBUG = 1
 #PROF = 1
 
 INCLUDE_DIR = 

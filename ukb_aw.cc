@@ -1,4 +1,4 @@
-#include "w2syn.h"
+#include "wdict.h"
 #include "common.h"
 #include "fileElem.h"
 #include "globalVars.h"
@@ -149,7 +149,7 @@ void create_wgraph_from_corpus (const string & fullname_in,
   if (glVars::verbose) 
     cerr << "Adding words to Mcr ...\n";
 
-  Mcr::instance().add_words(false);
+  Mcr::instance().add_dictionary(false);
 
   vector<CSentence> vcs;
   CSentence cs;
@@ -218,7 +218,7 @@ void dis_csent(const vector<string> & input_files, const string & ext,
   map<string, size_t> counts;
 
   if (glVars::mcr_with_freqs) {
-    bool ok = W2Syn::instance().syn_counts(counts);
+    bool ok = WDict::instance().syn_counts(counts);
     if (!ok) {
       cerr << "Error! There are no freqs. Check file " << glVars::w2s_filename << endl;
       exit(-1);
@@ -277,7 +277,7 @@ void dis_csent_hr(const string & input_file,
   if (glVars::verbose) 
     cerr << "Adding words to Mcr ...\n";
 
-  Mcr::instance().add_words(false);
+  Mcr::instance().add_dictionary(false);
 
   //Mcr::instance().write_to_binfile("kk.bin");
   //return;
@@ -327,7 +327,7 @@ void dis_csent_hr_by_word(const string & input_file,
   if (glVars::verbose) 
     cerr << "Adding words to Mcr ...\n";
 
-  Mcr::instance().add_words(false);
+  Mcr::instance().add_dictionary(false);
 
   try {
     while (cs.read_aw(fh_in)) {
@@ -409,7 +409,7 @@ void do_dgraph_gviz(const vector<string> & input_files,
     case glVars::pageRank:
       if (glVars::mcr_with_freqs) {
 	map<string, size_t> counts;
-	bool ok = W2Syn::instance().syn_counts(counts);
+	bool ok = WDict::instance().syn_counts(counts);
 	if (!ok) {
 	  cerr << "Error! There are no freqs. Check file " << glVars::w2s_filename << endl;
 	  exit(-1);

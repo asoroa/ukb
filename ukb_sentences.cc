@@ -73,7 +73,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
   if (glVars::verbose) 
     cerr << "Adding words to Mcr ...";
 
-  mcr.add_words(false);
+  mcr.add_dictionary(false);
 
   if (glVars::verbose) 
     Mcr::instance().display_info(cerr);

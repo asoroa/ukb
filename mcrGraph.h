@@ -114,7 +114,7 @@ public:
 
   // Add tokens a la hughes&ramage
 
-  void add_words(bool with_weight); // Adds all words of w2syn file
+  void add_dictionary(bool with_weight); // Adds all words of w2syn file
   void add_token(const std::string & str, bool with_weight); // Add a word
 
   // Add a comment to graph

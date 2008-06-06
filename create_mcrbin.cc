@@ -98,7 +98,7 @@ void merge_hlex(string & fName, bool store_w) {
 
 void merge_ts(bool store_w) {
 
-  Mcr::instance().add_words(store_w); // with weights!
+  Mcr::instance().add_dictionary(store_w); // with weights!
   Mcr::instance().add_relSource("TS: " + glVars::w2s_filename);
 }
 
