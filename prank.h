@@ -71,7 +71,6 @@ namespace prank {
     }
   }
 
-
   // 
   // Apply one step of pageRank algorithm
   //
@@ -107,29 +106,21 @@ namespace prank {
     }
   }
 
-  /////////////////////////////////////////////////////////////////
-  // PageRank iteration
   //
-
-  //
-  // main entry point
+  // Initialize rank and iterate
   //
 
   template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
-  void pageRank_iterate(G & g,
-			std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-			ppvMap_t ppv_V,
-			wMap_t & wmap,
-			map1_t rank_map1,
-			map2_t rank_map2,
-			int iterations) {
+  void do_pageRank(G & g,
+		   std::vector<typename graph_traits<G>::vertex_descriptor> & V,
+		   ppvMap_t ppv_V,
+		   wMap_t & wmap,
+		   map1_t rank_map1,
+		   map2_t rank_map2,
+		   int iterations,
+		   const std::vector<float> & out_coef) {
 
-    float damping = 0.85;
-
-    std::vector<float> out_coef(num_vertices(g), 0.0f);
-    // Initialize out_coef
-    init_out_coefs(g, V, &out_coef[0], wmap);
-
+    float damping = 0.85;    
     // Initialize rank_map1 appropriately
     {
       const float init_value = 1.0f/static_cast<float>(V.size());
@@ -138,9 +129,9 @@ namespace prank {
 	rank_map1[*v]=init_value;
       }
     }
-
+    
     // Continue iterating until the termination condition is met
-
+    
     bool to_map_2 = true;
     while(iterations--) {
       // Update to the appropriate rank map
@@ -160,6 +151,29 @@ namespace prank {
 	rank_map1[*v] = rank_map2[*v];
       }
     }
+  }
+
+  /////////////////////////////////////////////////////////////////
+  // PageRank iteration
+  //
+
+  //
+  // main entry point
+  //
+
+  template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
+  void pageRank_iterate(G & g,
+			std::vector<typename graph_traits<G>::vertex_descriptor> & V,
+			ppvMap_t ppv_V,
+			wMap_t & wmap,
+			map1_t rank_map1,
+			map2_t rank_map2,
+			int iterations) {
+
+    std::vector<float> out_coef(num_vertices(g), 0.0f);
+    // Initialize out_coef
+    init_out_coefs(g, V, &out_coef[0], wmap);
+    do_pageRank(g, V, ppv_V, wmap, rank_map1, rank_map2, iterations, out_coef);
   }
 
 

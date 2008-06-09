@@ -206,6 +206,7 @@ Mcr_vertex_t Mcr::findOrInsertSynset(const string & str) {
   tie(it, insertedP) = synsetMap.insert(make_pair(str, Mcr_vertex_t()));
   if(insertedP) {
     // new vertex
+    coef_status = 0; // reset out degree coefficients
     u = add_vertex(g);
     put(vertex_name, g, u, str);
     it->second = u;
@@ -221,6 +222,7 @@ Mcr_vertex_t Mcr::findOrInsertWord(const string & str) {
   tie(it, insertedP) = wordMap.insert(make_pair(str, Mcr_vertex_t()));
   if(insertedP) {
     // new vertex
+    coef_status = 0; // reset out degree coefficients
     u = add_vertex(g);
     put(vertex_name, g, u, str);
     it->second = u;
@@ -237,6 +239,7 @@ Mcr_edge_t Mcr::findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v,
   //if (w != 1.0) ++w; // minimum weight is 1
   tie(e, existsP) = edge(u, v, g);
   if(!existsP) {
+    coef_status = 0; // reset out degree coefficients
     e = add_edge(u, v, g).first;
     put(edge_weight, g, e, w);
   }
@@ -510,7 +513,7 @@ void insert_wpos(const string & word,
 	mcr.findOrInsertEdge(wpos_v, syns_it->first, 1.0);
       }
     }
-  }      
+  }
 }
 
 void Mcr::add_dictionary(bool with_weight) {
@@ -575,18 +578,29 @@ void Mcr::pageRank_ppv(const vector<float> & ppv_map,
 
   if (use_weight) {
     property_map<Mcr::boost_graph_t, edge_weight_t>::type weight_map = get(edge_weight, g);
-    //init_out_coefs(g, V, &out_coefs[0], weight_map);
-    prank::pageRank_iterate(g, V, &ppv_map[0],
-			    weight_map, &ranks[0], &rank_tmp[0], 
-			    glVars::prank::num_iterations);
+    if(coef_status != 2) {
+      vector<float>(num_vertices(g), 0.0f).swap(out_coefs);
+      prank::init_out_coefs(g, V, &out_coefs[0], weight_map);
+      coef_status = 2;
+    }
+    prank::do_pageRank(g, V, &ppv_map[0],
+		       weight_map, &ranks[0], &rank_tmp[0], 
+		       glVars::prank::num_iterations,
+		       out_coefs);
   } else {
-    //init_out_coefs(g, V, &out_coefs[0], cte_weight);
-    prank::pageRank_iterate_now(g, V, &ppv_map[0],
-				&ranks[0], &rank_tmp[0], 
-				glVars::prank::num_iterations);
+    typedef graph_traits<McrGraph>::edge_descriptor edge_descriptor;
+    prank::constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
+    if(coef_status != 1) {
+      vector<float>(num_vertices(g), 0.0f).swap(out_coefs);
+      prank::init_out_coefs(g, V, &out_coefs[0], cte_weight);
+      coef_status = 1;
+    }
+    prank::do_pageRank(g, V, &ppv_map[0],
+		       cte_weight, &ranks[0], &rank_tmp[0], 
+		       glVars::prank::num_iterations,
+		       out_coefs);
   }
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -638,9 +652,11 @@ void  Mcr::read_from_stream (std::ifstream & is) {
   size_t i;
   size_t id;
 
+  coef_status = 0;
   read_atom_from_stream(is, id);
   if(id != magic_id) {
     cerr << "Error: invalid id (filename is a mcrGraph?)" << endl;
+    exit(-1);
   }
 
   read_set_from_stream(is, relsSource);
@@ -654,6 +670,7 @@ void  Mcr::read_from_stream (std::ifstream & is) {
   read_atom_from_stream(is, id);
   if(id != magic_id) {
     cerr << "Error: invalid id after reading maps" << endl;
+    exit(-1);
   }
 
   read_atom_from_stream(is, vertex_n);
@@ -664,6 +681,7 @@ void  Mcr::read_from_stream (std::ifstream & is) {
   read_atom_from_stream(is, id);
   if(id != magic_id) {
     cerr << "Error: invalid id after reading vertices" << endl;
+    exit(-1);
   }
 
   read_atom_from_stream(is, edge_n);
@@ -674,6 +692,7 @@ void  Mcr::read_from_stream (std::ifstream & is) {
   read_atom_from_stream(is, id);
   if(id != magic_id) {
     cerr << "Error: invalid id after reading edges" << endl;
+    exit(-1);
   }
   read_vector_from_stream(is, notes);
 

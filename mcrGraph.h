@@ -129,9 +129,9 @@ private:
   static Mcr * create();
 
   // Private methods
-  Mcr() {};
+  Mcr() : coef_status(0) {};
   Mcr(const Mcr &) {};
-  Mcr &operator=(const Mcr &) { return *this; };
+  Mcr &operator=(const Mcr &);
   ~Mcr() {};
 
   void read_from_txt(const std::string & relFile,
@@ -148,6 +148,11 @@ private:
   std::map<std::string, int> relMap;     // maps from relation name to relation id
   std::map<int, std::string> relMapInv;  // maps from relation id to relation name
   std::vector<std::string> notes;
+  std::vector<float> out_coefs;          // aux. vector of out-degree coefficients
+  char coef_status;                      // 0 invalid
+                                         // 1 calculated without weights
+                                         // 2 calculated with weights
+
   //std::map<int, int> relType;            // maps from relation id to relation type id
   //std::map<int, int> relInv;             // maps from relation id to inverse id
   //std::map<std::string, int> sourceMap;  // maps from source name to source id's
