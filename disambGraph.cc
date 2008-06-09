@@ -1,6 +1,5 @@
 #include "disambGraph.h"
 #include "common.h"
-#include "w2syn.h"
 #include "mcrGraph.h"
 #include "csentence.h"
 #include "prank.h"

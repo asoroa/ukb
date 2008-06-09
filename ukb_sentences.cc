@@ -1,5 +1,4 @@
 #include "common.h"
-#include "w2syn.h"
 #include "globalVars.h"
 #include "configFile.h"
 #include "fileElem.h"
