@@ -567,7 +567,7 @@ int main(int argc, char *argv[]) {
   bool opt_do_hr = false;
   bool opt_do_hr_w2w = false;
   bool opt_hr_2pass = false;
-  bool opt_do_mcr_prank = false;
+  bool opt_do_static_prank = false;
   bool opt_do_test = false;
   bool opt_with_w = false;
   bool opt_out_semcor = false; 
@@ -607,7 +607,7 @@ int main(int argc, char *argv[]) {
     ("w2syn_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("allranks", "Write key file with all synsets associated with ranks.")
-    ("mcr_prank", "Given a text input file, disambiguate context using static pageRank over mcr (no dgraph required).")
+    ("static_prank", "Given a text input file, disambiguate context using static pageRank over mcr (no dgraph required).")
     ("rank_alg,R", value<string>(), "Ranking algorithm for DGraphs. Options are: pageRank, degree. Default is pageRank.")
     ("test,t", "(Internal) Do a test.")
     ("semcor", "Output Semcor key file.")
@@ -681,8 +681,8 @@ int main(int argc, char *argv[]) {
       opt_hr_2pass= true;
     }
 
-    if (vm.count("mcr_prank")) {
-      opt_do_mcr_prank = true;
+    if (vm.count("static_prank")) {
+      opt_do_static_prank = true;
     }
 
     if (vm.count("prank_iter")) {
@@ -820,7 +820,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  if (opt_do_mcr_prank) {
+  if (opt_do_static_prank) {
     Mcr::create_from_binfile(mcr_binfile);
     cout << cmdline << "\n";
     dis_csent_classic_prank(fullname_in, opt_with_w);
