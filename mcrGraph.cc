@@ -353,6 +353,26 @@ void Mcr::read_from_txt(const string & relFileName,
   read_mcr(synsFile, rels_source, this); // g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);
 }
 
+////////////////////////////////////////////////7
+// public function
+
+void Mcr::add_from_txt(const std::string & synsFileName) {
+  if (!p_instance) {
+    cerr << "add_relations_from_txt. MCR not initialized!" << endl;
+    exit(-1);
+  }
+  // optimize IO
+  std::ios::sync_with_stdio(false);
+
+  std::ifstream synsFile(synsFileName.c_str(), ofstream::in);
+  if (!synsFile) {
+    cerr << "Can't open " << synsFileName << endl;
+    throw;
+  }
+
+  read_mcr(synsFile, relsSource, this); // g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);  
+}
+
 void Mcr::display_info(std::ostream & o) const {
 
   o << "Relation sources: ";
@@ -370,7 +390,6 @@ void Mcr::display_info(std::ostream & o) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Add token vertices and link them to synsets
-
 
 
 typedef pair<Mcr_vertex_t, float> Syn_elem;

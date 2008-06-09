@@ -80,6 +80,7 @@ public:
 
   // Member functions
 
+  
   McrGraph & graph() {return g;}
 
   size_t size() const {return num_vertices(g); }
@@ -94,8 +95,8 @@ public:
 
   Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w );
 
+  void add_from_txt(const std::string & synsFile); // Add a textfile with relations btw. synsets
   void add_relSource(const std::string & str) { relsSource.insert(str); }
-
 
   bool bfs (Mcr_vertex_t source_synset, std::vector<Mcr_vertex_t> & synv) const ;
   //bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;

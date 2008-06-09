@@ -1,5 +1,5 @@
 #include "common.h"
-#include "w2syn.h"
+#include "wdict.h"
 #include "globalVars.h"
 #include "configFile.h"
 #include "fileElem.h"
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
   string cograph_filename;
   string fullname_out("mcr_wnet.bin");
   string relations_file("mcr_16_source/wei_relations.txt");
-  string mcr_file;
+  vector<string> mcr_files;
   string out_dir;
   string query_vertex;
 
@@ -162,8 +162,9 @@ int main(int argc, char *argv[]) {
 
   const char desc_header[] = "create_mcrbin: create a serialized image of the MCR\n"
     "Usage:\n"
-    "create_mcrbin mcr_file.txt [output.bin] -> Create a MCR image.\n"
-    "create_mcrbin -c coocgraph.bin mcr.bin output.bin -> Merge a mcr serialization with a coocurrence graph.\n"
+    "create_mcrbin [-o output.bin] mcr_file.txt mcr_file.txt ... -> Create a MCR image reading relations textfiles.\n"
+    "create_mcrbin [-o output.bin] -c coocgraph.bin mcr.bin -> Merge a mcr serialization with a coocurrence graph.\n"
+    "create_mcrbin [-o output.bin] --ts ts_dict.txt mcr.bin -> Merge TS from textfile.\n"
     "Options:";
 
   using namespace boost::program_options;
@@ -178,8 +179,9 @@ int main(int argc, char *argv[]) {
     ("hlex", value<string>(), "Merge a hyperlex coocurrence graph to a serialization graph.")
     ("ts,t", value<string>(), "Merge topic signatures in a serialization graph. Asks for the textfile with ts info.")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
+    ("output,o", value<string>(), "Output file name.")
     ("relations_file,r", value<string>(), "Specify file about relations (default mcr_16_source/wei_relations.txt).")
-    ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
+    //    ("dict_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
     ("param,p", value<string>(), "Specify parameter file.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
     ("ts_now", "Don't use weights when linking TS words to synsets (default is yes).")
@@ -188,15 +190,13 @@ int main(int argc, char *argv[]) {
     ;
   options_description po_desc_hide("Hidden");
   po_desc_hide.add_options()
-    ("input-file",value<string>(), "Input file.")
-    ("output-file",value<string>(), "Output file.")
+    ("input-file",value<vector<string> >(), "Input files.")
     ;
   options_description po_desc_all("All options");
   po_desc_all.add(po_desc).add(po_desc_hide);
 
   positional_options_description po_optdesc;
-  po_optdesc.add("input-file", 1);
-  po_optdesc.add("output-file", 1);
+  po_optdesc.add("input-file", -1);
 
   variables_map vm;
 
@@ -264,13 +264,13 @@ int main(int argc, char *argv[]) {
       relations_file = vm["relations_file"].as<string>();
     }
 
-    if (vm.count("w2syn_file")) {
-      if (opt_ts) {
-	cerr << "Error, --ts and --w2syns_file options conflict!\n";
-	exit(-1);
-      }
-      glVars::w2s_filename = vm["w2syn_file"].as<string>();
-    }
+//     if (vm.count("dict_file")) {
+//       if (opt_ts) {
+// 	cerr << "Error, --ts and --dict_file options conflict!\n";
+// 	exit(-1);
+//       }
+//       glVars::w2s_filename = vm["dict_file"].as<string>();
+//     }
 
     // weights
 
@@ -284,32 +284,32 @@ int main(int argc, char *argv[]) {
 
 
     if (vm.count("input-file")) {
-      mcr_file = vm["input-file"].as<string>();
+      mcr_files = vm["input-file"].as<vector<string> >();
     }
 
-    if (vm.count("output-file")) {
-      fullname_out = vm["output-file"].as<string>();
-    }
+     if (vm.count("output")) {
+       fullname_out = vm["output"].as<string>();
+     }
   }
   catch(exception& e) {
     cerr << e.what() << "\n";
     throw(e);
   }
 
-  if (mcr_file.size()==0) {
+  if (mcr_files.size()==0) {
     cout << po_desc << endl;
     cout << "No input files" << endl;
     exit(0);
   }
 
   if (opt_info) {
-    Mcr::create_from_binfile(mcr_file);
+    Mcr::create_from_binfile(mcr_files[0]);
     Mcr::instance().display_info(cout);
     return 0;
   }
 
   if (opt_cooc || opt_ts) {
-    Mcr::create_from_binfile(mcr_file);
+    Mcr::create_from_binfile(mcr_files[0]);
     if (opt_cooc) merge_cooc(cograph_filename, opt_weight_cooc);
     if (opt_ts) merge_ts(opt_weight_ts);
     Mcr::instance().add_comment(cmdline);
@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_hlex) {
-    Mcr::create_from_binfile(mcr_file);
+    Mcr::create_from_binfile(mcr_files[0]);
     merge_hlex(cograph_filename, opt_weight_cooc);
     Mcr::instance().add_comment(cmdline);
     Mcr::instance().write_to_binfile(fullname_out);
@@ -326,7 +326,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_query) {
-    Mcr::create_from_binfile(mcr_file);
+    Mcr::create_from_binfile(mcr_files[0]);
     query(query_vertex);
     return 1;
   }
@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
 
   if (glVars::verbose) {
     show_global_variables(cerr);
-    cerr << "MCR file:" << mcr_file << "\t";
+    //cerr << "MCR file:" << mcr_file << "\t";
     cerr << "Relations file:" << relations_file << endl;
   }
 
@@ -357,7 +357,10 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     cerr << "Reading relations"<< endl;
 
-  Mcr::create_from_txt(relations_file, mcr_file, source_rels);
+  Mcr::create_from_txt(relations_file, mcr_files[0], source_rels);
+  for(size_t i=1; i < mcr_files.size(); ++i) {
+    Mcr::instance().add_from_txt(mcr_files[i]);
+  }
 
   File_elem mcr_fe(fullname_out);
   mcr_fe.set_path(out_dir);
