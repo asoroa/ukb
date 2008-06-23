@@ -14,12 +14,22 @@
 #include <boost/filesystem/operations.hpp>
 #include "boost/filesystem/path.hpp"
 
+// graphviz
+
+#include <boost/graph/graphviz.hpp>
+#include <boost/graph/filtered_graph.hpp>
+
 // Program options
 
 #include <boost/program_options.hpp>
 
 using namespace std;
 using namespace boost;
+
+// global vars
+
+bool opt_verbose = false;
+
 
 string basename(const string & fname) {
   
@@ -72,6 +82,7 @@ bool extract_input_files(const string & fullname,
   return true;
 }
 
+
 void chsq (const string & input_name,
 	   const string & output_name,
 	   bool normalize) {
@@ -111,6 +122,34 @@ void query (const string & coName, const string & str) {
     }
   }
 }
+
+void create_from_dlin(const vector<string> & input_files, 
+		      const string & graph_binfile) {
+
+  CoocGraph coog;
+  if (glVars::verbose) 
+    cerr << "Creating from dling th." << endl;
+
+  for(vector<string>::const_iterator it=input_files.begin();
+      it != input_files.end(); ++it) {
+    string word = basename(*it);
+    ifstream fh(it->c_str());
+    if (!fh) {
+      cerr << "Error: can't read " << *it << endl;
+      exit(-1);
+    }
+
+    // Fill dling
+    coog.fill_dling_th(fh);
+    // First line is word, second similarities. F. ex.
+    //
+    // a
+  }
+  //coog.remove_isolated_vertices(1); // Remove dangling nodes
+  coog.write_to_binfile(graph_binfile);
+}
+
+
 
 void info (string & coName) {
 
@@ -159,20 +198,29 @@ void test(string & coName) {
 
   coog.read_from_binfile(coName);
 
-  CoocGraph::vertex_iterator it, end;
-  for(tie(it, end) = vertices(coog.graph()); it != end; ++it) {
-    if(out_degree(*it, coog.graph()) == 0) {
-      cout << get(vertex_name, coog.graph(), *it) << '\n';
-    }
+  ofstream fo("kk.dot", ofstream::out);
+  if (!fo) {
+    cerr << "Can't create kk.dot\n";
+    exit(-1);
   }
+
+  boost::write_graphviz(fo, 
+			coog.graph(),
+			make_my_writer(get(vertex_name, coog.graph()),"w"));
+  
+//   CoocGraph::vertex_iterator it, end;
+//   for(tie(it, end) = vertices(coog.graph()); it != end; ++it) {
+//     if(out_degree(*it, coog.graph()) == 0) {
+//       cout << get(vertex_name, coog.graph(), *it) << '\n';
+//     }
+//   }
 }
 
 int main(int argc, char *argv[]) {
 
   srand(3);
 
-  bool opt_force = false;
-  bool opt_verbose = false;
+  //bool opt_force = false;
 
   bool opt_query = false;
   bool opt_info = false;
@@ -180,6 +228,7 @@ int main(int argc, char *argv[]) {
   bool opt_edge_histo = false;
   bool opt_test = false;
   bool opt_chsq = false;
+  bool opt_dlin = false;
   bool opt_normalize = false;
 
   string query_vertex;
@@ -196,13 +245,14 @@ int main(int argc, char *argv[]) {
   //float threshold = 10.827;  // 99.99% confidence
 
 
-
   const char desc_header[] = "create_cograph: create a coocurrence graph\n"
     "Usage:\n"
-    "create_cograph [-f] file_or_dir [coocgraph.bin] \n"
+    "create_cograph [-o ouput.bin] file_or_dir \n"
     "\t file_or_dir: input textfile or directory. If directory given, all input files are read.\n"
-    "\t coocgraph.bin: Name of serialization graph. Default is coocgraph.bin.\n"
-    "create_cograph -c pruned_cograph.bin [-t threshold] cograph.bin\n"
+    "\t -o Name of serialization graph. Default is coocgraph.bin.\n"
+    "create_cograph [-o cograph.bin] --dling file_or_dir \n"
+    "\t create a cograph using as input Dekang-Lin thesaurus." 
+    "create_cograph [-t threshold] [-o output.bin] -c input.bin\n"
     "Options:";
   
   using namespace boost::program_options;
@@ -210,14 +260,16 @@ int main(int argc, char *argv[]) {
   options_description po_desc(desc_header);
 
   po_desc.add_options()
-    ("chsq,c", value<string>(), "Given a serialized graph, create another with chisq information. Prune it according threshold (see -t).")
+    ("dling,d", "Create a cograph using as input Dekang-Lin thesaurus." )
+    ("chsq,c", "Given a serialized graph, create another with chisq information. Prune it according threshold (see -t).")
     ("edge_histogram,E", "Output edge freq. values.")
     ("help,h", "This help page.")
     ("histogram,H", "Output vertex degrees.")
     ("normalize,N", "Normalize chisq. values, so they fit in [0,1] interval.")
     ("info,i", "Get info of a serielized cograph.")
-    ("force,f", "Don't use previous coocgraph.bin if exists.")
+    //("force,f", "Don't use previous coocgraph.bin if exists.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
+    ("output,o", value<string>(), "Output filename (default is ./coocgraph.bin).")
     ("verbose,v", "Be verbose.")
     ("threshold,t", value<float>(), 
      "Set a threshold for prunning the graph (use with -c option).\n"
@@ -235,14 +287,12 @@ int main(int argc, char *argv[]) {
   options_description po_desc_hide("Hidden");
   po_desc_hide.add_options()
     ("input-file",value<string>(), "Input file.")
-    ("output-file",value<string>(), "Output file.")
     ;
   options_description po_desc_all("All options");
   po_desc_all.add(po_desc).add(po_desc_hide);
   
   positional_options_description po_optdesc;
   po_optdesc.add("input-file", 1);
-  po_optdesc.add("output-file", 1);
   
   variables_map vm;
 
@@ -260,9 +310,12 @@ int main(int argc, char *argv[]) {
       exit(0);
     }
 
+    if (vm.count("dling")) {
+      opt_dlin = true;
+    }
+
     if (vm.count("chsq")) {
       opt_chsq = true;
-      graph_binfile= vm["chsq"].as<string>();
     }
 
     if (vm.count("info")) {
@@ -281,9 +334,9 @@ int main(int argc, char *argv[]) {
       opt_edge_histo = true;
     }
 
-    if (vm.count("force")) {
-      opt_force = true;
-    }
+//     if (vm.count("force")) {
+//       opt_force = true;
+//     }
 
     // verbosity
     if (vm.count("verbose")) {
@@ -307,8 +360,8 @@ int main(int argc, char *argv[]) {
       fullname_in = vm["input-file"].as<string>();
     }
 
-    if (vm.count("output-file")) {
-      graph_binfile = vm["output-file"].as<string>();
+    if (vm.count("output")) {
+      graph_binfile = vm["output"].as<string>();
     }
 
   }
@@ -328,6 +381,11 @@ int main(int argc, char *argv[]) {
     cout << po_desc << endl;
     cerr << "Error: No input files." << endl;
     return -1;
+  }
+
+  if (opt_dlin) {
+    create_from_dlin(input_files, graph_binfile);
+    return 0;
   }
 
   if (opt_test) {
@@ -356,6 +414,10 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_chsq) {
+    if(exists_file(graph_binfile)) {
+      cerr << "Error: " << graph_binfile << " exists. Won't override."<< endl;
+      return -1;
+    }
     if (glVars::chsq::threshold < 0.0) {
       cerr << "Error: negative threshold\n";
       return -1;

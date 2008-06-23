@@ -82,6 +82,10 @@ class CoocGraph {
 
   void fill_cograph(std::ifstream & fh);
 
+  // fill with dling thesaurus
+
+  void fill_dling_th(std::ifstream & fh);
+
   // Chi square and prunning
 
   void calculate_chisq();
@@ -90,7 +94,8 @@ class CoocGraph {
   bool normalize_edge_freqs(  float cutValue = 190.00);
 
 
-  void remove_isolated_vertices();
+  // Remove all vertices whose degree is <= m
+  void remove_isolated_vertices(size_t m = 0);
 
   // Remove edges below theshold
   void prune_zero_edges(float threshold = 0.0);

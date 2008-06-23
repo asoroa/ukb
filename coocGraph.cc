@@ -87,14 +87,14 @@ CoocGraph::CoocGraph(CoocGraph & cooc) {
   _docN = cooc._docN;
 }
 
-void CoocGraph::remove_isolated_vertices() {
+void CoocGraph::remove_isolated_vertices(size_t m) {
 
   CoocGraph coog;
   map<CoocGraph::vertex_descriptor, CoocGraph::vertex_descriptor> nMap;
 
   CoocGraph::vertex_iterator v_it, v_end;
   for(tie(v_it, v_end) = vertices(g); v_it != v_end; ++v_it) {
-    if (out_degree(*v_it, g) > 0) {
+    if (out_degree(*v_it, g) > m) {
       CoocGraph::vertex_descriptor u = coog.findOrInsertNode(get(vertex_name, g, *v_it));
       put(vertex_cfreq, coog.g, u,
 	  get(vertex_cfreq, g, *v_it));
@@ -176,6 +176,38 @@ void CoocGraph::fill_cograph(ifstream & fh) {
       V.push_back(findOrInsertNode(*sit));
     }
     insert_doc(V); // Insert cooc information to graph
+  }
+}
+
+void CoocGraph::fill_dling_th(ifstream & fh) {
+  string line;
+  char_separator<char> sep(" ");
+
+  while(fh) {
+
+    vector<string> fields;
+
+    line = next_notempty(fh); // source word
+    if (!fh) break;
+    CoocGraph::vertex_descriptor source = findOrInsertNode(line);
+//     put(vertex_cfreq, g, source,
+// 	get(vertex_cfreq, g, source) + 1);
+
+    // Related words
+    line = next_notempty(fh);
+    tokenizer<char_separator<char> > tok(line, sep);
+    copy(tok.begin(), tok.end(), back_inserter(fields));
+    if (0 == fields.size()) continue;
+    // erase duplicates
+    set<string> docWords;
+    for(vector<string>::iterator it_ = fields.begin(); it_ != fields.end(); ++it_)
+      docWords.insert(*it_);
+    vector<CoocGraph::vertex_descriptor> target;
+    for(set<string>::const_iterator sit = docWords.begin(); sit != docWords.end(); ++sit) {
+      CoocGraph::vertex_descriptor target = findOrInsertNode(*sit);
+      if (source == target) continue; // Don't allow self loops
+      findOrInsertEdge(source, target);
+    }
   }
 }
 

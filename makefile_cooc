@@ -18,7 +18,7 @@ LIBS = -lboost_filesystem -lboost_program_options
 ifdef DEBUG
 OPTFLAGS = -g
 else
-OPTFLAGS = -O2
+OPTFLAGS = -O3
 endif
 
 ifdef PROF
