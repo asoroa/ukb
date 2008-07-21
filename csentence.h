@@ -26,7 +26,7 @@ public:
   typedef std::vector<std::string>::value_type value_type;
   typedef std::vector<std::string>::size_type size_type;
 
-  explicit CWord() : distinguished(false), ranks_equal(true), disamb(false) {};
+  explicit CWord() : m_weight(1.0), distinguished(false), ranks_equal(true), disamb(false) {};
   CWord(const std::string & w_);
   CWord(const std::string & w_, const std::string & id, char pos, bool is_dist);
   CWord & operator=(const CWord & cw_);
@@ -47,6 +47,9 @@ public:
 
   std::string id() const {return cw_id;}
   char get_pos() const {return pos;}
+
+  float get_weight() const { return m_weight;}
+  void set_weight(float w) { m_weight = w;}
 
   bool is_distinguished() const { return distinguished; }
   bool is_disambiguated() const { return disamb; }
@@ -89,6 +92,7 @@ private:
   std::string w;
   std::string cw_id;
   char pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
+  float m_weight;     // Initial weight for PPV
   std::vector<std::string> syns;
   std::vector<float> ranks;
   bool distinguished;

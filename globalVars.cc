@@ -15,6 +15,10 @@ namespace glVars {
 
   boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
+  namespace csentence {
+    bool word_weight = false;
+  }
+
   namespace chsq {
     size_t cooc_min = 5;
     float threshold = 3.84146; // 95.0% confidence;

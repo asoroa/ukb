@@ -28,6 +28,11 @@ using namespace boost;
 
 const char *mcr_default_binfile = "mcr_wnet.bin";
 
+static int filter_nodes = 0; // 0 -> no filter
+                             // 1 -> only words
+                             // 2 -> only synsets
+
+
 void read_skip_relations (const string & file,
 			  set<string> & skip_rels) {
 
@@ -76,8 +81,6 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 
   if (glVars::verbose) 
     Mcr::instance().display_info(cerr);
-  if (glVars::verbose) 
-    cerr << "\nReady for pageRank!\n";
 
   // Read sentences and compute rank vectors
 
@@ -100,11 +103,53 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 	cerr << "Error: can't create" << fout.get_fname() << endl;
 	exit(-1);
       }
-      copy(ranks.begin(), ranks.end(), ostream_iterator<float>(fo, "\n"));
+
+      vector<float> filter_ranks;
+      float filter_sum = 0.0;
+      double norm;
+      switch(filter_nodes) {
+      case 1: // only words
+	if (glVars::verbose) 
+	  cerr << ranks.size() << "\n";
+	for(size_t i=0; i < ranks.size(); ++i) {
+	  if (mcr.vertexIsWord(i)) {
+	    filter_ranks.push_back(ranks[i]);
+	    filter_sum+=ranks[i];
+	  }
+	}
+	if (glVars::verbose) 
+	  cerr << filter_ranks.size() << " words\n";
+	// normalize vector
+	norm = 1.0/filter_sum;
+	for(vector<float>::iterator it=filter_ranks.begin(); it != filter_ranks.end(); ++it) {
+	  fo << *it * norm << "\n";
+	}
+	break;
+      case 2: // only synsets
+	if (glVars::verbose) 
+	  cerr << ranks.size() << "\n";
+	for(size_t i=0; i < ranks.size(); ++i) {
+	  if (mcr.vertexIsSynset(i)) {
+	    filter_ranks.push_back(ranks[i]);
+	    filter_sum+=ranks[i];
+	  }
+	}
+	// normalize vector
+	if (glVars::verbose) 
+	  cerr << filter_ranks.size() << " synsets\n";
+	norm = 1.0/filter_sum;
+	for(vector<float>::iterator it=filter_ranks.begin(); it != filter_ranks.end(); ++it) {
+	  fo << *it * norm << "\n";
+	}
+	break;
+
+      default:
+	copy(ranks.begin(), ranks.end(), ostream_iterator<float>(fo, "\n"));
+	break;
+      };
       cs = CSentence();
     }
-  } 
-  catch (string & e) {
+  } catch (string & e) {
     cerr << "Errore reading " << fullname_in << ":" << e << "\n";
     throw(e);    
   }
@@ -136,6 +181,9 @@ int main(int argc, char *argv[]) {
     ("help,h", "This help page.")
     ("mcr_binfile,M", value<string>(), "Binary file of MCR (see create_mcrbin). Default is mcr_wnet.bin")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
+    ("only_words", "Output only (normalized) PPVs for words.")
+    ("only_synsets", "Output only (normalized) PPVs for synsets.")
+    ("word_weight", "Use weights on words (init values of PPV). Input must have 5 fields, the last one being the weight.")
     ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
     ("param,p", value<string>(), "Specify parameter file.")
     ("verbose,v", "Be verbose.")
@@ -173,7 +221,6 @@ int main(int argc, char *argv[]) {
       glVars::verbose = 1;
     }
 
-
     // Config params first, so that they can be overriden by switch options
 
     if (vm.count("mcr_binfile")) {
@@ -185,12 +232,25 @@ int main(int argc, char *argv[]) {
       opt_param = true;
     }
 
+    if (vm.count("only_words")) {
+      filter_nodes = 1;
+    }
+
+    if (vm.count("only_synsets")) {
+      filter_nodes = 2;
+    }
+
     if (vm.count("out_dir")) {
       out_dir = vm["out_dir"].as<string>();
     }
 
+
     if (vm.count("w2syn_file")) {
       glVars::w2s_filename = vm["w2syn_file"].as<string>();
+    }
+
+    if (vm.count("word_weight")) {
+      glVars::csentence::word_weight = true;
     }
 
     if (vm.count("input-file")) {
@@ -215,7 +275,6 @@ int main(int argc, char *argv[]) {
     Mcr::instance().display_info(cerr);
 
   compute_sentence_vectors(fullname_in, out_dir);
-
   return 0;
 }
 

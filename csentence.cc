@@ -18,6 +18,7 @@ CWord & CWord::operator=(const CWord & cw_) {
   if (&cw_ != this) {
     w = cw_.w;
     cw_id = cw_.cw_id;
+    m_weight = cw_.m_weight;
     pos = cw_.pos;
     syns = cw_.syns;
     ranks = cw_.ranks;
@@ -74,18 +75,19 @@ void CWord::shuffle_synsets() {
 }
 
 CWord::CWord(const string & w_) : 
-  w(w_), cw_id(string()), pos(0), distinguished(true), ranks_equal(true) {
+  w(w_), cw_id(string()), pos(0), m_weight(1.0), distinguished(true), ranks_equal(true) {
   fill_syns(w_, syns, ranks, 0);
   disamb = (1 == syns.size()); // monosemous words are disambiguated
   shuffle_synsets();
 }
 
 CWord::CWord(const string & w_, const string & id_, char pos_, bool dist_) 
-  : w(w_), cw_id(id_), pos(pos_), distinguished(dist_), ranks_equal(true) {
+  : w(w_), cw_id(id_), pos(pos_), m_weight(1.0), distinguished(dist_), ranks_equal(true) {
   fill_syns(w_, syns, ranks, pos_);
   disamb = (1 == syns.size()); // monosemous words are disambiguated
   shuffle_synsets();
 }
+
 
 string CWord::wpos() const {
 
@@ -135,6 +137,8 @@ std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
   o << cw_.w;
   if (cw_.pos) 
     o << "-" << cw_.pos;
+  if(glVars::csentence::word_weight) 
+    o << "#" << cw_.m_weight;
   o << "#" << cw_.cw_id << "#" << cw_.distinguished << " " << cw_.ranks_equal << " " << cw_.disamb;
   o << '\n';
   for(size_t i = 0; i < cw_.syns.size(); ++i) {
@@ -260,9 +264,15 @@ istream & CSentence::read_aw(istream & is) {
       char_separator<char> wsep("#");
       tokenizer<char_separator<char> > wtok(*it, wsep);
       copy(wtok.begin(), wtok.end(), back_inserter(fields));
-      if (fields.size() != 4) 
-	throw "Bad word " + *it + " " + lexical_cast<string>(i);
+      if (fields.size() < 4) 
+	throw std::runtime_error("read_aw: Bad word " + *it + " " + lexical_cast<string>(i));
       CWord new_cw(fields[0], fields[2], fields[1].at(0), lexical_cast<bool>(fields[3]));
+      if(glVars::csentence::word_weight) {
+	if (fields.size() != 5) 
+	  throw std::runtime_error("read_aw: Bad word " + *it + " " + lexical_cast<string>(i) + ": no weight");
+	// optional weight
+	new_cw.set_weight(lexical_cast<float>(fields[4]));
+      }
       if (new_cw.size()) {
 	v.push_back(new_cw);
       } else {
@@ -372,7 +382,7 @@ bool calculate_mcr_hr(const CSentence & cs,
   vector<float> ppv(mcr.size(), 0.0);
   CSentence::const_iterator it = cs.begin();
   CSentence::const_iterator end = cs.end();
-  size_t K = 0;
+  float K = 0.0;
   for(;it != end; ++it) {
     //if(!it->is_distinguished()) continue;
     
@@ -380,13 +390,15 @@ bool calculate_mcr_hr(const CSentence & cs,
     string wpos = it->word();
 
     Mcr_vertex_t u;
-    tie(u, aux) = mcr.getVertexByName(wpos);
+    tie(u, aux) = mcr.getVertexByName(wpos);    
+    float w = 1.0;
+    if(glVars::csentence::word_weight) w = it->get_weight();
     if (aux) {
-      ppv[u] = 1;
-      ++K;
+      ppv[u] = w;
+      K +=w;
     }
   }
-  if (!K) return false;
+  if (K == 0.0) return false;
   // Normalize PPV vector
   float div = 1.0 / static_cast<float>(K);
   for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit) 
@@ -419,7 +431,7 @@ void calculate_mcr_hr_by_word_and_disamb(CSentence & cs,
     vector<float> ranks (mcr.size(), 0.0);
     // Initialize PPV vector
     vector<float> ppv(mcr.size(), 0.0);
-    size_t K = 0;
+    float K = 0.0;
     // put ppv to the synsets of words except cw_it
     for(CSentence::const_iterator it = cs.begin(); it != cw_end; ++it) {
       if(it == cw_it) continue;
@@ -428,12 +440,14 @@ void calculate_mcr_hr_by_word_and_disamb(CSentence & cs,
       
       Mcr_vertex_t u;
       tie(u, aux) = mcr.getVertexByName(wpos);
+      float w =  1.0;
+      if(glVars::csentence::word_weight) w = it->get_weight();
       if (aux) {
-	ppv[u] = 1;
-	++K;
+	ppv[u] = w;
+	K +=w;
       }
     }
-    if (!K) continue;
+    if (K == 0.0) continue;
     // Normalize PPV vector
     float div = 1.0 / static_cast<float>(K);
     for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit) 

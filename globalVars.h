@@ -21,6 +21,10 @@ namespace glVars {
 
   extern bool mcr_with_freqs;
 
+  namespace csentence {
+    extern bool word_weight;
+  }
+
   namespace chsq {
     extern size_t cooc_min;
     extern float threshold;
