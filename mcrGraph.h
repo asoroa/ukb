@@ -31,6 +31,7 @@ using boost::edge_weight;
 // Properties for graphs
 
 enum vertex_wname_t { vertex_wname};  // word name
+enum vertex_flags_t { vertex_flags};  // flags for vertex
 enum edge_id_t      { edge_id };      // relation id
 enum edge_source_t  { edge_source };  // relation source
 
@@ -38,6 +39,7 @@ enum edge_source_t  { edge_source };  // relation source
 
 namespace boost {
   BOOST_INSTALL_PROPERTY(vertex, wname);
+  BOOST_INSTALL_PROPERTY(vertex, flags);
   BOOST_INSTALL_PROPERTY(edge, id);
  //  BOOST_INSTALL_PROPERTY(edge, source);
 }
@@ -47,10 +49,11 @@ typedef adjacency_list <
   boost::vecS,
   //  boost::undirectedS,
   boost::bidirectionalS,
-  property<vertex_name_t, std::string>,
+  property<vertex_name_t, std::string,
+	   property<vertex_flags_t, unsigned char> >,
   property<edge_weight_t, float>
   > McrGraph;
- 
+
 //  property<edge_id_t, EdgeId_t> > McrGraph;
 
 //  property<edge_id_t, size_t,
@@ -66,6 +69,10 @@ typedef graph_traits < McrGraph >::vertices_size_type Mcr_vertex_size_t;
 
 
 class Mcr {
+
+  enum {
+    is_word = 1
+  } vflags;
 
 public:
 
@@ -94,6 +101,9 @@ public:
   Mcr_vertex_t findOrInsertWord(const std::string & str);
 
   Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w );
+
+  bool vertexIsSynset(Mcr_vertex_t u) const;
+  bool vertexIsWord(Mcr_vertex_t u) const;
 
   void add_from_txt(const std::string & synsFile); // Add a textfile with relations btw. synsets
   void add_relSource(const std::string & str) { relsSource.insert(str); }
@@ -133,6 +143,8 @@ private:
   Mcr(const Mcr &) {};
   Mcr &operator=(const Mcr &);
   ~Mcr() {};
+
+  Mcr_vertex_t InsertNode(const std::string & name, unsigned char flags);
 
   void read_from_txt(const std::string & relFile,
 		     const std::string & synsFile,

@@ -198,34 +198,32 @@ pair<Mcr_vertex_t, bool> Mcr::getVertexByName(const std::string & str) const {
   return make_pair(it->second, true);
 }
 
+Mcr_vertex_t Mcr::InsertNode(const string & name, unsigned char flags) {
+  coef_status = 0; // reset out degree coefficients
+  Mcr_vertex_t u = add_vertex(g);
+  put(vertex_name, g, u, name);
+  put(vertex_flags, g, u, flags);
+  return u;
+}
+
 Mcr_vertex_t Mcr::findOrInsertSynset(const string & str) {
-  Mcr_vertex_t u;
   map<string, Mcr_vertex_t>::iterator it;
   bool insertedP;
-
   tie(it, insertedP) = synsetMap.insert(make_pair(str, Mcr_vertex_t()));
   if(insertedP) {
     // new vertex
-    coef_status = 0; // reset out degree coefficients
-    u = add_vertex(g);
-    put(vertex_name, g, u, str);
-    it->second = u;
+    it->second = InsertNode(str, 0);
   }
   return it->second;
 }
 
 Mcr_vertex_t Mcr::findOrInsertWord(const string & str) {
-  Mcr_vertex_t u;
   map<string, Mcr_vertex_t>::iterator it;
   bool insertedP;
-
   tie(it, insertedP) = wordMap.insert(make_pair(str, Mcr_vertex_t()));
   if(insertedP) {
     // new vertex
-    coef_status = 0; // reset out degree coefficients
-    u = add_vertex(g);
-    put(vertex_name, g, u, str);
-    it->second = u;
+    it->second = InsertNode(str, Mcr::is_word);
   }
   return it->second;
 }
@@ -246,6 +244,16 @@ Mcr_edge_t Mcr::findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v,
   return e;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Query
+
+bool Mcr::vertexIsSynset(Mcr_vertex_t u) const {
+  return !vertexIsWord(u);
+}
+
+bool Mcr::vertexIsWord(Mcr_vertex_t u) const {
+  return (get(vertex_flags, g, u) & Mcr::is_word);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Random
@@ -500,7 +508,7 @@ void insert_wpos(const string & word,
   vector<string>::iterator wpos_str_end = wPosV.end();
   for (; wpos_str_it != wpos_str_end; ++wpos_str_it) {
     //insert word#pos
-    Mcr_vertex_t wpos_v = mcr.findOrInsertSynset(*wpos_str_it);
+    Mcr_vertex_t wpos_v = mcr.findOrInsertWord(*wpos_str_it);
     // link word to word#pos
     mcr.findOrInsertEdge(word_v, wpos_v, 1.0);
     // link word#pos to synsets
@@ -618,7 +626,7 @@ Mcr_vertex_t read_vertex_from_stream(ifstream & is,
   read_atom_from_stream(is, name);
   Mcr_vertex_t v = add_vertex(g);
   put(vertex_name, g, v, name);
-
+  put(vertex_flags, g, v, 0);
   return v;
 }
 
@@ -696,11 +704,18 @@ void  Mcr::read_from_stream (std::ifstream & is) {
   }
   read_vector_from_stream(is, notes);
 
-  graph_traits<McrGraph>::vertex_iterator v_it, v_end;
-  tie(v_it, v_end) = vertices(g);
-  for(; v_it != v_end; ++v_it) {
-    synsetMap[get(vertex_name, g, *v_it)] = *v_it;
+  map<string, Mcr_vertex_t>::iterator m_it(wordMap.begin());
+  map<string, Mcr_vertex_t>::iterator m_end(wordMap.end());
+  for(; m_it != m_end; ++m_it) {
+    put(vertex_flags, g, m_it->second, 
+	get(vertex_flags, g, m_it->second) || Mcr::is_word);
   }
+
+//   graph_traits<McrGraph>::vertex_iterator v_it, v_end;
+//   tie(v_it, v_end) = vertices(g);
+//   for(; v_it != v_end; ++v_it) {
+//     synsetMap[get(vertex_name, g, *v_it)] = *v_it;
+//   }
 }
 
 // write
