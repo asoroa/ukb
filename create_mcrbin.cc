@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     cerr << "Reading relations"<< endl;
 
-  Mcr::create_from_txt(relations_file, mcr_files[0], source_rels);
+  Mcr::create_from_txt(mcr_files[0], source_rels, relations_file );
   for(size_t i=1; i < mcr_files.size(); ++i) {
     Mcr::instance().add_from_txt(mcr_files[i]);
   }

@@ -80,36 +80,84 @@ public:
 
   //Singleton
   static Mcr & instance();
-  static void create_from_txt(const std::string & relFile,
-			      const std::string & synsFile,
-			      const std::set<std::string> & rels_source);
+
+
+  // 2 functions for creating Mcr graphs
+  //
+  // 1. create_from_txt
+  //    Create graph by reading a textfile with synset relations (synsFile)
+  //    Exclude relations not in rels_source set
+  //
+  // 2. create_from_binfile
+  //    Load a binary snapshot of the graph into memory
+
+  static void create_from_txt(const std::string & synsFile,
+			      const std::set<std::string> & rels_source,
+			      std::string reltypeFile = std::string());
+
   static void create_from_binfile(const std::string & o);
 
-  // Member functions
 
-  
+  // write_to_binfile
+  // Write mcr graph to a binary serialization file
+
+  void write_to_binfile (const std::string & str) const;
+
+  // add_from_txt
+  // add relations from synsFile to the graph
+
+  void add_from_txt(const std::string & synsFile); // Add a textfile with relations btw. synsets
+
+  // add_relSource
+  // add a new type of relations
+
+  void add_relSource(const std::string & str) { relsSource.insert(str); }
+
+  // Add tokens and link them to their synsets, according to the loaded dictionary.
+
+  void add_dictionary(bool with_weight); // Adds all words of the current dictionary
+  void add_token(const std::string & str, bool with_weight); // Add just word (lemma)
+
+  // graph
+  // Get the underlying boost graph
+
   McrGraph & graph() {return g;}
 
-  size_t size() const {return num_vertices(g); }
-
-  Mcr_vertex_t getRandomVertex() const;
-
-  std::pair<Mcr_vertex_t, bool> getVertexByName(const std::string & str) const;
-  std::string  getVertexName(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
+  // Add nodes and relations to the graph
 
   Mcr_vertex_t findOrInsertSynset(const std::string & str);
   Mcr_vertex_t findOrInsertWord(const std::string & str);
 
   Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w );
 
+  // Ask for a node
+
+  std::pair<Mcr_vertex_t, bool> getVertexByName(const std::string & str) const;
+
+  // ask for node properties
+
+  std::string  getVertexName(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
+
+  // Nodes can be synsets or words
+
   bool vertexIsSynset(Mcr_vertex_t u) const;
   bool vertexIsWord(Mcr_vertex_t u) const;
 
-  void add_from_txt(const std::string & synsFile); // Add a textfile with relations btw. synsets
-  void add_relSource(const std::string & str) { relsSource.insert(str); }
+
+  // Add a comment to graph
+
+
+  void display_info(std::ostream & o) const;
+  size_t size() const {return num_vertices(g); }
+
+  void add_comment(const std::string & str);
+  const std::vector<std::string> & get_comments() const;
+
+  Mcr_vertex_t getRandomVertex() const;
+
+  // Graph algorithms
 
   bool bfs (Mcr_vertex_t source_synset, std::vector<Mcr_vertex_t> & synv) const ;
-  //bool bfs (const std::string & source_synset, std::vector<Mcr_vertex_t> & synv) const ;
 
   bool dijkstra (Mcr_vertex_t src, std::vector<Mcr_vertex_t> & parents) const;
 
@@ -117,21 +165,7 @@ public:
 		    std::vector<float> & ranks,
 		    bool use_weight);
 
-  void write_to_binfile (const std::string & str) const;
-
-  void display_info(std::ostream & o) const;
-
   void ppv_weights(const std::vector<float> & ppv);
-
-  // Add tokens a la hughes&ramage
-
-  void add_dictionary(bool with_weight); // Adds all words of w2syn file
-  void add_token(const std::string & str, bool with_weight); // Add a word
-
-  // Add a comment to graph
-
-  void add_comment(const std::string & str);
-  const std::vector<std::string> & get_comments() const;
 
 private:
   // Singleton
@@ -147,8 +181,8 @@ private:
   Mcr_vertex_t InsertNode(const std::string & name, unsigned char flags);
 
   void read_from_txt(const std::string & relFile,
-		     const std::string & synsFile,
-		     const std::set<std::string> & skip_rels);
+		     const std::string & synsFile);
+
   void read_from_stream (std::ifstream & o);
   std::ofstream & write_to_stream(std::ofstream & o) const;
 
@@ -165,9 +199,6 @@ private:
                                          // 1 calculated without weights
                                          // 2 calculated with weights
 
-  //std::map<int, int> relType;            // maps from relation id to relation type id
-  //std::map<int, int> relInv;             // maps from relation id to inverse id
-  //std::map<std::string, int> sourceMap;  // maps from source name to source id's
 };
 
 

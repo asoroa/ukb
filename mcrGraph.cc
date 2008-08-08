@@ -1,7 +1,6 @@
 #include "mcrGraph.h"
 #include "common.h"
 #include "globalVars.h"
-//#include "w2syn.h"
 #include "wdict.h"
 #include "prank.h"
 
@@ -74,20 +73,19 @@ Mcr *Mcr::create() {
 
 Mcr & Mcr::instance() {
   if (!p_instance) {
-    //throw "MCR not initialized";
-    cerr << "MCR not initialized!" << endl;
-    exit(-1);
+    throw runtime_error("MCR not initialized");
   }
   return *p_instance;
 }
 
-void Mcr::create_from_txt(const string & relFileName,
-			  const string & synsFileName,
-			  const std::set<std::string> & rels_source) {
+void Mcr::create_from_txt(const string & synsFileName,
+			  const std::set<std::string> & rels_source,
+			  string relFileName) {
   if (p_instance) return;
   Mcr *tenp = create();
 
-  tenp->read_from_txt(relFileName, synsFileName, rels_source);
+  tenp->relsSource = rels_source;
+  tenp->read_from_txt(relFileName, synsFileName);
   p_instance = tenp;
 }
 
@@ -161,30 +159,15 @@ bool Mcr::dijkstra (Mcr_vertex_t src,
   vector<Mcr_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
   vector<float> dist(num_vertices(g));
   
-
-  // From Inet
-//   boost::dijkstra_shortest_paths(g, s, weight_map(weight).
-// 				 visitor(boost::make_dijkstra_visitor(std::make_pair(
-// 										     boost::record_distances(node_distance, boost::on_edge_relaxed()),
-// 										     update_position))));
-
   dijkstra_shortest_paths(g, 
 			  src,
 			  predecessor_map(&parents[0]).
 			  distance_map(&dist[0]));
-
-// 			  boost::visitor(boost::make_dijkstra_visitor
-// 					 (boost::make_list(mcr_bfs_init(&parents[0]),
-// 							   mcr_bfs_pred(&parents[0])))));
-
-			  //			  predecessor_map(&parents[0]).
-			  //			  boost::visitor(boost::make_dijkstra_visitor(mcr_bfs_init(&parents[0]))));
   return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // strings <-> vertex_id
-
 
 pair<Mcr_vertex_t, bool> Mcr::getVertexByName(const std::string & str) const {
   map<string, Mcr_vertex_t>::const_iterator it;
@@ -271,7 +254,7 @@ Mcr_vertex_t Mcr::getRandomVertex() const {
 
 // Read relations name, id and inverse relations
 
-void read_relations(ifstream & relFile,
+void read_reltypes(ifstream & relFile,
 		    map<string, int> & relMap,
 		    map<int, string> & relMapInv) {
 
@@ -288,7 +271,7 @@ void read_relations(ifstream & relFile,
     copy(tok.begin(), tok.end(), back_inserter(fields));
     if (fields.size() == 0) continue; // blank line
     if (fields.size() < 2) {
-      cerr << "read_relations error. Bad line: " << line_number << endl;
+      cerr << "read_reltypes error. Bad line: " << line_number << endl;
       exit(-1);
     }
     int relId = lexical_cast<int>(fields[0]);
@@ -315,25 +298,16 @@ void read_mcr(ifstream & mcrFile,
     copy(tok.begin(), tok.end(), back_inserter(fields));
     if (fields.size() == 0) continue; // blank line
     if (fields.size() < 4) {
-      cerr << "read_mcr error. Bad line: " << line_number << endl;
-      exit(-1);
+      throw runtime_error("read_mcr error: Bad line: " + line_number);
     }
+
+    if (rels_source.find(fields[3]) == srel_end) continue; // Skip this relation
+
     // last element says if relation is directed
     bool directed = (fields.size() > 4 && lexical_cast<int>(fields[4]) != 0);
-    if (rels_source.find(fields[3]) == srel_end) continue; // Skip this relation
-//     //if (fields[3] == "16") continue; // Skip WNet 1.6
-//     //if (fields[3] == "20") continue; // Skip WNet 2.0
-//     if (fields[3] == "ek") continue; // Skip Semcor selectional preferences (Eneko)
-//     //if (fields[3] == "xg") continue; // Skip Xwnet gold relations
-//     if (fields[3] == "su") continue; // Skip BNC selec. preferences (Diana)
-//     if (fields[3] == "sc") continue; // Skip Semcor coocurrence relations
-//     //if (fields[3] == "xn") continue; // Skip Xwnet normal relations
-//     //if (fields[3] == "xs") continue; // Skip Xwnet silver relations
 
     Mcr_vertex_t u = mcr->findOrInsertSynset(fields[0]);
     Mcr_vertex_t v = mcr->findOrInsertSynset(fields[1]);
-    //Mcr_vertex_t u = insert_synset_vertex(g, synsetMap, fields[0]);
-    //Mcr_vertex_t v = insert_synset_vertex(g, synsetMap, fields[1]);
 
     // add edge
     mcr->findOrInsertEdge(u, v, 1.0);
@@ -342,46 +316,33 @@ void read_mcr(ifstream & mcrFile,
   }
 }
 
-void Mcr::read_from_txt(const string & relFileName,
-			const string & synsFileName,
-			const set<string> & rels_source) {
+void Mcr::read_from_txt(const string & synsFileName,
+			const string & reltypeFileName) {
 
-  relsSource = rels_source;
   // optimize IO
   std::ios::sync_with_stdio(false);
 
-  std::ifstream relFile(relFileName.c_str(), ofstream::in);
-  if (relFile) {
-    read_relations(relFile, relMap, relMapInv);
+  if (reltypeFileName.length()) {
+    std::ifstream rt_file(reltypeFileName.c_str(), ofstream::in);
+    if (!rt_file) {
+      throw runtime_error("Mcr::read_from_txt error: Can't open " + reltypeFileName);
+    }
+    read_reltypes(rt_file, relMap, relMapInv);
   }
 
-  std::ifstream synsFile(synsFileName.c_str(), ofstream::in);
-  if (!synsFile) {
-    cerr << "Can't open " << synsFileName << endl;
-    throw;
+  std::ifstream syns_file(synsFileName.c_str(), ofstream::in);
+  if (!syns_file) {
+    throw runtime_error("Mcr::read_from_txt error: Can't open " + synsFileName);
   }
-
-  read_mcr(synsFile, rels_source, this); // g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);
+  read_mcr(syns_file, relsSource, this);
 }
 
 ////////////////////////////////////////////////7
 // public function
 
 void Mcr::add_from_txt(const std::string & synsFileName) {
-  if (!p_instance) {
-    cerr << "add_relations_from_txt. MCR not initialized!" << endl;
-    exit(-1);
-  }
-  // optimize IO
-  std::ios::sync_with_stdio(false);
 
-  std::ifstream synsFile(synsFileName.c_str(), ofstream::in);
-  if (!synsFile) {
-    cerr << "Can't open " << synsFileName << endl;
-    throw;
-  }
-
-  read_mcr(synsFile, relsSource, this); // g, synsetMap, relsSource); //, relInv, sourceMap, vertexNames);  
+  Mcr::instance().read_from_txt(synsFileName, "");
 }
 
 void Mcr::display_info(std::ostream & o) const {
@@ -443,56 +404,6 @@ void create_w2wpos_maps(const string & word,
     m_it->second.push_back(make_pair(u, syns.get_freq(i)));
   }
 }
-
-// void create_w2wpos_maps(const string & word,
-// 			vector<string> & wPosV,
-// 			map<string, vector<Syn_elem> > & wPos2Syns) {
-
-//   const Mcr & mcr = Mcr::instance();
-//   W2Syn & w2syn = W2Syn::instance();
-
-//   vector<string>::const_iterator syns_it, syns_end;
-//   vector<float>::const_iterator weight_it, weight_end;
-//   tie(syns_it, syns_end) = w2syn.get_wsyns(word);
-//   tie (weight_it, weight_end) = w2syn.get_weights(word);
-
-//   char_separator<char> sep("-");
-//   bool auxP;
-
-//   for(;syns_it != syns_end; ++syns_it, ++weight_it) {
-//     assert(weight_it != weight_end);
-//     vector<string> fields(2);
-//     tokenizer<char_separator<char> > tok(*syns_it, sep);
-//     copy(tok.begin(), tok.end(), fields.begin());
-
-//     string wpos(word.size() + 2, '#');
-//     string::iterator sit = copy(word.begin(), word.end(), wpos.begin());
-//     ++sit; // '#' char
-//     *sit = fields[1].at(0); // the pos
-
-//     Mcr_vertex_t u; // = insert_synset_vertex(g, synsetMap, *syns_it);
-//     tie(u, auxP) = mcr.getVertexByName(*syns_it);
-//     if(!auxP) {
-//       if (glVars::verbose) 
-// 	cerr << "W: Mcr::add_tokens warning: " << *syns_it << " is not in MCR.\n";
-//       // Warning! 
-//       // do NOT insert node, because it becomes a dangling node and therefore
-//       // PageRank can't be applied
-//       // u = insert_synset_vertex(g, synsetMap, *syns_it); // NO
-//       continue;
-//     }
-    
-//     map<string, vector<Syn_elem> >::iterator m_it;
-
-//     tie(m_it, auxP) = wPos2Syns.insert(make_pair(wpos, vector<Syn_elem>()));
-//     if (auxP) {
-//       // first appearence of word#pos
-//       wPosV.push_back(wpos);
-//     }
-//     m_it->second.push_back(make_pair(u, *weight_it));
-//   }
-// }
-
 
 void insert_wpos(const string & word,
 		 vector<string> & wPosV,
