@@ -281,6 +281,6 @@ int main(int argc, char *argv[]) {
 /*
  * Local Variables:
  * mode: c++
- * compile-command: "make -k ukb_sentences"
+ * compile-command: "make"
  * End:
  */
