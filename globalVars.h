@@ -40,6 +40,10 @@ namespace glVars {
     extern bool monosemous; // print monosemous words
   }
 
+  namespace input {
+    extern bool kyoto_kb;
+  }
+
   extern boost::mt19937 rand_generator;
 
   // Maiztasunak

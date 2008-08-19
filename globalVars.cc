@@ -36,6 +36,10 @@ namespace glVars {
 
   RankAlg rAlg = pageRank;
 
+  namespace input {
+    bool kyoto_kb = false;
+  }
+
 //   bool word_norep = 0;
 //   int hub_neighborhood = 0;
 //   float context_threshold = 0;

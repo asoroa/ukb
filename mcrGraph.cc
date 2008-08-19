@@ -282,6 +282,7 @@ void read_reltypes(ifstream & relFile,
 
 // Read the actual MCR file
 
+
 void read_mcr(ifstream & mcrFile, 
 	      const set<string> & rels_source,
 	      Mcr * mcr) {
@@ -316,6 +317,44 @@ void read_mcr(ifstream & mcrFile,
   }
 }
 
+
+// Line format:
+//
+// synset1 synset2 [rel directed]
+
+void read_mcr_kyoto(ifstream & mcrFile, 
+		    const set<string> & rels_source,
+		    Mcr *mcr) {
+  string line;
+  int line_number = 0;
+
+  set<string>::const_iterator srel_end = rels_source.end();
+  while(mcrFile) {
+    vector<string> fields;
+    std::getline(mcrFile, line, '\n');
+    line_number++;
+    char_separator<char> sep(" ");
+    tokenizer<char_separator<char> > tok(line, sep);
+    copy(tok.begin(), tok.end(), back_inserter(fields));
+    if (fields.size() == 0) continue; // blank line
+    if (fields.size() < 2) {
+      throw runtime_error("read_mcr_kyoto error: Bad line: " + line_number);
+    }
+    // Third element, if present, is the relation
+    if (fields.size() > 3 && rels_source.find(fields[2]) == srel_end) continue; // Skip this relation
+    // Fourth element, if present, says if relation is directed
+    bool directed = (fields.size() > 4 && lexical_cast<int>(fields[3]) != 0);
+
+    Mcr_vertex_t u = mcr->findOrInsertSynset(fields[0]);
+    Mcr_vertex_t v = mcr->findOrInsertSynset(fields[1]);
+
+    // add edge
+    mcr->findOrInsertEdge(u, v, 1.0);
+    if (!directed)
+      mcr->findOrInsertEdge(v, u, 1.0);
+  }
+}
+
 void Mcr::read_from_txt(const string & synsFileName,
 			const string & reltypeFileName) {
 
@@ -334,7 +373,11 @@ void Mcr::read_from_txt(const string & synsFileName,
   if (!syns_file) {
     throw runtime_error("Mcr::read_from_txt error: Can't open " + synsFileName);
   }
-  read_mcr(syns_file, relsSource, this);
+  if(glVars::input::kyoto_kb) {
+    read_mcr_kyoto(syns_file, relsSource, this);  
+  } else {
+    read_mcr(syns_file, relsSource, this);
+  }
 }
 
 ////////////////////////////////////////////////7
