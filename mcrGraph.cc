@@ -425,15 +425,11 @@ void create_w2wpos_maps(const string & word,
     ++sit; // '#' char
     *sit = syns.get_pos(i); // the pos
 
-    Mcr_vertex_t u; // = insert_synset_vertex(g, synsetMap, *syns_it);
+    Mcr_vertex_t u;
     tie(u, auxP) = mcr.getVertexByName(syns.get_entry(i));
     if(!auxP) {
-      if (glVars::verbose) 
-	cerr << "W: Mcr::add_tokens warning: " << syns.get_entry(i) << " is not in MCR.\n";
-      // Warning! 
-      // do NOT insert node, because it becomes a dangling node and therefore
-      // PageRank can't be applied
-      // u = insert_synset_vertex(g, synsetMap, *syns_it); // NO
+      if (glVars::debug::warning) 
+	cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in MCR.\n";
       continue;
     }
     

@@ -8,6 +8,10 @@ using namespace glVars;
 namespace glVars {
   int verbose = 0;
 
+  namespace debug {
+    bool warning = false;
+  }
+
   std::vector<std::string> rel_source;
   std::string w2s_filename = "../Data/Preproc/wn1.6_index.sense_freq";
 

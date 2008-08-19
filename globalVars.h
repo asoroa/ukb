@@ -16,6 +16,10 @@ namespace glVars {
   // debug
   extern int verbose;
 
+  namespace debug {
+    extern bool warning;
+  }
+
   extern std::vector<std::string> rel_source;
   extern std::string w2s_filename;
 

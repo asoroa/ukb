@@ -52,8 +52,7 @@ void fill_syns(const string & w,
       // filter synsets by pos
       char synpos = entries.get_pos(i);
       if(!synpos) {
-	cerr << "CWord: Error reading context. " << syn_str << " has no POS\n";
-	exit(-1);
+	throw std::runtime_error("CWord: Error reading context. " + syn_str + " has no POS\n");
       }
       if (pos != synpos) continue;
     }
@@ -62,7 +61,9 @@ void fill_syns(const string & w,
       syns.push_back(syn_str);
       ranks.push_back(0.0f);
     } else {
-      cerr << "CWord: synset " << syn_str << " of word " << w << " is not in MCR" << endl;
+      if (glVars::debug::warning) {
+	cerr << "W:CWord: synset " << syn_str << " of word " << w << " is not in MCR" << endl;
+      }
       // debug: synset  which is not in mcr
     }
   }
