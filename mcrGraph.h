@@ -137,7 +137,7 @@ public:
 
   // Add relation type to edge
 
-  void edge_add_reltype(Mcr_edge_t e, const std::string & rel);
+  void edge_add_reltype(Mcr_edge_t e, const std::string & rel);  
 
   // Ask for a node
 
@@ -146,6 +146,10 @@ public:
   // ask for node properties
 
   std::string  getVertexName(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
+
+  // ask for edge preperties
+
+  std::vector<std::string> get_edge_reltypes(Mcr_edge_t e) const;
 
   // Nodes can be synsets or words
 
@@ -175,6 +179,8 @@ public:
 		    bool use_weight);
 
   void ppv_weights(const std::vector<float> & ppv);
+
+  std::ostream & dump_graph(std::ostream & o) const;
 
 private:
   // Singleton

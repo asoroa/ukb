@@ -85,7 +85,7 @@ void Mcr::create_from_txt(const string & synsFileName,
   Mcr *tenp = create();
 
   tenp->relsSource = rels_source;
-  tenp->read_from_txt(relFileName, synsFileName);
+  tenp->read_from_txt(synsFileName, relFileName);
   p_instance = tenp;
 }
 
@@ -228,7 +228,7 @@ Mcr_edge_t Mcr::findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v,
 }
 
 vector<string>::size_type get_reltype_idx(const string & rel,
-										vector<string> rtypes) {
+										  vector<string> & rtypes) {
 
   vector<string>::iterator it = rtypes.begin();
   vector<string>::iterator end = rtypes.end();
@@ -236,14 +236,13 @@ vector<string>::size_type get_reltype_idx(const string & rel,
 
   for(;it != end; ++it) {
 	if (*it == rel) break;
-	++it;
 	++idx;
   }
   if (it == end) {
 	// new relation type
 	rtypes.push_back(rel);
   }
-  if (idx > 32) {
+  if (idx > 31) {
 	throw runtime_error("get_rtype_idx error: too many relation types !");
   }
   return idx;
@@ -251,9 +250,24 @@ vector<string>::size_type get_reltype_idx(const string & rel,
 
 void Mcr::edge_add_reltype(Mcr_edge_t e, const string & rel) {
   boost::uint32_t m = get(edge_rtype, g, e);
-  vector<string>::size_type idx = get_rtype_idx(rel, rtypes);
-  m &= (1L << idx);
+  vector<string>::size_type idx = get_reltype_idx(rel, rtypes);
+  m |= (1UL << idx);
   put(edge_rtype, g, e, m);
+}
+
+std::vector<std::string> Mcr::get_edge_reltypes(Mcr_edge_t e) const {
+  vector<string> res;
+  boost::uint32_t m = get(edge_rtype, g, e);  
+  vector<string>::size_type idx = 0;
+  boost::uint32_t i = 1;
+  while(idx < 32) {
+	if (m & i) {
+	  res.push_back(rtypes[idx]);
+	}
+	idx++;
+	i <<= 1;
+  }
+  return res;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -368,14 +382,15 @@ struct rel_parse {
   bool directed;
 };
 
-rel_parse parse_line(const string & line) {
+bool parse_line(const string & line, rel_parse & out) {
 
-  rel_parse res = {"","","","","",false};
+  rel_parse res = {"","","","","",false}; // empty res
 
   char_separator<char> sep(" ");
   tokenizer<char_separator<char> > tok(line, sep);
   tokenizer<char_separator<char> >::iterator it = tok.begin();
   tokenizer<char_separator<char> >::iterator end = tok.end();
+  if (it == end) return false; // empty line
   for(;it != end; ++it) {
 	// parse field
 	vector<string> field;
@@ -409,7 +424,8 @@ rel_parse parse_line(const string & line) {
   }
   if (!res.u.size()) throw runtime_error("parse_line error. No source vertex.");
   if (!res.v.size()) throw runtime_error("parse_line error. No target vertex.");
-  return res;
+  out = res;
+  return true;
 }
 
 void read_mcr(ifstream & mcrFile, 
@@ -419,12 +435,13 @@ void read_mcr(ifstream & mcrFile,
   int line_number = 0;
 
   set<string>::const_iterator srel_end = rels_source.end();
-  while(mcrFile) {
-    vector<string> fields;
-    std::getline(mcrFile, line, '\n');
-    line_number++;
-	try {
-	  rel_parse f = parse_line(line);
+  try {
+	while(mcrFile) {
+	  vector<string> fields;
+	  std::getline(mcrFile, line, '\n');
+	  line_number++;
+	  rel_parse f;
+	  if (!parse_line(line, f)) continue;
 	  if (f.src.size() && rels_source.find(f.src) == srel_end) continue; // Skip this relation
 	  Mcr_vertex_t u = mcr->findOrInsertSynset(f.u);
 	  Mcr_vertex_t v = mcr->findOrInsertSynset(f.v);
@@ -444,9 +461,9 @@ void read_mcr(ifstream & mcrFile,
 		  }
 		}
 	  }	  
-	} catch (std::runtime_error & e) {
-	  throw std::runtime_error(string(e.what()) + " in line " + lexical_cast<string>(line_number));
 	}
+  } catch (std::runtime_error & e) {
+	throw std::runtime_error(string(e.what()) + " in line " + lexical_cast<string>(line_number));
   }
 }
 
@@ -653,6 +670,31 @@ void Mcr::pageRank_ppv(const vector<float> & ppv_map,
 		       glVars::prank::num_iterations,
 		       out_coefs);
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Debug
+
+ostream & Mcr::dump_graph(std::ostream & o) const {
+  o << "Sources: ";
+  writeS(o, relsSource);
+  o << endl;
+  graph_traits<McrGraph>::vertex_iterator it, end;
+  tie(it, end) = vertices(g);
+  for(;it != end; ++it) {
+	o << get(vertex_name, g, *it);
+	graph_traits<McrGraph>::out_edge_iterator e, e_end;
+	tie(e, e_end) = out_edges(*it, g);
+	if (e != e_end)
+	  o << "\n";
+	for(; e != e_end; ++e) {
+	  o << "  ";
+	  vector<string> r = get_edge_reltypes(*e);
+	  writeV(o, r);
+	  o << " " << get(vertex_name, g, target(*e, g)) << "\n";
+	}
+  }
+  return o;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
