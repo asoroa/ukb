@@ -44,8 +44,9 @@ namespace glVars {
     extern bool monosemous; // print monosemous words
   }
 
-  namespace input {
-    extern bool kyoto_kb;
+  namespace kb {
+    extern bool keep_reltypes; // Wether edges locally keep the relation types
+    extern bool v1_kb; // Wether input has v1 format
   }
 
   extern boost::mt19937 rand_generator;

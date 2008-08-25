@@ -40,8 +40,9 @@ namespace glVars {
 
   RankAlg rAlg = pageRank;
 
-  namespace input {
-    bool kyoto_kb = false;
+  namespace kb {
+	bool keep_reltypes = false;
+    bool v1_kb = false;
   }
 
 //   bool word_norep = 0;

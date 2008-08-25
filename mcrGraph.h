@@ -12,6 +12,10 @@
 #include <ctime>            // std::time
 #include <iostream>
 
+// integer types
+
+#include <boost/cstdint.hpp>
+
 // graph
 
 #include <boost/graph/adjacency_list.hpp>
@@ -33,7 +37,7 @@ using boost::edge_weight;
 enum vertex_wname_t { vertex_wname};  // word name
 enum vertex_flags_t { vertex_flags};  // flags for vertex
 enum edge_id_t      { edge_id };      // relation id
-enum edge_source_t  { edge_source };  // relation source
+enum edge_rtype_t  { edge_rtype };  // relation type
 
 // typedef std::set<size_t> EdgeId_t;
 
@@ -41,7 +45,7 @@ namespace boost {
   BOOST_INSTALL_PROPERTY(vertex, wname);
   BOOST_INSTALL_PROPERTY(vertex, flags);
   BOOST_INSTALL_PROPERTY(edge, id);
- //  BOOST_INSTALL_PROPERTY(edge, source);
+  BOOST_INSTALL_PROPERTY(edge, rtype);
 }
 
 typedef adjacency_list <
@@ -50,8 +54,9 @@ typedef adjacency_list <
   //  boost::undirectedS,
   boost::bidirectionalS,
   property<vertex_name_t, std::string,
-	   property<vertex_flags_t, unsigned char> >,
-  property<edge_weight_t, float>
+		   property<vertex_flags_t, unsigned char> >,
+  property<edge_weight_t, float,
+		   property<edge_rtype_t, boost::uint32_t> >
   > McrGraph;
 
 //  property<edge_id_t, EdgeId_t> > McrGraph;
@@ -92,8 +97,8 @@ public:
   //    Load a binary snapshot of the graph into memory
 
   static void create_from_txt(const std::string & synsFile,
-			      const std::set<std::string> & rels_source,
-			      std::string reltypeFile = std::string());
+							  const std::set<std::string> & rels_source,
+							  std::string reltypeFile = std::string());
 
   static void create_from_binfile(const std::string & o);
 
@@ -129,6 +134,10 @@ public:
   Mcr_vertex_t findOrInsertWord(const std::string & str);
 
   Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w );
+
+  // Add relation type to edge
+
+  void edge_add_reltype(Mcr_edge_t e, const std::string & rel);
 
   // Ask for a node
 
@@ -191,9 +200,17 @@ private:
   std::set<std::string> relsSource;
   std::map<std::string, Mcr_vertex_t> synsetMap; // synset name to vertex id
   std::map<std::string, Mcr_vertex_t> wordMap; // synset name to vertex id
+  // These are obsolete
   std::map<std::string, int> relMap;     // maps from relation name to relation id
   std::map<int, std::string> relMapInv;  // maps from relation id to relation name
-  std::vector<std::string> notes;
+
+  // Registered relation types
+
+  std::vector<std::string> rtypes;
+
+  std::vector<std::string> notes;        // Command line which created the graph
+  // Aux variables
+
   std::vector<float> out_coefs;          // aux. vector of out-degree coefficients
   char coef_status;                      // 0 invalid
                                          // 1 calculated without weights

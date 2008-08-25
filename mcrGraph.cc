@@ -227,6 +227,35 @@ Mcr_edge_t Mcr::findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v,
   return e;
 }
 
+vector<string>::size_type get_reltype_idx(const string & rel,
+										vector<string> rtypes) {
+
+  vector<string>::iterator it = rtypes.begin();
+  vector<string>::iterator end = rtypes.end();
+  vector<string>::size_type idx = 0;
+
+  for(;it != end; ++it) {
+	if (*it == rel) break;
+	++it;
+	++idx;
+  }
+  if (it == end) {
+	// new relation type
+	rtypes.push_back(rel);
+  }
+  if (idx > 32) {
+	throw runtime_error("get_rtype_idx error: too many relation types !");
+  }
+  return idx;
+}
+
+void Mcr::edge_add_reltype(Mcr_edge_t e, const string & rel) {
+  boost::uint32_t m = get(edge_rtype, g, e);
+  vector<string>::size_type idx = get_rtype_idx(rel, rtypes);
+  m &= (1L << idx);
+  put(edge_rtype, g, e, m);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Query
 
@@ -255,8 +284,8 @@ Mcr_vertex_t Mcr::getRandomVertex() const {
 // Read relations name, id and inverse relations
 
 void read_reltypes(ifstream & relFile,
-		    map<string, int> & relMap,
-		    map<int, string> & relMapInv) {
+				   map<string, int> & relMap,
+				   map<int, string> & relMapInv) {
 
   string line;
   int line_number = 0;
@@ -283,9 +312,9 @@ void read_reltypes(ifstream & relFile,
 // Read the actual MCR file
 
 
-void read_mcr(ifstream & mcrFile, 
-	      const set<string> & rels_source,
-	      Mcr * mcr) {
+void read_mcr_v1(ifstream & mcrFile, 
+				 const set<string> & rels_source,
+				 Mcr * mcr) {
   string line;
   int line_number = 0;
 
@@ -320,11 +349,72 @@ void read_mcr(ifstream & mcrFile,
 
 // Line format:
 //
-// synset1 synset2 [rel directed]
+// u:synset v:synset t:rel i:rel s:source d:directed
+//
+// u: source vertex. Mandatory.
+// v: target vertex. Mandatory.
+// t: relation type (hyperonym, meronym, etc) of edge u->v. Optional.
+// i: (inverse) relation type of edge v->u (hyponym, etc). Optional.
+// s: source of relation (wn30, mcr17, etc). Optional.
+// d: wether the relation is directed. Optional, default is undirected.
 
-void read_mcr_kyoto(ifstream & mcrFile, 
-		    const set<string> & rels_source,
-		    Mcr *mcr) {
+
+struct rel_parse {
+  string u;
+  string v;
+  string rtype;
+  string irtype;
+  string src;
+  bool directed;
+};
+
+rel_parse parse_line(const string & line) {
+
+  rel_parse res = {"","","","","",false};
+
+  char_separator<char> sep(" ");
+  tokenizer<char_separator<char> > tok(line, sep);
+  tokenizer<char_separator<char> >::iterator it = tok.begin();
+  tokenizer<char_separator<char> >::iterator end = tok.end();
+  for(;it != end; ++it) {
+	// parse field
+	vector<string> field;
+	char_separator<char> sep_field(":");
+	tokenizer<char_separator<char> > tok_field(*it, sep_field);
+	copy(tok_field.begin(), tok_field.end(), back_inserter(field));
+	if (field.size() != 2) {
+      throw runtime_error("parse_line error. Malformed line.");
+	}
+	char f = field[0].at(0);
+	switch (f) {
+	case 'u':
+	  res.u = field[1];
+	  break;
+	case 'v':
+	  res.v = field[1];
+	  break;
+	case 't':
+	  res.rtype = field[1];
+	  break;
+	case 'i':
+	  res.irtype = field[1];
+	  break;
+	case 's':
+	  res.src = field[1];
+	  break;
+	case 'd':
+	  res.directed = lexical_cast<bool>(field[1]);
+	  break;
+	}
+  }
+  if (!res.u.size()) throw runtime_error("parse_line error. No source vertex.");
+  if (!res.v.size()) throw runtime_error("parse_line error. No target vertex.");
+  return res;
+}
+
+void read_mcr(ifstream & mcrFile, 
+			  const set<string> & rels_source,
+			  Mcr *mcr) {
   string line;
   int line_number = 0;
 
@@ -333,30 +423,35 @@ void read_mcr_kyoto(ifstream & mcrFile,
     vector<string> fields;
     std::getline(mcrFile, line, '\n');
     line_number++;
-    char_separator<char> sep(" ");
-    tokenizer<char_separator<char> > tok(line, sep);
-    copy(tok.begin(), tok.end(), back_inserter(fields));
-    if (fields.size() == 0) continue; // blank line
-    if (fields.size() < 2) {
-      throw runtime_error("read_mcr_kyoto error: Bad line: " + line_number);
-    }
-    // Third element, if present, is the relation
-    if (fields.size() > 3 && rels_source.find(fields[2]) == srel_end) continue; // Skip this relation
-    // Fourth element, if present, says if relation is directed
-    bool directed = (fields.size() > 4 && lexical_cast<int>(fields[3]) != 0);
+	try {
+	  rel_parse f = parse_line(line);
+	  if (f.src.size() && rels_source.find(f.src) == srel_end) continue; // Skip this relation
+	  Mcr_vertex_t u = mcr->findOrInsertSynset(f.u);
+	  Mcr_vertex_t v = mcr->findOrInsertSynset(f.v);
 
-    Mcr_vertex_t u = mcr->findOrInsertSynset(fields[0]);
-    Mcr_vertex_t v = mcr->findOrInsertSynset(fields[1]);
-
-    // add edge
-    mcr->findOrInsertEdge(u, v, 1.0);
-    if (!directed)
-      mcr->findOrInsertEdge(v, u, 1.0);
+	  // add edge
+	  Mcr_edge_t e1 = mcr->findOrInsertEdge(u, v, 1.0);
+	  // relation type
+	  if (glVars::kb::keep_reltypes && f.rtype.size()) {
+		mcr->edge_add_reltype(e1, f.rtype);
+	  }
+	  if (!f.directed) {
+		Mcr_edge_t e2 = mcr->findOrInsertEdge(v, u, 1.0);
+		if(glVars::kb::keep_reltypes) {
+		  string aux = f.irtype.size() ? f.irtype : f.rtype;
+		  if(aux.size()) {
+			mcr->edge_add_reltype(e2, aux);
+		  }
+		}
+	  }	  
+	} catch (std::runtime_error & e) {
+	  throw std::runtime_error(string(e.what()) + " in line " + lexical_cast<string>(line_number));
+	}
   }
 }
 
 void Mcr::read_from_txt(const string & synsFileName,
-			const string & reltypeFileName) {
+						const string & reltypeFileName) {
 
   // optimize IO
   std::ios::sync_with_stdio(false);
@@ -373,10 +468,10 @@ void Mcr::read_from_txt(const string & synsFileName,
   if (!syns_file) {
     throw runtime_error("Mcr::read_from_txt error: Can't open " + synsFileName);
   }
-  if(glVars::input::kyoto_kb) {
-    read_mcr_kyoto(syns_file, relsSource, this);  
+  if(glVars::kb::v1_kb) {
+    read_mcr_v1(syns_file, relsSource, this);
   } else {
-    read_mcr(syns_file, relsSource, this);
+    read_mcr(syns_file, relsSource, this);  
   }
 }
 
@@ -559,7 +654,6 @@ void Mcr::pageRank_ppv(const vector<float> & ppv_map,
 		       out_coefs);
   }
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Streaming
