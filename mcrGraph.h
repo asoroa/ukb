@@ -37,7 +37,7 @@ using boost::edge_weight;
 enum vertex_flags_t { vertex_flags};  // flags for vertex (for knowing
                                       // wether a node is word or
                                       // synset)
-enum vertex_flags_t { vertex_gloss};  // gloss of node
+enum vertex_gloss_t { vertex_gloss};  // gloss of node
 enum edge_id_t      { edge_id };      // relation id
 enum edge_rtype_t   { edge_rtype };  // relation type
 

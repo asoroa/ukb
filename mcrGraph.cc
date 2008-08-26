@@ -705,8 +705,8 @@ const size_t magic_id = 0x080826;
 
 // read
 
-Mcr_vertex_t read_vertex_from_stream(ifstream & is, 
-									 McrGraph & g) {
+Mcr_vertex_t read_vertex_from_stream_v1(ifstream & is, 
+										McrGraph & g) {
 
   string name;
 
@@ -717,8 +717,8 @@ Mcr_vertex_t read_vertex_from_stream(ifstream & is,
   return v;
 }
 
-Mcr_edge_t read_edge_from_stream(ifstream & is,
-								 McrGraph & g) {
+Mcr_edge_t read_edge_from_stream_v1(ifstream & is,
+									McrGraph & g) {
 
   size_t sIdx;
   size_t tIdx; 
@@ -740,6 +740,43 @@ Mcr_edge_t read_edge_from_stream(ifstream & is,
   return e;
 }
 
+Mcr_vertex_t read_vertex_from_stream(ifstream & is, 
+									 McrGraph & g) {
+
+  string name;
+  string gloss;
+
+  read_atom_from_stream(is, name);
+  read_atom_from_stream(is, gloss);
+  Mcr_vertex_t v = add_vertex(g);
+  put(vertex_name, g, v, name);
+  put(vertex_flags, g, v, 0);
+  return v;
+}
+
+Mcr_edge_t read_edge_from_stream(ifstream & is,
+								 McrGraph & g) {
+
+  size_t sIdx;
+  size_t tIdx; 
+  float w = 0.0;
+  boost::uint32_t rtype;
+  bool insertedP;
+  Mcr_edge_t e;
+
+  read_atom_from_stream(is, sIdx);
+  read_atom_from_stream(is, tIdx);
+  read_atom_from_stream(is, w);
+  read_atom_from_stream(is, rtype);
+  //read_atom_from_stream(is, source);
+  tie(e, insertedP) = add_edge(sIdx, tIdx, g);
+  assert(insertedP);
+  put(edge_weight, g, e, w);
+  put(edge_rtype, g, e, rtype);
+
+  return e;
+}
+
 void  Mcr::read_from_stream (std::ifstream & is) {
 
   size_t vertex_n;
@@ -749,47 +786,91 @@ void  Mcr::read_from_stream (std::ifstream & is) {
 
   coef_status = 0;
   read_atom_from_stream(is, id);
-  if(id != magic_id) {
-    cerr << "Error: invalid id (filename is a mcrGraph?)" << endl;
-    exit(-1);
+  if (id == magic_id_v1) {
+
+	// Backward compatibility with binary v1 format
+
+	read_set_from_stream(is, relsSource);
+	read_map_from_stream(is, relMap);
+	create_inverse_map(relMap, relMapInv);
+
+	read_map_from_stream(is, synsetMap);
+	read_map_from_stream(is, wordMap);
+	//read_map_from_stream(is, sourceMap);
+	
+	read_atom_from_stream(is, id);
+	if(id != magic_id_v1) {
+	  cerr << "Error: invalid id after reading maps" << endl;
+	  exit(-1);
+	}
+
+	read_atom_from_stream(is, vertex_n);
+	for(i=0; i<vertex_n; ++i) {
+	  read_vertex_from_stream_v1(is, g);
+	}
+
+	read_atom_from_stream(is, id);
+	if(id != magic_id_v1) {
+	  cerr << "Error: invalid id after reading vertices" << endl;
+	  exit(-1);
+	}
+
+	read_atom_from_stream(is, edge_n);
+	for(i=0; i<edge_n; ++i) {
+	  read_edge_from_stream_v1(is, g);
+	}
+	
+	read_atom_from_stream(is, id);
+	if(id != magic_id_v1) {
+	  cerr << "Error: invalid id after reading edges" << endl;
+	  exit(-1);
+	}
+	read_vector_from_stream(is, notes);
+	if(id != magic_id_v1) {
+	  cerr << "Error: invalid id (filename is a mcrGraph?)" << endl;
+	  exit(-1);
+	}
+  } else {
+	// Normal case
+	read_set_from_stream(is, relsSource);
+	read_vector_from_stream(is, rtypes);
+
+	read_map_from_stream(is, synsetMap);
+	read_map_from_stream(is, wordMap);
+	
+	read_atom_from_stream(is, id);
+	if(id != magic_id) {
+	  cerr << "Error: invalid id after reading maps" << endl;
+	  exit(-1);
+	}
+
+	read_atom_from_stream(is, vertex_n);
+	for(i=0; i<vertex_n; ++i) {
+	  read_vertex_from_stream(is, g);
+	}
+
+	read_atom_from_stream(is, id);
+	if(id != magic_id) {
+	  cerr << "Error: invalid id after reading vertices" << endl;
+	  exit(-1);
+	}
+
+	read_atom_from_stream(is, edge_n);
+	for(i=0; i<edge_n; ++i) {
+	  read_edge_from_stream(is, g);
+	}
+	
+	read_atom_from_stream(is, id);
+	if(id != magic_id) {
+	  cerr << "Error: invalid id after reading edges" << endl;
+	  exit(-1);
+	}
+	read_vector_from_stream(is, notes);
+	if(id != magic_id) {
+	  cerr << "Error: invalid id (filename is a mcrGraph?)" << endl;
+	  exit(-1);	
+	}
   }
-
-  read_set_from_stream(is, relsSource);
-  read_map_from_stream(is, relMap);
-  create_inverse_map(relMap, relMapInv);
-
-  read_map_from_stream(is, synsetMap);
-  read_map_from_stream(is, wordMap);
-  //read_map_from_stream(is, sourceMap);
-
-  read_atom_from_stream(is, id);
-  if(id != magic_id) {
-    cerr << "Error: invalid id after reading maps" << endl;
-    exit(-1);
-  }
-
-  read_atom_from_stream(is, vertex_n);
-  for(i=0; i<vertex_n; ++i) {
-    read_vertex_from_stream(is, g);
-  }
-
-  read_atom_from_stream(is, id);
-  if(id != magic_id) {
-    cerr << "Error: invalid id after reading vertices" << endl;
-    exit(-1);
-  }
-
-  read_atom_from_stream(is, edge_n);
-  for(i=0; i<edge_n; ++i) {
-    read_edge_from_stream(is, g);
-  }
-
-  read_atom_from_stream(is, id);
-  if(id != magic_id) {
-    cerr << "Error: invalid id after reading edges" << endl;
-    exit(-1);
-  }
-  read_vector_from_stream(is, notes);
 
   map<string, Mcr_vertex_t>::iterator m_it(wordMap.begin());
   map<string, Mcr_vertex_t>::iterator m_end(wordMap.end());
@@ -797,12 +878,6 @@ void  Mcr::read_from_stream (std::ifstream & is) {
     put(vertex_flags, g, m_it->second, 
 	get(vertex_flags, g, m_it->second) || Mcr::is_word);
   }
-
-//   graph_traits<McrGraph>::vertex_iterator v_it, v_end;
-//   tie(v_it, v_end) = vertices(g);
-//   for(; v_it != v_end; ++v_it) {
-//     synsetMap[get(vertex_name, g, *v_it)] = *v_it;
-//   }
 }
 
 // write
@@ -813,6 +888,7 @@ ofstream & write_vertex_to_stream(ofstream & o,
   string name;
 
   write_atom_to_stream(o, get(vertex_name, g, v));
+  write_atom_to_stream(o, get(vertex_gloss, g, v));
   return o;
 }
 
@@ -823,12 +899,12 @@ ofstream & write_edge_to_stream(ofstream & o,
   size_t uIdx = get(vertex_index, g, source(e,g));
   size_t vIdx = get(vertex_index, g, target(e,g));
   float w = get(edge_weight, g, e);
-  //size_t source = get(edge_source, g, e);
+  boost::uint32_t rtype = get(edge_rtype, g, e);
 
   o.write(reinterpret_cast<const char *>(&uIdx), sizeof(uIdx));
   o.write(reinterpret_cast<const char *>(&vIdx), sizeof(vIdx));
   o.write(reinterpret_cast<const char *>(&w), sizeof(w));
-  //o.write(reinterpret_cast<const char *>(&source), sizeof(source));
+  o.write(reinterpret_cast<const char *>(&rtype), sizeof(rtype));
   return o;
 }
 
@@ -839,7 +915,7 @@ ofstream & Mcr::write_to_stream(ofstream & o) const {
   write_atom_to_stream(o, magic_id);
 
   write_vector_to_stream(o, relsSource);
-  write_map_to_stream(o, relMap);
+  write_vector_to_stream(o, rtypes);
 
   write_map_to_stream(o, synsetMap);
   write_map_to_stream(o, wordMap);
