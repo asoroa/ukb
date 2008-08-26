@@ -56,7 +56,7 @@ void fill_syns(const string & w,
       }
       if (pos != synpos) continue;
     }
-    tie(mcr_v, existP) = mcr.getVertexByName(syn_str);
+    tie(mcr_v, existP) = mcr.get_vertex_by_name(syn_str);
     if (existP) {
       syns.push_back(syn_str);
       ranks.push_back(0.0f);
@@ -391,7 +391,7 @@ bool calculate_mcr_hr(const CSentence & cs,
     string wpos = it->word();
 
     Mcr_vertex_t u;
-    tie(u, aux) = mcr.getVertexByName(wpos);    
+    tie(u, aux) = mcr.get_vertex_by_name(wpos);    
     float w = 1.0;
     if(glVars::csentence::word_weight) w = it->get_weight();
     if (aux) {
@@ -440,7 +440,7 @@ void calculate_mcr_hr_by_word_and_disamb(CSentence & cs,
       string wpos = it->word();
       
       Mcr_vertex_t u;
-      tie(u, aux) = mcr.getVertexByName(wpos);
+      tie(u, aux) = mcr.get_vertex_by_name(wpos);
       float w =  1.0;
       if(glVars::csentence::word_weight) w = it->get_weight();
       if (aux) {
@@ -486,7 +486,7 @@ bool calculate_mcr_ppv_csentence(CSentence & cs, vector<float> & res) {
   for(; cw_it != cw_end; ++cw_it) {
     for(size_t i = 0; i != cw_it->size(); ++i) {
       Mcr_vertex_t u;
-      tie(u, aux) = mcr.getVertexByName(cw_it->syn(i));
+      tie(u, aux) = mcr.get_vertex_by_name(cw_it->syn(i));
       if (aux) {
 	ppv[u] = cw_it->rank(i);
 	K += cw_it->rank(i);

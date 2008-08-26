@@ -109,7 +109,7 @@ void query (const string & coName, const string & str) {
   bool aux;
   CoocGraph::vertex_descriptor u;
   
-  tie(u, aux) = coog.getVertexByName(str);
+  tie(u, aux) = coog.get_vertex_by_name(str);
   if (aux) {
     write_vertex(cout, u, coog.graph());
     cout << "\n";

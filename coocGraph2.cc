@@ -34,7 +34,7 @@ CoocGraph2::vertex_descriptor CoocGraph2::findOrInsertNode(const string & str) {
   return u;
 }
 
-CoocGraph2::edge_descriptor CoocGraph2::findOrInsertEdge(CoocGraph2::vertex_descriptor u,
+CoocGraph2::edge_descriptor CoocGraph2::find_or_insert_edge(CoocGraph2::vertex_descriptor u,
 						       CoocGraph2::vertex_descriptor v ) {
 
   CoocGraph2::edge_descriptor e;
@@ -50,7 +50,7 @@ CoocGraph2::edge_descriptor CoocGraph2::findOrInsertEdge(CoocGraph2::vertex_desc
 }
 
 std::pair<CoocGraph2::vertex_descriptor, bool>
-CoocGraph2::getVertexByName(const std::string & str) const {
+CoocGraph2::get_vertex_by_name(const std::string & str) const {
 
 
   map<string, CoocGraph2::vertex_descriptor>::const_iterator it = _nodeMap.find(str);
@@ -79,7 +79,7 @@ CoocGraph2::CoocGraph2(CoocGraph2 & cooc) {
   }
   CoocGraph2::edge_iterator e_it, e_end;
   for(tie(e_it, e_end) = edges(cooc.g); e_it != e_end; ++e_it) {
-    CoocGraph2::edge_descriptor e = findOrInsertEdge(nMap[source(*e_it, cooc.g)],
+    CoocGraph2::edge_descriptor e = find_or_insert_edge(nMap[source(*e_it, cooc.g)],
 						    nMap[target(*e_it, cooc.g)]);
     put(edge_freq, g, e,
 	get(edge_freq, cooc.g, *e_it));
@@ -103,7 +103,7 @@ void CoocGraph2::remove_isolated_vertices() {
   }
   CoocGraph2::edge_iterator e_it, e_end;
   for(tie(e_it, e_end) = edges(g); e_it != e_end; ++e_it) {
-    CoocGraph2::edge_descriptor e = coog.findOrInsertEdge(nMap[source(*e_it, g)],
+    CoocGraph2::edge_descriptor e = coog.find_or_insert_edge(nMap[source(*e_it, g)],
 							 nMap[target(*e_it, g)]);
     put(edge_freq, coog.g, e,
 	get(edge_freq, g, *e_it));
@@ -130,7 +130,7 @@ void CoocGraph2::insert_doc(vector<CoocGraph2::vertex_descriptor> & doc) {
     vector<CoocGraph2::vertex_descriptor>::iterator it = w;
     ++it;
     for(; it != end; ++it) {
-      CoocGraph2::edge_descriptor e = findOrInsertEdge(*w, *it);
+      CoocGraph2::edge_descriptor e = find_or_insert_edge(*w, *it);
       put(edge_freq, g, e,
 	  get(edge_freq, g, e) + 1);
     }

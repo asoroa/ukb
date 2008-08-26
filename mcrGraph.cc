@@ -169,7 +169,7 @@ bool Mcr::dijkstra (Mcr_vertex_t src,
 ////////////////////////////////////////////////////////////////////////////////
 // strings <-> vertex_id
 
-pair<Mcr_vertex_t, bool> Mcr::getVertexByName(const std::string & str) const {
+pair<Mcr_vertex_t, bool> Mcr::get_vertex_by_name(const std::string & str) const {
   map<string, Mcr_vertex_t>::const_iterator it;
 
   it = synsetMap.find(str);
@@ -189,7 +189,7 @@ Mcr_vertex_t Mcr::InsertNode(const string & name, unsigned char flags) {
   return u;
 }
 
-Mcr_vertex_t Mcr::findOrInsertSynset(const string & str) {
+Mcr_vertex_t Mcr::find_or_insert_synset(const string & str) {
   map<string, Mcr_vertex_t>::iterator it;
   bool insertedP;
   tie(it, insertedP) = synsetMap.insert(make_pair(str, Mcr_vertex_t()));
@@ -200,7 +200,7 @@ Mcr_vertex_t Mcr::findOrInsertSynset(const string & str) {
   return it->second;
 }
 
-Mcr_vertex_t Mcr::findOrInsertWord(const string & str) {
+Mcr_vertex_t Mcr::find_or_insert_word(const string & str) {
   map<string, Mcr_vertex_t>::iterator it;
   bool insertedP;
   tie(it, insertedP) = wordMap.insert(make_pair(str, Mcr_vertex_t()));
@@ -211,7 +211,7 @@ Mcr_vertex_t Mcr::findOrInsertWord(const string & str) {
   return it->second;
 }
 
-Mcr_edge_t Mcr::findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v,
+Mcr_edge_t Mcr::find_or_insert_edge(Mcr_vertex_t u, Mcr_vertex_t v,
 				 float w) {
 
   Mcr_edge_t e;
@@ -273,18 +273,18 @@ std::vector<std::string> Mcr::get_edge_reltypes(Mcr_edge_t e) const {
 ////////////////////////////////////////////////////////////////////////////////
 // Query
 
-bool Mcr::vertexIsSynset(Mcr_vertex_t u) const {
-  return !vertexIsWord(u);
+bool Mcr::vertex_is_synset(Mcr_vertex_t u) const {
+  return !vertex_is_word(u);
 }
 
-bool Mcr::vertexIsWord(Mcr_vertex_t u) const {
+bool Mcr::vertex_is_word(Mcr_vertex_t u) const {
   return (get(vertex_flags, g, u) & Mcr::is_word);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Random
 
-Mcr_vertex_t Mcr::getRandomVertex() const {
+Mcr_vertex_t Mcr::get_random_vertex() const {
 
   int r = g_randTarget(num_vertices(g));
 
@@ -350,13 +350,13 @@ void read_mcr_v1(ifstream & mcrFile,
     // last element says if relation is directed
     bool directed = (fields.size() > 4 && lexical_cast<int>(fields[4]) != 0);
 
-    Mcr_vertex_t u = mcr->findOrInsertSynset(fields[0]);
-    Mcr_vertex_t v = mcr->findOrInsertSynset(fields[1]);
+    Mcr_vertex_t u = mcr->find_or_insert_synset(fields[0]);
+    Mcr_vertex_t v = mcr->find_or_insert_synset(fields[1]);
 
     // add edge
-    mcr->findOrInsertEdge(u, v, 1.0);
+    mcr->find_or_insert_edge(u, v, 1.0);
     if (!directed)
-      mcr->findOrInsertEdge(v, u, 1.0);
+      mcr->find_or_insert_edge(v, u, 1.0);
   }
 }
 
@@ -443,17 +443,17 @@ void read_mcr(ifstream & mcrFile,
 	  rel_parse f;
 	  if (!parse_line(line, f)) continue;
 	  if (f.src.size() && rels_source.find(f.src) == srel_end) continue; // Skip this relation
-	  Mcr_vertex_t u = mcr->findOrInsertSynset(f.u);
-	  Mcr_vertex_t v = mcr->findOrInsertSynset(f.v);
+	  Mcr_vertex_t u = mcr->find_or_insert_synset(f.u);
+	  Mcr_vertex_t v = mcr->find_or_insert_synset(f.v);
 
 	  // add edge
-	  Mcr_edge_t e1 = mcr->findOrInsertEdge(u, v, 1.0);
+	  Mcr_edge_t e1 = mcr->find_or_insert_edge(u, v, 1.0);
 	  // relation type
 	  if (glVars::kb::keep_reltypes && f.rtype.size()) {
 		mcr->edge_add_reltype(e1, f.rtype);
 	  }
 	  if (!f.directed) {
-		Mcr_edge_t e2 = mcr->findOrInsertEdge(v, u, 1.0);
+		Mcr_edge_t e2 = mcr->find_or_insert_edge(v, u, 1.0);
 		if(glVars::kb::keep_reltypes) {
 		  string aux = f.irtype.size() ? f.irtype : f.rtype;
 		  if(aux.size()) {
@@ -538,7 +538,7 @@ void create_w2wpos_maps(const string & word,
     *sit = syns.get_pos(i); // the pos
 
     Mcr_vertex_t u;
-    tie(u, auxP) = mcr.getVertexByName(syns.get_entry(i));
+    tie(u, auxP) = mcr.get_vertex_by_name(syns.get_entry(i));
     if(!auxP) {
       if (glVars::debug::warning) 
 	cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in MCR.\n";
@@ -564,23 +564,23 @@ void insert_wpos(const string & word,
   Mcr & mcr = Mcr::instance();
 
   // insert word
-  Mcr_vertex_t word_v = mcr.findOrInsertWord(word); 
+  Mcr_vertex_t word_v = mcr.find_or_insert_word(word); 
 
   vector<string>::iterator wpos_str_it = wPosV.begin();
   vector<string>::iterator wpos_str_end = wPosV.end();
   for (; wpos_str_it != wpos_str_end; ++wpos_str_it) {
     //insert word#pos
-    Mcr_vertex_t wpos_v = mcr.findOrInsertWord(*wpos_str_it);
+    Mcr_vertex_t wpos_v = mcr.find_or_insert_word(*wpos_str_it);
     // link word to word#pos
-    mcr.findOrInsertEdge(word_v, wpos_v, 1.0);
+    mcr.find_or_insert_edge(word_v, wpos_v, 1.0);
     // link word#pos to synsets
     vector<Syn_elem>::const_iterator syns_it = wPos2Syns[*wpos_str_it].begin();
     vector<Syn_elem>::const_iterator syns_end = wPos2Syns[*wpos_str_it].end();
     for(;syns_it != syns_end; ++syns_it) {
       if (use_weights) {
-	mcr.findOrInsertEdge(wpos_v, syns_it->first, syns_it->second);
+	mcr.find_or_insert_edge(wpos_v, syns_it->first, syns_it->second);
       } else {
-	mcr.findOrInsertEdge(wpos_v, syns_it->first, 1.0);
+	mcr.find_or_insert_edge(wpos_v, syns_it->first, 1.0);
       }
     }
   }
@@ -700,12 +700,13 @@ ostream & Mcr::dump_graph(std::ostream & o) const {
 ////////////////////////////////////////////////////////////////////////////////
 // Streaming
 
-const size_t magic_id = 0x070201;
+const size_t magic_id_v1 = 0x070201;
+const size_t magic_id = 0x080826;
 
 // read
 
 Mcr_vertex_t read_vertex_from_stream(ifstream & is, 
-				     McrGraph & g) {
+									 McrGraph & g) {
 
   string name;
 
@@ -716,8 +717,8 @@ Mcr_vertex_t read_vertex_from_stream(ifstream & is,
   return v;
 }
 
-Mcr_edge_t read_edge_from_stream(ifstream & is, 
-				 McrGraph & g) {
+Mcr_edge_t read_edge_from_stream(ifstream & is,
+								 McrGraph & g) {
 
   size_t sIdx;
   size_t tIdx; 
@@ -807,8 +808,8 @@ void  Mcr::read_from_stream (std::ifstream & is) {
 // write
 
 ofstream & write_vertex_to_stream(ofstream & o,
-				  const McrGraph & g,
-				  const Mcr_vertex_t & v) {
+								  const McrGraph & g,
+								  const Mcr_vertex_t & v) {
   string name;
 
   write_atom_to_stream(o, get(vertex_name, g, v));
@@ -816,8 +817,8 @@ ofstream & write_vertex_to_stream(ofstream & o,
 }
 
 ofstream & write_edge_to_stream(ofstream & o,
-				const McrGraph & g,
-				const Mcr_edge_t & e) {
+								const McrGraph & g,
+								const Mcr_edge_t & e) {
 
   size_t uIdx = get(vertex_index, g, source(e,g));
   size_t vIdx = get(vertex_index, g, target(e,g));

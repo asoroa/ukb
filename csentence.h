@@ -66,7 +66,7 @@ public:
     size_t i;
     if (!n) return; // No synsets
     for(i = 0; i != n; ++i) 
-      ranks[i] = rankMap[g.getVertexByName(syns[i]).first];
+      ranks[i] = rankMap[g.get_vertex_by_name(syns[i]).first];
     
     for(i = 1; i != n; ++i) {
       if(ranks[i] != ranks[i-1]) {

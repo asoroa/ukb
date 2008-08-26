@@ -114,7 +114,7 @@ void create_kgSynsV(CSentence & cs,
     vector<string>::const_iterator sset_end = cw_it->end();
     vector<Kg_dg_> cw_theSyns;
     for(; sset_it != sset_end; ++sset_it) {
-      tie(aux, existP) = dg.getVertexByName(*sset_it);
+      tie(aux, existP) = dg.get_vertex_by_name(*sset_it);
       assert(existP);
       Kg_dg_ new_elem;
       new_elem.dg_v = aux;
@@ -181,7 +181,7 @@ KGraph::KGraph(CSentence & cs, DisambGraph & disg) {
 // vertex_id <-> strings 
 
 
-pair<Dis_vertex_t, bool> KGraph::getVertexByName(const std::string & str) const {
+pair<Dis_vertex_t, bool> KGraph::get_vertex_by_name(const std::string & str) const {
   map<string, Dis_vertex_t>::const_iterator it = synsetMap.find(str);
   if (it == synsetMap.end()) return make_pair(Dis_vertex_t(), false);
   return make_pair(it->second, true);

@@ -34,16 +34,16 @@ using boost::edge_weight;
 
 // Properties for graphs
 
-enum vertex_wname_t { vertex_wname};  // word name
-enum vertex_flags_t { vertex_flags};  // flags for vertex
+enum vertex_flags_t { vertex_flags};  // flags for vertex (for knowing
+                                      // wether a node is word or
+                                      // synset)
+enum vertex_flags_t { vertex_gloss};  // gloss of node
 enum edge_id_t      { edge_id };      // relation id
-enum edge_rtype_t  { edge_rtype };  // relation type
-
-// typedef std::set<size_t> EdgeId_t;
+enum edge_rtype_t   { edge_rtype };  // relation type
 
 namespace boost {
-  BOOST_INSTALL_PROPERTY(vertex, wname);
   BOOST_INSTALL_PROPERTY(vertex, flags);
+  BOOST_INSTALL_PROPERTY(vertex, gloss);
   BOOST_INSTALL_PROPERTY(edge, id);
   BOOST_INSTALL_PROPERTY(edge, rtype);
 }
@@ -51,27 +51,18 @@ namespace boost {
 typedef adjacency_list <
   boost::listS,
   boost::vecS,
-  //  boost::undirectedS,
   boost::bidirectionalS,
   property<vertex_name_t, std::string,
-		   property<vertex_flags_t, unsigned char> >,
+		   property<vertex_gloss_t, std::string,
+					property<vertex_flags_t, unsigned char> > >,
   property<edge_weight_t, float,
 		   property<edge_rtype_t, boost::uint32_t> >
   > McrGraph;
 
-//  property<edge_id_t, EdgeId_t> > McrGraph;
-
-//  property<edge_id_t, size_t,
-//	   property<edge_source_t, size_t> > > McrGraph;
 
 typedef graph_traits<McrGraph>::vertex_descriptor Mcr_vertex_t;
 typedef graph_traits<McrGraph>::edge_descriptor Mcr_edge_t;
 typedef graph_traits < McrGraph >::vertices_size_type Mcr_vertex_size_t;
-
-// typedef property_map<McrGraph, vertex_name_t>::type vname_map_t;
-// typedef property_map<McrGraph, edge_type_t>::type etype_map_t;
-// typedef property_map<McrGraph, edge_source_t>::type esource_map_t;
-
 
 class Mcr {
 
@@ -114,14 +105,14 @@ public:
   void add_from_txt(const std::string & synsFile); // Add a textfile with relations btw. synsets
 
   // add_relSource
-  // add a new type of relations
+  // add a new relation source
 
   void add_relSource(const std::string & str) { relsSource.insert(str); }
 
   // Add tokens and link them to their synsets, according to the loaded dictionary.
 
   void add_dictionary(bool with_weight); // Adds all words of the current dictionary
-  void add_token(const std::string & str, bool with_weight); // Add just word (lemma)
+  void add_token(const std::string & str, bool with_weight); // Add just a word (lemma)
 
   // graph
   // Get the underlying boost graph
@@ -130,10 +121,10 @@ public:
 
   // Add nodes and relations to the graph
 
-  Mcr_vertex_t findOrInsertSynset(const std::string & str);
-  Mcr_vertex_t findOrInsertWord(const std::string & str);
+  Mcr_vertex_t find_or_insert_synset(const std::string & str);
+  Mcr_vertex_t find_or_insert_word(const std::string & str);
 
-  Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float w );
+  Mcr_edge_t find_or_insert_edge(Mcr_vertex_t u, Mcr_vertex_t v, float w );
 
   // Add relation type to edge
 
@@ -141,11 +132,12 @@ public:
 
   // Ask for a node
 
-  std::pair<Mcr_vertex_t, bool> getVertexByName(const std::string & str) const;
+  std::pair<Mcr_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
   // ask for node properties
 
-  std::string  getVertexName(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
+  std::string  get_vertex_name(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
+  std::string  get_vertex_gloss(Mcr_vertex_t u) const {return get(vertex_gloss, g, u);}
 
   // ask for edge preperties
 
@@ -153,9 +145,8 @@ public:
 
   // Nodes can be synsets or words
 
-  bool vertexIsSynset(Mcr_vertex_t u) const;
-  bool vertexIsWord(Mcr_vertex_t u) const;
-
+  bool vertex_is_synset(Mcr_vertex_t u) const;
+  bool vertex_is_word(Mcr_vertex_t u) const;
 
   // Add a comment to graph
 
@@ -166,7 +157,7 @@ public:
   void add_comment(const std::string & str);
   const std::vector<std::string> & get_comments() const;
 
-  Mcr_vertex_t getRandomVertex() const;
+  Mcr_vertex_t get_random_vertex() const;
 
   // Graph algorithms
 

@@ -57,7 +57,7 @@ void merge_cooc(string & fName, bool store_w) {
 
   CoocGraph::vertex_iterator v_it, v_end;
   for(tie(v_it, v_end) = vertices(coog.graph()); v_it != v_end; ++v_it) {
-    Mcr_vertex_t u = mcr.findOrInsertWord(get(vertex_name, coog.graph(), *v_it));
+    Mcr_vertex_t u = mcr.find_or_insert_word(get(vertex_name, coog.graph(), *v_it));
     uMap[*v_it] = u;
   }
 
@@ -66,8 +66,8 @@ void merge_cooc(string & fName, bool store_w) {
     Mcr_vertex_t u = uMap[source(*e_it, coog.graph())];
     Mcr_vertex_t v = uMap[target(*e_it, coog.graph())];
     float w = store_w ? get(edge_freq, coog.graph(), *e_it) : 1.0;
-    mcr.findOrInsertEdge(u, v, w);
-    mcr.findOrInsertEdge(v, u, w);
+    mcr.find_or_insert_edge(u, v, w);
+    mcr.find_or_insert_edge(v, u, w);
   }
   mcr.add_relSource("Cooc: " + fName);
 }
@@ -82,7 +82,7 @@ void merge_hlex(string & fName, bool store_w) {
 
   CoocGraph2::vertex_iterator v_it, v_end;
   for(tie(v_it, v_end) = vertices(coog.graph()); v_it != v_end; ++v_it) {
-    Mcr_vertex_t u = mcr.findOrInsertWord(get(vertex_name, coog.graph(), *v_it));
+    Mcr_vertex_t u = mcr.find_or_insert_word(get(vertex_name, coog.graph(), *v_it));
     uMap[*v_it] = u;
   }
 
@@ -91,7 +91,7 @@ void merge_hlex(string & fName, bool store_w) {
     Mcr_vertex_t u = uMap[source(*e_it, coog.graph())];
     Mcr_vertex_t v = uMap[target(*e_it, coog.graph())];
     float w = store_w ? get(edge_freq, coog.graph(), *e_it) : 1.0;
-    mcr.findOrInsertEdge(u, v, w);
+    mcr.find_or_insert_edge(u, v, w);
   }
   mcr.add_relSource("Hlex cooc: " + fName);
 }
@@ -110,7 +110,7 @@ void query (const string & str) {
   bool aux;
   Mcr_vertex_t u;
 
-  tie(u, aux) = mcr.getVertexByName(str);
+  tie(u, aux) = mcr.get_vertex_by_name(str);
   if (aux) {
     cout << get(vertex_name, g, u);
     cout << "\n";

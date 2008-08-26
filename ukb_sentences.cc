@@ -112,7 +112,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 	if (glVars::verbose) 
 	  cerr << ranks.size() << "\n";
 	for(size_t i=0; i < ranks.size(); ++i) {
-	  if (mcr.vertexIsWord(i)) {
+	  if (mcr.vertex_is_word(i)) {
 	    filter_ranks.push_back(ranks[i]);
 	    filter_sum+=ranks[i];
 	  }
@@ -129,7 +129,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 	if (glVars::verbose) 
 	  cerr << ranks.size() << "\n";
 	for(size_t i=0; i < ranks.size(); ++i) {
-	  if (mcr.vertexIsSynset(i)) {
+	  if (mcr.vertex_is_synset(i)) {
 	    filter_ranks.push_back(ranks[i]);
 	    filter_sum+=ranks[i];
 	  }

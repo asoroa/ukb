@@ -60,10 +60,10 @@ class CoocGraph2 {
   // Accessors
 
   boost_graph_t & graph() { return g; }
-  std::pair<vertex_descriptor, bool> getVertexByName(const std::string & str) const;
+  std::pair<vertex_descriptor, bool> get_vertex_by_name(const std::string & str) const;
 
   vertex_descriptor findOrInsertNode(const string & str);
-  edge_descriptor findOrInsertEdge(vertex_descriptor u, vertex_descriptor v );
+  edge_descriptor find_or_insert_edge(vertex_descriptor u, vertex_descriptor v );
 
 
   // Info

@@ -97,7 +97,7 @@ void query (const string & coName, const string & str) {
   bool aux;
   CoocGraph2::vertex_descriptor u;
   
-  tie(u, aux) = coog.getVertexByName(str);
+  tie(u, aux) = coog.get_vertex_by_name(str);
   if (aux) {
     write_vertex(cout, u, coog.graph());
     cout << "\n";
@@ -194,7 +194,7 @@ void create_from_hlex(const vector<string> & input_files, string & graph_binfile
       size_t hub_dist = get(vertex_hubDist, agt.graph(), source(*e_it, agt.graph())); // hDist of father
       CoocGraph2::vertex_descriptor u = uMap[source(*e_it, agt.graph())];
       CoocGraph2::vertex_descriptor v = uMap[target(*e_it, agt.graph())];
-      CoocGraph2::edge_descriptor cooc_e = coog.findOrInsertEdge(u, v);
+      CoocGraph2::edge_descriptor cooc_e = coog.find_or_insert_edge(u, v);
       float old_freq = get(edge_freq, coog.graph(), cooc_e);
       float delta = hub_dist ? 1.0 / static_cast<float>(hub_dist) : 1.0;
       put(edge_freq, coog.graph(), cooc_e, old_freq + delta);

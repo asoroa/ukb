@@ -68,7 +68,7 @@ Dis_vertex_t DisambGraph::add_dgraph_vertex(const string & str) {
     Dis_vertex_t v = add_vertex(g);
     put(vertex_name, g, v, str);
     put(vertex_freq, g, v, 0.0);
-    put(vertex_mcrSource, g, v, Mcr::instance().getVertexByName(str).first);
+    put(vertex_mcrSource, g, v, Mcr::instance().get_vertex_by_name(str).first);
     map_it->second = v;
   } else {
     put(vertex_freq, g, map_it->second, 
@@ -126,7 +126,7 @@ void DisambGraph::fill_graph(Mcr_vertex_t src,
 // vertex_id <-> strings 
 
 
-pair<Dis_vertex_t, bool> DisambGraph::getVertexByName(const std::string & str) const {
+pair<Dis_vertex_t, bool> DisambGraph::get_vertex_by_name(const std::string & str) const {
   map<string, Dis_vertex_t>::const_iterator it = synsetMap.find(str);
   if (it == synsetMap.end()) return make_pair(Dis_vertex_t(), false);
   return make_pair(it->second, true);
@@ -162,7 +162,7 @@ void fill_disamb_synset_bfs(const string & src_str,
   bool existP;
   Mcr_vertex_t src, tgt;
   
-  tie(src, existP) = mcr.getVertexByName(src_str);
+  tie(src, existP) = mcr.get_vertex_by_name(src_str);
   assert(existP);
 
   mcr.bfs(src, parents);
@@ -176,7 +176,7 @@ void fill_disamb_synset_bfs(const string & src_str,
     vector<string>::const_iterator tg_it = s_it->begin();
     vector<string>::const_iterator tg_end = s_it->end();
     for(;tg_it != tg_end; ++tg_it) {
-      tie(tgt, existP) = mcr.getVertexByName(*tg_it);
+      tie(tgt, existP) = mcr.get_vertex_by_name(*tg_it);
       assert(existP);
       dgraph.fill_graph(src, tgt, parents);
     }
@@ -194,7 +194,7 @@ void fill_disamb_synset_dijkstra(const string & src_str,
   bool existP;
   Mcr_vertex_t src, tgt;
   
-  tie(src, existP) = mcr.getVertexByName(src_str);
+  tie(src, existP) = mcr.get_vertex_by_name(src_str);
   assert(existP);
 
   mcr.dijkstra(src, parents);
@@ -208,7 +208,7 @@ void fill_disamb_synset_dijkstra(const string & src_str,
     vector<string>::const_iterator tg_it = s_it->begin();
     vector<string>::const_iterator tg_end = s_it->end();
     for(;tg_it != tg_end; ++tg_it) {
-      tie(tgt, existP) = mcr.getVertexByName(*tg_it);
+      tie(tgt, existP) = mcr.get_vertex_by_name(*tg_it);
       assert(existP);
       dgraph.fill_graph(src, tgt, parents);
     }
@@ -229,7 +229,7 @@ void fill_disamb_graph(const CSentence &cs, DisambGraph & dgraph) {
     vector<string>::const_iterator sset_end = cw_it->end();
     ++cw_it; // point to next word
     for(;sset_it != sset_end; ++sset_it) {
-      //tie(src_v, existP) = mcr.getVertexByName(*sset_it);
+      //tie(src_v, existP) = mcr.get_vertex_by_name(*sset_it);
       //assert(existP);
       fill_disamb_synset_bfs(*sset_it, cw_it, cw_end, dgraph);
     }
@@ -256,7 +256,7 @@ void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
     vector<string>::const_iterator sset_end = cw_it->end();
     ++cw_it; // point to next word
     for(;sset_it != sset_end; ++sset_it) {
-      //tie(src_v, existP) = mcr.getVertexByName(*sset_it);
+      //tie(src_v, existP) = mcr.get_vertex_by_name(*sset_it);
       //assert(existP);
       fill_disamb_synset_dijkstra(*sset_it, cw_it, cw_end, dgraph);
     }
@@ -290,11 +290,11 @@ ostream & print_complete_csent(ostream & o, CSentence & cs, DisambGraph & dgraph
     if (syn_it != syn_end) {
       --syn_end;
       for(; syn_it != syn_end; ++syn_it) {
-	tie(v,P) = dgraph.getVertexByName(*syn_it);
+	tie(v,P) = dgraph.get_vertex_by_name(*syn_it);
 	assert(P);
 	o << *syn_it << ":" << get(vertex_rank, g, v) << " ,";
       }
-      tie(v,P) = dgraph.getVertexByName(*syn_end);
+      tie(v,P) = dgraph.get_vertex_by_name(*syn_end);
       assert(P);
       o << *syn_end << ":" << get(vertex_rank, g, v);
     }

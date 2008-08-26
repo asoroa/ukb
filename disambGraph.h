@@ -49,7 +49,7 @@ class DisambGraph {
 
   DisambGraph();
 
-  std::pair<Dis_vertex_t, bool> getVertexByName(const std::string & str) const;
+  std::pair<Dis_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
   void fill_graph(Mcr_vertex_t src,
 		  Mcr_vertex_t tgt,

@@ -34,7 +34,7 @@ CoocGraph::vertex_descriptor CoocGraph::findOrInsertNode(const string & str) {
   return u;
 }
 
-CoocGraph::edge_descriptor CoocGraph::findOrInsertEdge(CoocGraph::vertex_descriptor u,
+CoocGraph::edge_descriptor CoocGraph::find_or_insert_edge(CoocGraph::vertex_descriptor u,
 						       CoocGraph::vertex_descriptor v ) {
 
   CoocGraph::edge_descriptor e;
@@ -50,7 +50,7 @@ CoocGraph::edge_descriptor CoocGraph::findOrInsertEdge(CoocGraph::vertex_descrip
 }
 
 std::pair<CoocGraph::vertex_descriptor, bool>
-CoocGraph::getVertexByName(const std::string & str) const {
+CoocGraph::get_vertex_by_name(const std::string & str) const {
 
 
   map<string, CoocGraph::vertex_descriptor>::const_iterator it = _nodeMap.find(str);
@@ -79,7 +79,7 @@ CoocGraph::CoocGraph(CoocGraph & cooc) {
   }
   CoocGraph::edge_iterator e_it, e_end;
   for(tie(e_it, e_end) = edges(cooc.g); e_it != e_end; ++e_it) {
-    CoocGraph::edge_descriptor e = findOrInsertEdge(nMap[source(*e_it, cooc.g)],
+    CoocGraph::edge_descriptor e = find_or_insert_edge(nMap[source(*e_it, cooc.g)],
 						    nMap[target(*e_it, cooc.g)]);
     put(edge_freq, g, e,
 	get(edge_freq, cooc.g, *e_it));
@@ -103,7 +103,7 @@ void CoocGraph::remove_isolated_vertices(size_t m) {
   }
   CoocGraph::edge_iterator e_it, e_end;
   for(tie(e_it, e_end) = edges(g); e_it != e_end; ++e_it) {
-    CoocGraph::edge_descriptor e = coog.findOrInsertEdge(nMap[source(*e_it, g)],
+    CoocGraph::edge_descriptor e = coog.find_or_insert_edge(nMap[source(*e_it, g)],
 							 nMap[target(*e_it, g)]);
     put(edge_freq, coog.g, e,
 	get(edge_freq, g, *e_it));
@@ -130,7 +130,7 @@ void CoocGraph::insert_doc(vector<CoocGraph::vertex_descriptor> & doc) {
     vector<CoocGraph::vertex_descriptor>::iterator it = w;
     ++it;
     for(; it != end; ++it) {
-      CoocGraph::edge_descriptor e = findOrInsertEdge(*w, *it);
+      CoocGraph::edge_descriptor e = find_or_insert_edge(*w, *it);
       put(edge_freq, g, e,
 	  get(edge_freq, g, e) + 1);
     }
@@ -206,7 +206,7 @@ void CoocGraph::fill_dling_th(ifstream & fh) {
     for(set<string>::const_iterator sit = docWords.begin(); sit != docWords.end(); ++sit) {
       CoocGraph::vertex_descriptor target = findOrInsertNode(*sit);
       if (source == target) continue; // Don't allow self loops
-      findOrInsertEdge(source, target);
+      find_or_insert_edge(source, target);
     }
   }
 }

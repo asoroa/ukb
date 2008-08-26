@@ -25,7 +25,7 @@ class KGraph {
   KGraph() {};
   KGraph(CSentence & cs, DisambGraph & disg);
 
-  std::pair<Dis_vertex_t, bool> getVertexByName(const std::string & str) const;
+  std::pair<Dis_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
   void write_to_binfile (const std::string & fName) const;
   void read_from_binfile (const std::string & fName);
