@@ -59,36 +59,36 @@ void option_dependency(const boost::program_options::variables_map& vm,
 
 
 bool extract_input_files(const string & fullname,
-			 vector<string> & input_files,
-			 const string & extension) {
+						 vector<string> & input_files,
+						 const string & extension) {
 
   namespace fs = boost::filesystem;
 
-  fs::path full_path( fs::initial_path() );
+  fs::path abs_path( fs::initial_path() );
   
-  full_path = fs::system_complete( fs::path( fullname, fs::native ) );
+  // Creates an absolute path
+  abs_path = fs::system_complete( fs::path( fullname ) );
 
-  if ( !fs::exists( full_path ) )
-    {
-      std::cerr << "\nNot found: " << full_path.native_file_string() << std::endl;
-      return false;
-    }
+  if ( !fs::exists(abs_path)) {
+	std::cerr << "\nNot found: " << abs_path.native_file_string() << std::endl;
+	return false;
+  }
 
-  if ( fs::is_directory( full_path ) ) {
+  if ( fs::is_directory(abs_path) ) {
 
     fs::directory_iterator end_iter;
-    for ( fs::directory_iterator dir_itr( full_path );
+    for ( fs::directory_iterator dir_itr( abs_path );
           dir_itr != end_iter;
           ++dir_itr ) {
-      string dfile = dir_itr->native_file_string();
+      string dfile = dir_itr->leaf();
       size_t ext_i = dfile.find_last_of('.');
       if (ext_i == string::npos) continue;
       string dext(dfile.begin() + ext_i + 1, dfile.end());
       if (dext != extension) continue;
-      input_files.push_back(dfile);
+      input_files.push_back(dir_itr->native_file_string());
     }    
   } else {
-    input_files.push_back(full_path.native_file_string());
+    input_files.push_back(abs_path.native_file_string());
   }
   return true;
 }
@@ -212,7 +212,7 @@ void create_kgraph(string & cs_fname,
 
 template<class G>
 void dis_csent(const vector<string> & input_files, const string & ext,
-	       bool edge_weights) {
+			   bool edge_weights) {
   
 
   map<string, size_t> counts;
@@ -240,9 +240,9 @@ void dis_csent(const vector<string> & input_files, const string & ext,
 
     case glVars::pageRank:
       if (glVars::mcr_with_freqs) {
-	pageRank_ppv_disg(dg.graph(), counts, edge_weights);
+		pageRank_ppv_disg(dg.graph(), counts, edge_weights);
       } else {
-	pageRank_disg(dg.graph(), edge_weights);
+		pageRank_disg(dg.graph(), edge_weights);
       }
       break;
     case glVars::degree:
@@ -481,11 +481,54 @@ void do_dgraph_gviz(const vector<string> & input_files,
 //   }
 // }
 
-void test (const string & fullname_in, const string & out_dir) {
+void test2 (const string & fullname,
+		   const string & extension) {
+  namespace fs = boost::filesystem;
 
-  dis_csent_hr(fullname_in, false, false, false);
+  fs::path full_path( fs::initial_path() );
+
+  //cerr << fs::path(fullname).native_file_string() << endl;
+
+  full_path = fs::system_complete( fs::path( fullname ) );
+
+  cerr << full_path.native_file_string() << endl;
+
+  if ( !fs::exists( full_path ) )
+    {
+      std::cerr << "\nNot found: " << full_path.native_file_string() << std::endl;
+      return;
+    }
+
+  if ( fs::is_directory( full_path ) ) {
+
+    fs::directory_iterator end_iter;
+    for ( fs::directory_iterator dir_itr( full_path );
+          dir_itr != end_iter;
+          ++dir_itr ) {
+      string dfile = dir_itr->leaf();
+      size_t ext_i = dfile.find_last_of('.');
+      if (ext_i == string::npos) continue;
+      string dext(dfile.begin() + ext_i + 1, dfile.end());
+	  if (dext != extension) continue;
+	  cout << dfile << " " << dext << "\n";
+    }    
+  } else {
+	cout << full_path.leaf() << endl;
+  } 
 }
 
+void test(const string & str) {
+  vector<string> v;
+  extract_input_files(str, v, "csent");
+  for(vector<string>::iterator it=v.begin(); it != v.end(); ++it) {
+	File_elem e(*it);
+	cout << e.path << endl;
+	cout << e.fname << endl;
+	cout << e.ext << endl;
+  }
+  //writeV(cout, v);
+  //cout << endl;
+}
 
   // add words and word#pos into Mcr
 
@@ -866,12 +909,7 @@ int main(int argc, char *argv[]) {
 
   if (opt_do_test) {
 
-    if(fullname_in.size() == 0) {
-      cout << po_visible << endl;
-      cerr << "Error: No input files." << endl;
-      return -1;
-    }
-    test(fullname_in, out_dir);
+    test(fullname_in);
   }
   return 0;
 }
