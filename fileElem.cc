@@ -1,9 +1,97 @@
 #include "fileElem.h"
 #include <iostream>
+#include <stdexcept>
 
-using std::cerr;
-using std::cout;
-using std::endl;
+// Boost filesystem
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+
+
+using namespace std;
+
+namespace fs = boost::filesystem;
+
+static inline string path_string(const boost::filesystem::path & p) {
+#if (BOOST_VERSION / 100 % 1000 < 34) 
+  return p.native_file_string();
+#else
+  return p.file_string();
+#endif
+}
+
+template<class Dir> string dir_string(const Dir & p) {
+#if (BOOST_VERSION / 100 % 1000 < 34) 
+  // Dir is a path object
+  return p.native_file_string();
+#else
+  // Dir is a basic_directory object
+  return p.path().file_string();
+#endif
+}
+
+vector<string> extract_input_files(const string & fullname,
+								   const string & extension) {
+
+  vector<string> input_files;
+
+  fs::path abs_path( fs::initial_path() );
+  
+  // Creates an absolute path
+  abs_path = fs::system_complete( fs::path( fullname ) );
+
+  if ( !fs::exists(abs_path)) {
+	throw runtime_error("extract_input_files error:" + path_string(abs_path) + " not found.");
+  }
+
+  if ( fs::is_directory(abs_path) ) {
+
+    fs::directory_iterator end_iter;
+    for ( fs::directory_iterator dir_itr( abs_path );
+          dir_itr != end_iter;
+          ++dir_itr ) {
+	  if (fs::is_directory(*dir_itr)) continue;
+	  if (extension.size()) {
+		  string dfile = dir_itr->leaf();
+		  size_t ext_i = dfile.find_last_of('.');
+		  if (ext_i == string::npos) continue;
+		  string dext(dfile.begin() + ext_i + 1, dfile.end());
+		  if (dext != extension) continue;
+		}
+      input_files.push_back(dir_string(*dir_itr));
+    }
+  } else {
+    input_files.push_back(path_string(abs_path));
+  }
+  return input_files;
+}
+
+/////////////////////////////////////////////////////////////
+
+bool exists_file(const string & fname) {
+
+  namespace fs = boost::filesystem;
+
+  fs::path full_path( fs::initial_path() );
+  
+  full_path = fs::system_complete( fs::path( fname, fs::native ) );
+  return exists(full_path);
+}
+
+
+/////////////////////////////////////////////////////////////
+
+string basename(const string & fname) {
+  
+  namespace fs = boost::filesystem;
+
+  fs::path full_path( fs::initial_path() );
+  
+  full_path = fs::system_complete( fs::path( fname, fs::native ) );
+
+  return full_path.leaf();
+}
+
+
 
 /////////////////////////////////////////////////////////////
 // Filesystem stuff (paths, extensions, etc)

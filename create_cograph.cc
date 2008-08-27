@@ -9,11 +9,6 @@
 #include <iostream>
 #include <fstream>
 
-
-// Basename & friends
-#include <boost/filesystem/operations.hpp>
-#include "boost/filesystem/path.hpp"
-
 // graphviz
 
 #include <boost/graph/graphviz.hpp>
@@ -29,58 +24,6 @@ using namespace boost;
 // global vars
 
 bool opt_verbose = false;
-
-
-string basename(const string & fname) {
-  
-  namespace fs = boost::filesystem;
-
-  fs::path full_path( fs::initial_path() );
-  
-  full_path = fs::system_complete( fs::path( fname, fs::native ) );
-
-  return full_path.leaf();
-}
-
-bool exists_file(const string & fname) {
-
-  namespace fs = boost::filesystem;
-
-  fs::path full_path( fs::initial_path() );
-  
-  full_path = fs::system_complete( fs::path( fname, fs::native ) );
-  return exists(full_path);
-}
-
-bool extract_input_files(const string & fullname,
-			 vector<string> & input_files) {
-
-  namespace fs = boost::filesystem;
-
-  fs::path full_path( fs::initial_path() );
-  
-  full_path = fs::system_complete( fs::path( fullname, fs::native ) );
-
-  if ( !fs::exists( full_path ) )
-    {
-      std::cerr << "\nNot found: " << full_path.native_file_string() << std::endl;
-      return false;
-    }
-
-  if ( fs::is_directory( full_path) ) {
-
-    fs::directory_iterator end_iter;
-    for ( fs::directory_iterator dir_itr( full_path );
-          dir_itr != end_iter;
-          ++dir_itr ) {
-      if (fs::is_directory(*dir_itr)) continue;
-      input_files.push_back(dir_itr->native_file_string());
-    }    
-  } else {
-    input_files.push_back(full_path.native_file_string());
-  }
-  return true;
-}
 
 
 void chsq (const string & input_name,
@@ -376,7 +319,7 @@ int main(int argc, char *argv[]) {
   CoocGraph coog;
   vector<string> input_files;
 
-  extract_input_files(fullname_in, input_files);
+  input_files = extract_input_files(fullname_in);
   if(input_files.empty()) {
     cout << po_desc << endl;
     cerr << "Error: No input files." << endl;

@@ -56,51 +56,14 @@ void option_dependency(const boost::program_options::variables_map& vm,
 			+ "' requires option '" + required_option + "'.");
 }
 
-
-
-bool extract_input_files(const string & fullname,
-						 vector<string> & input_files,
-						 const string & extension) {
-
-  namespace fs = boost::filesystem;
-
-  fs::path abs_path( fs::initial_path() );
-  
-  // Creates an absolute path
-  abs_path = fs::system_complete( fs::path( fullname ) );
-
-  if ( !fs::exists(abs_path)) {
-	std::cerr << "\nNot found: " << abs_path.native_file_string() << std::endl;
-	return false;
-  }
-
-  if ( fs::is_directory(abs_path) ) {
-
-    fs::directory_iterator end_iter;
-    for ( fs::directory_iterator dir_itr( abs_path );
-          dir_itr != end_iter;
-          ++dir_itr ) {
-      string dfile = dir_itr->leaf();
-      size_t ext_i = dfile.find_last_of('.');
-      if (ext_i == string::npos) continue;
-      string dext(dfile.begin() + ext_i + 1, dfile.end());
-      if (dext != extension) continue;
-      input_files.push_back(dir_itr->native_file_string());
-    }    
-  } else {
-    input_files.push_back(abs_path.native_file_string());
-  }
-  return true;
-}
-
 ///////////////////////////////////////
 
 //Main program
 
 
 void create_dgraphs_from_corpus(string & fullname_in,
-				const string & out_dir,
-				bool opt_create_kgraph = false) {
+								const string & out_dir,
+								bool opt_create_kgraph = false) {
 
   File_elem fout(fullname_in, out_dir, ".dgraph");
   ifstream fh_in(fullname_in.c_str());
@@ -518,16 +481,15 @@ void test2 (const string & fullname,
 }
 
 void test(const string & str) {
-  vector<string> v;
-  extract_input_files(str, v, "csent");
+  vector<string> v =  extract_input_files(str, "csent");
   for(vector<string>::iterator it=v.begin(); it != v.end(); ++it) {
 	File_elem e(*it);
-	cout << e.path << endl;
-	cout << e.fname << endl;
-	cout << e.ext << endl;
+ 	cout << e.path << endl;
+ 	cout << e.fname << endl;
+ 	cout << e.ext << endl;
   }
-  //writeV(cout, v);
-  //cout << endl;
+  writeV(cout, v);
+  cout << endl;
 }
 
   // add words and word#pos into Mcr
@@ -871,7 +833,7 @@ int main(int argc, char *argv[]) {
   }
 
   if(opt_do_gviz) {
-    extract_input_files(fullname_in, input_files, "dgraph");
+    input_files = extract_input_files(fullname_in, "dgraph");
     
     if(input_files.empty()) {
       cout << po_visible << endl;
@@ -885,7 +847,7 @@ int main(int argc, char *argv[]) {
 
   if (opt_disamb_csent_dgraph || opt_disamb_csent_kgraph || opt_disamb_csent_wdgraph) {
     
-    extract_input_files(fullname_in, input_files, "csent");
+    input_files = extract_input_files(fullname_in, "csent");
 
     if(input_files.empty()) {
       cout << po_visible << endl;
