@@ -40,22 +40,6 @@ using namespace std;
 using namespace boost;
 
 
-
-////////////////////////////////////////////////////////////////////////////////
-// Auxiliary functions
-template<class Map, class InvMap>
-void create_inverse_map(const Map & source, InvMap & target) {
- 
-  typedef typename InvMap::value_type value_type_inv;
-
-  typename Map::const_iterator it = source.begin();
-  typename Map::const_iterator it_end = source.end();
-
-  for(; it != it_end; ++it) {
-    target.insert(value_type_inv(it->second,it->first));
-  }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Class Mcr
 
@@ -79,13 +63,12 @@ Mcr & Mcr::instance() {
 }
 
 void Mcr::create_from_txt(const string & synsFileName,
-			  const std::set<std::string> & rels_source,
-			  string relFileName) {
+						  const std::set<std::string> & rels_source) {
   if (p_instance) return;
   Mcr *tenp = create();
 
   tenp->relsSource = rels_source;
-  tenp->read_from_txt(synsFileName, relFileName);
+  tenp->read_from_txt(synsFileName);
   p_instance = tenp;
 }
 
@@ -294,37 +277,7 @@ Mcr_vertex_t Mcr::get_random_vertex() const {
 ////////////////////////////////////////////////////////////////////////////////
 // read from textfile and create graph
 
-
-// Read relations name, id and inverse relations
-
-void read_reltypes(ifstream & relFile,
-				   map<string, int> & relMap,
-				   map<int, string> & relMapInv) {
-
-  string line;
-  int line_number = 0;
-
-  while(relFile) {
-    // fields: id name code inverse_rel_id type NULL
-    vector<string> fields;
-    std::getline(relFile, line, '\n');
-    line_number++;
-    char_separator<char> sep(" ");
-    tokenizer<char_separator<char> > tok(line, sep);
-    copy(tok.begin(), tok.end(), back_inserter(fields));
-    if (fields.size() == 0) continue; // blank line
-    if (fields.size() < 2) {
-      cerr << "read_reltypes error. Bad line: " << line_number << endl;
-      exit(-1);
-    }
-    int relId = lexical_cast<int>(fields[0]);
-    relMap[fields[1]] = relId;
-  }
-  create_inverse_map(relMap, relMapInv);
-}
-
 // Read the actual MCR file
-
 
 void read_mcr_v1(ifstream & mcrFile, 
 				 const set<string> & rels_source,
@@ -368,7 +321,7 @@ void read_mcr_v1(ifstream & mcrFile,
 // u: source vertex. Mandatory.
 // v: target vertex. Mandatory.
 // t: relation type (hyperonym, meronym, etc) of edge u->v. Optional.
-// i: (inverse) relation type of edge v->u (hyponym, etc). Optional.
+// i: (inverse) relation type of edge v->u (hyponym, etc). Optional. Useless on undirected graphs.
 // s: source of relation (wn30, mcr17, etc). Optional.
 // d: wether the relation is directed. Optional, default is undirected.
 
@@ -467,19 +420,10 @@ void read_mcr(ifstream & mcrFile,
   }
 }
 
-void Mcr::read_from_txt(const string & synsFileName,
-						const string & reltypeFileName) {
+void Mcr::read_from_txt(const string & synsFileName) {
 
   // optimize IO
   std::ios::sync_with_stdio(false);
-
-  if (reltypeFileName.length()) {
-    std::ifstream rt_file(reltypeFileName.c_str(), ofstream::in);
-    if (!rt_file) {
-      throw runtime_error("Mcr::read_from_txt error: Can't open " + reltypeFileName);
-    }
-    read_reltypes(rt_file, relMap, relMapInv);
-  }
 
   std::ifstream syns_file(synsFileName.c_str(), ofstream::in);
   if (!syns_file) {
@@ -497,7 +441,7 @@ void Mcr::read_from_txt(const string & synsFileName,
 
 void Mcr::add_from_txt(const std::string & synsFileName) {
 
-  Mcr::instance().read_from_txt(synsFileName, "");
+  Mcr::instance().read_from_txt(synsFileName);
 }
 
 void Mcr::display_info(std::ostream & o) const {
@@ -512,7 +456,11 @@ void Mcr::display_info(std::ostream & o) const {
   if (edge_n & 2) edge_n++; 
 
   o << "\n" << num_vertices(g) << " vertices and " << edge_n/2 << " edges" << endl;
-
+  if (rtypes.size()) {
+	o << "Relations:";
+	writeV(o, rtypes);
+	o << endl;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -784,6 +732,8 @@ void  Mcr::read_from_stream (std::ifstream & is) {
   size_t i;
   size_t id;
 
+  std::map<std::string, int> relMap_aux;     // Obsolete map from relation name to relation id
+
   coef_status = 0;
   read_atom_from_stream(is, id);
   if (id == magic_id_v1) {
@@ -791,8 +741,7 @@ void  Mcr::read_from_stream (std::ifstream & is) {
 	// Backward compatibility with binary v1 format
 
 	read_set_from_stream(is, relsSource);
-	read_map_from_stream(is, relMap);
-	create_inverse_map(relMap, relMapInv);
+	read_map_from_stream(is, relMap_aux);
 
 	read_map_from_stream(is, synsetMap);
 	read_map_from_stream(is, wordMap);

@@ -30,7 +30,7 @@ using namespace boost;
 
 
 void read_skip_relations (const string & file,
-			  set<string> & skip_rels) {
+						  set<string> & skip_rels) {
 
   const string delims(" \t");
   ifstream fi(file.c_str(), ifstream::binary|ifstream::in);
@@ -146,7 +146,6 @@ int main(int argc, char *argv[]) {
 
   string cograph_filename;
   string fullname_out("mcr_wnet.bin");
-  string relations_file("mcr_16_source/wei_relations.txt");
   vector<string> mcr_files;
   string out_dir;
   string query_vertex;
@@ -180,13 +179,14 @@ int main(int argc, char *argv[]) {
     ("ts,t", value<string>(), "Merge topic signatures in a serialization graph. Asks for the textfile with ts info.")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("output,o", value<string>(), "Output file name.")
-    ("relations_file,r", value<string>(), "Specify file about relations (default mcr_16_source/wei_relations.txt).")
     //    ("dict_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
     ("param,p", value<string>(), "Specify parameter file.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
     ("ts_now", "Don't use weights when linking TS words to synsets (default is yes).")
     ("cooc_w", "Use weights when linking cooc words (default is don't).")
     ("verbose,v", "Be verbose.")
+    ("kyoto,k", "Use kyoto format for input txt.")
+    ("rtypes,r", "Keep relation types on edges. Implies -k.")
     ;
   options_description po_desc_hide("Hidden");
   po_desc_hide.add_options()
@@ -247,6 +247,15 @@ int main(int argc, char *argv[]) {
       opt_weight_cooc = true;
     }
 
+    if (vm.count("kyoto")) {
+	  glVars::kb::v1_kb = false;
+    }
+
+    if (vm.count("rtypes")) {
+	  if (glVars::kb::v1_kb) throw runtime_error("can't use --rtypes without --kyoto");
+	  glVars::kb::keep_reltypes = true;
+    }
+
     if (vm.count("ts")) {
       opt_ts = true;
       glVars::w2s_filename = vm["ts"].as<string>(); // use w2s to read ts file
@@ -258,10 +267,6 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("out_dir")) {
       out_dir = vm["out_dir"].as<string>();
-    }
-
-    if (vm.count("relations_file")) {
-      relations_file = vm["relations_file"].as<string>();
     }
 
 //     if (vm.count("dict_file")) {
@@ -348,8 +353,6 @@ int main(int argc, char *argv[]) {
 
   if (glVars::verbose) {
     show_global_variables(cerr);
-    //cerr << "MCR file:" << mcr_file << "\t";
-    cerr << "Relations file:" << relations_file << endl;
   }
 
   set<string> source_rels(glVars::rel_source.begin(), glVars::rel_source.end());
@@ -357,7 +360,7 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     cerr << "Reading relations"<< endl;
 
-  Mcr::create_from_txt(mcr_files[0], source_rels, relations_file );
+  Mcr::create_from_txt(mcr_files[0], source_rels );
   for(size_t i=1; i < mcr_files.size(); ++i) {
     Mcr::instance().add_from_txt(mcr_files[i]);
   }

@@ -88,8 +88,7 @@ public:
   //    Load a binary snapshot of the graph into memory
 
   static void create_from_txt(const std::string & synsFile,
-							  const std::set<std::string> & rels_source,
-							  std::string reltypeFile = std::string());
+							  const std::set<std::string> & rels_source);
 
   static void create_from_binfile(const std::string & o);
 
@@ -186,8 +185,7 @@ private:
 
   Mcr_vertex_t InsertNode(const std::string & name, unsigned char flags);
 
-  void read_from_txt(const std::string & relFile,
-		     const std::string & synsFile);
+  void read_from_txt(const std::string & relFile);
 
   void read_from_stream (std::ifstream & o);
   std::ofstream & write_to_stream(std::ofstream & o) const;
@@ -197,9 +195,6 @@ private:
   std::set<std::string> relsSource;
   std::map<std::string, Mcr_vertex_t> synsetMap; // synset name to vertex id
   std::map<std::string, Mcr_vertex_t> wordMap; // synset name to vertex id
-  // These are obsolete
-  std::map<std::string, int> relMap;     // maps from relation name to relation id
-  std::map<int, std::string> relMapInv;  // maps from relation id to relation name
 
   // Registered relation types
 
