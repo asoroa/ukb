@@ -407,7 +407,7 @@ void read_mcr(ifstream & mcrFile,
 	  }
 	  if (!f.directed) {
 		Mcr_edge_t e2 = mcr->find_or_insert_edge(v, u, 1.0);
-		if(glVars::kb::keep_reltypes) {
+		if(glVars::kb::keep_reltypes && f.rtype.size()) {
 		  string aux = f.irtype.size() ? f.irtype : f.rtype;
 		  if(aux.size()) {
 			mcr->edge_add_reltype(e2, aux);
