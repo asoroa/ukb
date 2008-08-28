@@ -47,6 +47,7 @@ namespace glVars {
   namespace kb {
     extern bool keep_reltypes; // Wether edges locally keep the relation types
     extern bool v1_kb; // Wether input has v1 format
+    extern bool filter_src; // Wether input relations should be filtered by relation source
   }
 
   extern boost::mt19937 rand_generator;

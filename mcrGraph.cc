@@ -206,6 +206,7 @@ Mcr_edge_t Mcr::find_or_insert_edge(Mcr_vertex_t u, Mcr_vertex_t v,
     coef_status = 0; // reset out degree coefficients
     e = add_edge(u, v, g).first;
     put(edge_weight, g, e, w);
+    put(edge_rtype, g, e, static_cast<boost::uint32_t>(0));
   }
   return e;
 }
@@ -240,7 +241,7 @@ void Mcr::edge_add_reltype(Mcr_edge_t e, const string & rel) {
 
 std::vector<std::string> Mcr::get_edge_reltypes(Mcr_edge_t e) const {
   vector<string> res;
-  boost::uint32_t m = get(edge_rtype, g, e);  
+  boost::uint32_t m = get(edge_rtype, g, e);
   vector<string>::size_type idx = 0;
   boost::uint32_t i = 1;
   while(idx < 32) {
@@ -395,7 +396,7 @@ void read_mcr(ifstream & mcrFile,
 	  line_number++;
 	  rel_parse f;
 	  if (!parse_line(line, f)) continue;
-	  if (f.src.size() && rels_source.find(f.src) == srel_end) continue; // Skip this relation
+	  if (glVars::kb::filter_src && f.src.size() && rels_source.find(f.src) == srel_end) continue; // Skip this relation
 	  Mcr_vertex_t u = mcr->find_or_insert_synset(f.u);
 	  Mcr_vertex_t v = mcr->find_or_insert_synset(f.v);
 

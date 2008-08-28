@@ -43,6 +43,7 @@ namespace glVars {
   namespace kb {
 	bool keep_reltypes = false;
     bool v1_kb = true;
+	bool filter_src = true;
   }
 
 //   bool word_norep = 0;
