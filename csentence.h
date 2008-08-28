@@ -53,6 +53,7 @@ public:
 
   bool is_distinguished() const { return distinguished; }
   bool is_disambiguated() const { return disamb; }
+  bool is_monosemous() const { return (1 == syns.size()); }
 
   void empty_synsets() { 
     std::vector<std::string>().swap(syns); 
@@ -79,6 +80,7 @@ public:
   void disamb_cword();
 
   friend std::ostream& operator<<(std::ostream & o, const CWord & cw_);
+  std::ostream & print_cword_simple(std::ostream & o) const;
   std::ostream & print_cword_aw(std::ostream & o) const;
   std::ostream & print_cword_semcor_aw(std::ostream & o) const;
   friend class CSentence;
@@ -140,6 +142,8 @@ public:
   friend std::ostream& operator<<(std::ostream & o, const CSentence & cs_);
   std::ostream & print_csent_aw(std::ostream & o) const;
   std::ostream & print_csent_semcor_aw(std::ostream & o) const;
+
+  std::ostream & print_csent_simple(std::ostream & o) const;
   
 private:  
   void read_from_stream (std::ifstream & is);

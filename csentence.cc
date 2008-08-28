@@ -177,9 +177,6 @@ ostream & cw_aw_print_all(ostream & o,
 
 ostream & CWord::print_cword_aw(ostream & o) const {
 
-  if (!disamb) return o;
-  if ((1 == syns.size()) && !glVars::output::monosemous) return o; // Don't output monosemous words
-
   vector<string> id_fields(split(cw_id, "."));
   assert(id_fields.size() > 0);
   o << id_fields[0] << " " << cw_id << " ";
@@ -191,7 +188,6 @@ ostream & CWord::print_cword_aw(ostream & o) const {
 
 ostream & CWord::print_cword_semcor_aw(ostream & o) const {
 
-  if (!disamb) return o;
   if ((1 == syns.size()) && !glVars::output::monosemous) return o; // Don't output monosemous words
 
   vector<string> id_fields(split(cw_id, "."));
@@ -203,7 +199,14 @@ ostream & CWord::print_cword_semcor_aw(ostream & o) const {
   return o;
 }
 
+ostream & CWord::print_cword_simple(ostream & o) const {
 
+  o << cw_id << " ";
+  if(!glVars::output::allranks) cw_aw_print_best(o, syns, ranks);
+  else cw_aw_print_all(o, syns, ranks);
+  o << " !! " << w << "\n";
+  return o;
+}
 
 ////////////////////////////////////////////////////////
 // Streaming
@@ -343,6 +346,9 @@ std::ostream & CSentence::print_csent_aw(std::ostream & o) const {
   for(; cw_it != cw_end; ++cw_it) {
     if (cw_it->size() == 0) continue;
     if (!cw_it->is_distinguished()) continue;
+    if (!cw_it->is_disambiguated()) continue;
+	if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
+
     cw_it->print_cword_aw(o);
   }
   return o;
@@ -356,7 +362,26 @@ std::ostream & CSentence::print_csent_semcor_aw(std::ostream & o) const {
   for(; cw_it != cw_end; ++cw_it) {
     if (cw_it->size() == 0) continue;
     if (!cw_it->is_distinguished()) continue;
+    if (!cw_it->is_disambiguated()) continue;
+	if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
+
     cw_it->print_cword_semcor_aw(o);
+  }
+  return o;
+}
+
+std::ostream & CSentence::print_csent_simple(std::ostream & o) const {
+
+  vector<CWord>::const_iterator cw_it = v.begin();
+  vector<CWord>::const_iterator cw_end = v.end();
+
+  for(; cw_it != cw_end; ++cw_it) {
+    if (cw_it->size() == 0) continue;
+    if (!cw_it->is_distinguished()) continue;
+    if (!cw_it->is_disambiguated()) continue;
+	if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
+	o << cs_id << " ";
+    cw_it->print_cword_simple(o);
   }
   return o;
 }
