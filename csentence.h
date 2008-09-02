@@ -26,58 +26,55 @@ public:
   typedef std::vector<std::string>::value_type value_type;
   typedef std::vector<std::string>::size_type size_type;
 
-  explicit CWord() : m_weight(1.0), distinguished(false), ranks_equal(true), disamb(false) {};
-  CWord(const std::string & w_);
+  explicit CWord() : m_pos(0), m_weight(1.0), m_is_synset(false),m_distinguished(false),
+					 m_disamb(false) {};
   CWord(const std::string & w_, const std::string & id, char pos, bool is_dist);
   CWord & operator=(const CWord & cw_);
   ~CWord() {};
 
-  iterator begin() {return syns.begin();}
-  iterator end() {return syns.end();}
-  const_iterator begin() const {return syns.begin();}
-  const_iterator end() const {return syns.end();}
-  size_type size() const {return syns.size(); }
+  static CWord create_synset_cword(const std::string & syn_id, const std::string & id_, float w);
 
-  const std::string & syn(size_t i) const { return syns[i];}
-  float rank(size_t i) const { return ranks[i];}
+  iterator begin() {return m_syns.begin();}
+  iterator end() {return m_syns.end();}
+  const_iterator begin() const {return m_syns.begin();}
+  const_iterator end() const {return m_syns.end();}
+  size_type size() const {return m_syns.size(); }
+
+  const std::string & syn(size_t i) const { return m_syns[i];}
+  float rank(size_t i) const { return m_ranks[i];}
 
   std::string word() const { return w; }
 
   std::string wpos() const;
 
-  std::string id() const {return cw_id;}
-  char get_pos() const {return pos;}
+  std::string id() const {return m_id;}
+  char get_pos() const {return m_pos;}
 
   float get_weight() const { return m_weight;}
   void set_weight(float w) { m_weight = w;}
 
-  bool is_distinguished() const { return distinguished; }
-  bool is_disambiguated() const { return disamb; }
-  bool is_monosemous() const { return (1 == syns.size()); }
+  bool is_distinguished() const { return m_distinguished; }
+  bool is_disambiguated() const { return m_disamb; }
+  bool is_monosemous() const { return (1 == m_syns.size()); }
 
   void empty_synsets() { 
-    std::vector<std::string>().swap(syns); 
-    std::vector<float>().swap(ranks); 
+    std::vector<std::string>().swap(m_syns); 
+    std::vector<float>().swap(m_ranks); 
+	m_disamb = false;
   }
-  std::vector<std::string> & get_syns_vector() { return syns; }
+  std::vector<std::string> & get_syns_vector() { return m_syns; }
 
   template <typename G, typename Map> 
   void rank_synsets(G & g, Map rankMap) {
-    size_t n = syns.size();
+    size_t n = m_syns.size();
     size_t i;
     if (!n) return; // No synsets
     for(i = 0; i != n; ++i) 
-      ranks[i] = rankMap[g.get_vertex_by_name(syns[i]).first];
-    
-    for(i = 1; i != n; ++i) {
-      if(ranks[i] != ranks[i-1]) {
-	ranks_equal = false;
-	break;
-      }
-    }
+      m_ranks[i] = rankMap[g.get_vertex_by_name(m_syns[i]).first];
   }
 
   void disamb_cword();
+
 
   friend std::ostream& operator<<(std::ostream & o, const CWord & cw_);
   std::ostream & print_cword_simple(std::ostream & o) const;
@@ -92,15 +89,15 @@ private:
   void shuffle_synsets();
 
   std::string w;
-  std::string cw_id;
-  char pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
+  std::string m_id;
+  char m_pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
   float m_weight;     // Initial weight for PPV
-  std::vector<std::string> syns;
-  std::vector<float> ranks;
-  bool distinguished;
-  bool ranks_equal; // If all ranks have the same value (for disambiguating)
-  bool disamb;      // If word is disambiguated, that is, if the synset
-		    // are ordered according to their ranks
+  std::vector<std::string> m_syns;
+  std::vector<float> m_ranks;
+  bool m_is_synset; // Wether the cword is just a synset (created with create_synset_cword)
+  bool m_distinguished;
+  bool m_disamb;      // If word is disambiguated, that is, if the synset
+                      // are ordered according to their ranks
 };
 
 class CSentence {

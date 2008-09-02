@@ -92,16 +92,16 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 
       bool ok = calculate_mcr_hr(cs,ranks, false);
       if (!ok) {
-	cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
-	continue;
+		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
+		continue;
       }
-
+	  
       fout.fname = cs.id();
 
       ofstream fo(fout.get_fname().c_str(),  ofstream::out);
       if (!fo) {
-	cerr << "Error: can't create" << fout.get_fname() << endl;
-	exit(-1);
+		cerr << "Error: can't create" << fout.get_fname() << endl;
+		exit(-1);
       }
 
       vector<float> filter_ranks;
@@ -109,43 +109,43 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
       double norm;
       switch(filter_nodes) {
       case 1: // only words
-	if (glVars::verbose) 
-	  cerr << ranks.size() << "\n";
-	for(size_t i=0; i < ranks.size(); ++i) {
-	  if (mcr.vertex_is_word(i)) {
-	    filter_ranks.push_back(ranks[i]);
-	    filter_sum+=ranks[i];
-	  }
-	}
-	if (glVars::verbose) 
-	  cerr << filter_ranks.size() << " words\n";
-	// normalize vector
-	norm = 1.0/filter_sum;
-	for(vector<float>::iterator it=filter_ranks.begin(); it != filter_ranks.end(); ++it) {
-	  fo << *it * norm << "\n";
-	}
-	break;
+		if (glVars::verbose) 
+		  cerr << ranks.size() << "\n";
+		for(size_t i=0; i < ranks.size(); ++i) {
+		  if (mcr.vertex_is_word(i)) {
+			filter_ranks.push_back(ranks[i]);
+			filter_sum+=ranks[i];
+		  }
+		}
+		if (glVars::verbose) 
+		  cerr << filter_ranks.size() << " words\n";
+		// normalize vector
+		norm = 1.0/filter_sum;
+		for(vector<float>::iterator it=filter_ranks.begin(); it != filter_ranks.end(); ++it) {
+		  fo << *it * norm << "\n";
+		}
+		break;
       case 2: // only synsets
-	if (glVars::verbose) 
-	  cerr << ranks.size() << "\n";
-	for(size_t i=0; i < ranks.size(); ++i) {
-	  if (mcr.vertex_is_synset(i)) {
-	    filter_ranks.push_back(ranks[i]);
-	    filter_sum+=ranks[i];
-	  }
-	}
-	// normalize vector
-	if (glVars::verbose) 
-	  cerr << filter_ranks.size() << " synsets\n";
-	norm = 1.0/filter_sum;
-	for(vector<float>::iterator it=filter_ranks.begin(); it != filter_ranks.end(); ++it) {
-	  fo << *it * norm << "\n";
-	}
-	break;
-
+		if (glVars::verbose) 
+		  cerr << ranks.size() << "\n";
+		for(size_t i=0; i < ranks.size(); ++i) {
+		  if (mcr.vertex_is_synset(i)) {
+			filter_ranks.push_back(ranks[i]);
+			filter_sum+=ranks[i];
+		  }
+		}
+		// normalize vector
+		if (glVars::verbose) 
+		  cerr << filter_ranks.size() << " synsets\n";
+		norm = 1.0/filter_sum;
+		for(vector<float>::iterator it=filter_ranks.begin(); it != filter_ranks.end(); ++it) {
+		  fo << *it * norm << "\n";
+		}
+		break;
+		
       default:
-	copy(ranks.begin(), ranks.end(), ostream_iterator<float>(fo, "\n"));
-	break;
+		copy(ranks.begin(), ranks.end(), ostream_iterator<float>(fo, "\n"));
+		break;
       };
       cs = CSentence();
     }
