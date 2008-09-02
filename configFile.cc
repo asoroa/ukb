@@ -100,7 +100,7 @@ void parseVarValue(string & variable, const string & value,
 }
 
 
-bool skip_line(const string &l) {
+static bool skip_line(const string &l) {
 
   if (l.size() == 0) return true;
   string::const_iterator sIt = l.begin();

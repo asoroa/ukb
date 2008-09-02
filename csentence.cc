@@ -274,13 +274,28 @@ void CWord::read_from_stream(std::ifstream & i) {
 
 // AW file read (create a csentence from a context)
 
+static bool skip_line(const string &l) {
+
+  if (l.size() == 0) return true;
+  string::const_iterator sIt = l.begin();
+  string::const_iterator sItEnd = l.end();
+  while(sIt != sItEnd && isspace(*sIt)) sIt++;
+  if (sIt == sItEnd) return true;
+  if (*sIt == '#') return true;
+  return false;
+}
+
 istream & CSentence::read_aw(istream & is) {
 
   string line;
+  int l_n = 0;
 
   if(is) {
-    getline(is, line, '\n');
-    if (!is) return is; // EOF
+	do {
+	  getline(is, line, '\n');
+	  l_n++;
+	} while(is && skip_line(line));
+	if(!is) return is;
 
     // first line is id
     char_separator<char> sep(" ");
@@ -291,37 +306,46 @@ istream & CSentence::read_aw(istream & is) {
     if (ctx.size() == 0) return is; // blank line or EOF
     cs_id = ctx[0];
     vector<string>().swap(ctx);
-    // next comes the context
-    getline(is, line, '\n');
+	// next comes the context
+	do {
+	  getline(is, line, '\n');
+	  l_n++;
+	} while(is && skip_line(line));
+	if(!is) return is;
+
     tokenizer<char_separator<char> > tok_ctx(line, sep);
     copy(tok_ctx.begin(), tok_ctx.end(), back_inserter(ctx));
     if (ctx.size() == 0) return is; // blank line or EOF
     int i = 0;
-    for(vector<string>::const_iterator it = ctx.begin(); it != ctx.end(); ++i, ++it) {
-      vector<string> fields;
-      char_separator<char> wsep("#");
-      tokenizer<char_separator<char> > wtok(*it, wsep);
-      copy(wtok.begin(), wtok.end(), back_inserter(fields));
-      if (fields.size() < 4)
-		throw std::runtime_error("read_aw: Bad word " + *it + " " + lexical_cast<string>(i));
-	  int dist = lexical_cast<bool>(fields[3]);
-	  CWord new_cw(fields[0], fields[2], fields[1].at(0), dist > 0);
-	  if (dist == 2) {
-		new_cw = CWord::create_synset_cword(fields[0], fields[2], 1.0);
+	try {
+	  for(vector<string>::const_iterator it = ctx.begin(); it != ctx.end(); ++i, ++it) {
+		vector<string> fields;
+		char_separator<char> wsep("#");
+		tokenizer<char_separator<char> > wtok(*it, wsep);
+		copy(wtok.begin(), wtok.end(), back_inserter(fields));
+		if (fields.size() < 4)
+		  throw std::runtime_error("Bad word " + *it + " " + lexical_cast<string>(i));
+		int dist = lexical_cast<int>(fields[3]);
+		CWord new_cw(fields[0], fields[2], fields[1].at(0), dist > 0);
+		if (dist == 2) {
+		  new_cw = CWord::create_synset_cword(fields[0], fields[2], 1.0);
+		}
+		if(glVars::csentence::word_weight) {
+		  if (fields.size() != 5)
+			throw std::runtime_error("Bad word " + *it + " " + lexical_cast<string>(i) + ": no weight");
+		  // optional weight
+		  new_cw.set_weight(lexical_cast<float>(fields[4]));
+		}
+		if (new_cw.size()) {
+		  v.push_back(new_cw);
+		} else {
+		  // No synset for that word.
+		  cerr << "W: " << fields[0] << "-" << fields[1] << " can't be mapped to MCR." << endl;
+		}		
 	  }
-      if(glVars::csentence::word_weight) {
-		if (fields.size() != 5)
-		  throw std::runtime_error("read_aw: Bad word " + *it + " " + lexical_cast<string>(i) + ": no weight");
-		// optional weight
-		new_cw.set_weight(lexical_cast<float>(fields[4]));
-      }
-      if (new_cw.size()) {
-		v.push_back(new_cw);
-      } else {
-		// No synset for that word.
-		cerr << "W: " << fields[0] << "-" << fields[1] << " can't be mapped to MCR." << endl;
-      }
-    }
+	} catch (std::exception & e) {
+	  throw std::runtime_error("Context error in line " + lexical_cast<string>(l_n) + " : " + e.what() );
+	}
   }
   return is;
 }
