@@ -767,7 +767,6 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("semcor")) {
       opt_out_semcor = 1;
-      glVars::output::allranks = 1; // Output all ranks
     }
 
     if (vm.count("test")) {
