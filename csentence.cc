@@ -187,7 +187,7 @@ ostream & cw_aw_print_best(ostream & o,
 						   const vector<string> & syns,
 						   const vector<float> & ranks) {
   size_t n = syns.size();
-  o << syns[0];
+  o << " " << syns[0];
   for(size_t i = 1; i != n; ++i) {
     if (ranks[i] != ranks[0]) break;
     o << " " << syns[i];
