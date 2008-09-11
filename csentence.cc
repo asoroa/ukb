@@ -213,7 +213,7 @@ ostream & CWord::print_cword_aw(ostream & o) const {
 
   vector<string> id_fields(split(m_id, "."));
   assert(id_fields.size() > 0);
-  o << id_fields[0] << " " << m_id << " ";
+  o << id_fields[0] << " " << m_id;
   if(!glVars::output::allranks) cw_aw_print_best(o, m_syns, m_ranks);
   else cw_aw_print_all(o, m_syns, m_ranks);
   o << " !! " << w << "\n";
@@ -226,7 +226,7 @@ ostream & CWord::print_cword_semcor_aw(ostream & o) const {
 
   vector<string> id_fields(split(m_id, "."));
   assert(id_fields.size() > 0);
-  o << id_fields[0] << "." << id_fields[1] << " " << m_id << " ";
+  o << id_fields[0] << "." << id_fields[1] << " " << m_id;
   if(!glVars::output::allranks) cw_aw_print_best(o, m_syns, m_ranks);
   else cw_aw_print_all(o, m_syns, m_ranks);
   o << " !! " << w << "\n";
