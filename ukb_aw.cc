@@ -321,7 +321,8 @@ void dis_csent_hr_by_word(const string & input_file,
 }
 
 void dis_csent_classic_prank(const string & input_file, 
-			     bool with_w) {
+							 bool with_w,
+							 bool out_semcor) {
   
   ifstream fh_in(input_file.c_str());
 
@@ -341,7 +342,8 @@ void dis_csent_classic_prank(const string & input_file,
   try {
     while (cs.read_aw(fh_in)) {
       disamb_csentence_mcr(cs, ranks);
-      cs.print_csent_aw(cout);
+      if (out_semcor) cs.print_csent_semcor_aw(cout);
+      else cs.print_csent_aw(cout);
       cs = CSentence();
     }
   } 
@@ -827,7 +829,7 @@ int main(int argc, char *argv[]) {
   if (opt_do_static_prank) {
     Mcr::create_from_binfile(mcr_binfile);
     cout << cmdline << "\n";
-    dis_csent_classic_prank(fullname_in, opt_with_w);
+    dis_csent_classic_prank(fullname_in, opt_with_w, opt_out_semcor);
     return 0;
   }
 
