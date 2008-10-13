@@ -138,6 +138,7 @@ int main(int argc, char *argv[]) {
   bool opt_param = false;
   bool opt_force_param = false;
   bool opt_query = false;
+  bool opt_dump = false;
 
   bool opt_weight_ts = true;    // use weights for TS
   bool opt_weight_cooc = false; // don't use weights for cooc
@@ -174,6 +175,7 @@ int main(int argc, char *argv[]) {
     ("help,h", "This help page.")
     ("force-default-values,f", "Use default relations.")
     ("info,i", "Give info about some Mcr binfile.")
+    ("dump", "Dump a serialized graph. Warning: very verbose!.")
     ("cooc,c", value<string>(), "Merge a coocurrence graph to a serialization graph.")
     ("hlex", value<string>(), "Merge a hyperlex coocurrence graph to a serialization graph.")
     ("ts,t", value<string>(), "Merge topic signatures in a serialization graph. Asks for the textfile with ts info.")
@@ -234,6 +236,10 @@ int main(int argc, char *argv[]) {
     if (vm.count("query")) {
       opt_query = true;
       query_vertex = vm["query"].as<string>();
+    }
+
+    if (vm.count("dump")) {
+      opt_dump = true;
     }
 
     if (vm.count("cooc")) {
@@ -310,6 +316,12 @@ int main(int argc, char *argv[]) {
   if (opt_info) {
     Mcr::create_from_binfile(mcr_files[0]);
     Mcr::instance().display_info(cout);
+    return 0;
+  }
+
+  if (opt_dump) {
+    Mcr::create_from_binfile(mcr_files[0]);
+    Mcr::instance().dump_graph(cout);
     return 0;
   }
 
