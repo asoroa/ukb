@@ -57,7 +57,7 @@ Mcr *Mcr::create() {
 
 Mcr & Mcr::instance() {
   if (!p_instance) {
-    throw runtime_error("MCR not initialized");
+    throw runtime_error("KB not initialized");
   }
   return *p_instance;
 }
@@ -278,7 +278,7 @@ Mcr_vertex_t Mcr::get_random_vertex() const {
 ////////////////////////////////////////////////////////////////////////////////
 // read from textfile and create graph
 
-// Read the actual MCR file
+// Read the actual KB file
 
 void read_mcr_v1(ifstream & mcrFile, 
 				 const set<string> & rels_source,
@@ -490,7 +490,7 @@ void create_w2wpos_maps(const string & word,
     tie(u, auxP) = mcr.get_vertex_by_name(syns.get_entry(i));
     if(!auxP) {
       if (glVars::debug::warning) 
-	cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in MCR.\n";
+	cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
       continue;
     }
     
@@ -556,7 +556,7 @@ void Mcr::add_token(const string & token, bool with_weight) {
 
   create_w2wpos_maps(token, wPosV, wPos2Syns);
 
-    // Add vertices and link them in the MCR
+    // Add vertices and link them in the KB
   insert_wpos(token, wPosV, wPos2Syns, with_weight);
 
 
@@ -574,7 +574,7 @@ void Mcr::ppv_weights(const vector<float> & ppv) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// PageRank in MCR
+// PageRank in KB
 
 
 // PPV version

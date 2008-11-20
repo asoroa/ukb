@@ -282,7 +282,7 @@ void dis_csent_hr(const string & input_file,
       bool ok = calculate_mcr_hr(cs,ranks, with_weight);
       if (!ok) {
 		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-		cerr << "(No word links to MCR ?)\n";
+		cerr << "(No word links to KB ?)\n";
 		continue;
       }
 
@@ -365,7 +365,7 @@ void dis_csent_classic_prank(const string & input_file,
 
   CSentence cs;
 
-  // Global (static) pageRank over MCR
+  // Global (static) pageRank over KB
   size_t N = Mcr::instance().size();
   vector<float> ppv(N, 1.0/static_cast<float>(N));
   vector<float> ranks;
@@ -625,7 +625,7 @@ int main(int argc, char *argv[]) {
 
   using namespace boost::program_options;
 
-  const char desc_header[] = "ukb_aw: perform AW with MCR KB based algorithm\n"
+  const char desc_header[] = "ukb_aw: perform AW with KB based algorithm\n"
     "Usage:\n"
 	"ukb_aw --dis_dgraph file.txt    -> Disambiguate file.txt using dgraph technique.\n"
     "ukb_aw --create_dgraph file.txt -> Create a disgraph from the file (.dgraph extension).\n"
@@ -646,7 +646,7 @@ int main(int argc, char *argv[]) {
     ("hr", "Given a text input file, disambiguate context using only hughes & ramage technique (no dgraph required).")
     ("w2w_hr", "Given a text input file, disambiguate context using hughes & ramage technique word by word.")
     ("graphviz,G", "Dump disambGraph to a graphviz format. Output file has same name and extension .dot")
-    ("mcr_binfile,M", value<string>(), "Binary file of MCR (see create_mcrbin). Default is mcr_wnet.bin")
+    ("mcr_binfile,M", value<string>(), "Binary file of KB (see create_mcrbin). Default is mcr_wnet.bin")
     ("w2syn_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("allranks", "Write key file with all synsets associated with ranks.")

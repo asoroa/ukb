@@ -47,7 +47,7 @@ void fill_syns(const string & w,
       ranks.push_back(0.0f);
     } else {
       if (glVars::debug::warning) {
-		cerr << "W:CWord: synset " << syn_str << " of word " << w << " is not in MCR" << endl;
+		cerr << "W:CWord: synset " << syn_str << " of word " << w << " is not in KB" << endl;
       }
       // debug: synset  which is not in mcr
     }
@@ -98,7 +98,7 @@ CWord CWord::create_synset_cword(const string & syn, const string & id_, float w
   bool P;
   tie(aux, P) = Mcr::instance().get_vertex_by_name(syn);
   if (!P) {
-	throw std::runtime_error("CWord::create_synset_cword " + syn + " not in MCR");
+	throw std::runtime_error("CWord::create_synset_cword " + syn + " not in KB");
 	return CWord();
   }
   CWord cw;
@@ -340,7 +340,7 @@ istream & CSentence::read_aw(istream & is) {
 		  v.push_back(new_cw);
 		} else {
 		  // No synset for that word.
-		  cerr << "W: " << fields[0] << "-" << fields[1] << " can't be mapped to MCR." << endl;
+		  cerr << "W: " << fields[0] << "-" << fields[1] << " can't be mapped to KB." << endl;
 		}		
 	  }
 	} catch (std::exception & e) {

@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 
   po_desc.add_options()
     ("help,h", "This help page.")
-    ("mcr_binfile,M", value<string>(), "Binary file of MCR (see create_mcrbin). Default is mcr_wnet.bin")
+    ("mcr_binfile,M", value<string>(), "Binary file of KB (see create_mcrbin). Default is mcr_wnet.bin")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("only_words", "Output only (normalized) PPVs for words.")
     ("only_synsets", "Output only (normalized) PPVs for synsets.")

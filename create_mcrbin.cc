@@ -160,9 +160,9 @@ int main(int argc, char *argv[]) {
     cmdline += argv[i];
   }
 
-  const char desc_header[] = "create_mcrbin: create a serialized image of the MCR\n"
+  const char desc_header[] = "create_mcrbin: create a serialized image of the KB\n"
     "Usage:\n"
-    "create_mcrbin [-o output.bin] mcr_file.txt mcr_file.txt ... -> Create a MCR image reading relations textfiles.\n"
+    "create_mcrbin [-o output.bin] mcr_file.txt mcr_file.txt ... -> Create a KB image reading relations textfiles.\n"
     "create_mcrbin [-o output.bin] -c coocgraph.bin mcr.bin -> Merge a mcr serialization with a coocurrence graph.\n"
     "create_mcrbin [-o output.bin] --ts ts_dict.txt mcr.bin -> Merge TS from textfile.\n"
     "Options:";
