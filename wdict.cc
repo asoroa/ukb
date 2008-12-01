@@ -55,9 +55,30 @@ size_t count_lines(const string & fname) {
   return N;
 }
 
+//////////////////////////////////////////////////////7
+// join
+
+std::string join(const std::string &delim, 
+				 std::vector<std::string>::const_iterator it, 
+				 std::vector<std::string>::const_iterator end) {
+  
+  std::string res("");
+
+  if (it == end) return res;
+  --end;
+  for(;it != end; ++it) {
+	res+=*it;
+	res+=delim;
+  }
+  res+=*end;
+  return res;
+}
+
+
+
 void read_wdict_file(const string & fname,
-		     vector<string> & words,
-		     WDict::wdicts_t & wdicts) {
+					 vector<string> & words,
+					 WDict::wdicts_t & wdicts) {
     
   // optimize IO
   std::ios::sync_with_stdio(false);
@@ -80,7 +101,7 @@ void read_wdict_file(const string & fname,
   int line_number = 0;
   bool insertedP;
   int words_I = 0;
-
+  
   try {
     while(fh) {
       vector<string> fields;
@@ -91,8 +112,8 @@ void read_wdict_file(const string & fname,
       copy(tok.begin(), tok.end(), back_inserter(fields));
       if (fields.size() == 0) continue; // blank line
       if (fields.size() < 2) {
-	cerr << "read_wdict_file error. Bad line: " << line_number << endl;
-	exit(-1);
+		cerr << "read_wdict_file error. Bad line: " << line_number << endl;
+		exit(-1);
       }
       vector<string>::const_iterator fields_it = fields.begin();
       vector<string>::const_iterator fields_end = fields.end();
@@ -106,27 +127,48 @@ void read_wdict_file(const string & fname,
       WDict_item_t & item = map_value_it->second;
 
       for(; fields_it != fields_end; ++fields_it) {
-	char_separator<char> sf_sep(":");
-	tokenizer<char_separator<char> > sf_tok(*fields_it, sf_sep);
-	vector<string> syn_freq;
-	copy(sf_tok.begin(), sf_tok.end(), back_inserter(syn_freq));
-	if (syn_freq.size() == 0) {
-	  cerr << "read_wdict_file error. Bad line: " << line_number << endl;
-	  exit(-1);
-	}
-	item.wsyns.push_back(syn_freq[0]);
-	if (syn_freq.size() > 1) {
-	  item.has_freq = true;
-	  item.syns_count.push_back(lexical_cast<float>(syn_freq[1]));
-	} else {
-	  item.has_freq = false;
-	}
+
+		char_separator<char> sf_sep("", ":"); // keep delimiters
+		tokenizer<char_separator<char> > sf_tok(*fields_it, sf_sep);
+		vector<string> syn_freq;
+		copy(sf_tok.begin(), sf_tok.end(), back_inserter(syn_freq));
+
+		// Warning. concept-id can have ":" characters in. So, just
+		// take the last field as weight, and join the rest.
+
+		size_t m = syn_freq.size();
+		float weight = 0.0f;
+		bool has_w = false;
+		if (m > 2 ) {
+		  try {
+			weight = lexical_cast<float>(syn_freq[m - 1]);
+			has_w = true;
+		  } catch (boost::bad_lexical_cast &) {
+		  }
+		}
+
+		string concept_id;
+		if (has_w) {
+		  if (m == 3) {
+			concept_id = syn_freq[0];
+		  } else {
+			concept_id = join("", syn_freq.begin(), syn_freq.end() - 2);
+		  }
+		} else {
+		  concept_id = join("", syn_freq.begin(), syn_freq.end());
+		}
+
+		item.wsyns.push_back(concept_id);
+		if (has_w && weight) {
+		  item.has_freq = true;
+		  item.syns_count.push_back(weight);
+		} else {
+		  item.has_freq = false;
+		}
       }
     }
   } catch (boost::bad_lexical_cast & e) {
-    cerr << "Error in " << fname << " line " << line_number << endl;;
-    cerr << e.what();
-    exit(-1);
+	throw std::runtime_error("Error in read_wdict_file:" + string(e.what()) + " in line" + lexical_cast<string>(line_number));
   }
 }
   

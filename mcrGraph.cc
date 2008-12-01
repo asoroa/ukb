@@ -296,7 +296,7 @@ void read_mcr_v1(ifstream & mcrFile,
     copy(tok.begin(), tok.end(), back_inserter(fields));
     if (fields.size() == 0) continue; // blank line
     if (fields.size() < 4) {
-      throw runtime_error("read_mcr error: Bad line: " + line_number);
+      throw runtime_error("read_mcr error: Bad line: " + lexical_cast<string>(line_number));
     }
 
     if (rels_source.find(fields[3]) == srel_end) continue; // Skip this relation
@@ -346,33 +346,35 @@ bool parse_line(const string & line, rel_parse & out) {
   tokenizer<char_separator<char> >::iterator end = tok.end();
   if (it == end) return false; // empty line
   for(;it != end; ++it) {
-	// parse field
-	vector<string> field;
-	char_separator<char> sep_field(":");
-	tokenizer<char_separator<char> > tok_field(*it, sep_field);
-	copy(tok_field.begin(), tok_field.end(), back_inserter(field));
-	if (field.size() != 2) {
-      throw runtime_error("parse_line error. Malformed line.");
+
+	string str = *it;
+	if (str.length() < 3 || str[1] != ':') {
+      throw runtime_error("parse_line error. Malformed line: " + line);
 	}
-	char f = field[0].at(0);
+	char f = str[0];
+	string val = str.substr(2);
+
 	switch (f) {
 	case 'u':
-	  res.u = field[1];
+	  res.u = val;
 	  break;
 	case 'v':
-	  res.v = field[1];
+	  res.v = val;
 	  break;
 	case 't':
-	  res.rtype = field[1];
+	  res.rtype = val;
 	  break;
 	case 'i':
-	  res.irtype = field[1];
+	  res.irtype = val;
 	  break;
 	case 's':
-	  res.src = field[1];
+	  res.src = val;
 	  break;
 	case 'd':
-	  res.directed = lexical_cast<bool>(field[1]);
+	  res.directed = lexical_cast<bool>(val);
+	  break;
+	default:
+	  throw runtime_error("parse_line error. Unknown value " + str);
 	  break;
 	}
   }
@@ -416,7 +418,7 @@ void read_mcr(ifstream & mcrFile,
 		}
 	  }	  
 	}
-  } catch (std::runtime_error & e) {
+  } catch (std::exception & e) {
 	throw std::runtime_error(string(e.what()) + " in line " + lexical_cast<string>(line_number));
   }
 }
