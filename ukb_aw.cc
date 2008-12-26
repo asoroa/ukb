@@ -386,6 +386,51 @@ void dis_csent_classic_prank(const string & input_file,
 }
 
 
+void dis_csent_wiki(const string & input_file,
+					bool out_semcor) {
+  
+  ifstream fh_in(input_file.c_str());
+
+  if (!fh_in) {
+    cerr << "Can't open " << input_file << endl;
+    exit(-1);
+  }
+
+  CSentence cs;
+
+  try {
+    while (cs.read_aw(fh_in)) {
+	  
+	  // Add the words of the context
+
+	  CSentence::iterator it = cs.begin();
+	  CSentence::iterator end = cs.end();
+	  for(;it != end; ++it) {
+		Mcr::instance().add_token(it->word(), false);
+	  }
+
+      vector<float> ranks;
+      bool ok = calculate_mcr_hr(cs,ranks, false);
+      if (!ok) {
+		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+		cerr << "(No word links to KB ?)\n";
+		continue;
+      }
+
+      disamb_csentence_mcr(cs, ranks);
+      if (out_semcor) cs.print_csent_semcor_aw(cout);
+      else cs.print_csent_aw(cout);
+      //cout << cs << '\n';
+      //cout << cs << '\n';
+      cs = CSentence();
+    }
+  } 
+  catch (string & e) {
+    cerr << "Errore reading " << input_file << ":" << e << "\n";
+    throw(e);    
+  }
+}
+
 
 void do_dgraph_gviz(const vector<string> & input_files,
 					const string & out_dir) {
@@ -612,6 +657,7 @@ int main(int argc, char *argv[]) {
   bool opt_with_w = false;
   bool opt_out_semcor = false; 
   bool opt_timer = false; 
+  bool opt_wiki = false; 
 
 
   string cmdline("!!");
@@ -657,6 +703,7 @@ int main(int argc, char *argv[]) {
     ("semcor", "Output Semcor key file.")
     ("verbose,v", "Be verbose.")
     ("no-monosemous", "Don't output anything for monosemous words.")
+    ("wiki", "Tune params. for wikipedia disambiguation.")
     ;
 
   options_description po_desc_prank("pageRank options");
@@ -787,6 +834,10 @@ int main(int argc, char *argv[]) {
       glVars::rAlg = alg;
     }
     
+    if (vm.count("wiki")) {
+      opt_wiki = true;
+    }
+
     if (vm.count("with_freqs")) {
       glVars::mcr_with_freqs = true;
     }
@@ -865,6 +916,17 @@ int main(int argc, char *argv[]) {
     cout << cmdline << "\n";
     disamb_dgraph_from_corpus(fullname_in, opt_with_w, opt_out_semcor);
     goto END;
+  }
+
+  if(opt_wiki) {
+	glVars::input::filter_pos = false;
+	if (glVars::verbose) cerr << "Read Dict\n";
+	WDict::instance();
+	if (glVars::verbose) cerr << "Read KB\n";
+    Mcr::create_from_binfile(mcr_binfile);
+    cout << cmdline << "\n";
+    dis_csent_wiki(fullname_in, opt_out_semcor);
+	goto END;
   }
 
   if (opt_do_hr) {
