@@ -473,9 +473,9 @@ void Mcr::display_info(std::ostream & o) const {
 typedef pair<Mcr_vertex_t, float> Syn_elem;
 
 void create_w2wpos_maps(const string & word,
-			vector<string> & wPosV,
-			map<string, vector<Syn_elem> > & wPos2Syns) {
-
+						vector<string> & wPosV,
+						map<string, vector<Syn_elem> > & wPos2Syns) {
+  
   bool auxP;
   const Mcr & mcr = Mcr::instance();
 
@@ -485,14 +485,17 @@ void create_w2wpos_maps(const string & word,
 
     string wpos(word.size() + 2, '#');
     string::iterator sit = copy(word.begin(), word.end(), wpos.begin());
-    ++sit; // '#' char
-    *sit = syns.get_pos(i); // the pos
+	char synpos = syns.get_pos(i);
+	if (glVars::input::filter_pos && synpos) {
+	  ++sit; // '#' char
+	  *sit = syns.get_pos(i); // the pos
+	}
 
     Mcr_vertex_t u;
     tie(u, auxP) = mcr.get_vertex_by_name(syns.get_entry(i));
     if(!auxP) {
       if (glVars::debug::warning) 
-	cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
+		cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
       continue;
     }
     
@@ -508,9 +511,9 @@ void create_w2wpos_maps(const string & word,
 }
 
 void insert_wpos(const string & word,
-		 vector<string> & wPosV,
-		 map<string, vector<Syn_elem> > & wPos2Syns,
-		 bool use_weights) {
+				 vector<string> & wPosV,
+				 map<string, vector<Syn_elem> > & wPos2Syns,
+				 bool use_weights) {
 
   Mcr & mcr = Mcr::instance();
 
@@ -529,11 +532,35 @@ void insert_wpos(const string & word,
     vector<Syn_elem>::const_iterator syns_end = wPos2Syns[*wpos_str_it].end();
     for(;syns_it != syns_end; ++syns_it) {
       if (use_weights) {
-	mcr.find_or_insert_edge(wpos_v, syns_it->first, syns_it->second);
+		mcr.find_or_insert_edge(wpos_v, syns_it->first, syns_it->second);
       } else {
-	mcr.find_or_insert_edge(wpos_v, syns_it->first, 1.0);
+		mcr.find_or_insert_edge(wpos_v, syns_it->first, 1.0);
       }
     }
+  }
+}
+
+void insert_word(const string & word, bool use_w) {
+
+  Mcr & mcr = Mcr::instance();
+
+  WDict_entries syns = WDict::instance().get_entries(word);
+
+  if (!syns.size()) return;
+  
+  Mcr_vertex_t u = mcr.find_or_insert_word(word);
+  
+  for(size_t i = 0; i < syns.size(); ++i) {
+	bool auxP;
+    Mcr_vertex_t v;
+    tie(v, auxP) = mcr.get_vertex_by_name(syns.get_entry(i));
+    if(!auxP) {
+      if (glVars::debug::warning) 
+		cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
+      continue;
+    }
+	// (directed) link word -> concept
+	mcr.find_or_insert_edge(u, v, 1.0);
   }
 }
 
@@ -549,19 +576,22 @@ void Mcr::add_dictionary(bool with_weight) {
   }
 }
 
+
 void Mcr::add_token(const string & token, bool with_weight) {
 
   vector<string> wPosV;
   map<string, vector<Syn_elem> > wPos2Syns;
 
-    // Create w2wPos and wPos2Syns maps
-
-  create_w2wpos_maps(token, wPosV, wPos2Syns);
+  if (glVars::input::filter_pos) {
+	// Create w2wPos and wPos2Syns maps
+  
+	create_w2wpos_maps(token, wPosV, wPos2Syns);
 
     // Add vertices and link them in the KB
-  insert_wpos(token, wPosV, wPos2Syns, with_weight);
-
-
+	insert_wpos(token, wPosV, wPos2Syns, with_weight);
+  } else {
+	insert_word(token, with_weight);
+  }
 }
 
 void Mcr::ppv_weights(const vector<float> & ppv) {

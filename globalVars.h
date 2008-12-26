@@ -38,6 +38,16 @@ namespace glVars {
     extern size_t num_iterations;
   }
 
+
+  // Input 
+  namespace input {
+	// Wether input words must be filtered by pos when attaching them
+	// to the KB. It also has effects on dictionary.
+
+	extern bool filter_pos;
+  }
+
+
   // Output stuff
   namespace output {
     extern bool allranks; // print all ranks (with weights or just best ranks)

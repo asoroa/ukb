@@ -29,7 +29,11 @@ namespace glVars {
   }
 
   namespace prank {
-    size_t num_iterations = 30; // @@better 50
+    size_t num_iterations = 30;
+  }
+
+  namespace input {
+	bool filter_pos = true;
   }
 
   namespace output {

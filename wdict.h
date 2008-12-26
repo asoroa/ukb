@@ -37,10 +37,7 @@ class WDict_entries {
   size_t size() const { return _item.wsyns.size(); }
   const std::string & get_entry(size_t i) const { return _item.wsyns[i]; }
   float get_freq(size_t i) const { return _item.syns_count[i]; }
-  char get_pos(size_t i) const {
-    std::string::size_type idx = _item.wsyns[i].find_last_of("-");
-    return _item.wsyns[i].at(idx + 1);
-  }
+  char get_pos(size_t i) const;
 };
 
 

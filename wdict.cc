@@ -75,7 +75,6 @@ std::string join(const std::string &delim,
 }
 
 
-
 void read_wdict_file(const string & fname,
 					 vector<string> & words,
 					 WDict::wdicts_t & wdicts) {
@@ -144,6 +143,7 @@ void read_wdict_file(const string & fname,
 			weight = lexical_cast<float>(syn_freq[m - 1]);
 			has_w = true;
 		  } catch (boost::bad_lexical_cast &) {
+			// last field wasn't a float. Do nothing.
 		  }
 		}
 
@@ -167,8 +167,8 @@ void read_wdict_file(const string & fname,
 		}
       }
     }
-  } catch (boost::bad_lexical_cast & e) {
-	throw std::runtime_error("Error in read_wdict_file:" + string(e.what()) + " in line" + lexical_cast<string>(line_number));
+  } catch (std::exception & e) {
+	throw std::runtime_error("Error in read_wdict_file: " + string(e.what()) + " in line " + lexical_cast<string>(line_number));
   }
 }
   
@@ -180,7 +180,6 @@ WDict & WDict::instance() {
   static WDict inst;
   return inst;
 }
-
 
 WDict_entries WDict::get_entries(const std::string & word) const {
   static WDict_item_t null_entry;
@@ -231,3 +230,14 @@ bool WDict::syn_counts(map<string, size_t> & res) const {
   }
   return true;
 }
+
+//////////////////////////////////////////////////////////////
+// WDict_entries
+
+char WDict_entries::get_pos(size_t i) const {
+  std::string::size_type idx = _item.wsyns[i].find_last_of("-");
+  if (idx == string::npos) return 0;
+  if (idx == _item.wsyns[i].length() - 1) return 0;
+  return _item.wsyns[i].at(idx + 1);
+}
+

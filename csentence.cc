@@ -28,12 +28,12 @@ void fill_syns(const string & w,
   WDict_entries entries = WDict::instance().get_entries(w);
 
   for(size_t i= 0; i < entries.size(); ++i) {
-
+	
     const string & syn_str = entries.get_entry(i);
 
     bool existP;
     Mcr_vertex_t mcr_v;
-    if(pos) {
+    if(pos && glVars::input::filter_pos) {
       // filter synsets by pos
       char synpos = entries.get_pos(i);
       if(!synpos) {
@@ -118,8 +118,9 @@ string CWord::wpos() const {
 	std::runtime_error("CWoord::wpos: can't get wpos of Cword synset " + w);
   }
   string wpos(w);
-  wpos.append("#");
   char pos = get_pos();
+  if(!glVars::input::filter_pos || pos == 0) return wpos;
+  wpos.append("#");
   wpos.append(1,pos);
   return wpos;
 };
@@ -322,11 +323,16 @@ istream & CSentence::read_aw(istream & is) {
 		vector<string> fields;
 		char_separator<char> wsep("#");
 		tokenizer<char_separator<char> > wtok(*it, wsep);
+
 		copy(wtok.begin(), wtok.end(), back_inserter(fields));
+
 		if (fields.size() < 4)
 		  throw std::runtime_error("Bad word " + *it + " " + lexical_cast<string>(i));
 		int dist = lexical_cast<int>(fields[3]);
-		CWord new_cw(fields[0], fields[2], fields[1].at(0), dist > 0);
+		string spos = fields[1];
+		char pos(0);
+		if (fields[1].size() && glVars::input::filter_pos) pos = fields[1].at(0);
+		CWord new_cw(fields[0], fields[2], pos, dist > 0);
 		if (dist == 2) {
 		  new_cw = CWord::create_synset_cword(fields[0], fields[2], 1.0);
 		}
@@ -340,8 +346,13 @@ istream & CSentence::read_aw(istream & is) {
 		  v.push_back(new_cw);
 		} else {
 		  // No synset for that word.
-		  cerr << "W: " << fields[0] << "-" << fields[1] << " can't be mapped to KB." << endl;
-		}		
+		  if (glVars::debug::warning) {
+			cerr << "W: " << fields[0];
+			if (glVars::input::filter_pos && pos) 
+			  cerr << "-" << fields[1]; 
+			cerr << " can't be mapped to KB." << endl;
+		  }
+		}
 	  }
 	} catch (std::exception & e) {
 	  throw std::runtime_error("Context error in line " + lexical_cast<string>(l_n) + " : " + e.what() );
