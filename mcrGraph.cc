@@ -317,7 +317,7 @@ void read_mcr_v1(ifstream & mcrFile,
 
 // Line format:
 //
-// u:synset v:synset t:rel i:rel s:source d:directed
+// u:synset v:synset t:rel i:rel s:source d:directed w:weight
 //
 // u: source vertex. Mandatory.
 // v: target vertex. Mandatory.
@@ -325,6 +325,7 @@ void read_mcr_v1(ifstream & mcrFile,
 // i: (inverse) relation type of edge v->u (hyponym, etc). Optional. Useless on undirected graphs.
 // s: source of relation (wn30, mcr17, etc). Optional.
 // d: wether the relation is directed. Optional, default is undirected.
+// w: relation weigth. Must be positive.
 
 
 struct rel_parse {
@@ -333,12 +334,16 @@ struct rel_parse {
   string rtype;
   string irtype;
   string src;
+  float w;
   bool directed;
+
+  rel_parse() : u(), v(), rtype(), irtype(), src(), w(0.0), directed(false) {}
+
 };
 
 bool parse_line(const string & line, rel_parse & out) {
 
-  rel_parse res = {"","","","","",false}; // empty res
+  rel_parse res;
 
   char_separator<char> sep(" ");
   tokenizer<char_separator<char> > tok(line, sep);
@@ -369,6 +374,9 @@ bool parse_line(const string & line, rel_parse & out) {
 	  break;
 	case 's':
 	  res.src = val;
+	  break;
+	case 'w':
+	  res.w = lexical_cast<float>(val);
 	  break;
 	case 'd':
 	  res.directed = lexical_cast<bool>(val);
@@ -401,15 +409,15 @@ void read_mcr(ifstream & mcrFile,
 	  if (glVars::kb::filter_src && f.src.size() && rels_source.find(f.src) == srel_end) continue; // Skip this relation
 	  Mcr_vertex_t u = mcr->find_or_insert_synset(f.u);
 	  Mcr_vertex_t v = mcr->find_or_insert_synset(f.v);
-
+	  float w = f.w ? f.w : 1.0;
 	  // add edge
-	  Mcr_edge_t e1 = mcr->find_or_insert_edge(u, v, 1.0);
+	  Mcr_edge_t e1 = mcr->find_or_insert_edge(u, v, w);
 	  // relation type
 	  if (glVars::kb::keep_reltypes && f.rtype.size()) {
 		mcr->edge_add_reltype(e1, f.rtype);
 	  }
 	  if (!f.directed) {
-		Mcr_edge_t e2 = mcr->find_or_insert_edge(v, u, 1.0);
+		Mcr_edge_t e2 = mcr->find_or_insert_edge(v, u, w);
 		if(glVars::kb::keep_reltypes && f.rtype.size()) {
 		  string aux = f.irtype.size() ? f.irtype : f.rtype;
 		  if(aux.size()) {

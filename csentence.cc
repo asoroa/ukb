@@ -105,7 +105,7 @@ CWord CWord::create_synset_cword(const string & syn, const string & id_, float w
   cw.m_weight = w;
   cw.w = syn;
   cw.m_id = id_;
-  cw.m_is_synset = false;
+  cw.m_is_synset = true;
   cw.m_distinguished=false;
   cw.m_syns.push_back(syn);
   cw.m_ranks.push_back(0.0f);

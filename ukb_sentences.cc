@@ -55,7 +55,7 @@ void add_words_to_mcr() {
 
 }
 
-void compute_sentence_vectors(string & fullname_in, string & out_dir) {
+void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weight) {
 
   Mcr & mcr = Mcr::instance();
   if (glVars::verbose) 
@@ -90,7 +90,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
       // Initialize rank vector
       vector<float> ranks;
 
-      bool ok = calculate_mcr_hr(cs,ranks, false);
+      bool ok = calculate_mcr_hr(cs,ranks, weight);
       if (!ok) {
 		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 		continue;
@@ -162,6 +162,7 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_param = false;
+  bool opt_with_w = false;
 
   string mcr_binfile(mcr_default_binfile);
 
@@ -184,6 +185,7 @@ int main(int argc, char *argv[]) {
     ("only_words", "Output only (normalized) PPVs for words.")
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
     ("word_weight", "Use weights on words (init values of PPV). Input must have 5 fields, the last one being the weight.")
+    ("ppr_weight", "Use weights on PageRank.")
     ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
     ("param,p", value<string>(), "Specify parameter file.")
     ("verbose,v", "Be verbose.")
@@ -249,6 +251,10 @@ int main(int argc, char *argv[]) {
       glVars::w2s_filename = vm["w2syn_file"].as<string>();
     }
 
+    if (vm.count("ppr_weights")) {
+      opt_with_w = true;
+    }
+
     if (vm.count("word_weight")) {
       glVars::csentence::word_weight = true;
     }
@@ -274,7 +280,7 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose) 
     Mcr::instance().display_info(cerr);
 
-  compute_sentence_vectors(fullname_in, out_dir);
+  compute_sentence_vectors(fullname_in, out_dir, opt_with_w);
   return 0;
 }
 
