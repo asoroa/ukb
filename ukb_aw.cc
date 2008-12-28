@@ -213,7 +213,7 @@ void dis_csent(const vector<string> & input_files, const string & ext,
   if (glVars::mcr_with_freqs) {
     bool ok = WDict::instance().syn_counts(counts);
     if (!ok) {
-      cerr << "Error! There are no freqs. Check file " << glVars::w2s_filename << endl;
+      cerr << "Error! There are no freqs. Check file " << glVars::dict_filename << endl;
       exit(-1);
     }
   }
@@ -453,7 +453,7 @@ void do_dgraph_gviz(const vector<string> & input_files,
 		map<string, size_t> counts;
 		bool ok = WDict::instance().syn_counts(counts);
 		if (!ok) {
-		  cerr << "Error! There are no freqs. Check file " << glVars::w2s_filename << endl;
+		  cerr << "Error! There are no freqs. Check file " << glVars::dict_filename << endl;
 		  exit(-1);
 		}
 		pageRank_ppv_disg(dg.graph(), counts);
@@ -693,7 +693,7 @@ int main(int argc, char *argv[]) {
     ("w2w_hr", "Given a text input file, disambiguate context using hughes & ramage technique word by word.")
     ("graphviz,G", "Dump disambGraph to a graphviz format. Output file has same name and extension .dot")
     ("mcr_binfile,M", value<string>(), "Binary file of KB (see create_mcrbin). Default is mcr_wnet.bin")
-    ("w2syn_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
+    ("dict_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("allranks", "Write key file with all synsets associated with ranks.")
     ("static_prank", "Given a text input file, disambiguate context using static pageRank over mcr (no dgraph required).")
@@ -813,8 +813,8 @@ int main(int argc, char *argv[]) {
       opt_disamb_csent_wdgraph = true;
     }
 
-    if (vm.count("w2syn_file")) {
-      glVars::w2s_filename = vm["w2syn_file"].as<string>();
+    if (vm.count("dict_file")) {
+      glVars::dict_filename = vm["dict_file"].as<string>();
     }
 
     if (vm.count("mcr_binfile")) {

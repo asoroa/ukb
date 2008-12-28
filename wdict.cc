@@ -17,7 +17,7 @@ using namespace boost;
 
 ////////////////////////////////////////////////
 // Global variables
-//const std::string w2s_filename = "mcr_source/enWN16";
+//const std::string dict_filename = "mcr_source/enWN16";
 
 std::ostream & operator<<(std::ostream & o, const WDict_item_t & item) {
   o << "S: ";
@@ -173,7 +173,7 @@ void read_wdict_file(const string & fname,
 }
   
 WDict::WDict() {
-  read_wdict_file(glVars::w2s_filename, words, m_wdicts);
+  read_wdict_file(glVars::dict_filename, words, m_wdicts);
 }
 
 WDict & WDict::instance() {

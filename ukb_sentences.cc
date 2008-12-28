@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
     ("word_weight", "Use weights on words (init values of PPV). Input must have 5 fields, the last one being the weight.")
     ("ppr_weight", "Use weights on PageRank.")
-    ("w2syn_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
+    ("dict_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
     ("param,p", value<string>(), "Specify parameter file.")
     ("verbose,v", "Be verbose.")
     ;
@@ -247,8 +247,8 @@ int main(int argc, char *argv[]) {
     }
 
 
-    if (vm.count("w2syn_file")) {
-      glVars::w2s_filename = vm["w2syn_file"].as<string>();
+    if (vm.count("dict_file")) {
+      glVars::dict_filename = vm["dict_file"].as<string>();
     }
 
     if (vm.count("ppr_weights")) {

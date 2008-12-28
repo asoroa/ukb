@@ -13,7 +13,7 @@ namespace glVars {
   }
 
   std::vector<std::string> rel_source;
-  std::string w2s_filename = "../Data/Preproc/wn1.6_index.sense_freq";
+  std::string dict_filename = "../Data/Preproc/wn1.6_index.sense_freq";
 
   bool mcr_with_freqs = false;
 

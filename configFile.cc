@@ -91,7 +91,7 @@ void parseVarValue(string & variable, const string & value,
     }
     break;
   case 2: // w2syn_filename
-    glVars::w2s_filename = value;
+    glVars::dict_filename = value;
     break;
   case 3: // with_freqs
     glVars::mcr_with_freqs = (is_negated == false);

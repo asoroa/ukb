@@ -10,11 +10,6 @@
 #include <iosfwd>
 
 ////////////////////////////////////////
-// Global variables
-
-extern const std::string w2s_filename;
-
-////////////////////////////////////////
 
 // type of dict items
 
