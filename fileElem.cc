@@ -3,15 +3,16 @@
 #include <stdexcept>
 
 // Boost filesystem
+#include <boost/version.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-
 
 using namespace std;
 
 namespace fs = boost::filesystem;
 
 static inline string path_string(const boost::filesystem::path & p) {
+
 #if (BOOST_VERSION / 100 % 1000 < 34) 
   return p.native_file_string();
 #else
