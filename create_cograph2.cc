@@ -19,6 +19,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace ukb;
 
 void chsq (const string & input_name,
 		   const string & output_name,

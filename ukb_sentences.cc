@@ -25,6 +25,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace ukb;
 
 const char *mcr_default_binfile = "mcr_wnet.bin";
 

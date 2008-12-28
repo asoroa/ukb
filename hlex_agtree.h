@@ -28,16 +28,18 @@ namespace boost {
   BOOST_INSTALL_PROPERTY(vertex, vOrig);  
 }
 
-typedef boost::adjacency_list <  
-  boost::listS,
-  boost::vecS,
-  boost::bidirectionalS,
-  boost::property<vertex_name_t, std::string,
-		  boost::property<vertex_hubDist_t, size_t, 
-				  boost::property<vertex_hubN_t, size_t,
-						  boost::property<vertex_vOrig_t, Mcr_vertex_t> // not used
-				  > > >
-  > AgTree;
+namespace ukb {
+
+  typedef boost::adjacency_list <  
+	boost::listS,
+	boost::vecS,
+	boost::bidirectionalS,
+	boost::property<vertex_name_t, std::string,
+					boost::property<vertex_hubDist_t, size_t, 
+									boost::property<vertex_hubN_t, size_t,
+													boost::property<vertex_vOrig_t, Mcr_vertex_t> // not used
+													> > >
+	> AgTree;
 
 
 class AgZuhaitza {
@@ -73,7 +75,7 @@ public:
   const vertex_descriptor & rootVertex() const {return targetVertex;}
   size_t hub_number() const { return hubs.size(); }
 };
-
+}
 
 
 #endif

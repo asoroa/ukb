@@ -48,16 +48,18 @@ namespace boost {
   BOOST_INSTALL_PROPERTY(edge, rtype);
 }
 
-typedef adjacency_list <
-  boost::listS,
-  boost::vecS,
-  boost::bidirectionalS,
-  property<vertex_name_t, std::string,
-		   property<vertex_gloss_t, std::string,
-					property<vertex_flags_t, unsigned char> > >,
-  property<edge_weight_t, float,
-		   property<edge_rtype_t, boost::uint32_t> >
-  > McrGraph;
+namespace ukb {
+
+  typedef adjacency_list <
+	boost::listS,
+	boost::vecS,
+	boost::bidirectionalS,
+	property<vertex_name_t, std::string,
+			 property<vertex_gloss_t, std::string,
+					  property<vertex_flags_t, unsigned char> > >,
+	property<edge_weight_t, float,
+			 property<edge_rtype_t, boost::uint32_t> >
+	> McrGraph;
 
 
 typedef graph_traits<McrGraph>::vertex_descriptor Mcr_vertex_t;
@@ -165,8 +167,8 @@ public:
   bool dijkstra (Mcr_vertex_t src, std::vector<Mcr_vertex_t> & parents) const;
 
   void pageRank_ppv(const std::vector<float> & ppv_map,
-		    std::vector<float> & ranks,
-		    bool use_weight);
+					std::vector<float> & ranks,
+					bool use_weight);
 
   void ppv_weights(const std::vector<float> & ppv);
 
@@ -209,6 +211,6 @@ private:
                                          // 2 calculated with weights
 
 };
-
+}
 
 #endif 

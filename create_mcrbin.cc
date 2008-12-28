@@ -27,6 +27,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace ukb;
 
 
 void read_skip_relations (const string & file,

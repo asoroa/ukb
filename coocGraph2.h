@@ -17,30 +17,32 @@
 
 #include"coocGraph.h"
 
-using boost::vertex_name_t;
-using boost::vertex_name;
-using boost::edge_index_t;
-using boost::edge_index;
+namespace ukb {
+
+  using boost::vertex_name_t;
+  using boost::vertex_name;
+  using boost::edge_index_t;
+  using boost::edge_index;
 
 
-using std::string;
+  using std::string;
 
-using boost::property;
-using boost::adjacency_list;
-using boost::graph_traits;
+  using boost::property;
+  using boost::adjacency_list;
+  using boost::graph_traits;
 
-typedef adjacency_list <
-  boost::listS,
-  boost::vecS,
-  boost::bidirectionalS,
-  property<vertex_name_t, string, 
-	   property<vertex_cfreq_t, size_t> >,
-  property<edge_index_t, size_t,
-	   property<edge_freq_t, float> > > coGraph2;
+  typedef adjacency_list <
+	boost::listS,
+	boost::vecS,
+	boost::bidirectionalS,
+	property<vertex_name_t, string, 
+			 property<vertex_cfreq_t, size_t> >,
+	property<edge_index_t, size_t,
+			 property<edge_freq_t, float> > > coGraph2;
 
 class CoocGraph2 {
 
- public:
+public:
   typedef coGraph2 boost_graph_t;
   typedef graph_traits<boost_graph_t>::vertex_descriptor vertex_descriptor;
   typedef graph_traits<boost_graph_t>::vertex_iterator vertex_iterator;
@@ -97,7 +99,7 @@ private:
 
   void insert_doc(std::vector<vertex_descriptor> & doc);
   void insert_doc_workaround(const std::string & w1, 
-			     std::vector<vertex_descriptor> & doc);
+							 std::vector<vertex_descriptor> & doc);
 
   void read_from_stream (std::ifstream & is);
   std::ofstream & write_to_stream(std::ofstream & o) const;
@@ -110,8 +112,9 @@ private:
 };
 
 void write_vertex(std::ostream & o, const CoocGraph2::vertex_descriptor & v,
-		  const CoocGraph2::boost_graph_t & g);
+				  const CoocGraph2::boost_graph_t & g);
 
+}
 #endif
 
 /*

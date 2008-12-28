@@ -5,6 +5,9 @@
 
 #include<string>
 
-void parse_config(const std::string & fizena);
+namespace ukb {
+
+  void parse_config(const std::string & fizena);
+}
 
 #endif // AGGRAFOA_H

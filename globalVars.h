@@ -12,126 +12,127 @@
 
 #include <boost/random/mersenne_twister.hpp>
 
-namespace glVars {
-  // debug
-  extern int verbose;
+namespace ukb {
+  namespace glVars {
+	// debug
+	extern int verbose;
 
-  namespace debug {
-    extern bool warning;
-  }
+	namespace debug {
+	  extern bool warning;
+	}
 
-  extern std::vector<std::string> rel_source;
-  extern std::string dict_filename;
+	extern std::vector<std::string> rel_source;
+	extern std::string dict_filename;
 
-  extern bool mcr_with_freqs;
+	extern bool mcr_with_freqs;
 
-  namespace csentence {
-    extern bool word_weight;
-  }
+	namespace csentence {
+	  extern bool word_weight;
+	}
 
-  namespace chsq {
-    extern size_t cooc_min;
-    extern float threshold;
-  }
+	namespace chsq {
+	  extern size_t cooc_min;
+	  extern float threshold;
+	}
 
-  namespace prank {
-    extern size_t num_iterations;
-  }
-
-
-  // Input 
-  namespace input {
-	// Wether input words must be filtered by pos when attaching them
-	// to the KB. It also has effects on dictionary.
-
-	extern bool filter_pos;
-  }
+	namespace prank {
+	  extern size_t num_iterations;
+	}
 
 
-  // Output stuff
-  namespace output {
-    extern bool allranks; // print all ranks (with weights or just best ranks)
-    extern bool monosemous; // print monosemous words
-  }
+	// Input 
+	namespace input {
+	  // Wether input words must be filtered by pos when attaching them
+	  // to the KB. It also has effects on dictionary.
 
-  namespace kb {
-    extern bool keep_reltypes; // Wether edges locally keep the relation types
-    extern bool v1_kb; // Wether input has v1 format
-    extern bool filter_src; // Wether input relations should be filtered by relation source
-  }
-
-  extern boost::mt19937 rand_generator;
-
-  // Maiztasunak
-
-  // Ezaugarriak
-
-  enum RankAlg {
-    no_alg, // error
-    pageRank,
-    degree
-  };
+	  extern bool filter_pos;
+	}
 
 
-  extern RankAlg rAlg;
+	// Output stuff
+	namespace output {
+	  extern bool allranks; // print all ranks (with weights or just best ranks)
+	  extern bool monosemous; // print monosemous words
+	}
 
-  RankAlg get_algEnum(const std::string & alg);
+	namespace kb {
+	  extern bool keep_reltypes; // Wether edges locally keep the relation types
+	  extern bool v1_kb; // Wether input has v1 format
+	  extern bool filter_src; // Wether input relations should be filtered by relation source
+	}
 
-//   enum VertexRelate { // How to compute relateness between vertices in cooc. graph
-//     freq,
-//     chsq,         // Chi square
-//     rel_error
-//   };
+	extern boost::mt19937 rand_generator;
 
-//  extern VertexRelate vRelate;
+	// Maiztasunak
 
-//   enum HubsAlg {
-//     veronis,
-//     pageRank,
-//     hits,
-//     degree,
-//     mcl,
-//     random
-//   };
+	// Ezaugarriak
 
-//   extern HubsAlg hubsAlg;
+	enum RankAlg {
+	  no_alg, // error
+	  pageRank,
+	  degree
+	};
+
+
+	extern RankAlg rAlg;
+
+	RankAlg get_algEnum(const std::string & alg);
+
+	//   enum VertexRelate { // How to compute relateness between vertices in cooc. graph
+	//     freq,
+	//     chsq,         // Chi square
+	//     rel_error
+	//   };
+
+	//  extern VertexRelate vRelate;
+
+	//   enum HubsAlg {
+	//     veronis,
+	//     pageRank,
+	//     hits,
+	//     degree,
+	//     mcl,
+	//     random
+	//   };
+
+	//   extern HubsAlg hubsAlg;
 
   
-//   struct Param {
-//     // coocurrences with a frequency of 5 or more are retained
-//     static size_t edgeFreqMin;
+	//   struct Param {
+	//     // coocurrences with a frequency of 5 or more are retained
+	//     static size_t edgeFreqMin;
 
-//     // Words with less than 10 occurrences are discarded
+	//     // Words with less than 10 occurrences are discarded
 
-//     static size_t vertexFreqMin;
+	//     static size_t vertexFreqMin;
 
-//     // Edges with a weigth below 0.1 are arbitrarily (totally) elminiated
-//     static float ertzPisuMin;
+	//     // Edges with a weigth below 0.1 are arbitrarily (totally) elminiated
+	//     static float ertzPisuMin;
 
-//     // Context containing fewer than 4 words are discarded
-//     static size_t ctxSizeMin;
-//   };
+	//     // Context containing fewer than 4 words are discarded
+	//     static size_t ctxSizeMin;
+	//   };
 
-//   struct VeronisParam {
-//     // Good candidate for Hub:
-//     // The mean of the weights btw. the candidate node and its 6 most frequent
-//     // neighbors must be below 0.8
-//     static size_t hubNeighborSize;
-//     static float hubNeighborWeightMin;
-//     static float hubFreqThreshold;
-//   };
+	//   struct VeronisParam {
+	//     // Good candidate for Hub:
+	//     // The mean of the weights btw. the candidate node and its 6 most frequent
+	//     // neighbors must be below 0.8
+	//     static size_t hubNeighborSize;
+	//     static float hubNeighborWeightMin;
+	//     static float hubFreqThreshold;
+	//   };
 
-//   struct PrankParam {
-//     static float   freqThreshold;
-//     static int     siblingsCannotBeHubs;
-//   };
+	//   struct PrankParam {
+	//     static float   freqThreshold;
+	//     static int     siblingsCannotBeHubs;
+	//   };
 
-//   struct MclParam {
-//     static float Inflate;
-//   };
+	//   struct MclParam {
+	//     static float Inflate;
+	//   };
 
-};
+  }
 
-void show_global_variables (std::ostream & o);
-
+  void show_global_variables (std::ostream & o);
+}
 #endif

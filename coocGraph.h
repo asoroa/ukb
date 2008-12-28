@@ -10,17 +10,9 @@
 #include <boost/property_map.hpp>
 #include <boost/graph/properties.hpp>
 
-using boost::vertex_name_t;
-using boost::vertex_name;
-using boost::edge_index_t;
-using boost::edge_index;
-
-
-
 enum vertex_freq_t     { vertex_freq };   // vertex freq
 enum vertex_cfreq_t    { vertex_cfreq };  // vertex context (document) freq
 enum edge_freq_t       { edge_freq };     // edge freq
-
 
 namespace boost {
   BOOST_INSTALL_PROPERTY(vertex, freq);
@@ -28,24 +20,31 @@ namespace boost {
   BOOST_INSTALL_PROPERTY(edge, freq);
 }
 
-using std::string;
+namespace ukb {
 
-using boost::property;
-using boost::adjacency_list;
-using boost::graph_traits;
+  using boost::vertex_name_t;
+  using boost::vertex_name;
+  using boost::edge_index_t;
+  using boost::edge_index;
 
-typedef adjacency_list <
-  boost::listS,
-  boost::vecS,
-  boost::undirectedS,
-  property<vertex_name_t, string, 
-	   property<vertex_cfreq_t, size_t> >,
-  property<edge_index_t, size_t,
-	   property<edge_freq_t, float> > > coGraph;
+  using std::string;
+
+  using boost::property;
+  using boost::adjacency_list;
+  using boost::graph_traits;
+
+  typedef adjacency_list <
+	boost::listS,
+	boost::vecS,
+	boost::undirectedS,
+	property<vertex_name_t, string, 
+			 property<vertex_cfreq_t, size_t> >,
+	property<edge_index_t, size_t,
+			 property<edge_freq_t, float> > > coGraph;
 
 class CoocGraph {
 
- public:
+public:
   typedef coGraph boost_graph_t;
   typedef graph_traits<boost_graph_t>::vertex_descriptor vertex_descriptor;
   typedef graph_traits<boost_graph_t>::vertex_iterator vertex_iterator;
@@ -107,7 +106,7 @@ private:
 
   void insert_doc(std::vector<vertex_descriptor> & doc);
   void insert_doc_workaround(const std::string & w1, 
-			     std::vector<vertex_descriptor> & doc);
+							 std::vector<vertex_descriptor> & doc);
 
   void read_from_stream (std::ifstream & is);
   std::ofstream & write_to_stream(std::ofstream & o) const;
@@ -120,8 +119,9 @@ private:
 };
 
 void write_vertex(std::ostream & o, const CoocGraph::vertex_descriptor & v,
-		  const CoocGraph::boost_graph_t & g);
+				  const CoocGraph::boost_graph_t & g);
 
+}
 #endif
 
 /*

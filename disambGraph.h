@@ -25,17 +25,19 @@ namespace boost {
   BOOST_INSTALL_PROPERTY(vertex, mcrSource);
 }
 
-typedef adjacency_list <
-  boost::listS,
-  boost::vecS,
-  boost::undirectedS,
-  //  boost::bidirectionalS,
-  property<vertex_name_t, std::string,          // the synset name (WN1.6)
-	   property<vertex_rank_t, float,
-		    property<vertex_freq_t, double, 
-			     property<vertex_mcrSource_t, Mcr_vertex_t> > > >, 
-  property<edge_freq_t, float>
-> DisambG;
+namespace ukb {
+
+  typedef adjacency_list <
+	boost::listS,
+	boost::vecS,
+	boost::undirectedS,
+	//  boost::bidirectionalS,
+	property<vertex_name_t, std::string,          // the synset name (WN1.6)
+			 property<vertex_rank_t, float,
+					  property<vertex_freq_t, double, 
+							   property<vertex_mcrSource_t, Mcr_vertex_t> > > >, 
+	property<edge_freq_t, float>
+	> DisambG;
 
 typedef graph_traits<DisambG>::vertex_descriptor Dis_vertex_t;
 typedef graph_traits<DisambG>::edge_descriptor Dis_edge_t;
@@ -43,7 +45,7 @@ typedef graph_traits<DisambG >::vertices_size_type Dis_vertex_size_t;
 
 class DisambGraph {
 
- public:
+public:
 
   typedef DisambG boost_graph_t; // the underlying graph type
 
@@ -52,8 +54,8 @@ class DisambGraph {
   std::pair<Dis_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
   void fill_graph(Mcr_vertex_t src,
-		  Mcr_vertex_t tgt,
-		  const std::vector<Mcr_vertex_t> & parents);
+				  Mcr_vertex_t tgt,
+				  const std::vector<Mcr_vertex_t> & parents);
 
   Dis_vertex_t add_dgraph_vertex(const std::string & str);
   void add_dgraph_edge(Dis_vertex_t u, Dis_vertex_t v, float w = 1.0);
@@ -82,9 +84,9 @@ private:
 // fill dgraph with a sentence
 
 void fill_disamb_graph(const CSentence & sentence,
-		       DisambGraph & dgraph);
+					   DisambGraph & dgraph);
 void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
-		       const std::vector<float> & ppv_ranks);
+					   const std::vector<float> & ppv_ranks);
 
 void disamb_csentence(CSentence & cs, DisambGraph & dgraph);
 
@@ -97,8 +99,8 @@ void hits(DisambG & g);
 void pageRank_disg(DisambG & g, bool use_weigths = true);
 
 void pageRank_ppv_disg(DisambG & g,
-		       const std::map<std::string, size_t> & syn_n,
-		       bool use_weigths = true);
+					   const std::map<std::string, size_t> & syn_n,
+					   bool use_weigths = true);
 
 // Degree ranking
 
@@ -112,13 +114,14 @@ void write_dgraph_graphviz(const std::string & fname, DisambG & g);
 
 // streaming functions for disambG type graphs
 Dis_vertex_t read_vertex_from_stream(std::ifstream & is, 
-				     DisambG & g);
+									 DisambG & g);
 Dis_edge_t read_edge_from_stream(std::ifstream & is, 
-				 DisambG & g);
+								 DisambG & g);
 std::ofstream & write_vertex_to_stream(std::ofstream & o,
-				       const DisambG & g,
-				       const Dis_vertex_t & v);
+									   const DisambG & g,
+									   const Dis_vertex_t & v);
 std::ofstream & write_edge_to_stream(std::ofstream & o,
-				     const DisambG & g,
-				     const Dis_edge_t & e);
+									 const DisambG & g,
+									 const Dis_edge_t & e);
+}
 #endif

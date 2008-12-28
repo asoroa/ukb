@@ -21,6 +21,7 @@
 
 #include <boost/timer.hpp>
 
+using namespace ukb;
 using namespace std;
 using namespace boost;
 

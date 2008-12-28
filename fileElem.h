@@ -6,31 +6,33 @@
 #include <string>
 #include <vector>
 
-using std::string;
+namespace ukb {
 
-std::vector<std::string> extract_input_files(const std::string & fullname,
-											 const std::string & extension = std::string());
+  using std::string;
 
-bool exists_file(const std::string & fname);
+  std::vector<std::string> extract_input_files(const std::string & fullname,
+											   const std::string & extension = std::string());
 
-std::string basename(const std::string & fname);
+  bool exists_file(const std::string & fname);
 
-struct File_elem {
+  std::string basename(const std::string & fname);
 
-  File_elem(const string & fname);
-  File_elem(const string & fullname_in,
-			const string & out_dir,
-			const string & new_ext = string());
+  struct File_elem {
 
-  void fill(const string & str);
+	File_elem(const string & fname);
+	File_elem(const string & fullname_in,
+			  const string & out_dir,
+			  const string & new_ext = string());
 
-  void set_path(const string & out_dir);
+	void fill(const string & str);
 
-  string get_fname() const;
+	void set_path(const string & out_dir);
 
-  string path;
-  string fname;
-  string ext;
-};
+	string get_fname() const;
 
+	string path;
+	string fname;
+	string ext;
+  };
+}
 #endif
