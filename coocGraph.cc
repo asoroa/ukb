@@ -516,6 +516,5 @@ namespace ukb {
 /*
  * Local Variables:
  * mode: c++
- * compile-command: "make -f makefile_cooc"
  * End:
  */

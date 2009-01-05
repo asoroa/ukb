@@ -7,7 +7,7 @@ SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc ukb_sentences.cc
 
 # Library files
 
-SRC = common.cc globalVars.cc configFile.cc fileElem.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc coocGraph.cc coocGraph2.cc hlex_agtree.cc wdict.cc
+SRC = common.cc globalVars.cc configFile.cc fileElem.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc coocGraph.cc hlex_agtree.cc wdict.cc
 
 RUNDIR = ../run
 
