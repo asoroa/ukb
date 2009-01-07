@@ -151,11 +151,11 @@ namespace ukb {
 	std::string cs_id;
   };
 
-  bool calculate_kb_hr(const CSentence & cs,
+  bool calculate_kb_ppr(const CSentence & cs,
 						std::vector<float> & res,
 						bool with_weight);
-
-  void calculate_kb_hr_by_word_and_disamb(CSentence & cs,
+  
+  void calculate_kb_ppr_by_word_and_disamb(CSentence & cs,
 										   bool with_weight);
 
   bool calculate_kb_ppv_csentence(CSentence & cs, std::vector<float> & res);

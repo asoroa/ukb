@@ -12,9 +12,7 @@ namespace ukb {
 	}
 
 	std::vector<std::string> rel_source;
-	std::string dict_filename = "../Data/Preproc/wn1.6_index.sense_freq";
-
-	bool kb_with_freqs = false;
+	std::string dict_filename = "dict.txt";
 
 	boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
@@ -86,7 +84,6 @@ namespace ukb {
 
 	o << "General options" << std::endl << "******" << std::endl;
 	o << "verbose:" << verbose << '\t' ;
-	o << "PPV:" << kb_with_freqs << std::endl;
 	o << "Rels: ";
 	writeV(o, rel_source);
 	o << std::endl;

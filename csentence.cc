@@ -467,7 +467,7 @@ namespace ukb {
   // Given a CSentence obtain it's PageRank vector
   // Initial PPV is computed a la hughes&ramage97
 
-  bool calculate_kb_hr(const CSentence & cs,
+  bool calculate_kb_ppr(const CSentence & cs,
 						vector<float> & res,
 						bool with_weight) {
 
@@ -514,7 +514,7 @@ namespace ukb {
   // 2. Pagerank
   // 3. use rank for disambiguating word
 
-  void calculate_kb_hr_by_word_and_disamb(CSentence & cs,
+  void calculate_kb_ppr_by_word_and_disamb(CSentence & cs,
 										   bool with_weight) {
 
 	Kb & kb = ukb::Kb::instance();
