@@ -32,8 +32,7 @@ namespace ukb {
   void init_varMap () {
 	varMap["verbose"] = 0;
 	varMap["rel_sources"] = 1;
-	varMap["w2syn_filename"] = 2;
-	varMap["with_freqs"] = 3;
+	varMap["dict_filename"] = 2;
   }
 
 
@@ -92,11 +91,8 @@ namespace ukb {
 		c_warn("zero-sized vector");
 	  }
 	  break;
-	case 2: // w2syn_filename
+	case 2: // dict_filename
 	  glVars::dict_filename = value;
-	  break;
-	case 3: // with_freqs
-	  glVars::kb_with_freqs = (is_negated == false);
 	  break;
 	}
   }
