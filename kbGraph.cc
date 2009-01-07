@@ -327,7 +327,7 @@ namespace ukb {
   // i: (inverse) relation type of edge v->u (hyponym, etc). Optional. Useless on undirected graphs.
   // s: source of relation (wn30, kb17, etc). Optional.
   // d: wether the relation is directed. Optional, default is undirected.
-  // w: relation weigth. Must be positive.
+  // w: relation weigth. Must be positive. Optional.
 
 
   struct rel_parse {
