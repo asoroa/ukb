@@ -76,7 +76,7 @@ public:
 
   typedef KbGraph boost_graph_t; // the underlying graph type
 
-  //Singleton
+  // Singleton
   static Kb & instance();
 
 
@@ -84,13 +84,14 @@ public:
   //
   // 1. create_from_txt
   //    Create graph by reading a textfile with synset relations (synsFile)
-  //    Exclude relations not in rels_source set
-  //
-  // 2. create_from_binfile
-  //    Load a binary snapshot of the graph into memory
+  //    If glVars::kb::filter_src is true, exclude input relations not in
+  //    rels_source set
 
   static void create_from_txt(const std::string & synsFile,
 							  const std::set<std::string> & rels_source);
+
+  // 2. create_from_binfile
+  //    Load a binary snapshot of the graph into memory
 
   static void create_from_binfile(const std::string & o);
 
@@ -110,7 +111,8 @@ public:
 
   void add_relSource(const std::string & str) { relsSource.insert(str); }
 
-  // Add tokens and link them to their synsets, according to the loaded dictionary.
+  // Add tokens and link them to their synsets, according to the dictionary.
+  // Note: the words are linked to nodes by _directed_ edges
 
   void add_dictionary(bool with_weight); // Adds all words of the current dictionary
   void add_token(const std::string & str, bool with_weight); // Add just a word (lemma)
@@ -151,12 +153,16 @@ public:
 
   // Add a comment to graph
 
+  void add_comment(const std::string & str);
+
+  // Some useful info
 
   void display_info(std::ostream & o) const;
   size_t size() const {return num_vertices(g); }
 
-  void add_comment(const std::string & str);
   const std::vector<std::string> & get_comments() const;
+
+  // Get a random vertex
 
   Kb_vertex_t get_random_vertex() const;
 
