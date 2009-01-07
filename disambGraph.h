@@ -3,7 +3,7 @@
 #ifndef DISAMBGRAPH_H
 #define DISAMBGRAPH_H
 
-#include "mcrGraph.h"
+#include "kbGraph.h"
 #include "csentence.h"
 
 using boost::adjacency_list;
@@ -16,13 +16,13 @@ using boost::vertex_rank_t;
 using boost::vertex_rank;
 
 enum vertex_freq_t  { vertex_freq};     // vertex freq (for ppv)
-enum vertex_mcrSource_t   { vertex_mcrSource };     // original MCR vertex index
+enum vertex_kbSource_t   { vertex_kbSource };     // original MCR vertex index
 enum edge_freq_t    { edge_freq };      // relation id
 
 namespace boost {
   BOOST_INSTALL_PROPERTY(edge, freq);
   BOOST_INSTALL_PROPERTY(vertex, freq);
-  BOOST_INSTALL_PROPERTY(vertex, mcrSource);
+  BOOST_INSTALL_PROPERTY(vertex, kbSource);
 }
 
 namespace ukb {
@@ -35,7 +35,7 @@ namespace ukb {
 	property<vertex_name_t, std::string,          // the synset name (WN1.6)
 			 property<vertex_rank_t, float,
 					  property<vertex_freq_t, double, 
-							   property<vertex_mcrSource_t, Mcr_vertex_t> > > >, 
+							   property<vertex_kbSource_t, Kb_vertex_t> > > >, 
 	property<edge_freq_t, float>
 	> DisambG;
 
@@ -53,9 +53,9 @@ public:
 
   std::pair<Dis_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
-  void fill_graph(Mcr_vertex_t src,
-				  Mcr_vertex_t tgt,
-				  const std::vector<Mcr_vertex_t> & parents);
+  void fill_graph(Kb_vertex_t src,
+				  Kb_vertex_t tgt,
+				  const std::vector<Kb_vertex_t> & parents);
 
   Dis_vertex_t add_dgraph_vertex(const std::string & str);
   void add_dgraph_edge(Dis_vertex_t u, Dis_vertex_t v, float w = 1.0);

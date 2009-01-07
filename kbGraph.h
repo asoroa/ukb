@@ -59,14 +59,14 @@ namespace ukb {
 					  property<vertex_flags_t, unsigned char> > >,
 	property<edge_weight_t, float,
 			 property<edge_rtype_t, boost::uint32_t> >
-	> McrGraph;
+	> KbGraph;
 
 
-typedef graph_traits<McrGraph>::vertex_descriptor Mcr_vertex_t;
-typedef graph_traits<McrGraph>::edge_descriptor Mcr_edge_t;
-typedef graph_traits < McrGraph >::vertices_size_type Mcr_vertex_size_t;
+typedef graph_traits<KbGraph>::vertex_descriptor Kb_vertex_t;
+typedef graph_traits<KbGraph>::edge_descriptor Kb_edge_t;
+typedef graph_traits < KbGraph >::vertices_size_type Kb_vertex_size_t;
 
-class Mcr {
+class Kb {
 
   enum {
     is_word = 1
@@ -74,13 +74,13 @@ class Mcr {
 
 public:
 
-  typedef McrGraph boost_graph_t; // the underlying graph type
+  typedef KbGraph boost_graph_t; // the underlying graph type
 
   //Singleton
-  static Mcr & instance();
+  static Kb & instance();
 
 
-  // 2 functions for creating Mcr graphs
+  // 2 functions for creating Kb graphs
   //
   // 1. create_from_txt
   //    Create graph by reading a textfile with synset relations (synsFile)
@@ -96,7 +96,7 @@ public:
 
 
   // write_to_binfile
-  // Write mcr graph to a binary serialization file
+  // Write kb graph to a binary serialization file
 
   void write_to_binfile (const std::string & str) const;
 
@@ -118,36 +118,36 @@ public:
   // graph
   // Get the underlying boost graph
 
-  McrGraph & graph() {return g;}
+  KbGraph & graph() {return g;}
 
   // Add nodes and relations to the graph
 
-  Mcr_vertex_t find_or_insert_synset(const std::string & str);
-  Mcr_vertex_t find_or_insert_word(const std::string & str);
+  Kb_vertex_t find_or_insert_synset(const std::string & str);
+  Kb_vertex_t find_or_insert_word(const std::string & str);
 
-  Mcr_edge_t find_or_insert_edge(Mcr_vertex_t u, Mcr_vertex_t v, float w );
+  Kb_edge_t find_or_insert_edge(Kb_vertex_t u, Kb_vertex_t v, float w );
 
   // Add relation type to edge
 
-  void edge_add_reltype(Mcr_edge_t e, const std::string & rel);  
+  void edge_add_reltype(Kb_edge_t e, const std::string & rel);  
 
   // Ask for a node
 
-  std::pair<Mcr_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
+  std::pair<Kb_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
   // ask for node properties
 
-  std::string  get_vertex_name(Mcr_vertex_t u) const {return get(vertex_name, g, u);}
-  std::string  get_vertex_gloss(Mcr_vertex_t u) const {return get(vertex_gloss, g, u);}
+  std::string  get_vertex_name(Kb_vertex_t u) const {return get(vertex_name, g, u);}
+  std::string  get_vertex_gloss(Kb_vertex_t u) const {return get(vertex_gloss, g, u);}
 
   // ask for edge preperties
 
-  std::vector<std::string> get_edge_reltypes(Mcr_edge_t e) const;
+  std::vector<std::string> get_edge_reltypes(Kb_edge_t e) const;
 
   // Nodes can be synsets or words
 
-  bool vertex_is_synset(Mcr_vertex_t u) const;
-  bool vertex_is_word(Mcr_vertex_t u) const;
+  bool vertex_is_synset(Kb_vertex_t u) const;
+  bool vertex_is_word(Kb_vertex_t u) const;
 
   // Add a comment to graph
 
@@ -158,13 +158,13 @@ public:
   void add_comment(const std::string & str);
   const std::vector<std::string> & get_comments() const;
 
-  Mcr_vertex_t get_random_vertex() const;
+  Kb_vertex_t get_random_vertex() const;
 
   // Graph algorithms
 
-  bool bfs (Mcr_vertex_t source_synset, std::vector<Mcr_vertex_t> & synv) const ;
+  bool bfs (Kb_vertex_t source_synset, std::vector<Kb_vertex_t> & synv) const ;
 
-  bool dijkstra (Mcr_vertex_t src, std::vector<Mcr_vertex_t> & parents) const;
+  bool dijkstra (Kb_vertex_t src, std::vector<Kb_vertex_t> & parents) const;
 
   void pageRank_ppv(const std::vector<float> & ppv_map,
 					std::vector<float> & ranks,
@@ -176,16 +176,16 @@ public:
 
 private:
   // Singleton
-  static Mcr * p_instance;
-  static Mcr * create();
+  static Kb * p_instance;
+  static Kb * create();
 
   // Private methods
-  Mcr() : coef_status(0) {};
-  Mcr(const Mcr &) {};
-  Mcr &operator=(const Mcr &);
-  ~Mcr() {};
+  Kb() : coef_status(0) {};
+  Kb(const Kb &) {};
+  Kb &operator=(const Kb &);
+  ~Kb() {};
 
-  Mcr_vertex_t InsertNode(const std::string & name, unsigned char flags);
+  Kb_vertex_t InsertNode(const std::string & name, unsigned char flags);
 
   void read_from_txt(const std::string & relFile);
 
@@ -193,10 +193,10 @@ private:
   std::ofstream & write_to_stream(std::ofstream & o) const;
 
   // Private members
-  McrGraph g;
+  KbGraph g;
   std::set<std::string> relsSource;
-  std::map<std::string, Mcr_vertex_t> synsetMap; // synset name to vertex id
-  std::map<std::string, Mcr_vertex_t> wordMap; // synset name to vertex id
+  std::map<std::string, Kb_vertex_t> synsetMap; // synset name to vertex id
+  std::map<std::string, Kb_vertex_t> wordMap; // synset name to vertex id
 
   // Registered relation types
 

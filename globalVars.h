@@ -24,7 +24,7 @@ namespace ukb {
 	extern std::vector<std::string> rel_source;
 	extern std::string dict_filename;
 
-	extern bool mcr_with_freqs;
+	extern bool kb_with_freqs;
 
 	namespace csentence {
 	  extern bool word_weight;

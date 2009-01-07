@@ -1,6 +1,6 @@
 #include "disambGraph.h"
 #include "common.h"
-#include "mcrGraph.h"
+#include "kbGraph.h"
 #include "csentence.h"
 #include "prank.h"
 #include "globalVars.h"
@@ -48,7 +48,7 @@ namespace ukb {
 	Dis_edge_t e;
 	bool existP;
 
-	map<Mcr_vertex_t, Dis_vertex_t>::iterator it;
+	map<Kb_vertex_t, Dis_vertex_t>::iterator it;
 
 	tie(e, existP) = edge(u, v, g);
 	if(!existP) {
@@ -70,7 +70,7 @@ namespace ukb {
 	  Dis_vertex_t v = add_vertex(g);
 	  put(vertex_name, g, v, str);
 	  put(vertex_freq, g, v, 0.0);
-	  put(vertex_mcrSource, g, v, ukb::Mcr::instance().get_vertex_by_name(str).first);
+	  put(vertex_kbSource, g, v, ukb::Kb::instance().get_vertex_by_name(str).first);
 	  map_it->second = v;
 	} else {
 	  put(vertex_freq, g, map_it->second, 
@@ -79,9 +79,9 @@ namespace ukb {
 	return map_it->second;
   }
 
-  void DisambGraph::fill_graph(Mcr_vertex_t src,
-							   Mcr_vertex_t tgt,
-							   const std::vector<Mcr_vertex_t> & parents) {
+  void DisambGraph::fill_graph(Kb_vertex_t src,
+							   Kb_vertex_t tgt,
+							   const std::vector<Kb_vertex_t> & parents) {
 
 	//   if (tgt == 81369) {
 	//     int deb=0;
@@ -89,17 +89,17 @@ namespace ukb {
 	//   }
 
 	vector<string> path_str;
-	Mcr_vertex_t pred;
-	McrGraph & mcr_g = ukb::Mcr::instance().graph();
+	Kb_vertex_t pred;
+	KbGraph & kb_g = ukb::Kb::instance().graph();
 
 	pred = parents[tgt];
 	while(tgt != pred) {
-	  path_str.push_back(get(vertex_name, mcr_g, tgt));
+	  path_str.push_back(get(vertex_name, kb_g, tgt));
 	  tgt = pred;
 	  pred = parents[tgt];
 	}
 	if (tgt != src) return;
-	path_str.push_back(get(vertex_name, mcr_g, src));
+	path_str.push_back(get(vertex_name, kb_g, src));
   
 	vector<Dis_vertex_t> path_v;
 	size_t length = 0;
@@ -159,15 +159,15 @@ namespace ukb {
 	//   }
 
 	//bfs from src
-	std::vector<Mcr_vertex_t> parents;
-	Mcr & mcr = ukb::Mcr::instance();
+	std::vector<Kb_vertex_t> parents;
+	Kb & kb = ukb::Kb::instance();
 	bool existP;
-	Mcr_vertex_t src, tgt;
+	Kb_vertex_t src, tgt;
   
-	tie(src, existP) = mcr.get_vertex_by_name(src_str);
+	tie(src, existP) = kb.get_vertex_by_name(src_str);
 	assert(existP);
 
-	mcr.bfs(src, parents);
+	kb.bfs(src, parents);
 
 	// insert src vertex in dgraph (fixes a bug)
 	dgraph.add_dgraph_vertex(src_str);
@@ -178,7 +178,7 @@ namespace ukb {
 	  vector<string>::const_iterator tg_it = s_it->begin();
 	  vector<string>::const_iterator tg_end = s_it->end();
 	  for(;tg_it != tg_end; ++tg_it) {
-		tie(tgt, existP) = mcr.get_vertex_by_name(*tg_it);
+		tie(tgt, existP) = kb.get_vertex_by_name(*tg_it);
 		assert(existP);
 		dgraph.fill_graph(src, tgt, parents);
 	  }
@@ -191,15 +191,15 @@ namespace ukb {
 								   vector<CWord>::const_iterator s_end,
 								   DisambGraph & dgraph) {
 
-	std::vector<Mcr_vertex_t> parents;
-	Mcr & mcr = ukb::Mcr::instance();
+	std::vector<Kb_vertex_t> parents;
+	Kb & kb = ukb::Kb::instance();
 	bool existP;
-	Mcr_vertex_t src, tgt;
+	Kb_vertex_t src, tgt;
   
-	tie(src, existP) = mcr.get_vertex_by_name(src_str);
+	tie(src, existP) = kb.get_vertex_by_name(src_str);
 	assert(existP);
 
-	mcr.dijkstra(src, parents);
+	kb.dijkstra(src, parents);
 
 	// insert src vertex in dgraph (fixes a bug)
 	dgraph.add_dgraph_vertex(src_str);
@@ -210,7 +210,7 @@ namespace ukb {
 	  vector<string>::const_iterator tg_it = s_it->begin();
 	  vector<string>::const_iterator tg_end = s_it->end();
 	  for(;tg_it != tg_end; ++tg_it) {
-		tie(tgt, existP) = mcr.get_vertex_by_name(*tg_it);
+		tie(tgt, existP) = kb.get_vertex_by_name(*tg_it);
 		assert(existP);
 		dgraph.fill_graph(src, tgt, parents);
 	  }
@@ -231,7 +231,7 @@ namespace ukb {
 	  vector<string>::const_iterator sset_end = cw_it->end();
 	  ++cw_it; // point to next word
 	  for(;sset_it != sset_end; ++sset_it) {
-		//tie(src_v, existP) = mcr.get_vertex_by_name(*sset_it);
+		//tie(src_v, existP) = kb.get_vertex_by_name(*sset_it);
 		//assert(existP);
 		fill_disamb_synset_bfs(*sset_it, cw_it, cw_end, dgraph);
 	  }
@@ -239,14 +239,14 @@ namespace ukb {
   }
 
   // fill dgraph with ppv ranks
-  // using edge weights in mcr derived from ppv_rank
+  // using edge weights in kb derived from ppv_rank
 
   void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
 						 const vector<float> & ppv_ranks) {
 
   
-	// First, update mcr's edge weights
-	ukb::Mcr::instance().ppv_weights(ppv_ranks);  
+	// First, update kb's edge weights
+	ukb::Kb::instance().ppv_weights(ppv_ranks);  
 
 	vector<CWord>::const_iterator cw_it = cs.begin();
 	vector<CWord>::const_iterator cw_end = cs.end();
@@ -258,7 +258,7 @@ namespace ukb {
 	  vector<string>::const_iterator sset_end = cw_it->end();
 	  ++cw_it; // point to next word
 	  for(;sset_it != sset_end; ++sset_it) {
-		//tie(src_v, existP) = mcr.get_vertex_by_name(*sset_it);
+		//tie(src_v, existP) = kb.get_vertex_by_name(*sset_it);
 		//assert(existP);
 		fill_disamb_synset_dijkstra(*sset_it, cw_it, cw_end, dgraph);
 	  }
@@ -535,17 +535,17 @@ namespace ukb {
 									   DisambG & g) {
 
 	string name;
-	Mcr_vertex_t mcr_source;
+	Kb_vertex_t kb_source;
 	float rank;
 
 	read_atom_from_stream(is, name);
-	read_atom_from_stream(is, mcr_source);
+	read_atom_from_stream(is, kb_source);
 	read_atom_from_stream(is, rank);
 	Dis_vertex_t v = add_vertex(g);
 	put(vertex_name, g, v, name);
 	//  put(vertex_wname, g, v, wname);
 	put(vertex_rank, g, v, rank);
-	put(vertex_mcrSource, g, v, mcr_source);
+	put(vertex_kbSource, g, v, kb_source);
 	return v;
   }
 
@@ -630,7 +630,7 @@ namespace ukb {
 	string name;
 
 	write_atom_to_stream(o, get(vertex_name, g, v));
-	write_atom_to_stream(o, get(vertex_mcrSource, g, v));
+	write_atom_to_stream(o, get(vertex_kbSource, g, v));
 	write_atom_to_stream(o, get(vertex_rank, g, v));
 	return o;
   }
@@ -752,8 +752,8 @@ namespace ukb {
 						  //make_my_writer(get(vertex_name, g), "label"),
 						  make_my_writer3(get(vertex_name, g), 
 										  get(vertex_rank, g), 
-										  get(vertex_mcrSource, g),
-										  "label", "rank", "mcr"),
+										  get(vertex_kbSource, g),
+										  "label", "rank", "kb"),
 						  make_my_writer(get(edge_freq, g), "weigth"));
   }
 }

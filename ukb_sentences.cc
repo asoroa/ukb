@@ -2,7 +2,7 @@
 #include "globalVars.h"
 #include "configFile.h"
 #include "fileElem.h"
-#include "mcrGraph.h"
+#include "kbGraph.h"
 #include "disambGraph.h"
 
 #include <string>
@@ -27,7 +27,7 @@ using namespace std;
 using namespace boost;
 using namespace ukb;
 
-const char *mcr_default_binfile = "mcr_wnet.bin";
+const char *kb_default_binfile = "kb_wnet.bin";
 
 static int filter_nodes = 0; // 0 -> no filter
                              // 1 -> only words
@@ -52,13 +52,13 @@ void read_skip_relations (const string & file,
   }
 }
 
-void add_words_to_mcr() {
+void add_words_to_kb() {
 
 }
 
 void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weight) {
 
-  Mcr & mcr = Mcr::instance();
+  Kb & kb = Kb::instance();
   if (glVars::verbose) 
     cerr << "Reading words ...\n";
 
@@ -73,15 +73,15 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
   vector<CSentence> vcs;
   CSentence cs;
 
-  // add words and word#pos into Mcr
+  // add words and word#pos into Kb
 
   if (glVars::verbose) 
-    cerr << "Adding words to Mcr ...";
+    cerr << "Adding words to Kb ...";
 
-  mcr.add_dictionary(false);
+  kb.add_dictionary(false);
 
   if (glVars::verbose) 
-    Mcr::instance().display_info(cerr);
+    Kb::instance().display_info(cerr);
 
   // Read sentences and compute rank vectors
 
@@ -91,7 +91,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
       // Initialize rank vector
       vector<float> ranks;
 
-      bool ok = calculate_mcr_hr(cs,ranks, weight);
+      bool ok = calculate_kb_hr(cs,ranks, weight);
       if (!ok) {
 		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 		continue;
@@ -113,7 +113,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
 		if (glVars::verbose) 
 		  cerr << ranks.size() << "\n";
 		for(size_t i=0; i < ranks.size(); ++i) {
-		  if (mcr.vertex_is_word(i)) {
+		  if (kb.vertex_is_word(i)) {
 			filter_ranks.push_back(ranks[i]);
 			filter_sum+=ranks[i];
 		  }
@@ -130,7 +130,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
 		if (glVars::verbose) 
 		  cerr << ranks.size() << "\n";
 		for(size_t i=0; i < ranks.size(); ++i) {
-		  if (mcr.vertex_is_synset(i)) {
+		  if (kb.vertex_is_synset(i)) {
 			filter_ranks.push_back(ranks[i]);
 			filter_sum+=ranks[i];
 		  }
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   bool opt_param = false;
   bool opt_with_w = false;
 
-  string mcr_binfile(mcr_default_binfile);
+  string kb_binfile(kb_default_binfile);
 
   string out_dir;
   string fullname_in;
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 
   po_desc.add_options()
     ("help,h", "This help page.")
-    ("mcr_binfile,M", value<string>(), "Binary file of KB (see create_mcrbin). Default is mcr_wnet.bin")
+    ("kb_binfile,M", value<string>(), "Binary file of KB (see create_kbbin). Default is kb_wnet.bin")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("only_words", "Output only (normalized) PPVs for words.")
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
@@ -226,8 +226,8 @@ int main(int argc, char *argv[]) {
 
     // Config params first, so that they can be overriden by switch options
 
-    if (vm.count("mcr_binfile")) {
-      mcr_binfile = vm["mcr_binfile"].as<string>();
+    if (vm.count("kb_binfile")) {
+      kb_binfile = vm["kb_binfile"].as<string>();
     }
 
     if (vm.count("param")) {
@@ -276,10 +276,10 @@ int main(int argc, char *argv[]) {
   }
 
   if (glVars::verbose) 
-    cerr << "Reading binary mcr file " << mcr_binfile;
-  Mcr::create_from_binfile(mcr_binfile);
+    cerr << "Reading binary kb file " << kb_binfile;
+  Kb::create_from_binfile(kb_binfile);
   if (glVars::verbose) 
-    Mcr::instance().display_info(cerr);
+    Kb::instance().display_info(cerr);
 
   compute_sentence_vectors(fullname_in, out_dir, opt_with_w);
   return 0;

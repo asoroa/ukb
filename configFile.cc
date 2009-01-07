@@ -96,7 +96,7 @@ namespace ukb {
 	  glVars::dict_filename = value;
 	  break;
 	case 3: // with_freqs
-	  glVars::mcr_with_freqs = (is_negated == false);
+	  glVars::kb_with_freqs = (is_negated == false);
 	  break;
 	}
   }

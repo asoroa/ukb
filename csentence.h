@@ -3,7 +3,7 @@
 #ifndef CSENTENCE_H
 #define CSENTENCE_H
 
-//#include "mcrGraph.h"
+//#include "kbGraph.h"
 #include <string>
 #include <vector>
 #include <iosfwd>
@@ -11,7 +11,7 @@
 
 namespace ukb {
 
-  //typedef std::vector<Mcr_vertex_t> CWord;
+  //typedef std::vector<Kb_vertex_t> CWord;
 
   //typedef unsigned int Vertex_t; // Achtung!
 
@@ -151,16 +151,16 @@ namespace ukb {
 	std::string cs_id;
   };
 
-  bool calculate_mcr_hr(const CSentence & cs,
+  bool calculate_kb_hr(const CSentence & cs,
 						std::vector<float> & res,
 						bool with_weight);
 
-  void calculate_mcr_hr_by_word_and_disamb(CSentence & cs,
+  void calculate_kb_hr_by_word_and_disamb(CSentence & cs,
 										   bool with_weight);
 
-  bool calculate_mcr_ppv_csentence(CSentence & cs, std::vector<float> & res);
+  bool calculate_kb_ppv_csentence(CSentence & cs, std::vector<float> & res);
 
-  void disamb_csentence_mcr(CSentence & cs,
+  void disamb_csentence_kb(CSentence & cs,
 							std::vector<float> & ranks);
 }
 #endif

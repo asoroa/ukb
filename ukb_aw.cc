@@ -2,7 +2,7 @@
 #include "common.h"
 #include "fileElem.h"
 #include "globalVars.h"
-#include "mcrGraph.h"
+#include "kbGraph.h"
 #include "disambGraph.h"
 #include <string>
 #include <iostream>
@@ -28,7 +28,7 @@ using namespace boost;
 // Global variables
 
 
-const char *mcr_default_binfile = "mcr_wnet.bin";
+const char *kb_default_binfile = "kb_wnet.bin";
 
 // Program options stuff
 
@@ -133,9 +133,9 @@ void create_wgraph_from_corpus (const string & fullname_in,
   }
 
   if (glVars::verbose) 
-    cerr << "Adding words to Mcr ...\n";
+    cerr << "Adding words to Kb ...\n";
 
-  Mcr::instance().add_dictionary(false);
+  Kb::instance().add_dictionary(false);
 
   vector<CSentence> vcs;
   CSentence cs;
@@ -146,7 +146,7 @@ void create_wgraph_from_corpus (const string & fullname_in,
       // PPVs here
       vector<float> ranks;
 
-      bool ok = calculate_mcr_hr(cs,ranks, false);
+      bool ok = calculate_kb_hr(cs,ranks, false);
       if (!ok) {
 		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 		continue;
@@ -182,7 +182,7 @@ void dis_csent(const vector<string> & input_files, const string & ext,
 
   map<string, size_t> counts;
 
-  if (glVars::mcr_with_freqs) {
+  if (glVars::kb_with_freqs) {
     bool ok = WDict::instance().syn_counts(counts);
     if (!ok) {
       cerr << "Error! There are no freqs. Check file " << glVars::dict_filename << endl;
@@ -204,7 +204,7 @@ void dis_csent(const vector<string> & input_files, const string & ext,
     switch (glVars::rAlg) {
 
     case glVars::pageRank:
-      if (glVars::mcr_with_freqs) {
+      if (glVars::kb_with_freqs) {
 		pageRank_ppv_disg(dg.graph(), counts, edge_weights);
       } else {
 		pageRank_disg(dg.graph(), edge_weights);
@@ -241,27 +241,27 @@ void dis_csent_hr(const string & input_file,
   CSentence cs;
 
   if (glVars::verbose) 
-    cerr << "Adding words to Mcr ...\n";
+    cerr << "Adding words to Kb ...\n";
 
-  Mcr::instance().add_dictionary(false);
+  Kb::instance().add_dictionary(false);
 
-  //Mcr::instance().write_to_binfile("kk.bin");
+  //Kb::instance().write_to_binfile("kk.bin");
   //return;
   try {
     while (cs.read_aw(fh_in)) {
 
       vector<float> ranks;
-      bool ok = calculate_mcr_hr(cs,ranks, with_weight);
+      bool ok = calculate_kb_hr(cs,ranks, with_weight);
       if (!ok) {
 		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
 		cerr << "(No word links to KB ?)\n";
 		continue;
       }
 
-      disamb_csentence_mcr(cs, ranks);
+      disamb_csentence_kb(cs, ranks);
       if(hr_2pass) {
-		calculate_mcr_ppv_csentence(cs, ranks);
-		disamb_csentence_mcr(cs, ranks);
+		calculate_kb_ppv_csentence(cs, ranks);
+		disamb_csentence_kb(cs, ranks);
       }
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_aw(cout);
@@ -291,14 +291,14 @@ void dis_csent_hr_by_word(const string & input_file,
   CSentence cs;
 
   if (glVars::verbose) 
-    cerr << "Adding words to Mcr ...\n";
+    cerr << "Adding words to Kb ...\n";
 
-  Mcr::instance().add_dictionary(false);
+  Kb::instance().add_dictionary(false);
   
   try {
     while (cs.read_aw(fh_in)) {
 	  
-      calculate_mcr_hr_by_word_and_disamb(cs, with_weight);
+      calculate_kb_hr_by_word_and_disamb(cs, with_weight);
       if(hr_2pass) {
 		//
 		// 2nd pass
@@ -306,8 +306,8 @@ void dis_csent_hr_by_word(const string & input_file,
 		// use previous ranks of CSentence for PPV and pageRank again
 		//
 		vector<float> ranks;
-		calculate_mcr_ppv_csentence(cs, ranks);
-		disamb_csentence_mcr(cs, ranks);
+		calculate_kb_ppv_csentence(cs, ranks);
+		disamb_csentence_kb(cs, ranks);
       }
       //      cout << cs << endl;
       //      exit(-1);
@@ -338,14 +338,14 @@ void dis_csent_classic_prank(const string & input_file,
   CSentence cs;
 
   // Global (static) pageRank over KB
-  size_t N = Mcr::instance().size();
+  size_t N = Kb::instance().size();
   vector<float> ppv(N, 1.0/static_cast<float>(N));
   vector<float> ranks;
-  Mcr::instance().pageRank_ppv(ppv, ranks, with_w);
+  Kb::instance().pageRank_ppv(ppv, ranks, with_w);
 
   try {
     while (cs.read_aw(fh_in)) {
-      disamb_csentence_mcr(cs, ranks);
+      disamb_csentence_kb(cs, ranks);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_aw(cout);
       cs = CSentence();
@@ -378,18 +378,18 @@ void dis_csent_wiki(const string & input_file,
 	  CSentence::iterator it = cs.begin();
 	  CSentence::iterator end = cs.end();
 	  for(;it != end; ++it) {
-		Mcr::instance().add_token(it->word(), false);
+		Kb::instance().add_token(it->word(), false);
 	  }
 
       vector<float> ranks;
-      bool ok = calculate_mcr_hr(cs,ranks, false);
+      bool ok = calculate_kb_hr(cs,ranks, false);
       if (!ok) {
 		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
 		cerr << "(No word links to KB ?)\n";
 		continue;
       }
 
-      disamb_csentence_mcr(cs, ranks);
+      disamb_csentence_kb(cs, ranks);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_aw(cout);
       //cout << cs << '\n';
@@ -421,7 +421,7 @@ void do_dgraph_gviz(const vector<string> & input_files,
     switch (glVars::rAlg) {
 
     case glVars::pageRank:
-      if (glVars::mcr_with_freqs) {
+      if (glVars::kb_with_freqs) {
 		map<string, size_t> counts;
 		bool ok = WDict::instance().syn_counts(counts);
 		if (!ok) {
@@ -456,9 +456,9 @@ void do_dgraph_gviz(const vector<string> & input_files,
 //   }
 
 //   if (glVars::verbose) 
-//     cerr << "Adding words to Mcr ...\n";
+//     cerr << "Adding words to Kb ...\n";
 
-//   Mcr::instance().add_words();
+//   Kb::instance().add_words();
 
 //   vector<CSentence> vcs;
 //   CSentence cs;
@@ -469,7 +469,7 @@ void do_dgraph_gviz(const vector<string> & input_files,
 //       // PPVs here
 //       vector<float> ranks;
 
-//       bool ok = calculate_mcr_ranks(cs,ranks);
+//       bool ok = calculate_kb_ranks(cs,ranks);
 //       if (!ok) {
 // 	cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 // 	continue;
@@ -543,7 +543,7 @@ void test(const string & str) {
   cout << endl;
 }
 
-// add words and word#pos into Mcr
+// add words and word#pos into Kb
 
 //dis_csent_hr(input_file);
 
@@ -610,7 +610,7 @@ void test(const string & str) {
 int main(int argc, char *argv[]) {
 
   string out_dir;
-  string mcr_binfile(mcr_default_binfile);
+  string kb_binfile(kb_default_binfile);
 
   bool opt_create_dgraph = false;
   bool opt_disamb_dgraph = false;
@@ -662,11 +662,11 @@ int main(int argc, char *argv[]) {
     ("hr", "Given a text input file, disambiguate context using only hughes & ramage technique (no dgraph required).")
     ("w2w_hr", "Given a text input file, disambiguate context using hughes & ramage technique word by word.")
     ("graphviz,G", "Dump disambGraph to a graphviz format. Output file has same name and extension .dot")
-    ("mcr_binfile,M", value<string>(), "Binary file of KB (see create_mcrbin). Default is mcr_wnet.bin")
+    ("kb_binfile,M", value<string>(), "Binary file of KB (see create_kbbin). Default is kb_wnet.bin")
     ("dict_file,W", value<string>(), "Word to synset map file. Default is ../Data/Preproc/wn1.6_index.sense_freq")
     ("out_dir,O", value<string>(), "Directory for leaving output files.")
     ("allranks", "Write key file with all synsets associated with ranks.")
-    ("static_prank", "Given a text input file, disambiguate context using static pageRank over mcr (no dgraph required).")
+    ("static_prank", "Given a text input file, disambiguate context using static pageRank over kb (no dgraph required).")
     ("rank_alg,R", value<string>(), "Ranking algorithm for DGraphs. Options are: pageRank, degree. Default is pageRank.")
     ("test,t", "(Internal) Do a test.")
     ("timer,T", "Output elapsed time.")
@@ -773,8 +773,8 @@ int main(int argc, char *argv[]) {
       glVars::dict_filename = vm["dict_file"].as<string>();
     }
 
-    if (vm.count("mcr_binfile")) {
-      mcr_binfile = vm["mcr_binfile"].as<string>();
+    if (vm.count("kb_binfile")) {
+      kb_binfile = vm["kb_binfile"].as<string>();
     }
 
     if (vm.count("out_dir")) {
@@ -795,7 +795,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("with_freqs")) {
-      glVars::mcr_with_freqs = true;
+      glVars::kb_with_freqs = true;
     }
 
     if (vm.count("with_weights")) {
@@ -851,19 +851,19 @@ int main(int argc, char *argv[]) {
   timer tick;
 
   if(opt_create_wdgraph ) {
-    Mcr::create_from_binfile(mcr_binfile);
+    Kb::create_from_binfile(kb_binfile);
     create_wgraph_from_corpus(fullname_in, out_dir);
     goto END;
   }
   
   if(opt_create_dgraph) {
-    Mcr::create_from_binfile(mcr_binfile);
+    Kb::create_from_binfile(kb_binfile);
     create_dgraphs_from_corpus(fullname_in, out_dir);
     goto END;
   }
 
   if(opt_disamb_dgraph) {
-    Mcr::create_from_binfile(mcr_binfile);
+    Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
     disamb_dgraph_from_corpus(fullname_in, opt_with_w, opt_out_semcor);
     goto END;
@@ -874,28 +874,28 @@ int main(int argc, char *argv[]) {
 	if (glVars::verbose) cerr << "Read Dict\n";
 	WDict::instance();
 	if (glVars::verbose) cerr << "Read KB\n";
-    Mcr::create_from_binfile(mcr_binfile);
+    Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
     dis_csent_wiki(fullname_in, opt_out_semcor);
 	goto END;
   }
 
   if (opt_do_hr) {
-    Mcr::create_from_binfile(mcr_binfile);
+    Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
     dis_csent_hr(fullname_in, opt_with_w, opt_hr_2pass, opt_out_semcor);
     goto END;
   }
 
   if (opt_do_hr_w2w) {
-    Mcr::create_from_binfile(mcr_binfile);
+    Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
     dis_csent_hr_by_word(fullname_in, opt_with_w, opt_hr_2pass, opt_out_semcor);
     goto END;
   }
 
   if (opt_do_static_prank) {
-    Mcr::create_from_binfile(mcr_binfile);
+    Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
     dis_csent_classic_prank(fullname_in, opt_with_w, opt_out_semcor);
     goto END;

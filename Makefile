@@ -7,7 +7,7 @@ SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc ukb_sentences.cc
 
 # Library files
 
-SRC = common.cc globalVars.cc configFile.cc fileElem.cc mcrGraph.cc disambGraph.cc csentence.cc kGraph.cc coocGraph.cc hlex_agtree.cc wdict.cc
+SRC = common.cc globalVars.cc configFile.cc fileElem.cc kbGraph.cc disambGraph.cc csentence.cc coocGraph.cc hlex_agtree.cc wdict.cc
 
 RUNDIR = ../run
 
@@ -31,7 +31,7 @@ else
 PROFFLAGS =
 endif
 
-CCOPTIONS = -Wall $(OPTFLAGS)
+CCOPTIONS = -Wall -Wno-deprecated $(OPTFLAGS)
 MEMBERS = $(SRC:.cc=.o)
 EXEC  = $(notdir $(basename $(SRCS)))
 

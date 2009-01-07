@@ -19,7 +19,7 @@ namespace ukb {
 
   ////////////////////////////////////////////////
   // Global variables
-  //const std::string dict_filename = "mcr_source/enWN16";
+  //const std::string dict_filename = "kb_source/enWN16";
 
   std::ostream & operator<<(std::ostream & o, const WDict_item_t & item) {
 	o << "S: ";

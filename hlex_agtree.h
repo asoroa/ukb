@@ -3,7 +3,7 @@
 #ifndef HLEX_AGTREE_H
 #define HLEX_AGTREE_H
 
-#include "mcrGraph.h"
+#include "kbGraph.h"
 #include <map>
 #include <string>
 
@@ -37,7 +37,7 @@ namespace ukb {
 	boost::property<vertex_name_t, std::string,
 					boost::property<vertex_hubDist_t, size_t, 
 									boost::property<vertex_hubN_t, size_t,
-													boost::property<vertex_vOrig_t, Mcr_vertex_t> // not used
+													boost::property<vertex_vOrig_t, Kb_vertex_t> // not used
 													> > >
 	> AgTree;
 

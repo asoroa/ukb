@@ -1,7 +1,7 @@
 #include "csentence.h"
 #include "common.h"
 #include "globalVars.h"
-#include "mcrGraph.h"
+#include "kbGraph.h"
 #include "wdict.h"
 
 // Tokenizer
@@ -20,7 +20,7 @@ namespace ukb {
 				 char pos = 0) {
 
 	//W2Syn & w2syn = W2Syn::instance();
-	Mcr & mcr = ukb::Mcr::instance();
+	Kb & kb = ukb::Kb::instance();
 
 	vector<string>::const_iterator str_it;
 	vector<string>::const_iterator str_end;
@@ -32,7 +32,7 @@ namespace ukb {
 	  const string & syn_str = entries.get_entry(i);
 
 	  bool existP;
-	  Mcr_vertex_t mcr_v;
+	  Kb_vertex_t kb_v;
 	  if(pos && glVars::input::filter_pos) {
 		// filter synsets by pos
 		char synpos = entries.get_pos(i);
@@ -41,7 +41,7 @@ namespace ukb {
 		}
 		if (pos != synpos) continue;
 	  }
-	  tie(mcr_v, existP) = mcr.get_vertex_by_name(syn_str);
+	  tie(kb_v, existP) = kb.get_vertex_by_name(syn_str);
 	  if (existP) {
 		syns.push_back(syn_str);
 		ranks.push_back(0.0f);
@@ -49,7 +49,7 @@ namespace ukb {
 		if (glVars::debug::warning) {
 		  cerr << "W:CWord: synset " << syn_str << " of word " << w << " is not in KB" << endl;
 		}
-		// debug: synset  which is not in mcr
+		// debug: synset  which is not in kb
 	  }
 	}
   }
@@ -94,9 +94,9 @@ namespace ukb {
   // Create a special CWord which is a synset and a weigth.
 
   CWord CWord::create_synset_cword(const string & syn, const string & id_, float w) {
-	Mcr_vertex_t aux;
+	Kb_vertex_t aux;
 	bool P;
-	tie(aux, P) = ukb::Mcr::instance().get_vertex_by_name(syn);
+	tie(aux, P) = ukb::Kb::instance().get_vertex_by_name(syn);
 	if (!P) {
 	  throw std::runtime_error("CWord::create_synset_cword " + syn + " not in KB");
 	  return CWord();
@@ -168,7 +168,7 @@ namespace ukb {
 
   std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
 
-	//McrGraph & g = ukb::Mcr::instance().graph();
+	//KbGraph & g = ukb::Kb::instance().graph();
 
 	o << cw_.w;
 	if (cw_.m_pos)
@@ -461,24 +461,24 @@ namespace ukb {
 
   ////////////////////////////////////////////////////////////////////////////////
   //
-  // PageRank in Mcr
+  // PageRank in Kb
 
 
   // Given a CSentence obtain it's PageRank vector
   // Initial PPV is computed a la hughes&ramage97
 
-  bool calculate_mcr_hr(const CSentence & cs,
+  bool calculate_kb_hr(const CSentence & cs,
 						vector<float> & res,
 						bool with_weight) {
 
-	Mcr & mcr = ukb::Mcr::instance();
+	Kb & kb = ukb::Kb::instance();
 	bool aux;
 
 	// Initialize result vector
-	vector<float> (mcr.size(), 0.0).swap(res);
+	vector<float> (kb.size(), 0.0).swap(res);
 
 	// Initialize PPV vector
-	vector<float> ppv(mcr.size(), 0.0);
+	vector<float> ppv(kb.size(), 0.0);
 	CSentence::const_iterator it = cs.begin();
 	CSentence::const_iterator end = cs.end();
 	float K = 0.0;
@@ -488,8 +488,8 @@ namespace ukb {
 	  //string wpos = it->wpos();
 	  string wpos = it->word();
 
-	  Mcr_vertex_t u;
-	  tie(u, aux) = mcr.get_vertex_by_name(wpos);
+	  Kb_vertex_t u;
+	  tie(u, aux) = kb.get_vertex_by_name(wpos);
 	  float w = 1.0;
 	  if(glVars::csentence::word_weight) w = it->get_weight();
 	  if (aux) {
@@ -504,7 +504,7 @@ namespace ukb {
 	  *rit *= div;
 
 	// Execute PageRank
-	mcr.pageRank_ppv(ppv, res, with_weight);
+	kb.pageRank_ppv(ppv, res, with_weight);
 	return true;
   }
 
@@ -514,10 +514,10 @@ namespace ukb {
   // 2. Pagerank
   // 3. use rank for disambiguating word
 
-  void calculate_mcr_hr_by_word_and_disamb(CSentence & cs,
+  void calculate_kb_hr_by_word_and_disamb(CSentence & cs,
 										   bool with_weight) {
 
-	Mcr & mcr = ukb::Mcr::instance();
+	Kb & kb = ukb::Kb::instance();
 	bool aux;
 
 	vector<CWord>::iterator cw_it = cs.begin();
@@ -527,9 +527,9 @@ namespace ukb {
 	  // Target word must be distinguished.
 	  if(!cw_it->is_distinguished()) continue;
 
-	  vector<float> ranks (mcr.size(), 0.0);
+	  vector<float> ranks (kb.size(), 0.0);
 	  // Initialize PPV vector
-	  vector<float> ppv(mcr.size(), 0.0);
+	  vector<float> ppv(kb.size(), 0.0);
 	  float K = 0.0;
 	  // put ppv to the synsets of words except cw_it
 	  for(CSentence::const_iterator it = cs.begin(); it != cw_end; ++it) {
@@ -537,8 +537,8 @@ namespace ukb {
 
 		string wpos = it->word();
 
-		Mcr_vertex_t u;
-		tie(u, aux) = mcr.get_vertex_by_name(wpos);
+		Kb_vertex_t u;
+		tie(u, aux) = kb.get_vertex_by_name(wpos);
 		float w =  1.0;
 		if(glVars::csentence::word_weight) w = it->get_weight();
 		if (aux) {
@@ -553,38 +553,38 @@ namespace ukb {
 		*rit *= div;
 
 	  // Execute PageRank
-	  mcr.pageRank_ppv(ppv, ranks, with_weight);
+	  kb.pageRank_ppv(ppv, ranks, with_weight);
 	  // disambiguate cw_it
-	  cw_it->rank_synsets(mcr, ranks);
+	  cw_it->rank_synsets(kb, ranks);
 	  cw_it->disamb_cword();
 	}
   }
 
   //
   // Given a previously disambiguated CSentence (all synsets of words
-  // have a rank), calculate a mcr prgaRank where PPV is formed by
+  // have a rank), calculate a kb prgaRank where PPV is formed by
   // 'activating' just the synsets of CWords with appropiate
   // (normalized) rank
   //
 
-  bool calculate_mcr_ppv_csentence(CSentence & cs, vector<float> & res) {
+  bool calculate_kb_ppv_csentence(CSentence & cs, vector<float> & res) {
 
-	Mcr & mcr = ukb::Mcr::instance();
+	Kb & kb = ukb::Kb::instance();
 	bool aux;
 
 	// Initialize result vector
-	vector<float> (mcr.size(), 0.0).swap(res);
+	vector<float> (kb.size(), 0.0).swap(res);
 
 	// Initialize PPV vector
-	vector<float> ppv(mcr.size(), 0.0);
+	vector<float> ppv(kb.size(), 0.0);
 
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	float K = 0.0;
 	for(; cw_it != cw_end; ++cw_it) {
 	  for(size_t i = 0; i != cw_it->size(); ++i) {
-		Mcr_vertex_t u;
-		tie(u, aux) = mcr.get_vertex_by_name(cw_it->syn(i));
+		Kb_vertex_t u;
+		tie(u, aux) = kb.get_vertex_by_name(cw_it->syn(i));
 		if (aux) {
 		  ppv[u] = cw_it->rank(i);
 		  K += cw_it->rank(i);
@@ -599,7 +599,7 @@ namespace ukb {
 	  *rit *= div;
 
 	// Execute PageRank
-	mcr.pageRank_ppv(ppv, res, false);
+	kb.pageRank_ppv(ppv, res, false);
 	return true;
   }
 
@@ -608,15 +608,15 @@ namespace ukb {
   // Disambiguate a CSentence given a vector of ranks
   //
 
-  void disamb_csentence_mcr(CSentence & cs,
+  void disamb_csentence_kb(CSentence & cs,
 							vector<float> & ranks) {
 
-	Mcr & mcr = ukb::Mcr::instance();
+	Kb & kb = ukb::Kb::instance();
 
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
-	  cw_it->rank_synsets(mcr, ranks);
+	  cw_it->rank_synsets(kb, ranks);
 	  cw_it->disamb_cword();
 	}
   }

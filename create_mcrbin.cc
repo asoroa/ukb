@@ -3,7 +3,7 @@
 #include "globalVars.h"
 #include "configFile.h"
 #include "fileElem.h"
-#include "mcrGraph.h"
+#include "kbGraph.h"
 //#include "disambGraph.h"
 #include "coocGraph.h"
 #include <string>
@@ -49,49 +49,49 @@ void read_skip_relations (const string & file,
 
 void merge_cooc(string & fName, bool store_w) {
 
-  Mcr & mcr = Mcr::instance();
+  Kb & kb = Kb::instance();
 
   CoocGraph coog;
   coog.read_from_binfile(fName);
-  map<CoocGraph::vertex_descriptor, Mcr_vertex_t> uMap;
+  map<CoocGraph::vertex_descriptor, Kb_vertex_t> uMap;
 
   CoocGraph::vertex_iterator v_it, v_end;
   for(tie(v_it, v_end) = vertices(coog.graph()); v_it != v_end; ++v_it) {
-    Mcr_vertex_t u = mcr.find_or_insert_word(get(vertex_name, coog.graph(), *v_it));
+    Kb_vertex_t u = kb.find_or_insert_word(get(vertex_name, coog.graph(), *v_it));
     uMap[*v_it] = u;
   }
 
   CoocGraph::edge_iterator e_it, e_end;
   for(tie(e_it, e_end) = edges(coog.graph()); e_it != e_end; ++e_it) {
-    Mcr_vertex_t u = uMap[source(*e_it, coog.graph())];
-    Mcr_vertex_t v = uMap[target(*e_it, coog.graph())];
+    Kb_vertex_t u = uMap[source(*e_it, coog.graph())];
+    Kb_vertex_t v = uMap[target(*e_it, coog.graph())];
     float w = store_w ? get(edge_freq, coog.graph(), *e_it) : 1.0;
-    mcr.find_or_insert_edge(u, v, w);
-    mcr.find_or_insert_edge(v, u, w);
+    kb.find_or_insert_edge(u, v, w);
+    kb.find_or_insert_edge(v, u, w);
   }
-  mcr.add_relSource("Cooc: " + fName);
+  kb.add_relSource("Cooc: " + fName);
 }
 
 
 void merge_ts(bool store_w) {
 
-  Mcr::instance().add_dictionary(store_w); // with weights!
-  Mcr::instance().add_relSource("TS: " + glVars::dict_filename);
+  Kb::instance().add_dictionary(store_w); // with weights!
+  Kb::instance().add_relSource("TS: " + glVars::dict_filename);
 }
 
 void query (const string & str) {
 
-  Mcr & mcr = Mcr::instance();
-  McrGraph & g = mcr.graph();
+  Kb & kb = Kb::instance();
+  KbGraph & g = kb.graph();
 
   bool aux;
-  Mcr_vertex_t u;
+  Kb_vertex_t u;
 
-  tie(u, aux) = mcr.get_vertex_by_name(str);
+  tie(u, aux) = kb.get_vertex_by_name(str);
   if (aux) {
     cout << get(vertex_name, g, u);
     cout << "\n";
-    graph_traits<Mcr::boost_graph_t>::out_edge_iterator it , end;
+    graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
     tie(it, end) = out_edges(u, g);
     for(;it != end; ++it) {
       cout << "  ";
@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
   bool opt_weight_cooc = false; // don't use weights for cooc
 
   string cograph_filename;
-  string fullname_out("mcr_wnet.bin");
-  vector<string> mcr_files;
+  string fullname_out("kb_wnet.bin");
+  vector<string> kb_files;
   string out_dir;
   string query_vertex;
 
@@ -137,9 +137,9 @@ int main(int argc, char *argv[]) {
 
   const char desc_header[] = "create_mcrbin: create a serialized image of the KB\n"
     "Usage:\n"
-    "create_mcrbin [-o output.bin] mcr_file.txt mcr_file.txt ... -> Create a KB image reading relations textfiles.\n"
-    "create_mcrbin [-o output.bin] -c coocgraph.bin mcr.bin -> Merge a mcr serialization with a coocurrence graph.\n"
-    "create_mcrbin [-o output.bin] --ts ts_dict.txt mcr.bin -> Merge TS from textfile.\n"
+    "create_mcrbin [-o output.bin] kb_file.txt kb_file.txt ... -> Create a KB image reading relations textfiles.\n"
+    "create_mcrbin [-o output.bin] -c coocgraph.bin kb.bin -> Merge a kb serialization with a coocurrence graph.\n"
+    "create_mcrbin [-o output.bin] --ts ts_dict.txt kb.bin -> Merge TS from textfile.\n"
     "Options:";
 
   using namespace boost::program_options;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   po_desc.add_options()
     ("help,h", "This help page.")
     ("force-default-values,f", "Use default relations.")
-    ("info,i", "Give info about some Mcr binfile.")
+    ("info,i", "Give info about some Kb binfile.")
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
     ("cooc,c", value<string>(), "Merge a coocurrence graph to a serialization graph.")
     ("ts,t", value<string>(), "Merge topic signatures in a serialization graph. Asks for the textfile with ts info.")
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
 
 
     if (vm.count("input-file")) {
-      mcr_files = vm["input-file"].as<vector<string> >();
+      kb_files = vm["input-file"].as<vector<string> >();
     }
 
      if (vm.count("output")) {
@@ -275,36 +275,36 @@ int main(int argc, char *argv[]) {
     throw(e);
   }
 
-  if (mcr_files.size()==0) {
+  if (kb_files.size()==0) {
     cout << po_desc << endl;
     cout << "No input files" << endl;
     exit(0);
   }
 
   if (opt_info) {
-    Mcr::create_from_binfile(mcr_files[0]);
-    Mcr::instance().display_info(cout);
+    Kb::create_from_binfile(kb_files[0]);
+    Kb::instance().display_info(cout);
     return 0;
   }
 
   if (opt_dump) {
-    Mcr::create_from_binfile(mcr_files[0]);
-    Mcr::instance().dump_graph(cout);
+    Kb::create_from_binfile(kb_files[0]);
+    Kb::instance().dump_graph(cout);
     return 0;
   }
 
   if (opt_cooc || opt_ts) {
-    Mcr::create_from_binfile(mcr_files[0]);
+    Kb::create_from_binfile(kb_files[0]);
     if (opt_cooc) merge_cooc(cograph_filename, opt_weight_cooc);
     if (opt_ts) merge_ts(opt_weight_ts);
-    Mcr::instance().add_comment(cmdline);
-    Mcr::instance().write_to_binfile(fullname_out);
+    Kb::instance().add_comment(cmdline);
+    Kb::instance().write_to_binfile(fullname_out);
     return 1;
   }
 
 
   if (opt_query) {
-    Mcr::create_from_binfile(mcr_files[0]);
+    Kb::create_from_binfile(kb_files[0]);
     query(query_vertex);
     return 1;
   }
@@ -333,19 +333,19 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     cerr << "Reading relations"<< endl;
 
-  Mcr::create_from_txt(mcr_files[0], source_rels );
-  for(size_t i=1; i < mcr_files.size(); ++i) {
-    Mcr::instance().add_from_txt(mcr_files[i]);
+  Kb::create_from_txt(kb_files[0], source_rels );
+  for(size_t i=1; i < kb_files.size(); ++i) {
+    Kb::instance().add_from_txt(kb_files[i]);
   }
 
-  File_elem mcr_fe(fullname_out);
-  mcr_fe.set_path(out_dir);
+  File_elem kb_fe(fullname_out);
+  kb_fe.set_path(out_dir);
   if (glVars::verbose)
-    cerr << "Writing binary file: "<< mcr_fe.get_fname()<< endl;
-  Mcr::instance().add_comment(cmdline);
-  Mcr::instance().write_to_binfile(mcr_fe.get_fname());
+    cerr << "Writing binary file: "<< kb_fe.get_fname()<< endl;
+  Kb::instance().add_comment(cmdline);
+  Kb::instance().write_to_binfile(kb_fe.get_fname());
   if (glVars::verbose)
-    cerr << "Wrote " << num_vertices(Mcr::instance().graph()) << " vertices and " << num_edges(Mcr::instance().graph()) << " edges" << endl;
+    cerr << "Wrote " << num_vertices(Kb::instance().graph()) << " vertices and " << num_edges(Kb::instance().graph()) << " edges" << endl;
 
   return 0;
 }

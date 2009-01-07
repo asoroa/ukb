@@ -1,4 +1,4 @@
-#include "mcrGraph.h"
+#include "kbGraph.h"
 #include "common.h"
 #include "globalVars.h"
 #include "wdict.h"
@@ -43,41 +43,41 @@ namespace ukb {
 
 
   ////////////////////////////////////////////////////////////////////////////////
-  // Class Mcr
+  // Class Kb
 
 
   ////////////////////////////////////////////////////////////////////////////////
   // Singleton stuff
 
-  Mcr* Mcr::p_instance = 0;
+  Kb* Kb::p_instance = 0;
 
-  Mcr *Mcr::create() {
+  Kb *Kb::create() {
 
-	static Mcr theMcr;
-	return &theMcr;
+	static Kb theKb;
+	return &theKb;
   }
 
-  Mcr & Mcr::instance() {
+  Kb & Kb::instance() {
 	if (!p_instance) {
 	  throw runtime_error("KB not initialized");
 	}
 	return *p_instance;
   }
 
-  void Mcr::create_from_txt(const string & synsFileName,
+  void Kb::create_from_txt(const string & synsFileName,
 							const std::set<std::string> & rels_source) {
 	if (p_instance) return;
-	Mcr *tenp = create();
+	Kb *tenp = create();
 
 	tenp->relsSource = rels_source;
 	tenp->read_from_txt(synsFileName);
 	p_instance = tenp;
   }
 
-  void Mcr::create_from_binfile(const std::string & fname) {
+  void Kb::create_from_binfile(const std::string & fname) {
 
 	if (p_instance) return;
-	Mcr *tenp = create();
+	Kb *tenp = create();
 
 	ifstream fi(fname.c_str(), ifstream::binary|ifstream::in);
 	if (!fi) {
@@ -91,57 +91,57 @@ namespace ukb {
   ////////////////////////////////////////////////////////////////////////////////
 
 
-  void Mcr::add_comment(const string & str) {
+  void Kb::add_comment(const string & str) {
 	notes.push_back(str);
   }
 
-  const vector<string> & Mcr::get_comments() const {
+  const vector<string> & Kb::get_comments() const {
 	return notes;
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   // bfs
 
-  struct mcr_bfs_init:public base_visitor<mcr_bfs_init> {
+  struct kb_bfs_init:public base_visitor<kb_bfs_init> {
   public:
-	mcr_bfs_init(Mcr_vertex_t *v):m_v(v) { }
+	kb_bfs_init(Kb_vertex_t *v):m_v(v) { }
 	typedef on_initialize_vertex event_filter;
-	inline void operator()(Mcr_vertex_t u, const McrGraph & g)
+	inline void operator()(Kb_vertex_t u, const KbGraph & g)
 	{
 	  m_v[u] = u;
 	}
-	Mcr_vertex_t *m_v;
+	Kb_vertex_t *m_v;
   };
 
-  struct mcr_bfs_pred:public base_visitor<mcr_bfs_pred> {
+  struct kb_bfs_pred:public base_visitor<kb_bfs_pred> {
   public:
-	mcr_bfs_pred(Mcr_vertex_t *v):m_v(v) { }
+	kb_bfs_pred(Kb_vertex_t *v):m_v(v) { }
 	typedef on_tree_edge event_filter;
-	inline void operator()(Mcr_edge_t e, const McrGraph & g) {
+	inline void operator()(Kb_edge_t e, const KbGraph & g) {
 	  m_v[target(e, g)] = source(e,g);
 	}
-	Mcr_vertex_t *m_v;
+	Kb_vertex_t *m_v;
   };
 
 
-  bool Mcr::bfs (Mcr_vertex_t src, 
-				 std::vector<Mcr_vertex_t> & parents) const {
+  bool Kb::bfs (Kb_vertex_t src, 
+				 std::vector<Kb_vertex_t> & parents) const {
 
-	vector<Mcr_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
+	vector<Kb_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
   
 	breadth_first_search(g, 
 						 src,
 						 boost::visitor(boost::make_bfs_visitor
-										(boost::make_list(mcr_bfs_init(&parents[0]),
-														  mcr_bfs_pred(&parents[0])))));
+										(boost::make_list(kb_bfs_init(&parents[0]),
+														  kb_bfs_pred(&parents[0])))));
 	return true;
   }
 
 
-  bool Mcr::dijkstra (Mcr_vertex_t src, 
-					  std::vector<Mcr_vertex_t> & parents) const {
+  bool Kb::dijkstra (Kb_vertex_t src, 
+					  std::vector<Kb_vertex_t> & parents) const {
 
-	vector<Mcr_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
+	vector<Kb_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
 	vector<float> dist(num_vertices(g));
   
 	dijkstra_shortest_paths(g, 
@@ -154,30 +154,30 @@ namespace ukb {
   ////////////////////////////////////////////////////////////////////////////////
   // strings <-> vertex_id
 
-  pair<Mcr_vertex_t, bool> Mcr::get_vertex_by_name(const std::string & str) const {
-	map<string, Mcr_vertex_t>::const_iterator it;
+  pair<Kb_vertex_t, bool> Kb::get_vertex_by_name(const std::string & str) const {
+	map<string, Kb_vertex_t>::const_iterator it;
 
 	it = synsetMap.find(str);
 	if (it != synsetMap.end()) return make_pair(it->second, true);
 
 	// is it a word ?
 	it = wordMap.find(str);
-	if (it == wordMap.end()) return make_pair(Mcr_vertex_t(), false);
+	if (it == wordMap.end()) return make_pair(Kb_vertex_t(), false);
 	return make_pair(it->second, true);
   }
 
-  Mcr_vertex_t Mcr::InsertNode(const string & name, unsigned char flags) {
+  Kb_vertex_t Kb::InsertNode(const string & name, unsigned char flags) {
 	coef_status = 0; // reset out degree coefficients
-	Mcr_vertex_t u = add_vertex(g);
+	Kb_vertex_t u = add_vertex(g);
 	put(vertex_name, g, u, name);
 	put(vertex_flags, g, u, flags);
 	return u;
   }
 
-  Mcr_vertex_t Mcr::find_or_insert_synset(const string & str) {
-	map<string, Mcr_vertex_t>::iterator it;
+  Kb_vertex_t Kb::find_or_insert_synset(const string & str) {
+	map<string, Kb_vertex_t>::iterator it;
 	bool insertedP;
-	tie(it, insertedP) = synsetMap.insert(make_pair(str, Mcr_vertex_t()));
+	tie(it, insertedP) = synsetMap.insert(make_pair(str, Kb_vertex_t()));
 	if(insertedP) {
 	  // new vertex
 	  it->second = InsertNode(str, 0);
@@ -185,21 +185,21 @@ namespace ukb {
 	return it->second;
   }
 
-  Mcr_vertex_t Mcr::find_or_insert_word(const string & str) {
-	map<string, Mcr_vertex_t>::iterator it;
+  Kb_vertex_t Kb::find_or_insert_word(const string & str) {
+	map<string, Kb_vertex_t>::iterator it;
 	bool insertedP;
-	tie(it, insertedP) = wordMap.insert(make_pair(str, Mcr_vertex_t()));
+	tie(it, insertedP) = wordMap.insert(make_pair(str, Kb_vertex_t()));
 	if(insertedP) {
 	  // new vertex
-	  it->second = InsertNode(str, Mcr::is_word);
+	  it->second = InsertNode(str, Kb::is_word);
 	}
 	return it->second;
   }
 
-  Mcr_edge_t Mcr::find_or_insert_edge(Mcr_vertex_t u, Mcr_vertex_t v,
+  Kb_edge_t Kb::find_or_insert_edge(Kb_vertex_t u, Kb_vertex_t v,
 									  float w) {
 
-	Mcr_edge_t e;
+	Kb_edge_t e;
 	bool existsP;
 
 	//if (w != 1.0) ++w; // minimum weight is 1
@@ -234,14 +234,14 @@ namespace ukb {
 	return idx;
   }
 
-  void Mcr::edge_add_reltype(Mcr_edge_t e, const string & rel) {
+  void Kb::edge_add_reltype(Kb_edge_t e, const string & rel) {
 	boost::uint32_t m = get(edge_rtype, g, e);
 	vector<string>::size_type idx = get_reltype_idx(rel, rtypes);
 	m |= (1UL << idx);
 	put(edge_rtype, g, e, m);
   }
 
-  std::vector<std::string> Mcr::get_edge_reltypes(Mcr_edge_t e) const {
+  std::vector<std::string> Kb::get_edge_reltypes(Kb_edge_t e) const {
 	vector<string> res;
 	boost::uint32_t m = get(edge_rtype, g, e);
 	vector<string>::size_type idx = 0;
@@ -259,18 +259,18 @@ namespace ukb {
   ////////////////////////////////////////////////////////////////////////////////
   // Query
 
-  bool Mcr::vertex_is_synset(Mcr_vertex_t u) const {
+  bool Kb::vertex_is_synset(Kb_vertex_t u) const {
 	return !vertex_is_word(u);
   }
 
-  bool Mcr::vertex_is_word(Mcr_vertex_t u) const {
-	return (get(vertex_flags, g, u) & Mcr::is_word);
+  bool Kb::vertex_is_word(Kb_vertex_t u) const {
+	return (get(vertex_flags, g, u) & Kb::is_word);
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   // Random
 
-  Mcr_vertex_t Mcr::get_random_vertex() const {
+  Kb_vertex_t Kb::get_random_vertex() const {
 
 	int r = g_randTarget(num_vertices(g));
 
@@ -282,23 +282,23 @@ namespace ukb {
 
   // Read the actual KB file
 
-  void read_mcr_v1(ifstream & mcrFile, 
+  void read_kb_v1(ifstream & kbFile, 
 				   const set<string> & rels_source,
-				   Mcr * mcr) {
+				   Kb * kb) {
 	string line;
 	int line_number = 0;
 
 	set<string>::const_iterator srel_end = rels_source.end();
-	while(mcrFile) {
+	while(kbFile) {
 	  vector<string> fields;
-	  std::getline(mcrFile, line, '\n');
+	  std::getline(kbFile, line, '\n');
 	  line_number++;
 	  char_separator<char> sep(" ");
 	  tokenizer<char_separator<char> > tok(line, sep);
 	  copy(tok.begin(), tok.end(), back_inserter(fields));
 	  if (fields.size() == 0) continue; // blank line
 	  if (fields.size() < 4) {
-		throw runtime_error("read_mcr error: Bad line: " + lexical_cast<string>(line_number));
+		throw runtime_error("read_kb error: Bad line: " + lexical_cast<string>(line_number));
 	  }
 
 	  if (rels_source.find(fields[3]) == srel_end) continue; // Skip this relation
@@ -306,13 +306,13 @@ namespace ukb {
 	  // last element says if relation is directed
 	  bool directed = (fields.size() > 4 && lexical_cast<int>(fields[4]) != 0);
 
-	  Mcr_vertex_t u = mcr->find_or_insert_synset(fields[0]);
-	  Mcr_vertex_t v = mcr->find_or_insert_synset(fields[1]);
+	  Kb_vertex_t u = kb->find_or_insert_synset(fields[0]);
+	  Kb_vertex_t v = kb->find_or_insert_synset(fields[1]);
 
 	  // add edge
-	  mcr->find_or_insert_edge(u, v, 1.0);
+	  kb->find_or_insert_edge(u, v, 1.0);
 	  if (!directed)
-		mcr->find_or_insert_edge(v, u, 1.0);
+		kb->find_or_insert_edge(v, u, 1.0);
 	}
   }
 
@@ -325,7 +325,7 @@ namespace ukb {
   // v: target vertex. Mandatory.
   // t: relation type (hyperonym, meronym, etc) of edge u->v. Optional.
   // i: (inverse) relation type of edge v->u (hyponym, etc). Optional. Useless on undirected graphs.
-  // s: source of relation (wn30, mcr17, etc). Optional.
+  // s: source of relation (wn30, kb17, etc). Optional.
   // d: wether the relation is directed. Optional, default is undirected.
   // w: relation weigth. Must be positive.
 
@@ -394,36 +394,36 @@ namespace ukb {
 	return true;
   }
 
-  void read_mcr(ifstream & mcrFile, 
+  void read_kb(ifstream & kbFile, 
 				const set<string> & rels_source,
-				Mcr *mcr) {
+				Kb *kb) {
 	string line;
 	int line_number = 0;
 
 	set<string>::const_iterator srel_end = rels_source.end();
 	try {
-	  while(mcrFile) {
+	  while(kbFile) {
 		vector<string> fields;
-		std::getline(mcrFile, line, '\n');
+		std::getline(kbFile, line, '\n');
 		line_number++;
 		rel_parse f;
 		if (!parse_line(line, f)) continue;
 		if (glVars::kb::filter_src && f.src.size() && rels_source.find(f.src) == srel_end) continue; // Skip this relation
-		Mcr_vertex_t u = mcr->find_or_insert_synset(f.u);
-		Mcr_vertex_t v = mcr->find_or_insert_synset(f.v);
+		Kb_vertex_t u = kb->find_or_insert_synset(f.u);
+		Kb_vertex_t v = kb->find_or_insert_synset(f.v);
 		float w = f.w ? f.w : 1.0;
 		// add edge
-		Mcr_edge_t e1 = mcr->find_or_insert_edge(u, v, w);
+		Kb_edge_t e1 = kb->find_or_insert_edge(u, v, w);
 		// relation type
 		if (glVars::kb::keep_reltypes && f.rtype.size()) {
-		  mcr->edge_add_reltype(e1, f.rtype);
+		  kb->edge_add_reltype(e1, f.rtype);
 		}
 		if (!f.directed) {
-		  Mcr_edge_t e2 = mcr->find_or_insert_edge(v, u, w);
+		  Kb_edge_t e2 = kb->find_or_insert_edge(v, u, w);
 		  if(glVars::kb::keep_reltypes && f.rtype.size()) {
 			string aux = f.irtype.size() ? f.irtype : f.rtype;
 			if(aux.size()) {
-			  mcr->edge_add_reltype(e2, aux);
+			  kb->edge_add_reltype(e2, aux);
 			}
 		  }
 		}	  
@@ -433,31 +433,31 @@ namespace ukb {
 	}
   }
 
-  void Mcr::read_from_txt(const string & synsFileName) {
+  void Kb::read_from_txt(const string & synsFileName) {
 
 	// optimize IO
 	std::ios::sync_with_stdio(false);
 
 	std::ifstream syns_file(synsFileName.c_str(), ofstream::in);
 	if (!syns_file) {
-	  throw runtime_error("Mcr::read_from_txt error: Can't open " + synsFileName);
+	  throw runtime_error("Kb::read_from_txt error: Can't open " + synsFileName);
 	}
 	if(glVars::kb::v1_kb) {
-	  read_mcr_v1(syns_file, relsSource, this);
+	  read_kb_v1(syns_file, relsSource, this);
 	} else {
-	  read_mcr(syns_file, relsSource, this);  
+	  read_kb(syns_file, relsSource, this);  
 	}
   }
 
   ////////////////////////////////////////////////7
   // public function
 
-  void Mcr::add_from_txt(const std::string & synsFileName) {
+  void Kb::add_from_txt(const std::string & synsFileName) {
 
-	Mcr::instance().read_from_txt(synsFileName);
+	Kb::instance().read_from_txt(synsFileName);
   }
 
-  void Mcr::display_info(std::ostream & o) const {
+  void Kb::display_info(std::ostream & o) const {
 
 	o << "Relation sources: ";
 	writeS(o, relsSource);
@@ -480,14 +480,14 @@ namespace ukb {
   // Add token vertices and link them to synsets
 
 
-  typedef pair<Mcr_vertex_t, float> Syn_elem;
+  typedef pair<Kb_vertex_t, float> Syn_elem;
 
   void create_w2wpos_maps(const string & word,
 						  vector<string> & wPosV,
 						  map<string, vector<Syn_elem> > & wPos2Syns) {
   
 	bool auxP;
-	const Mcr & mcr = Mcr::instance();
+	const Kb & kb = Kb::instance();
 
 	WDict_entries syns = WDict::instance().get_entries(word);
 
@@ -501,11 +501,11 @@ namespace ukb {
 		*sit = syns.get_pos(i); // the pos
 	  }
 
-	  Mcr_vertex_t u;
-	  tie(u, auxP) = mcr.get_vertex_by_name(syns.get_entry(i));
+	  Kb_vertex_t u;
+	  tie(u, auxP) = kb.get_vertex_by_name(syns.get_entry(i));
 	  if(!auxP) {
 		if (glVars::debug::warning) 
-		  cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
+		  cerr << "W:Kb::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
 		continue;
 	  }
     
@@ -525,26 +525,26 @@ namespace ukb {
 				   map<string, vector<Syn_elem> > & wPos2Syns,
 				   bool use_weights) {
 
-	Mcr & mcr = Mcr::instance();
+	Kb & kb = Kb::instance();
 
 	// insert word
-	Mcr_vertex_t word_v = mcr.find_or_insert_word(word); 
+	Kb_vertex_t word_v = kb.find_or_insert_word(word); 
 
 	vector<string>::iterator wpos_str_it = wPosV.begin();
 	vector<string>::iterator wpos_str_end = wPosV.end();
 	for (; wpos_str_it != wpos_str_end; ++wpos_str_it) {
 	  //insert word#pos
-	  Mcr_vertex_t wpos_v = mcr.find_or_insert_word(*wpos_str_it);
+	  Kb_vertex_t wpos_v = kb.find_or_insert_word(*wpos_str_it);
 	  // link word to word#pos
-	  mcr.find_or_insert_edge(word_v, wpos_v, 1.0);
+	  kb.find_or_insert_edge(word_v, wpos_v, 1.0);
 	  // link word#pos to synsets
 	  vector<Syn_elem>::const_iterator syns_it = wPos2Syns[*wpos_str_it].begin();
 	  vector<Syn_elem>::const_iterator syns_end = wPos2Syns[*wpos_str_it].end();
 	  for(;syns_it != syns_end; ++syns_it) {
 		if (use_weights) {
-		  mcr.find_or_insert_edge(wpos_v, syns_it->first, syns_it->second);
+		  kb.find_or_insert_edge(wpos_v, syns_it->first, syns_it->second);
 		} else {
-		  mcr.find_or_insert_edge(wpos_v, syns_it->first, 1.0);
+		  kb.find_or_insert_edge(wpos_v, syns_it->first, 1.0);
 		}
 	  }
 	}
@@ -552,29 +552,29 @@ namespace ukb {
 
   void insert_word(const string & word, bool use_w) {
 
-	Mcr & mcr = Mcr::instance();
+	Kb & kb = Kb::instance();
 
 	WDict_entries syns = WDict::instance().get_entries(word);
 
 	if (!syns.size()) return;
   
-	Mcr_vertex_t u = mcr.find_or_insert_word(word);
+	Kb_vertex_t u = kb.find_or_insert_word(word);
   
 	for(size_t i = 0; i < syns.size(); ++i) {
 	  bool auxP;
-	  Mcr_vertex_t v;
-	  tie(v, auxP) = mcr.get_vertex_by_name(syns.get_entry(i));
+	  Kb_vertex_t v;
+	  tie(v, auxP) = kb.get_vertex_by_name(syns.get_entry(i));
 	  if(!auxP) {
 		if (glVars::debug::warning) 
-		  cerr << "W:Mcr::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
+		  cerr << "W:Kb::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
 		continue;
 	  }
 	  // (directed) link word -> concept
-	  mcr.find_or_insert_edge(u, v, 1.0);
+	  kb.find_or_insert_edge(u, v, 1.0);
 	}
   }
 
-  void Mcr::add_dictionary(bool with_weight) {
+  void Kb::add_dictionary(bool with_weight) {
 
 	WDict & w2syn = WDict::instance();
 
@@ -587,7 +587,7 @@ namespace ukb {
   }
 
 
-  void Mcr::add_token(const string & token, bool with_weight) {
+  void Kb::add_token(const string & token, bool with_weight) {
 
 	vector<string> wPosV;
 	map<string, vector<Syn_elem> > wPos2Syns;
@@ -604,9 +604,9 @@ namespace ukb {
 	}
   }
 
-  void Mcr::ppv_weights(const vector<float> & ppv) {
+  void Kb::ppv_weights(const vector<float> & ppv) {
 
-	graph_traits<McrGraph>::edge_iterator it, end;
+	graph_traits<KbGraph>::edge_iterator it, end;
 
 	tie(it, end) = edges(g);
 	for(; it != end; ++it) {
@@ -621,7 +621,7 @@ namespace ukb {
 
   // PPV version
 
-  void Mcr::pageRank_ppv(const vector<float> & ppv_map,
+  void Kb::pageRank_ppv(const vector<float> & ppv_map,
 						 vector<float> & ranks,
 						 bool use_weight) {
 
@@ -631,14 +631,14 @@ namespace ukb {
 
 	// ugly ugly hack @@CHANGE ME !!!
 
-	vector<Mcr_vertex_t> V(N);
+	vector<Kb_vertex_t> V(N);
 
-	graph_traits<McrGraph>::vertex_iterator it, end;
+	graph_traits<KbGraph>::vertex_iterator it, end;
 	tie(it, end) = vertices(g);
 	copy(it, end, V.begin());
 
 	if (use_weight) {
-	  property_map<Mcr::boost_graph_t, edge_weight_t>::type weight_map = get(edge_weight, g);
+	  property_map<Kb::boost_graph_t, edge_weight_t>::type weight_map = get(edge_weight, g);
 	  if(coef_status != 2) {
 		vector<float>(num_vertices(g), 0.0f).swap(out_coefs);
 		prank::init_out_coefs(g, V, &out_coefs[0], weight_map);
@@ -649,7 +649,7 @@ namespace ukb {
 						 glVars::prank::num_iterations,
 						 out_coefs);
 	} else {
-	  typedef graph_traits<McrGraph>::edge_descriptor edge_descriptor;
+	  typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
 	  prank::constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
 	  if(coef_status != 1) {
 		vector<float>(num_vertices(g), 0.0f).swap(out_coefs);
@@ -666,15 +666,15 @@ namespace ukb {
   ////////////////////////////////////////////////////////////////////////////////
   // Debug
 
-  ostream & Mcr::dump_graph(std::ostream & o) const {
+  ostream & Kb::dump_graph(std::ostream & o) const {
 	o << "Sources: ";
 	writeS(o, relsSource);
 	o << endl;
-	graph_traits<McrGraph>::vertex_iterator it, end;
+	graph_traits<KbGraph>::vertex_iterator it, end;
 	tie(it, end) = vertices(g);
 	for(;it != end; ++it) {
 	  o << get(vertex_name, g, *it);
-	  graph_traits<McrGraph>::out_edge_iterator e, e_end;
+	  graph_traits<KbGraph>::out_edge_iterator e, e_end;
 	  tie(e, e_end) = out_edges(*it, g);
 	  if (e != e_end)
 		o << "\n";
@@ -696,27 +696,27 @@ namespace ukb {
 
   // read
 
-  Mcr_vertex_t read_vertex_from_stream_v1(ifstream & is, 
-										  McrGraph & g) {
+  Kb_vertex_t read_vertex_from_stream_v1(ifstream & is, 
+										  KbGraph & g) {
 
 	string name;
 
 	read_atom_from_stream(is, name);
-	Mcr_vertex_t v = add_vertex(g);
+	Kb_vertex_t v = add_vertex(g);
 	put(vertex_name, g, v, name);
 	put(vertex_flags, g, v, 0);
 	return v;
   }
 
-  Mcr_edge_t read_edge_from_stream_v1(ifstream & is,
-									  McrGraph & g) {
+  Kb_edge_t read_edge_from_stream_v1(ifstream & is,
+									  KbGraph & g) {
 
 	size_t sIdx;
 	size_t tIdx; 
 	float w = 0.0;
 	//size_t source;
 	bool insertedP;
-	Mcr_edge_t e;
+	Kb_edge_t e;
 
 	read_atom_from_stream(is, sIdx);
 	read_atom_from_stream(is, tIdx);
@@ -731,29 +731,29 @@ namespace ukb {
 	return e;
   }
 
-  Mcr_vertex_t read_vertex_from_stream(ifstream & is, 
-									   McrGraph & g) {
+  Kb_vertex_t read_vertex_from_stream(ifstream & is, 
+									   KbGraph & g) {
 
 	string name;
 	string gloss;
 
 	read_atom_from_stream(is, name);
 	read_atom_from_stream(is, gloss);
-	Mcr_vertex_t v = add_vertex(g);
+	Kb_vertex_t v = add_vertex(g);
 	put(vertex_name, g, v, name);
 	put(vertex_flags, g, v, 0);
 	return v;
   }
 
-  Mcr_edge_t read_edge_from_stream(ifstream & is,
-								   McrGraph & g) {
+  Kb_edge_t read_edge_from_stream(ifstream & is,
+								   KbGraph & g) {
 
 	size_t sIdx;
 	size_t tIdx; 
 	float w = 0.0;
 	boost::uint32_t rtype;
 	bool insertedP;
-	Mcr_edge_t e;
+	Kb_edge_t e;
 
 	read_atom_from_stream(is, sIdx);
 	read_atom_from_stream(is, tIdx);
@@ -768,7 +768,7 @@ namespace ukb {
 	return e;
   }
 
-  void  Mcr::read_from_stream (std::ifstream & is) {
+  void  Kb::read_from_stream (std::ifstream & is) {
 
 	size_t vertex_n;
 	size_t edge_n;
@@ -819,7 +819,7 @@ namespace ukb {
 	  }
 	  read_vector_from_stream(is, notes);
 	  if(id != magic_id_v1) {
-		cerr << "Error: invalid id (filename is a mcrGraph?)" << endl;
+		cerr << "Error: invalid id (filename is a kbGraph?)" << endl;
 		exit(-1);
 	  }
 	} else {
@@ -859,24 +859,24 @@ namespace ukb {
 	  }
 	  read_vector_from_stream(is, notes);
 	  if(id != magic_id) {
-		cerr << "Error: invalid id (filename is a mcrGraph?)" << endl;
+		cerr << "Error: invalid id (filename is a kbGraph?)" << endl;
 		exit(-1);	
 	  }
 	}
 
-	map<string, Mcr_vertex_t>::iterator m_it(wordMap.begin());
-	map<string, Mcr_vertex_t>::iterator m_end(wordMap.end());
+	map<string, Kb_vertex_t>::iterator m_it(wordMap.begin());
+	map<string, Kb_vertex_t>::iterator m_end(wordMap.end());
 	for(; m_it != m_end; ++m_it) {
 	  put(vertex_flags, g, m_it->second, 
-		  get(vertex_flags, g, m_it->second) || Mcr::is_word);
+		  get(vertex_flags, g, m_it->second) || Kb::is_word);
 	}
   }
 
   // write
 
   ofstream & write_vertex_to_stream(ofstream & o,
-									const McrGraph & g,
-									const Mcr_vertex_t & v) {
+									const KbGraph & g,
+									const Kb_vertex_t & v) {
 	string name;
 
 	write_atom_to_stream(o, get(vertex_name, g, v));
@@ -885,8 +885,8 @@ namespace ukb {
   }
 
   ofstream & write_edge_to_stream(ofstream & o,
-								  const McrGraph & g,
-								  const Mcr_edge_t & e) {
+								  const KbGraph & g,
+								  const Kb_edge_t & e) {
 
 	size_t uIdx = get(vertex_index, g, source(e,g));
 	size_t vIdx = get(vertex_index, g, target(e,g));
@@ -900,7 +900,7 @@ namespace ukb {
 	return o;
   }
 
-  ofstream & Mcr::write_to_stream(ofstream & o) const {
+  ofstream & Kb::write_to_stream(ofstream & o) const {
 
 	// First write maps
 
@@ -918,7 +918,7 @@ namespace ukb {
 	size_t vertex_n = num_vertices(g);
 
 	write_atom_to_stream(o, vertex_n);
-	graph_traits<McrGraph>::vertex_iterator v_it, v_end;
+	graph_traits<KbGraph>::vertex_iterator v_it, v_end;
 
 	tie(v_it, v_end) = vertices(g);
 	for(; v_it != v_end; ++v_it) {
@@ -930,7 +930,7 @@ namespace ukb {
 	size_t edge_n = num_edges(g);
 
 	write_atom_to_stream(o, edge_n);
-	graph_traits<McrGraph>::edge_iterator e_it, e_end;
+	graph_traits<KbGraph>::edge_iterator e_it, e_end;
 
 	tie(e_it, e_end) = edges(g);
 	for(; e_it != e_end; ++e_it) {
@@ -941,7 +941,7 @@ namespace ukb {
 	return o;
   }
 
-  void Mcr::write_to_binfile (const string & fName) const {
+  void Kb::write_to_binfile (const string & fName) const {
 
 	ofstream fo(fName.c_str(),  ofstream::binary|ofstream::out);
 	if (!fo) {
