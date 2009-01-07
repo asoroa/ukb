@@ -35,7 +35,7 @@ static int filter_nodes = 0; // 0 -> no filter
 
 
 void read_skip_relations (const string & file,
-			  set<string> & skip_rels) {
+						  set<string> & skip_rels) {
 
   const string delims(" \t");
   ifstream fi(file.c_str(), ifstream::binary|ifstream::in);
@@ -50,10 +50,6 @@ void read_skip_relations (const string & file,
     for(vector<string>::iterator it = rels.begin(); it != rels.end(); ++it)
       skip_rels.insert(*it);
   }
-}
-
-void add_words_to_kb() {
-
 }
 
 void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weight) {
@@ -73,7 +69,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
   vector<CSentence> vcs;
   CSentence cs;
 
-  // add words and word#pos into Kb
+  // add words into Kb
 
   if (glVars::verbose) 
     cerr << "Adding words to Kb ...";
@@ -91,7 +87,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
       // Initialize rank vector
       vector<float> ranks;
 
-      bool ok = calculate_kb_hr(cs,ranks, weight);
+      bool ok = calculate_kb_ppr(cs,ranks, weight);
       if (!ok) {
 		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 		continue;
@@ -128,7 +124,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
 		break;
       case 2: // only synsets
 		if (glVars::verbose) 
-		  cerr << ranks.size() << "\n";
+		  cerr << ranks.size() << " synsets\n";
 		for(size_t i=0; i < ranks.size(); ++i) {
 		  if (kb.vertex_is_synset(i)) {
 			filter_ranks.push_back(ranks[i]);
@@ -162,42 +158,55 @@ int main(int argc, char *argv[]) {
 
   timer load;
 
-  bool opt_param = false;
   bool opt_with_w = false;
 
   string kb_binfile(kb_default_binfile);
 
-  string out_dir;
+  string out_dir(".");
   string fullname_in;
 
-  const char desc_header[] = "Usage:\n"
-    "ukb_sentences context_file.txt\n"
+  const char desc_header[] = "ukb_sim: perform similarity with KB based algorithm\n"
+	"Usage examples:\n"
+    "ukb_sim -K kb.bin -D dict.txt -O outdir input.txt\n"
     "  Creates one file per sentence (.ppv extension) with the vector of the sentence"
-    "Options:";
+    "Options";
   
   using namespace boost::program_options;
 
-  options_description po_desc(desc_header);
+  options_description po_desc("General options:");
 
   po_desc.add_options()
     ("help,h", "This help page.")
-    ("kb_binfile,M", value<string>(), "Binary file of KB (see create_kbbin). Default is kb_wnet.bin")
-    ("out_dir,O", value<string>(), "Directory for leaving output files.")
-    ("only_words", "Output only (normalized) PPVs for words.")
-    ("only_synsets", "Output only (normalized) PPVs for synsets.")
+    ("kb_binfile,K", value<string>(), "Binary file of KB (see create_kbbin). Default is kb_wnet.bin")
+    ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
+    ("out_dir,O", value<string>(), "Directory for leaving output PPV files.")
     ("word_weight", "Use weights on words (init values of PPV). Input must have 5 fields, the last one being the weight.")
-    ("ppr_weight", "Use weights on PageRank.")
-    ("dict_file,W", value<string>(), "Word to synset map file (default is ../Data/Preproc/wn1.6_index.sense_freq).")
-    ("param,p", value<string>(), "Specify parameter file.")
     ("verbose,v", "Be verbose.")
     ;
-  options_description po_desc_hide("Hidden");
-  po_desc_hide.add_options()
+
+  options_description po_desc_prank("pageRank general options");
+  po_desc_prank.add_options()
+    ("with_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
+    ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
+    ;
+
+  options_description po_desc_output("Output options");
+  po_desc_output.add_options()
+    ("only_words", "Output only (normalized) PPVs for words.")
+    ("only_synsets", "Output only (normalized) PPVs for synsets.")
+    ;
+
+  options_description po_hidden("Hidden");
+  po_hidden.add_options()
     ("input-file",value<string>(), "Input file.")
     ("output-file",value<string>(), "Output file.")
     ;
+
+  options_description po_visible(desc_header);
+  po_visible.add(po_desc).add(po_desc_prank).add(po_desc_output);
+
   options_description po_desc_all("All options");
-  po_desc_all.add(po_desc).add(po_desc_hide);
+  po_desc_all.add(po_visible).add(po_hidden);
   
   positional_options_description po_optdesc;
   po_optdesc.add("input-file", 1);
@@ -214,7 +223,7 @@ int main(int argc, char *argv[]) {
     // If asked for help, don't do anything more
 
     if (vm.count("help")) {
-      cout << po_desc << endl;
+      cout << po_visible << endl;
       exit(0);
     }
 
@@ -224,15 +233,8 @@ int main(int argc, char *argv[]) {
       glVars::verbose = 1;
     }
 
-    // Config params first, so that they can be overriden by switch options
-
     if (vm.count("kb_binfile")) {
       kb_binfile = vm["kb_binfile"].as<string>();
-    }
-
-    if (vm.count("param")) {
-      parse_config(vm["param"].as<string>());
-      opt_param = true;
     }
 
     if (vm.count("only_words")) {
@@ -247,13 +249,16 @@ int main(int argc, char *argv[]) {
       out_dir = vm["out_dir"].as<string>();
     }
 
-
     if (vm.count("dict_file")) {
       glVars::dict_filename = vm["dict_file"].as<string>();
     }
 
-    if (vm.count("ppr_weights")) {
+    if (vm.count("with_weight")) {
       opt_with_w = true;
+    }
+
+    if (vm.count("prank_iter")) {
+      glVars::prank::num_iterations = vm["prank_iter"].as<size_t>();
     }
 
     if (vm.count("word_weight")) {
@@ -271,7 +276,7 @@ int main(int argc, char *argv[]) {
   }
 
   if(fullname_in.size() == 0) {
-    cout << po_desc << endl;
+    cout << po_visible << endl;
     return 1;
   }
 

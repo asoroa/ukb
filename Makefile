@@ -1,7 +1,7 @@
 
 # The source file where the main() function is
 
-SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc ukb_sentences.cc
+SRCS = ukb_wsd.cc create_mcrbin.cc create_cograph.cc ukb_sim.cc
 #SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc ukb_sentences.cc
 #SRCS = ukb_aw.cc create_mcrbin.cc create_cograph.cc
 
