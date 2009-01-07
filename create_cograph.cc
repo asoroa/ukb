@@ -2,7 +2,6 @@
 #include "globalVars.h"
 #include "fileElem.h"
 #include "coocGraph.h"
-#include "coocGraph2.h"
 #include "hlex_agtree.h"
 
 #include <string>
