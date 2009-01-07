@@ -3,7 +3,6 @@
 #include "fileElem.h"
 #include "globalVars.h"
 #include "mcrGraph.h"
-#include "kGraph.h"
 #include "disambGraph.h"
 #include <string>
 #include <iostream>
@@ -62,8 +61,7 @@ void option_dependency(const boost::program_options::variables_map& vm,
 //Main program
 
 void create_dgraphs_from_corpus(string & fullname_in,
-								const string & out_dir,
-								bool opt_create_kgraph = false) {
+								const string & out_dir) {
 
   File_elem fout(fullname_in, out_dir, ".dgraph");
   ifstream fh_in(fullname_in.c_str());
@@ -85,11 +83,6 @@ void create_dgraphs_from_corpus(string & fullname_in,
       dgraph.write_to_binfile(fout.get_fname());
       fout.ext = ".csent";
       cs.write_to_binfile(fout.get_fname());
-      if (opt_create_kgraph) {
-		fout.ext="kgraph";
-		KGraph kg(cs, dgraph);
-		kg.write_to_binfile(fout.get_fname());
-      }
       cs = CSentence();
     }
   } 
@@ -178,28 +171,6 @@ void create_wgraph_from_corpus (const string & fullname_in,
     cerr << "Error reading " << fullname_in << ":" << e << "\n";
     throw(e);    
   }
-}
-
-void create_kgraph(string & cs_fname,
-				   const string & out_dir) {
-
-  File_elem cs_fe(cs_fname);
-  File_elem dg_fe(cs_fe.fname, cs_fe.path, ".dgraph");
-  CSentence cs;
-  cs.read_from_binfile(cs_fe.get_fname());
-  DisambGraph dg;
-  dg.read_from_binfile(dg_fe.get_fname());
-
-  File_elem kg_fe(cs_fe.fname, cs_fe.path, ".kgraph");
-  kg_fe.set_path(out_dir);
-  KGraph kg(cs, dg);
-  kg.write_to_binfile(kg_fe.get_fname());
-  pageRank_disg(kg.graph());
-  disamb_csentence(cs, kg);
-  cs.print_csent_aw(cout);
-
-  kg_fe.ext = ".dot";
-  write_dgraph_graphviz(kg_fe.get_fname(), kg.graph());
 }
 
 
@@ -643,11 +614,9 @@ int main(int argc, char *argv[]) {
 
   bool opt_create_dgraph = false;
   bool opt_disamb_dgraph = false;
-  bool opt_create_kgraph = false;
   bool opt_create_wdgraph = false;
   //bool opt_eval_dgraph = false;
   bool opt_disamb_csent_dgraph = false;
-  bool opt_disamb_csent_kgraph = false;
   bool opt_disamb_csent_wdgraph = false;
   bool opt_do_gviz = false;
   bool opt_do_hr = false;
@@ -717,12 +686,6 @@ int main(int argc, char *argv[]) {
     ("2pass", "Use ranks of 1st pass to PPV and pageRank again.")
     ;
   
-  options_description po_desc_kgraph("KGraph options");
-  po_desc_kgraph.add_options()
-    ("create_kgraph", "Create kgraph binary file given one csentence (dgraph must have same name and be in same directory)")
-    ("dis_csent_kgraph", "Disambiguate csentence and output result. A kgraph with same id must be in the directory.")
-    ;
-  
   options_description po_desc_wdgraph("WDgraph options");
   po_desc_wdgraph.add_options()
     ("create_wdgraph", "Create wdgraph binary file(s), one per context, with extension .wdgraph")
@@ -730,7 +693,7 @@ int main(int argc, char *argv[]) {
     ;
   
   options_description po_visible;
-  po_visible.add(po_desc).add(po_desc_prank).add(po_desc_hr).add(po_desc_kgraph).add(po_desc_wdgraph);
+  po_visible.add(po_desc).add(po_desc_prank).add(po_desc_hr).add(po_desc_wdgraph);
   
   options_description po_hidden("Hidden");
   po_hidden.add_options()
@@ -785,10 +748,6 @@ int main(int argc, char *argv[]) {
       opt_create_dgraph = true;
     }
 
-    if (vm.count("create_kgraph")) {
-      opt_create_kgraph = true;
-    }
-
     if (vm.count("create_wdgraph")) {
       opt_create_wdgraph = true;
     }
@@ -804,10 +763,6 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("graphviz")) {
       opt_do_gviz = true;
-    }
-
-    if (vm.count("dis_csent_kgraph")) {
-      opt_disamb_csent_kgraph = true;
     }
 
     if (vm.count("dis_csent_wdgraph")) {
@@ -895,11 +850,6 @@ int main(int argc, char *argv[]) {
 
   timer tick;
 
-  if(opt_create_kgraph ) {
-    create_kgraph(fullname_in, out_dir);
-    goto END;
-  }
-
   if(opt_create_wdgraph ) {
     Mcr::create_from_binfile(mcr_binfile);
     create_wgraph_from_corpus(fullname_in, out_dir);
@@ -908,7 +858,7 @@ int main(int argc, char *argv[]) {
   
   if(opt_create_dgraph) {
     Mcr::create_from_binfile(mcr_binfile);
-    create_dgraphs_from_corpus(fullname_in, out_dir, opt_create_kgraph);
+    create_dgraphs_from_corpus(fullname_in, out_dir);
     goto END;
   }
 
@@ -964,7 +914,7 @@ int main(int argc, char *argv[]) {
   }
 
 
-  if (opt_disamb_csent_dgraph || opt_disamb_csent_kgraph || opt_disamb_csent_wdgraph) {
+  if (opt_disamb_csent_dgraph ||  opt_disamb_csent_wdgraph) {
     
     input_files = extract_input_files(fullname_in, "csent");
 
@@ -983,9 +933,6 @@ int main(int argc, char *argv[]) {
       dis_csent<DisambGraph>(input_files, ".wdgraph", opt_with_w, opt_out_semcor);
     }
 
-    if(opt_disamb_csent_kgraph) {
-      dis_csent<KGraph>(input_files, ".kgraph", opt_with_w, opt_out_semcor);
-    }
   }
 
   if (opt_do_test) {
