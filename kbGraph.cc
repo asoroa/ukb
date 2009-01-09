@@ -65,12 +65,11 @@ namespace ukb {
   }
 
   void Kb::create_from_txt(const string & synsFileName,
-							const std::set<std::string> & rels_source) {
+							const std::set<std::string> & src_allowed) {
 	if (p_instance) return;
 	Kb *tenp = create();
 
-	tenp->relsSource = rels_source;
-	tenp->read_from_txt(synsFileName);
+	tenp->read_from_txt(synsFileName, src_allowed);
 	p_instance = tenp;
   }
 
@@ -283,12 +282,12 @@ namespace ukb {
   // Read the actual KB file
 
   void read_kb_v1(ifstream & kbFile, 
-				   const set<string> & rels_source,
-				   Kb * kb) {
+				  const set<string> & src_allowed,
+				  Kb * kb) {
 	string line;
 	int line_number = 0;
 
-	set<string>::const_iterator srel_end = rels_source.end();
+	set<string>::const_iterator srel_end = src_allowed.end();
 	while(kbFile) {
 	  vector<string> fields;
 	  std::getline(kbFile, line, '\n');
@@ -301,7 +300,11 @@ namespace ukb {
 		throw runtime_error("read_kb error: Bad line: " + lexical_cast<string>(line_number));
 	  }
 
-	  if (rels_source.find(fields[3]) == srel_end) continue; // Skip this relation
+	  if (glVars::kb::filter_src) {
+		if (src_allowed.find(fields[3]) == srel_end) continue; // Skip this relation
+	  } 
+
+	  kb->add_relSource(fields[3]);
 
 	  // last element says if relation is directed
 	  bool directed = (fields.size() > 4 && lexical_cast<int>(fields[4]) != 0);
@@ -395,12 +398,12 @@ namespace ukb {
   }
 
   void read_kb(ifstream & kbFile, 
-				const set<string> & rels_source,
-				Kb *kb) {
+			   const set<string> & src_allowed,
+			   Kb *kb) {
 	string line;
 	int line_number = 0;
 
-	set<string>::const_iterator srel_end = rels_source.end();
+	set<string>::const_iterator srel_end = src_allowed.end();
 	try {
 	  while(kbFile) {
 		vector<string> fields;
@@ -408,7 +411,12 @@ namespace ukb {
 		line_number++;
 		rel_parse f;
 		if (!parse_line(line, f)) continue;
-		if (glVars::kb::filter_src && f.src.size() && rels_source.find(f.src) == srel_end) continue; // Skip this relation
+		
+		if (glVars::kb::filter_src) {
+		  if (src_allowed.find(f.src) == srel_end) continue; // Skip this relation
+		}
+		kb->add_relSource(f.src);
+
 		Kb_vertex_t u = kb->find_or_insert_synset(f.u);
 		Kb_vertex_t v = kb->find_or_insert_synset(f.v);
 		float w = f.w ? f.w : 1.0;
@@ -433,7 +441,8 @@ namespace ukb {
 	}
   }
 
-  void Kb::read_from_txt(const string & synsFileName) {
+  void Kb::read_from_txt(const string & synsFileName,
+						 const set<string> & src_allowed) {
 
 	// optimize IO
 	std::ios::sync_with_stdio(false);
@@ -443,18 +452,19 @@ namespace ukb {
 	  throw runtime_error("Kb::read_from_txt error: Can't open " + synsFileName);
 	}
 	if(glVars::kb::v1_kb) {
-	  read_kb_v1(syns_file, relsSource, this);
+	  read_kb_v1(syns_file, src_allowed, this);
 	} else {
-	  read_kb(syns_file, relsSource, this);  
+	  read_kb(syns_file, src_allowed, this);  
 	}
   }
 
   ////////////////////////////////////////////////7
   // public function
 
-  void Kb::add_from_txt(const std::string & synsFileName) {
+  void Kb::add_from_txt(const std::string & synsFileName,
+						const set<string> & src_allowed) {
 
-	Kb::instance().read_from_txt(synsFileName);
+	Kb::instance().read_from_txt(synsFileName, src_allowed);
   }
 
   void Kb::display_info(std::ostream & o) const {

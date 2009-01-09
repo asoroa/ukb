@@ -104,12 +104,13 @@ public:
   // add_from_txt
   // add relations from synsFile to the graph
 
-  void add_from_txt(const std::string & synsFile); // Add a textfile with relations btw. synsets
+  void add_from_txt(const std::string & synsFile, 
+					const std::set<std::string> & rels_source);
 
   // add_relSource
   // add a new relation source
 
-  void add_relSource(const std::string & str) { relsSource.insert(str); }
+  void add_relSource(const std::string & str) { if (str.size()) relsSource.insert(str); }
 
   // Add tokens and link them to their synsets, according to the dictionary.
   // Note: the words are linked to nodes by _directed_ edges
@@ -193,7 +194,8 @@ private:
 
   Kb_vertex_t InsertNode(const std::string & name, unsigned char flags);
 
-  void read_from_txt(const std::string & relFile);
+  void read_from_txt(const std::string & relFile,
+					 const std::set<std::string> & rels_source);
 
   void read_from_stream (std::ifstream & o);
   std::ofstream & write_to_stream(std::ofstream & o) const;
