@@ -191,6 +191,9 @@ namespace ukb {
 	//return WDict_entries(m_wdicts[&word]);
   }
 
+
+
+
   std::pair<vector<std::string>::const_iterator, vector<std::string>::const_iterator>
   WDict::get_wsyns(const std::string & word) const {
 	vector<string>::const_iterator null_it;
@@ -241,6 +244,12 @@ namespace ukb {
 	if (idx == string::npos) return 0;
 	if (idx == _item.wsyns[i].length() - 1) return 0;
 	return _item.wsyns[i].at(idx + 1);
+  }
+
+  float WDict_entries::get_freq(size_t i) const { 
+	if (_item.has_freq) 
+	  return _item.syns_count[i];
+	return 0.0f;
   }
 
 }

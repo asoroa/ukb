@@ -33,7 +33,7 @@ namespace ukb {
 
 	size_t size() const { return _item.wsyns.size(); }
 	const std::string & get_entry(size_t i) const { return _item.wsyns[i]; }
-	float get_freq(size_t i) const { return _item.syns_count[i]; }
+	float get_freq(size_t i) const;
 	char get_pos(size_t i) const;
   };
 
