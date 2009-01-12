@@ -33,25 +33,6 @@ static int filter_nodes = 0; // 0 -> no filter
                              // 1 -> only words
                              // 2 -> only synsets
 
-
-void read_skip_relations (const string & file,
-						  set<string> & skip_rels) {
-
-  const string delims(" \t");
-  ifstream fi(file.c_str(), ifstream::binary|ifstream::in);
-  if (!fi) {
-    cerr << "Error: can't open " << file << endl;
-    exit(-1);
-  }
-  string line;
-  while(fi) {
-    getline(fi, line);
-    vector<string> rels = split(line, delims);
-    for(vector<string>::iterator it = rels.begin(); it != rels.end(); ++it)
-      skip_rels.insert(*it);
-  }
-}
-
 void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weight) {
 
   Kb & kb = Kb::instance();
@@ -165,10 +146,10 @@ int main(int argc, char *argv[]) {
   string out_dir(".");
   string fullname_in;
 
-  const char desc_header[] = "ukb_sim: perform similarity with KB based algorithm\n"
+  const char desc_header[] = "ukb_ppv: get personalized PageRank vector if a KB\n"
 	"Usage examples:\n"
-    "ukb_sim -K kb.bin -D dict.txt -O outdir input.txt\n"
-    "  Creates one file per sentence (.ppv extension) with the vector of the sentence"
+    "ukb_ppv -K kb.bin -D dict.txt -O outdir input.txt\n"
+    "  Creates one file per sentence (.ppv extension) with the vector of the PPV vector given the input sentence"
     "Options";
   
   using namespace boost::program_options;
@@ -177,7 +158,7 @@ int main(int argc, char *argv[]) {
 
   po_desc.add_options()
     ("help,h", "This help page.")
-    ("kb_binfile,K", value<string>(), "Binary file of KB (see create_kbbin). Default is kb_wnet.bin")
+    ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin")
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files.")
     ("word_weight", "Use weights on words (init values of PPV). Input must have 5 fields, the last one being the weight.")
