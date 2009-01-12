@@ -16,10 +16,6 @@
 
 #include <boost/program_options.hpp>
 
-// timer
-
-#include <boost/timer.hpp>
-
 using namespace ukb;
 using namespace std;
 using namespace boost;
@@ -82,7 +78,7 @@ void disamb_dgraph_from_corpus(string & fullname_in,
 	  pageRank_disg(dgraph.graph(), with_weight);
 	  disamb_csentence(cs, dgraph);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_aw(cout);
+      else cs.print_csent_simple(cout);
       cs = CSentence();
     }
   } 
@@ -133,7 +129,7 @@ void dis_csent_ppr(const string & input_file,
 		disamb_csentence_kb(cs, ranks);
       }
       if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_aw(cout);
+      else cs.print_csent_simple(cout);
       cs = CSentence();
     }
   } 
@@ -180,7 +176,7 @@ void dis_csent_ppr_by_word(const string & input_file,
       //      cout << cs << endl;
       //      exit(-1);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_aw(cout);
+      else cs.print_csent_simple(cout);
 
       //cout << cs << '\n';
       cs = CSentence();
@@ -215,7 +211,7 @@ void dis_csent_classic_prank(const string & input_file,
     while (cs.read_aw(fh_in)) {
       disamb_csentence_kb(cs, ranks);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_aw(cout);
+      else cs.print_csent_simple(cout);
       cs = CSentence();
     }
   } 
@@ -225,94 +221,15 @@ void dis_csent_classic_prank(const string & input_file,
   }
 }
 
-
-void do_dgraph_gviz(const vector<string> & input_files,
-					const string & out_dir) {
-
-
-  for(vector<string>::const_iterator fname=input_files.begin(); fname != input_files.end(); ++fname) {
-
-    File_elem dg_finfo(*fname);
-
-    DisambGraph dg;
-    dg.read_from_binfile(dg_finfo.get_fname());
-    dg.reset_edge_weigths();
-    dg_finfo.set_path(out_dir);
-    dg_finfo.ext = ".dot";
-
-    switch (glVars::rAlg) {
-
-    case glVars::pageRank:
-	  pageRank_disg(dg.graph());
-	  break;
-    case glVars::degree:
-      degreeRank(dg.graph());
-      break;
-    default:
-      cerr << "Error: invalid ranking algorithm"<< endl;
-      exit(-1);
-    }
-    
-    write_dgraph_graphviz(dg_finfo.get_fname(), dg.graph());
-  }
-}
-
-void test2 (const string & fullname,
-			const string & extension) {
-  namespace fs = boost::filesystem;
-
-  fs::path full_path( fs::initial_path() );
-
-  //cerr << fs::path(fullname).native_file_string() << endl;
-
-  full_path = fs::system_complete( fs::path( fullname ) );
-
-  cerr << full_path.native_file_string() << endl;
-
-  if ( !fs::exists( full_path ) )
-    {
-      std::cerr << "\nNot found: " << full_path.native_file_string() << std::endl;
-      return;
-    }
-
-  if ( fs::is_directory( full_path ) ) {
-
-    fs::directory_iterator end_iter;
-    for ( fs::directory_iterator dir_itr( full_path );
-          dir_itr != end_iter;
-          ++dir_itr ) {
-      string dfile = dir_itr->leaf();
-      size_t ext_i = dfile.find_last_of('.');
-      if (ext_i == string::npos) continue;
-      string dext(dfile.begin() + ext_i + 1, dfile.end());
-	  if (dext != extension) continue;
-	  cout << dfile << " " << dext << "\n";
-    }    
-  } else {
-	cout << full_path.leaf() << endl;
-  } 
-}
-
 void test(const string & str) {
-  vector<string> v =  extract_input_files(str, "csent");
-  for(vector<string>::iterator it=v.begin(); it != v.end(); ++it) {
-	File_elem e(*it);
- 	cout << e.path << endl;
- 	cout << e.fname << endl;
- 	cout << e.ext << endl;
-  }
-  writeV(cout, v);
-  cout << endl;
 }
 
 
 int main(int argc, char *argv[]) {
 
-  string out_dir;
   string kb_binfile(kb_default_binfile);
 
   bool opt_disamb_dgraph = false;
-  bool opt_do_gviz = false;
   bool opt_do_ppr = false;
   bool opt_do_ppr_w2w = false;
   bool opt_ppr_2pass = false;
@@ -320,7 +237,6 @@ int main(int argc, char *argv[]) {
   bool opt_do_test = false;
   bool opt_with_w = false;
   bool opt_out_semcor = false; 
-  bool opt_timer = false; 
 
 
   string cmdline("!!");
@@ -346,15 +262,16 @@ int main(int argc, char *argv[]) {
 
   po_desc.add_options()
     ("help,h", "This page")
-    ("kb_binfile,K", value<string>(), "Binary file of KB (see create_kbbin). Default is kb_wnet.bin.")
+    ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin.")
     ("dict_file,D", value<string>(), "Dictionary text file. Default is dict.txt")
     ;
 
   options_description po_desc_wsd("WSD methods");
   po_desc_wsd.add_options()
     ("ppr", "Given a text input file, disambiguate context using Personalized PageRank method.")
-    ("ppr_w2w", "Given a text input file, disambiguate context using Personalized PageRank method word by word (see Readme.txt).")
+    ("ppr_w2w", "Given a text input file, disambiguate context using Personalized PageRank method word by word (see README).")
     ("static", "Given a text input file, disambiguate context using static pageRank over kb.")
+    ("dis_dgraph", "Given a text input file, disambiguate context using disambiguation graph mehod.")
     ;
 
   options_description po_desc_prank("pageRank general options");
@@ -365,7 +282,7 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_ppr("PPR options");
   po_desc_ppr.add_options()
-    ("2pass", "Use ranks of 1st pass to PPV and pageRank again.")
+    ("2pass", "Use ranks obtained in 1st pass to assign initial PPV and pageRank again.")
     ;
 
   options_description po_desc_output("Output options");
@@ -374,19 +291,10 @@ int main(int argc, char *argv[]) {
     ("allranks", "Write key file with all synsets associated with ranks.")
     ("verbose,v", "Be verbose.")
     ("no-monosemous", "Don't output anything for monosemous words.")
-    ("timer,T", "Output elapsed time.")
-    ;
-  
-  options_description po_desc_dgraph("Disambiguation graph (dgraph) options");
-  po_desc_dgraph.add_options()
-    ("out_dir,O", value<string>(), "Directory for leaving output files.")
-    ("dis_dgraph", "Given a text input file, disambiguate context using dgraph (to intermediate files).")
-    ("rank_alg,R", value<string>(), "Ranking algorithm for DGraphs. Options are: pageRank, degree. Default is pageRank.")
-    ("graphviz,G", "Dump disambGraph to a graphviz format. Output file has same name and extension .dot")
     ;
 
   options_description po_visible(desc_header);
-  po_visible.add(po_desc).add(po_desc_wsd).add(po_desc_prank).add(po_desc_ppr).add(po_desc_output).add(po_desc_dgraph);
+  po_visible.add(po_desc).add(po_desc_wsd).add(po_desc_prank).add(po_desc_ppr).add(po_desc_output);
   
   options_description po_hidden("Hidden");
   po_hidden.add_options()
@@ -442,9 +350,6 @@ int main(int argc, char *argv[]) {
       opt_disamb_dgraph = true;
     }
 
-    if (vm.count("graphviz")) {
-      opt_do_gviz = true;
-    }
 
     if (vm.count("dict_file")) {
       glVars::dict_filename = vm["dict_file"].as<string>();
@@ -452,10 +357,6 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("kb_binfile")) {
       kb_binfile = vm["kb_binfile"].as<string>();
-    }
-
-    if (vm.count("out_dir")) {
-      out_dir = vm["out_dir"].as<string>();
     }
 
     if (vm.count("rank_alg")) {
@@ -481,7 +382,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("allranks")) {
-      glVars::output::allranks = 1;
+      glVars::output::allranks = true;
     }
 
     if (vm.count("semcor")) {
@@ -490,10 +391,6 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("test")) {
       opt_do_test = true;
-    }
-
-    if (vm.count("timer")) {
-      opt_timer = true;
     }
 
     if (vm.count("no-monosemous")) {
@@ -509,17 +406,17 @@ int main(int argc, char *argv[]) {
     throw(e);
   }
 
-  //   writeV(cout, input_files);
-  //   cout << endl;
-  //   return 0;
+  if (!opt_disamb_dgraph && !opt_do_ppr && !opt_do_ppr_w2w && !opt_do_static_prank) {
+    cout << po_visible << endl;
+	cout << "Error: please select one wsd method (ppr, ppr_w2w, static or dis_dgraph)" << endl;
+	exit(-1);
+  }
 
   if (!fullname_in.size()) {
     cout << po_visible << endl;
     cout << "Error: No input" << endl;
-    exit(0);
+    exit(-1);
   }
-
-  timer tick;
 
   if(opt_disamb_dgraph) {
     Kb::create_from_binfile(kb_binfile);
@@ -549,25 +446,11 @@ int main(int argc, char *argv[]) {
     goto END;
   }
 
-  if(opt_do_gviz) {
-    input_files = extract_input_files(fullname_in, "dgraph");
-    
-    if(input_files.empty()) {
-      cout << po_visible << endl;
-      cerr << "Error: No input files." << endl;
-      exit(0);      
-    }
-    do_dgraph_gviz(input_files, out_dir);
-    goto END;
-  }
-
   if (opt_do_test) {
     test(fullname_in);
 	goto END;
   }
 
  END:
-  if (opt_timer) 
-	cerr << "Elapsed time: " << tick.elapsed() << endl;
-
+  return 0;
 }
