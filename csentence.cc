@@ -173,7 +173,7 @@ namespace ukb {
 	o << cw_.w;
 	if (cw_.m_pos)
 	  o << "-" << cw_.m_pos;
-	if(glVars::csentence::word_weight)
+	if(glVars::csentence::concepts_in)
 	  o << "#" << cw_.m_weight;
 	o << "#" << cw_.m_id << "#" << cw_.m_distinguished << " " << cw_.m_disamb;
 	o << '\n';
@@ -336,7 +336,7 @@ namespace ukb {
 		  if (dist == 2) {
 			new_cw = CWord::create_synset_cword(fields[0], fields[2], 1.0);
 		  }
-		  if(glVars::csentence::word_weight) {
+		  if(glVars::csentence::concepts_in) {
 			if (fields.size() != 5)
 			  throw std::runtime_error("Bad word " + *it + " " + lexical_cast<string>(i) + ": no weight");
 			// optional weight
@@ -491,7 +491,7 @@ namespace ukb {
 	  Kb_vertex_t u;
 	  tie(u, aux) = kb.get_vertex_by_name(wpos);
 	  float w = 1.0;
-	  if(glVars::csentence::word_weight) w = it->get_weight();
+	  if(glVars::csentence::concepts_in) w = it->get_weight();
 	  if (aux) {
 		ppv[u] = w;
 		K +=w;
@@ -540,7 +540,7 @@ namespace ukb {
 		Kb_vertex_t u;
 		tie(u, aux) = kb.get_vertex_by_name(wpos);
 		float w =  1.0;
-		if(glVars::csentence::word_weight) w = it->get_weight();
+		if(glVars::csentence::concepts_in) w = it->get_weight();
 		if (aux) {
 		  ppv[u] = w;
 		  K +=w;

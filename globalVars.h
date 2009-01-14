@@ -25,7 +25,7 @@ namespace ukb {
 	extern std::string dict_filename;
 
 	namespace csentence {
-	  extern bool word_weight;
+	  extern bool concepts_in;
 	}
 
 	namespace chsq {

@@ -17,7 +17,7 @@ namespace ukb {
 	boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
 	namespace csentence {
-	  bool word_weight = false;
+	  bool concepts_in = false;
 	}
 
 	namespace chsq {
