@@ -354,6 +354,28 @@ namespace ukb {
 	return o;
   }
 
+  ///////////////////////////////////////////////////////////////////////
+  // Normalize probability vector
+  //
+
+  template<class T>
+  bool normalize_pvector(std::vector<T> & v) {
+	T sum(0);
+	typename std::vector<T>::iterator it = v.begin();
+	typename std::vector<T>::iterator end = v.end();
+
+	for(; it != end; ++it)
+	  sum += *it;
+
+	if (sum == T(0)) return false;
+	T factor(T(1) / sum);
+
+	for(it = v.begin(); it != end; ++it)
+	  *it *= factor;
+	return true;
+  }
+
+
   /////////////////////////////////////////////////////////////////////
   // copy_if
 
