@@ -1,0 +1,76 @@
+AC_PREREQ(2.59)
+AC_INIT([ukb])
+
+dnl global flags
+
+AC_SUBST(CCFLAGS,["-O3 -Wall -Wno-deprecated"])
+
+dnl C++ compiler
+AC_PROG_CXX
+AC_LANG_CPLUSPLUS
+
+AC_PROG_MAKE_SET
+
+AC_HEADER_STDC
+
+dnl BOOST include lib
+AC_ARG_WITH(boost-include,
+            [--with-boost-include=path of BOOST headers],
+            if test [ x$withval != x ] -a [ -d $withval ]; then
+            BOOST_INCLUDE_DIR=$withval
+            else
+            echo "Please specify a suitable PCRE include directory: --with-pcre-include=DIR"; exit 1
+            fi ,
+            BOOST_INCLUDE_DIR="/usr/include/boost")
+
+dnl BOOST lib dir
+AC_ARG_WITH(boost-lib,
+            [--with-boost-lib=path of BOOST lib],
+            if test [ x$withval != x ] -a [ -d $withval ]; then
+	    BOOST_LIB_DIR="-L"$withval;
+	    [LDFLAGS="${LDFLAGS} -L${withval}"]
+            else
+            echo "Please specify a suitable PCRE library directory: --with-pcre-lib=DIR"; exit 1
+            fi ,
+	    )
+
+dnl check boost graph library include
+AC_CHECK_FILE($BOOST_INCLUDE_DIR/graph/adjacency_list.hpp, ,
+              echo "BOOST include directory does not contain the Boost Graph Library !";
+              echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1)
+
+dnl check boost tokenizer include
+AC_CHECK_FILE($BOOST_INCLUDE_DIR/tokenizer.hpp, ,
+              echo "BOOST include directory does not contain the Tokenizer Library !";
+              echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1)
+
+dnl check boost lexical cast include
+AC_CHECK_FILE($BOOST_INCLUDE_DIR/lexical_cast.hpp, ,
+              echo "BOOST include directory does not contain the Lexical Cast Library !";
+              echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1)
+
+dnl check boost filesystem include
+AC_CHECK_FILE($BOOST_INCLUDE_DIR/filesystem.hpp, ,
+              echo "BOOST include directory does not contain the Lexical Cast Library !";
+              echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1)
+
+AC_SUBST(BOOST_INCLUDE_DIR)
+
+dnl BOOST filesystem library
+AC_CHECK_LIB(boost_filesystem,
+	     main,
+	     [LDFLAGS="${LDFLAGS} -lboost_filesystem"],
+	     echo "libboost_filesystem not found. Please add BOOST library directory to your LD_LIBRARY_PATH or specify a suitable BOOST library directory: --with-boost-lib=DIR"; exit 1)
+
+dnl BOOST program options library
+AC_CHECK_LIB(boost_program_options,
+	     main,
+	     [LDFLAGS="${LDFLAGS} -lboost_program_options"],
+	     echo "libboost_program_options not found. Please add BOOST library directory to your LD_LIBRARY_PATH or specify a suitable BOOST library directory: --with-boost-lib=DIR"; exit 1)
+
+AC_SUBST(BOOST_LIB_DIR)
+
+AC_SUBST(LDFLAGS)
+
+dnl create Makefile
+AC_OUTPUT(Makefile)

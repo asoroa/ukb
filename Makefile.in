@@ -1,0 +1,39 @@
+
+CCC = @CXX@
+CCFLAGS = @CCFLAGS@
+INCLUDES = -I @BOOST_INCLUDE_DIR@
+LDFLAGS = @LDFLAGS@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+datarootdir = @datarootdir@
+
+INSTALLDIR = ${bindir}
+
+EXEC_SRC = ukb_wsd.cc ukb_ppv.cc compile_kb.cc
+EXEC = $(notdir $(basename $(EXEC_SRC)))
+
+SOURCES= common.cc globalVars.cc configFile.cc fileElem.cc kbGraph.cc disambGraph.cc csentence.cc coocGraph.cc hlex_agtree.cc wdict.cc
+
+MEMBERS=$(SOURCES:.cc=.o)
+
+.PHONY: all install clean
+
+all: $(EXEC)
+
+%.o : %.cc
+	$(CCC) -c $(CCFLAGS) -o $@ $(INCLUDES) $<
+
+$(EXEC): $(MEMBERS) $(SRCS) $(EXEC_SRC)
+	gcc $(CCFLAGS) -o $@ $@.cc $(MEMBERS) $(INCLUDES) $(LDFLAGS)
+
+install: $(EXEC)
+	install -d -m 755 $(INSTALLDIR)
+	@for exec in $(EXEC); do \
+	cp -f $$exec $(INSTALLDIR) > /dev/null 2>&1; \
+	done
+
+clean:
+	find . -type f -name '*.o' | xargs rm -f
+	rm -f $(EXEC)
