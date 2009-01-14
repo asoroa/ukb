@@ -82,49 +82,14 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
 		exit(-1);
       }
 
-      vector<float> filter_ranks;
-      float filter_sum = 0.0;
-      double norm;
-      switch(filter_nodes) {
-      case 1: // only words
-		if (glVars::verbose) 
-		  cerr << ranks.size() << "\n";
-		for(size_t i=0; i < ranks.size(); ++i) {
-		  if (kb.vertex_is_word(i)) {
-			filter_ranks.push_back(ranks[i]);
-			filter_sum+=ranks[i];
-		  }
-		}
-		if (glVars::verbose) 
-		  cerr << filter_ranks.size() << " words\n";
-		// normalize vector
-		norm = 1.0/filter_sum;
-		for(vector<float>::iterator it=filter_ranks.begin(); it != filter_ranks.end(); ++it) {
-		  fo << *it * norm << "\n";
-		}
-		break;
-      case 2: // only synsets
-		if (glVars::verbose) 
-		  cerr << ranks.size() << " synsets\n";
-		for(size_t i=0; i < ranks.size(); ++i) {
-		  if (kb.vertex_is_synset(i)) {
-			filter_ranks.push_back(ranks[i]);
-			filter_sum+=ranks[i];
-		  }
-		}
-		// normalize vector
-		if (glVars::verbose) 
-		  cerr << filter_ranks.size() << " synsets\n";
-		norm = 1.0/filter_sum;
-		for(vector<float>::iterator it=filter_ranks.begin(); it != filter_ranks.end(); ++it) {
-		  fo << *it * norm << "\n";
-		}
-		break;
-		
-      default:
-		copy(ranks.begin(), ranks.end(), ostream_iterator<float>(fo, "\n"));
-		break;
-      };
+	  vector<float> outranks;
+	  vector<string> vnames;
+
+	  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
+
+	  for(size_t i = 0; i < outranks.size(); ++i) {
+		fo << vnames[i] << "\t" << outranks[i] << "\n";
+	  }
       cs = CSentence();
     }
   } catch (string & e) {
@@ -160,8 +125,8 @@ int main(int argc, char *argv[]) {
     ("help,h", "This help page.")
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin")
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
-    ("out_dir,O", value<string>(), "Directory for leaving output PPV files.")
-    ("word_weight", "Use weights on words (init values of PPV). Input must have 5 fields, the last one being the weight.")
+    ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
+    ("concepts_in", "Let concept ids in input context. Item must have 5 fields, the fourth being 2 and the last one being the weight.")
     ("verbose,v", "Be verbose.")
     ;
 
@@ -242,8 +207,8 @@ int main(int argc, char *argv[]) {
       glVars::prank::num_iterations = vm["prank_iter"].as<size_t>();
     }
 
-    if (vm.count("word_weight")) {
-      glVars::csentence::word_weight = true;
+    if (vm.count("concepts_in")) {
+      glVars::csentence::concepts_in = true;
     }
 
     if (vm.count("input-file")) {

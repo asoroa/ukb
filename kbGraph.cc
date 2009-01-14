@@ -24,7 +24,7 @@
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/variate_generator.hpp>
 
-// bfs 
+// bfs
 
 #include <boost/graph/visitors.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -123,12 +123,12 @@ namespace ukb {
   };
 
 
-  bool Kb::bfs (Kb_vertex_t src, 
+  bool Kb::bfs (Kb_vertex_t src,
 				 std::vector<Kb_vertex_t> & parents) const {
 
 	vector<Kb_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
-  
-	breadth_first_search(g, 
+
+	breadth_first_search(g,
 						 src,
 						 boost::visitor(boost::make_bfs_visitor
 										(boost::make_list(kb_bfs_init(&parents[0]),
@@ -137,13 +137,13 @@ namespace ukb {
   }
 
 
-  bool Kb::dijkstra (Kb_vertex_t src, 
+  bool Kb::dijkstra (Kb_vertex_t src,
 					  std::vector<Kb_vertex_t> & parents) const {
 
 	vector<Kb_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
 	vector<float> dist(num_vertices(g));
-  
-	dijkstra_shortest_paths(g, 
+
+	dijkstra_shortest_paths(g,
 							src,
 							predecessor_map(&parents[0]).
 							distance_map(&dist[0]));
@@ -256,7 +256,7 @@ namespace ukb {
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  // Query
+  // Query and retrieval
 
   bool Kb::vertex_is_synset(Kb_vertex_t u) const {
 	return !vertex_is_word(u);
@@ -265,6 +265,74 @@ namespace ukb {
   bool Kb::vertex_is_word(Kb_vertex_t u) const {
 	return (get(vertex_flags, g, u) & Kb::is_word);
   }
+
+  // filter_mode
+  //   0 -> no filter
+  //   1 -> only words
+  //   2 -> only concepts
+
+
+  void vname_filter(const map<string, Kb_vertex_t> & theMap,
+					const vector<float> & ranks,
+					const KbGraph & g,
+					vector<float> & outranks,
+					vector<string> & vnames) {
+
+	size_t v_m = theMap.size();
+
+	vector<Kb_vertex_t> V(v_m);
+	// empty output vectors
+	vector<float>(v_m).swap(outranks);
+	vector<string>(v_m).swap(vnames);
+
+	map<string, Kb_vertex_t>::const_iterator m_it = theMap.begin();
+	map<string, Kb_vertex_t>::const_iterator m_end = theMap.end();
+	size_t v_i = 0;
+
+	// Fill vertices index vector
+	for(; m_it != m_end; ++m_it, ++v_i) {
+	  V[v_i] = m_it->second;
+	}
+	// Sort to guarantee uniqueness
+	sort(V);
+
+	for(v_i = 0; v_i < v_m; ++v_i) {
+	  outranks[v_i] = ranks[V[v_i]];
+	  vnames[v_i] = get(vertex_name, g, V[v_i]);
+	}
+	normalize_pvector(outranks);
+  }
+
+
+  void Kb::filter_ranks_vnames(const vector<float> & ranks,
+							   vector<float> & outranks,
+							   vector<string> & vnames,
+							   int filter_mode) const {
+
+	size_t v_i, v_m;
+
+	switch(filter_mode) {
+	case 0:
+	  // No filtering
+	  v_m = ranks.size();
+	  outranks.resize(v_m);
+	  vnames.resize(v_m);
+	  for(v_i = 0; v_i < v_m; ++v_i) {
+		outranks[v_i] = ranks[v_i];
+		vnames[v_i] = get(vertex_name, g, v_i);
+	  }
+	  break;
+	case 1:
+	  // Only words
+	  vname_filter(wordMap, ranks, g, outranks, vnames);
+	  break;
+	case 2:
+	  // Only concepts
+	  vname_filter(synsetMap, ranks, g, outranks, vnames);
+	  break;
+	}
+  }
+
 
   ////////////////////////////////////////////////////////////////////////////////
   // Random
@@ -281,7 +349,7 @@ namespace ukb {
 
   // Read the actual KB file
 
-  void read_kb_v1(ifstream & kbFile, 
+  void read_kb_v1(ifstream & kbFile,
 				  const set<string> & src_allowed,
 				  Kb * kb) {
 	string line;
@@ -302,7 +370,7 @@ namespace ukb {
 
 	  if (glVars::kb::filter_src) {
 		if (src_allowed.find(fields[3]) == srel_end) continue; // Skip this relation
-	  } 
+	  }
 
 	  kb->add_relSource(fields[3]);
 
@@ -397,7 +465,7 @@ namespace ukb {
 	return true;
   }
 
-  void read_kb(ifstream & kbFile, 
+  void read_kb(ifstream & kbFile,
 			   const set<string> & src_allowed,
 			   Kb *kb) {
 	string line;
@@ -411,7 +479,7 @@ namespace ukb {
 		line_number++;
 		rel_parse f;
 		if (!parse_line(line, f)) continue;
-		
+
 		if (glVars::kb::filter_src) {
 		  if (src_allowed.find(f.src) == srel_end) continue; // Skip this relation
 		}
@@ -434,7 +502,7 @@ namespace ukb {
 			  kb->edge_add_reltype(e2, aux);
 			}
 		  }
-		}	  
+		}
 	  }
 	} catch (std::exception & e) {
 	  throw std::runtime_error(string(e.what()) + " in line " + lexical_cast<string>(line_number));
@@ -454,7 +522,7 @@ namespace ukb {
 	if(glVars::kb::v1_kb) {
 	  read_kb_v1(syns_file, src_allowed, this);
 	} else {
-	  read_kb(syns_file, src_allowed, this);  
+	  read_kb(syns_file, src_allowed, this);
 	}
   }
 
@@ -476,7 +544,7 @@ namespace ukb {
 	  writeV(o, notes);
 	}
 	size_t edge_n = num_edges(g);
-	if (edge_n & 2) edge_n++; 
+	if (edge_n & 2) edge_n++;
 
 	o << "\n" << num_vertices(g) << " vertices and " << edge_n/2 << " edges" << endl;
 	if (rtypes.size()) {
@@ -495,7 +563,7 @@ namespace ukb {
   void create_w2wpos_maps(const string & word,
 						  vector<string> & wPosV,
 						  map<string, vector<Syn_elem> > & wPos2Syns) {
-  
+
 	bool auxP;
 	const Kb & kb = Kb::instance();
 
@@ -514,11 +582,11 @@ namespace ukb {
 	  Kb_vertex_t u;
 	  tie(u, auxP) = kb.get_vertex_by_name(syns.get_entry(i));
 	  if(!auxP) {
-		if (glVars::debug::warning) 
+		if (glVars::debug::warning)
 		  cerr << "W:Kb::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
 		continue;
 	  }
-    
+
 	  map<string, vector<Syn_elem> >::iterator m_it;
 
 	  tie(m_it, auxP) = wPos2Syns.insert(make_pair(wpos, vector<Syn_elem>()));
@@ -538,7 +606,7 @@ namespace ukb {
 	Kb & kb = Kb::instance();
 
 	// insert word
-	Kb_vertex_t word_v = kb.find_or_insert_word(word); 
+	Kb_vertex_t word_v = kb.find_or_insert_word(word);
 
 	vector<string>::iterator wpos_str_it = wPosV.begin();
 	vector<string>::iterator wpos_str_end = wPosV.end();
@@ -567,15 +635,15 @@ namespace ukb {
 	WDict_entries syns = WDict::instance().get_entries(word);
 
 	if (!syns.size()) return;
-  
+
 	Kb_vertex_t u = kb.find_or_insert_word(word);
-  
+
 	for(size_t i = 0; i < syns.size(); ++i) {
 	  bool auxP;
 	  Kb_vertex_t v;
 	  tie(v, auxP) = kb.get_vertex_by_name(syns.get_entry(i));
 	  if(!auxP) {
-		if (glVars::debug::warning) 
+		if (glVars::debug::warning)
 		  cerr << "W:Kb::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
 		continue;
 	  }
@@ -604,7 +672,7 @@ namespace ukb {
 
 	if (glVars::input::filter_pos) {
 	  // Create w2wPos and wPos2Syns maps
-  
+
 	  create_w2wpos_maps(token, wPosV, wPos2Syns);
 
 	  // Add vertices and link them in the KB
@@ -655,7 +723,7 @@ namespace ukb {
 		coef_status = 2;
 	  }
 	  prank::do_pageRank(g, V, &ppv_map[0],
-						 weight_map, &ranks[0], &rank_tmp[0], 
+						 weight_map, &ranks[0], &rank_tmp[0],
 						 glVars::prank::num_iterations,
 						 out_coefs);
 	} else {
@@ -667,7 +735,7 @@ namespace ukb {
 		coef_status = 1;
 	  }
 	  prank::do_pageRank(g, V, &ppv_map[0],
-						 cte_weight, &ranks[0], &rank_tmp[0], 
+						 cte_weight, &ranks[0], &rank_tmp[0],
 						 glVars::prank::num_iterations,
 						 out_coefs);
 	}
@@ -706,7 +774,7 @@ namespace ukb {
 
   // read
 
-  Kb_vertex_t read_vertex_from_stream_v1(ifstream & is, 
+  Kb_vertex_t read_vertex_from_stream_v1(ifstream & is,
 										  KbGraph & g) {
 
 	string name;
@@ -722,7 +790,7 @@ namespace ukb {
 									  KbGraph & g) {
 
 	size_t sIdx;
-	size_t tIdx; 
+	size_t tIdx;
 	float w = 0.0;
 	//size_t source;
 	bool insertedP;
@@ -741,7 +809,7 @@ namespace ukb {
 	return e;
   }
 
-  Kb_vertex_t read_vertex_from_stream(ifstream & is, 
+  Kb_vertex_t read_vertex_from_stream(ifstream & is,
 									   KbGraph & g) {
 
 	string name;
@@ -759,7 +827,7 @@ namespace ukb {
 								   KbGraph & g) {
 
 	size_t sIdx;
-	size_t tIdx; 
+	size_t tIdx;
 	float w = 0.0;
 	boost::uint32_t rtype;
 	bool insertedP;
@@ -799,7 +867,7 @@ namespace ukb {
 	  read_map_from_stream(is, synsetMap);
 	  read_map_from_stream(is, wordMap);
 	  //read_map_from_stream(is, sourceMap);
-	
+
 	  read_atom_from_stream(is, id);
 	  if(id != magic_id_v1) {
 		cerr << "Error: invalid id after reading maps" << endl;
@@ -821,7 +889,7 @@ namespace ukb {
 	  for(i=0; i<edge_n; ++i) {
 		read_edge_from_stream_v1(is, g);
 	  }
-	
+
 	  read_atom_from_stream(is, id);
 	  if(id != magic_id_v1) {
 		cerr << "Error: invalid id after reading edges" << endl;
@@ -839,7 +907,7 @@ namespace ukb {
 
 	  read_map_from_stream(is, synsetMap);
 	  read_map_from_stream(is, wordMap);
-	
+
 	  read_atom_from_stream(is, id);
 	  if(id != magic_id) {
 		cerr << "Error: invalid id after reading maps" << endl;
@@ -861,7 +929,7 @@ namespace ukb {
 	  for(i=0; i<edge_n; ++i) {
 		read_edge_from_stream(is, g);
 	  }
-	
+
 	  read_atom_from_stream(is, id);
 	  if(id != magic_id) {
 		cerr << "Error: invalid id after reading edges" << endl;
@@ -870,14 +938,14 @@ namespace ukb {
 	  read_vector_from_stream(is, notes);
 	  if(id != magic_id) {
 		cerr << "Error: invalid id (filename is a kbGraph?)" << endl;
-		exit(-1);	
+		exit(-1);
 	  }
 	}
 
 	map<string, Kb_vertex_t>::iterator m_it(wordMap.begin());
 	map<string, Kb_vertex_t>::iterator m_end(wordMap.end());
 	for(; m_it != m_end; ++m_it) {
-	  put(vertex_flags, g, m_it->second, 
+	  put(vertex_flags, g, m_it->second,
 		  get(vertex_flags, g, m_it->second) || Kb::is_word);
 	}
   }

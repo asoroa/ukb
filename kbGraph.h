@@ -152,6 +152,28 @@ public:
   bool vertex_is_synset(Kb_vertex_t u) const;
   bool vertex_is_word(Kb_vertex_t u) const;
 
+  // Given a previously calculated rank vector, output 2 vector, probably
+  // filtering the nodes.
+  // 
+  // Input params:
+  //
+  // ranks: previously calculated rank vector
+  // filter_mode:
+  //   0 -> no filter
+  //   1 -> only words
+  //   2 -> only concepts
+  //
+  // Output:
+  //
+  // outranks: new rank vector
+  // vnames: node names
+
+  void filter_ranks_vnames(const std::vector<float> & ranks,
+						   std::vector<float> & outranks,
+						   std::vector<std::string> & vnames,
+						   int filter_mode) const;
+  
+
   // Add a comment to graph
 
   void add_comment(const std::string & str);
