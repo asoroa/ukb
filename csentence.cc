@@ -464,8 +464,10 @@ namespace ukb {
   // PageRank in Kb
 
 
-  // Given a CSentence obtain it's PageRank vector
-  // Initial PPV is computed a la hughes&ramage97
+  // Given a CSentence apply Personalized PageRank and obtain obtain it's
+  // Personalized PageRank Vector (PPV) 
+  //
+  // Initial V is computed by activating the words of the context
 
   bool calculate_kb_ppr(const CSentence & cs,
 						vector<float> & res,
@@ -508,7 +510,6 @@ namespace ukb {
 	return true;
   }
 
-  // Second method for hughes & ramage
   // given a word,
   // 1. put a ppv in the synsets of the rest of words.
   // 2. Pagerank

@@ -90,7 +90,6 @@ void disamb_dgraph_from_corpus(string & fullname_in,
 
 void dis_csent_ppr(const string & input_file,
 				   bool with_weight,
-				   bool hr_2pass,
 				   bool out_semcor) {
   
   ifstream fh_in(input_file.c_str());
@@ -119,15 +118,6 @@ void dis_csent_ppr(const string & input_file,
       }
 
       disamb_csentence_kb(cs, ranks);
-      if(hr_2pass) {
-		//
-		// 2nd pass
-		//
-		// use previous ranks of CSentence for PPV and pageRank again
-		//
-		calculate_kb_ppv_csentence(cs, ranks);
-		disamb_csentence_kb(cs, ranks);
-      }
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_simple(cout);
       cs = CSentence();
@@ -142,7 +132,6 @@ void dis_csent_ppr(const string & input_file,
 
 void dis_csent_ppr_by_word(const string & input_file,
 						  bool with_weight,
-						  bool hr_2pass,
 						  bool out_semcor) {
   
   ifstream fh_in(input_file.c_str());
@@ -163,18 +152,6 @@ void dis_csent_ppr_by_word(const string & input_file,
     while (cs.read_aw(fh_in)) {
 	  
       calculate_kb_ppr_by_word_and_disamb(cs, with_weight);
-      if(hr_2pass) {
-		//
-		// 2nd pass
-		//
-		// use previous ranks of CSentence for PPV and pageRank again
-		//
-		vector<float> ranks;
-		calculate_kb_ppv_csentence(cs, ranks);
-		disamb_csentence_kb(cs, ranks);
-      }
-      //      cout << cs << endl;
-      //      exit(-1);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_simple(cout);
 
@@ -232,7 +209,6 @@ int main(int argc, char *argv[]) {
   bool opt_disamb_dgraph = false;
   bool opt_do_ppr = false;
   bool opt_do_ppr_w2w = false;
-  bool opt_ppr_2pass = false;
   bool opt_do_static_prank = false;
   bool opt_do_test = false;
   bool opt_with_w = false;
@@ -280,11 +256,6 @@ int main(int argc, char *argv[]) {
     ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
     ;
 
-  options_description po_desc_ppr("PPR options");
-  po_desc_ppr.add_options()
-    ("2pass", "Use ranks obtained in 1st pass to assign initial PPV and pageRank again.")
-    ;
-
   options_description po_desc_output("Output options");
   po_desc_output.add_options()
     ("semcor", "Output Semcor key file.")
@@ -294,7 +265,7 @@ int main(int argc, char *argv[]) {
     ;
 
   options_description po_visible(desc_header);
-  po_visible.add(po_desc).add(po_desc_wsd).add(po_desc_prank).add(po_desc_ppr).add(po_desc_output);
+  po_visible.add(po_desc).add(po_desc_wsd).add(po_desc_prank).add(po_desc_output);
   
   options_description po_hidden("Hidden");
   po_hidden.add_options()
@@ -332,10 +303,6 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("ppr_w2w")) {
       opt_do_ppr_w2w= true;
-    }
-
-    if (vm.count("2pass")) {
-      opt_ppr_2pass= true;
     }
 
     if (vm.count("static")) {
@@ -428,14 +395,14 @@ int main(int argc, char *argv[]) {
   if (opt_do_ppr) {
     Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
-    dis_csent_ppr(fullname_in, opt_with_w, opt_ppr_2pass, opt_out_semcor);
+    dis_csent_ppr(fullname_in, opt_with_w, opt_out_semcor);
     goto END;
   }
 
   if (opt_do_ppr_w2w) {
     Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
-    dis_csent_ppr_by_word(fullname_in, opt_with_w, opt_ppr_2pass, opt_out_semcor);
+    dis_csent_ppr_by_word(fullname_in, opt_with_w, opt_out_semcor);
     goto END;
   }
 
