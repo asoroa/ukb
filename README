@@ -1,0 +1,430 @@
+UKB: Words sense disambiguation and lexical similarity/relatedness using
+     unsupervised knowledge-based method.
+
+author: Eneko Agirre and Aitor Soroa
+
+If you use this software in writing scientific papers, or you use this
+software in any other medium serving scientists or students (e.g. web-sites,
+CD-ROMs) please include the citation [1]
+
+************************************************************************
+
+This is a collection of programs for performing graph-based Word Sense
+Disambiguation and lexical similarity/relatedness using a pre-existing
+knowledge base. The details of the method are described in [1]. The
+collection comprises three applications:
+
+* compile_kb: creates a machine dependant serialization of a KB graph which
+    	      is then used by the rest of the programs.
+
+* ukb_wsd: main program for WSD.
+
+* ukb_ppv: output a ranking vector over KB nodes.
+
+Overall, the ukb_wsd and ukb_ppv applications need three information
+sources:
+
+	1. A knowledge base (concept and relations).
+
+	2. A dictionary (lemma-concept mapping).
+
+	3. An input context.
+
+First, we will see the three components in detail. Then, we will describe
+the applications.
+
+1. Knowledge base
+*****************
+
+The knowledge base (KB) is just a graph where vertices are the KB concepts
+and edges are the relations linking those concepts. Typically, the KB is a
+graph representation of WordNet, but it can be any kind of knowledge base.
+
+The source KB is a text file where each line represents an edge (relation)
+between two vertices (concepts) on the KB. Specifically, lines of source KB
+file follow a key-value syntax. The keys are the following:
+
+   u: the source vertex (concept) of the relation. (required)
+   v: the target vertex (concept) of the relation. (required)
+   d: whether the relation is directed (optional)
+   s: source of relation (optional).
+   w: relation weigth (Must be positive). (optional)
+
+for instance, the following line:
+
+   u:00001740-n v:00002254-n
+
+represents an undirected relation between concept "00001740-n" and concept
+"00002254-n". The following one:
+
+   u:00023741-n v:02223033-a d:1 w:0.3 s:wn30
+
+represents a directed relation between "00023741-n" and "02223033-a" with
+weight 0.3. It also says that the relation is extracted from the "wn30"
+source. This is useful when we want to filter the relation according to the
+source it was extracted from (see 1.3 "Filtering relations by source").
+
+We currently don't represent the type of relation, and therefore all
+relations are equivalent.
+
+1.1 Concept identifiers
+************************
+
+Concept identifiers (for example, "00002254-n") have the following syntax:
+
+   idx-pos
+
+where the idx is a unique number and pos represents the part of speech
+of the concept.
+
+pos: part of speech
+    n -> noun
+    v -> verb
+    a -> adjective
+    r -> adverb
+
+
+1.2 Compiling the KB
+*********************
+
+The 'ukb_wsd' and 'ukb_ppv' applications require a compiled binary image of
+the KB, so you first need to compile the input KB text file into a
+platform-dependent binary serialization. The compilation is performed by the
+'compile_kb' application, and must be run just once (for every KB and on
+every different platform the application is expected to work on, that is).
+
+For example, given an input text file "wn17.txt" which looks like:
+
+u:00001740-n v:00002254-n
+u:00001740-n v:00002596-n
+u:00001740-n v:00002908-n
+u:00001740-n v:00004081-n
+u:00001740-n v:00004753-n
+u:00001740-n v:00012351-n
+u:00001740-n v:00012545-n
+u:00001740-n v:00018241-n
+u:00001740-n v:03714099-n
+u:00004753-n v:00018241-n
+
+we first compile it to a binary, platform-dependent format, and leave it on
+a file named 'wn17.bin':
+
+% ./compile_kb -o wn17.bin wn17.txt
+
+We can now ask about the size of the created graph:
+
+% ./compile_kb -i wn17.bin
+Relation sources:
+Notes: (cmd: ./compile_kb -o wn17.bin wn17.txt)
+10 vertices and 10 edges
+
+subsequent uses of 'ukb_wsd' of 'ukb_ppv' applications will just need the
+'wn17.bin' file as KB source.
+
+1.3 Filtering relations by source
+*********************************
+
+Sometimes it may be interesting to filter the KB relations according to the
+source they were extracted from. This way, one KB input file can be used to
+produce several binary serializations. Suppose we have the following input
+text:
+
+u:00001740-n v:00002254-n s:wn17
+u:00001740-n v:00002596-n s:wn17
+u:00001740-n v:00002908-n s:xnet_g
+u:00001740-n v:00004081-n s:xnet_g
+u:00001740-n v:00004753-n s:xnet_s
+u:00001740-n v:00012351-n s:xnet_s
+u:00001740-n v:00012545-n s:xnet_s
+u:00001740-n v:00018241-n s:xnet_s
+u:00001740-n v:03714099-n s:xnet_s
+u:00004753-n v:00018241-n s:xnet_s
+
+Some relations correspond to WordNet 1.7 (wn17), and some are extracted from
+eXtended WordNet. The latter are further subdivided into gold relations
+(xnet_g) and silver relations (xnet_s).
+
+To compile the KB using just wn17 source relations, use the -f option (--filter_src):
+
+% ./compile_kb -f "wn17" -o wn17.bin wn17.txt
+% ./compile_kb -i  wn17.bin
+Relation sources: (wn17)
+Notes: (cmd: ./compile_kb -f wn17 -o wn17.bin wn17.txt)
+3 vertices and 2 edges
+
+To use only eXtended WordNet relations:
+
+% ./compile_kb -f "xnet_g,xnet_s" -o wn17.bin wn17.txt
+Relation sources: (xnet_g,xnet_s)
+Notes: (cmd: ./compile_kb -f xnet_g,xnet_s -o wn17.bin wn17.txt)
+8 vertices and 8 edges
+
+2. Dictionary
+*************
+
+The dictionary is just a text file which associates words (typically,
+lemmas) to concepts on the KB. Each line is a dictionary entry, and has the
+following syntax:
+
+wordform concept_id+
+
+For instance, the following line:
+
+cartwheel 02531639-n 00308383-n 11072773-n 01525369-v
+
+associates the entry 'cartwheel' with the concepts 02531639-n,
+00308383-n, 11072773-n and 01525369-v.
+
+
+3. Input context
+****************
+
+The input context is a file with the words to be disambiguated. Words have
+to be grouped in contexts (i.e. a sentence or a corpus occurrence window)
+and the algorithm disambiguates all words in a context on the same run. The
+length of the context can be variable, but must be greater than one
+(in-house experiments are performed with contexts of 20 words).
+
+Words in the context must have an entry on the dictionary. Otherwise, the
+system won't be able to relate the context word to KB concepts, and the word
+will not be used for WSD purposes. Therefore, contexts are usually formed by
+content-words, i.e., prepositions, pronouns etc. are not used.
+
+Each context is represented by 2 consecutive lines in the file. The first
+line contains just a token which indicates the context identifier whereas
+the second one actually contains the context. Here is an example of a
+context representing the sentence "The man killed the a cat with a hammer":
+
+ctx_01
+man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1
+
+Each of the elements on a context has 4 mandatory fields, separated by the
+'#' character. The four fields are:
+
+lemma#pos#id#d
+
+lemma: the lemma of the word
+
+pos: part of speech
+      n -> noun
+      v -> verb
+      a -> adjective
+      r -> adverb
+
+id: the word's id
+
+d: a boolean (1 or 0) which indicates if the word has to be
+   disambiguated. Although all words in the context play a role in the
+   disambiguation process, sometimes we are just required to disambiguate a
+   portion of it. For example, if we were required to disambiguate just the
+   word "cat" in the above sentence, we would create an input like:
+
+    ctx_01
+    man#n#w1#0 kill#v#w2#0 cat#n#w3#1 hammer#n#w4#0
+
+    i.e., where just the element 'cat' has a 1 in the last field.
+
+
+4. ukb_wsd
+**********
+
+The 'ukb_wsd' application performs knowledge-based WSD using a Personalized
+PageRank calculation. It needs a compiled KB, a dictionary and an input
+context.
+
+For example, given that we have a file named "context.txt" file like this:
+
+ctx_01
+man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1
+
+a previously compiled KB file named "wn17.bin" (see section 1.2, "Compiling
+the KB"), and a dictionary file named "wn17_dict.txt".
+
+For disambiguating the context, type:
+
+% ./ukb_wsd --ppr -K wn17.bin -D wn17_dict.txt context.txt
+
+The result would look like the following:
+
+!! ./ukb_wsd --ppr -K wn17.bin -D wn17_dict.txt context.txt
+ctx_01 w1  08249817-n !! man
+ctx_01 w2  00980806-v !! kill
+ctx_01 w3  01738104-n !! cat
+ctx_01 w4  02970821-n !! hammer
+
+The system returns the results following the keyfile format of
+Senseval/Semeval lexical sample. The first line is a commentary and stores
+the command that actually created the file. Then, for each disambiguated
+word it returns a line formed by:
+
+context_id word_id (concept_id(/weight)?)+ !! lemma
+
+after the context id and word id, the system returns the concept associated
+to the word which has maximum rank, i.e., the program's guess about the
+sense of the word in the context. Then, and after a comment mark (!!), the
+lemma of the original word is also displayed.
+
+The 'ukb_wsd' application has several options:
+
+General options:
+
+  -K [ --kb_binfile ] arg
+            Binary file of KB previously created by the 'compile_kb'
+            application. Default is kb_wnet.bin.
+
+  -D [ --dict_file ] arg
+            Dictionary text file. Default is dict.txt
+
+You must also choose one wsd method. Currently there are four methods,
+namely, 'ppr', 'ppr_w2w', 'static' and 'dgraph'. All methods perform some
+ranking on the concepts of the KB; disambiguation is then choosing the
+concept associated to a word with maximum rank.
+
+  --ppr
+            Given a text input file, disambiguate context using Personalized
+            PageRank method.
+
+  --ppr_w2w
+            Given a text input file, disambiguate context using Personalized
+            PageRank method word by word.
+
+  --static
+            Given a text input file, disambiguate context using static
+            PageRank over kb.
+
+  --dis_dgraph
+            Given a text input file, disambiguate context using
+            disambiguation graph mehod.
+
+
+The first two methods ('ppr' and 'ppr_w2w'), apply the so called
+"Personalized PageRank" (PPR) over the whole KB. See [1] for further details
+about the PPR method. In general, ppr_w2w yields to better results, but it
+is slower if you want to disambiguate more than one word in a context (i.e.,
+more than one context word has the fourth field filled with 1). In
+particular, the 'ppr' method performs one PageRank calculation for the whole
+context, whereas the 'ppr_w2w' method performs one PageRank computation for
+every word in the context to be disambiguated.
+
+The 'static' method is a baseline. It just calculates a standard (i.e., not
+personalized) PageRank over the KB and disambiguates all context words
+accordingly. The method is thus context independent and very quick: a sole
+PageRank calculation suffices to disambiguate all words on all contexts.
+
+The 'dis_dgraph' method is somehow different. Instead of PageRanking over
+the whole KB, it first extracts a subgraph with the most relevant concepts
+of a given context. It does so by calculating shortest paths among the
+concepts involved on a particular context. Then, it applies standard
+PageRank over the subgraph.
+
+PageRank general options:
+
+  -w [ --with_weight ]
+            Use weigths in PageRank calculation. Serialized graph edges must
+	    have some weight.
+
+  --prank_iter arg
+            Number of iterations in PageRank. Default is 30.
+
+Output options:
+
+  --allranks
+            Write key file with all synsets associated with ranks. The
+	    system will return all the concepts attached to that word in the
+	    KB, along with a weight, ordered in decreasing order. For
+	    example in the previous example, it would produce the following
+	    example:
+
+% ./ukb_wsd --ppr --allranks -K wn17.bin -D wn17_dict.txt context.txt
+!! ./ukb_wsd --ppr --allranks -K wn17.bin -D wn17_dict.txt context.txt
+ctx_01 w1  08249817-n/0.207209 02078052-n/0.0929814 ... !! man
+ctx_01 w2  00980806-v/0.114124 00267266-v/0.0808975 ... !! kill
+ctx_01 w3  01738104-n/0.24285 02542955-n/0.129899 ... !! cat
+ctx_01 w4  02970821-n/0.16454 06073651-n/0.110485 ... !! hammer
+
+  -v [ --verbose ]
+            Be verbose.
+
+  --no-monosemous
+            Don't output anything for monosemous words.
+
+5. ukb_ppv
+**********
+
+The 'ukb_ppv' application outputs the ranks of the KB concepts (the
+so-called Personalized PageRank Vector, PPV) after applying a Personalized
+PageRank over it, given an input context. Given the previously
+"context.txt", the "wn17.bin" KB and "wn17_dict.txt" dictionary, we can
+extract the PPV by executing:
+
+% ./ukb_ppv -K wn17.bin -D wn17_dict.txt -O /tmp context.txt
+
+The program will create a file named /tmp/ctx_01.ppv with the rank values of
+every node in the KB. The program creates a ppv file for every context in
+the input file. Each file consist on several lines, one per vertex, with 2
+fields each, the vertex name and associated rank. The ranks are normalized
+so that its sum is equal to 1.
+
+The 'ukb_ppv application has several options:
+
+General options:
+
+  -K [ --kb_binfile ] arg
+            Binary file of KB previously created by the 'compile_kb'
+            application. Default is kb_wnet.bin.
+
+  -D [ --dict_file ] arg
+            Dictionary text file. Default is dict.txt
+
+  -O [ --out_dir ] arg
+            Directory for leaving output PPV files. Default is the current
+            directory.
+
+  --concepts_in
+
+            With this option KB nodes can also be part of the input context,
+            and have a weight attached. Fourth field of context "word" must
+            be 2 (not 0 nor 1), and a fifth field specifies the weight. For
+            example, such a context is possible:
+
+ctx_01
+man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
+00980806-v#v#fake_id#2#0.6
+
+	    that is, apart of the context words, "08249817-n" and
+	    "00980806-v" concepts of KB are also "activated" with the
+	    specified weight when PageRanking.
+
+  -v [ --verbose ]
+            Be verbose.
+
+PageRank general options:
+
+  -w [ --with_weight ]
+            Use weigths in PageRank calculation. Serialized graph edges must
+	    have some weight.
+
+  --prank_iter arg
+            Number of iterations in PageRank. Default is 30.
+
+Output options:
+
+  --only_words
+            Output only (normalized) PPVs for dictionary words.
+
+  --only_synsets
+            Output only (normalized) PPVs for KB concepts.
+
+************************************************************************
+
+References
+
+[1] Eneko Agirre and Aitor Soroa. 2009. Personalizing PageRank for Word
+    Sense Disambiguation. Proceedings of the 12th conference of the European
+    chapter of the Association for Computational Linguistics
+    (EACL-2009). Athens, Greece.
+
+See also
+
+   LICENSE for copyright and licensing, and INSTALL for generic installation
+   instructions.

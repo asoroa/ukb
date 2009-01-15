@@ -1,0 +1,38 @@
+
+You need the following Boost libraries to compile ukb:
+
+      * boost graph library
+      * boost program options 
+      * boost filesystem
+      * boost tokenizer
+      * boost lexical cast
+
+Then, just run by the standard compilation procedure:
+
+# Check dependencies and generate Makefile
+
+% ./configure 
+
+# the ./configure script has some options (./configure --help to see them
+# all). The important options are:
+#
+#  --prefix
+#             path were the executables will be installed (after 'make
+#             install')
+#
+#  --with-boost-include
+#            path were the Boost include files reside (default is
+#            /usr/include/boost)
+#
+#  --with-boost-lib
+#            path were the Boost library files reside (default is /usr/lib)
+
+# Compile 
+
+% make
+
+# The executables are now in the current directory. Now, if you want to
+# install them on a different location, just 'cp' them, or execute
+
+% make install
+
