@@ -50,8 +50,8 @@ AC_CHECK_FILE($BOOST_INCLUDE_DIR/lexical_cast.hpp, ,
               echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1)
 
 dnl check boost filesystem include
-AC_CHECK_FILE($BOOST_INCLUDE_DIR/filesystem.hpp, ,
-              echo "BOOST include directory does not contain the Lexical Cast Library !";
+AC_CHECK_FILE($BOOST_INCLUDE_DIR/filesystem/path.hpp, ,
+              echo "BOOST include directory does not contain the Filesystem Library !";
               echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1)
 
 AC_SUBST(BOOST_INCLUDE_DIR)

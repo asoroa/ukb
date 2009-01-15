@@ -2965,9 +2965,9 @@ else
 fi
 
 
-as_ac_File=`echo "ac_cv_file_$BOOST_INCLUDE_DIR/filesystem.hpp" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for $BOOST_INCLUDE_DIR/filesystem.hpp" >&5
-echo $ECHO_N "checking for $BOOST_INCLUDE_DIR/filesystem.hpp... $ECHO_C" >&6; }
+as_ac_File=`echo "ac_cv_file_$BOOST_INCLUDE_DIR/filesystem/path.hpp" | $as_tr_sh`
+{ echo "$as_me:$LINENO: checking for $BOOST_INCLUDE_DIR/filesystem/path.hpp" >&5
+echo $ECHO_N "checking for $BOOST_INCLUDE_DIR/filesystem/path.hpp... $ECHO_C" >&6; }
 if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -2975,7 +2975,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$BOOST_INCLUDE_DIR/filesystem.hpp"; then
+if test -r "$BOOST_INCLUDE_DIR/filesystem/path.hpp"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2987,7 +2987,7 @@ echo "${ECHO_T}$ac_res" >&6; }
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  echo "BOOST include directory does not contain the Lexical Cast Library !";
+  echo "BOOST include directory does not contain the Filesystem Library !";
               echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1
 fi
 
