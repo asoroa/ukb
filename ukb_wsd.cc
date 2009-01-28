@@ -238,6 +238,7 @@ int main(int argc, char *argv[]) {
 
   po_desc.add_options()
     ("help,h", "This page")
+    ("version", "Show version.")
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin.")
     ("dict_file,D", value<string>(), "Dictionary text file. Default is dict.txt")
     ;
@@ -294,6 +295,11 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("help")) {
       cout << po_visible << endl;
+      exit(0);
+    }
+
+    if (vm.count("version")) {
+      cout << glVars::ukb_version << endl;
       exit(0);
     }
 

@@ -111,6 +111,7 @@ int main(int argc, char *argv[]) {
 
   po_desc.add_options()
     ("help,h", "This help page.")
+    ("version", "Show version.")
     ("filter_src,f", value<string>(), "Filter relations according to their sources.")
     ("info,i", "Give info about some Kb binfile.")
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
@@ -142,6 +143,11 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("help")) {
       cout << po_desc << endl;
+      exit(0);
+    }
+
+    if (vm.count("version")) {
+      cout << glVars::ukb_version << endl;
       exit(0);
     }
 

@@ -5,6 +5,9 @@
 
 namespace ukb {
   namespace glVars {
+
+	char ukb_version[] = UKB_VER;
+
 	int verbose = 0;
 
 	namespace debug {

@@ -14,6 +14,9 @@
 
 namespace ukb {
   namespace glVars {
+
+	extern char ukb_version[];
+
 	// debug
 	extern int verbose;
 

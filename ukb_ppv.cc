@@ -123,6 +123,7 @@ int main(int argc, char *argv[]) {
 
   po_desc.add_options()
     ("help,h", "This help page.")
+    ("version", "Show version.")
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin")
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
@@ -170,6 +171,11 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("help")) {
       cout << po_visible << endl;
+      exit(0);
+    }
+
+    if (vm.count("version")) {
+      cout << glVars::ukb_version << endl;
       exit(0);
     }
 
