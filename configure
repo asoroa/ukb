@@ -625,6 +625,7 @@ SET_MAKE
 CXXCPP
 GREP
 EGREP
+ENABLE_STATIC
 BOOST_INCLUDE_DIR
 BOOST_LIB_DIR
 LIBOBJS
@@ -1206,6 +1207,11 @@ if test -n "$ac_init_help"; then
      short | recursive ) echo "Configuration of ukb 0.1.0:";;
    esac
   cat <<\_ACEOF
+
+Optional Features:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+--enable-static enable static linkage
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2868,6 +2874,15 @@ _ACEOF
 fi
 
 
+# Check whether --enable-static was given.
+if test "${enable_static+set}" = set; then
+  enableval=$enable_static; ENABLE_STATIC="--static"
+else
+  ENABLE_STATIC=""
+fi
+
+
+
 
 # Check whether --with-boost-include was given.
 if test "${with_boost_include+set}" = set; then
@@ -3810,13 +3825,14 @@ SET_MAKE!$SET_MAKE$ac_delim
 CXXCPP!$CXXCPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
+ENABLE_STATIC!$ENABLE_STATIC$ac_delim
 BOOST_INCLUDE_DIR!$BOOST_INCLUDE_DIR$ac_delim
 BOOST_LIB_DIR!$BOOST_LIB_DIR$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 53; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

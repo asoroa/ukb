@@ -1,5 +1,6 @@
 
 CCC = @CXX@
+STATIC = @ENABLE_STATIC@
 INCLUDES = -I @BOOST_INCLUDE_DIR@
 LDFLAGS = @LDFLAGS@
 UKB_VER = @PACKAGE_VERSION@
@@ -27,7 +28,7 @@ all: $(EXEC)
 	$(CCC) -c $(CCFLAGS) -o $@ $(INCLUDES) $<
 
 $(EXEC): $(MEMBERS) $(SRCS) $(EXEC_SRC)
-	gcc $(CCFLAGS) -o $@ $@.cc $(MEMBERS) $(INCLUDES) $(LDFLAGS)
+	$(CCC) $(CCFLAGS) -o $@ $@.cc $(MEMBERS) $(INCLUDES) $(STATIC) $(LDFLAGS)
 
 install: $(EXEC)
 	install -d -m 755 $(INSTALLDIR)
