@@ -26,6 +26,9 @@ Then, just run by the standard compilation procedure:
 #
 #  --with-boost-lib
 #            path were the Boost library files reside (default is /usr/lib)
+#
+#  --enable-static
+#            Enable static linkage
 
 # Compile 
 
