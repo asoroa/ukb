@@ -528,7 +528,7 @@ namespace ukb {
 	  // Target word must be distinguished.
 	  if(!cw_it->is_distinguished()) continue;
 
-	  vector<float> ranks (kb.size(), 0.0);
+	  vector<float> ranks;
 	  // Initialize PPV vector
 	  vector<float> ppv(kb.size(), 0.0);
 	  float K = 0.0;
