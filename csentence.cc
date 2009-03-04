@@ -288,8 +288,8 @@ namespace ukb {
 
   istream & CSentence::read_aw(istream & is) {
 
-	string line;
-	int l_n = 0;
+  string line;
+  size_t l_n = 0;
 
 	if(is) {
 	  do {
