@@ -699,6 +699,30 @@ namespace ukb {
 
   // PPV version
 
+  template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
+  void pageRank_dispatch(G & g,
+						 vector<Kb_vertex_t> & V,
+						 ppvMap_t ppv_map, 
+						 wMap_t & wmap,
+						 map1_t rank,
+						 map2_t rank_tmp,
+						 const vector<float> & out_coefs) {
+
+	if (glVars::prank::threshold != 0.0) 
+	  prank::do_pageRank_l1(g, V, 
+							&ppv_map[0], wmap, 
+							&rank[0], &rank_tmp[0],
+							glVars::prank::threshold,
+							out_coefs);
+	else
+	  prank::do_pageRank(g, V, 
+						 &ppv_map[0], wmap, 
+						 &rank[0], &rank_tmp[0],
+						 glVars::prank::num_iterations,
+						 out_coefs);
+  }
+						 
+
   void Kb::pageRank_ppv(const vector<float> & ppv_map,
 						 vector<float> & ranks,
 						 bool use_weight) {
@@ -722,10 +746,13 @@ namespace ukb {
 		prank::init_out_coefs(g, V, &out_coefs[0], weight_map);
 		coef_status = 2;
 	  }
-	  prank::do_pageRank(g, V, &ppv_map[0],
-						 weight_map, &ranks[0], &rank_tmp[0],
-						 glVars::prank::num_iterations,
-						 out_coefs);
+	  pageRank_dispatch(g, V, &ppv_map[0],
+						weight_map, &ranks[0], &rank_tmp[0],
+						out_coefs);
+// 	  prank::do_pageRank(g, V, &ppv_map[0],
+// 						 weight_map, &ranks[0], &rank_tmp[0],
+// 						 glVars::prank::num_iterations,
+// 						 out_coefs);
 	} else {
 	  typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
 	  prank::constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
@@ -734,10 +761,13 @@ namespace ukb {
 		prank::init_out_coefs(g, V, &out_coefs[0], cte_weight);
 		coef_status = 1;
 	  }
-	  prank::do_pageRank(g, V, &ppv_map[0],
-						 cte_weight, &ranks[0], &rank_tmp[0],
-						 glVars::prank::num_iterations,
-						 out_coefs);
+	  pageRank_dispatch(g, V, &ppv_map[0],
+						cte_weight, &ranks[0], &rank_tmp[0],
+						out_coefs);
+// 	  prank::do_pageRank(g, V, &ppv_map[0],
+// 						 cte_weight, &ranks[0], &rank_tmp[0],
+// 						 glVars::prank::num_iterations,
+// 						 out_coefs);
 	}
   }
 
