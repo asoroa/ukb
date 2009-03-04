@@ -30,6 +30,7 @@ namespace ukb {
 
 	namespace prank {
 	  size_t num_iterations = 30;
+	  float threshold = 0.000001;
 	}
 
 	namespace input {

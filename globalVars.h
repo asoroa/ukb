@@ -38,6 +38,7 @@ namespace ukb {
 
 	namespace prank {
 	  extern size_t num_iterations;
+	  extern float threshold;
 	}
 
 
