@@ -168,8 +168,8 @@ public:
   // outranks: new rank vector
   // vnames: node names
 
-  void filter_ranks_vnames(const std::vector<float> & ranks,
-						   std::vector<float> & outranks,
+  void filter_ranks_vnames(const std::vector<double> & ranks,
+						   std::vector<double> & outranks,
 						   std::vector<std::string> & vnames,
 						   int filter_mode) const;
   
@@ -195,11 +195,11 @@ public:
 
   bool dijkstra (Kb_vertex_t src, std::vector<Kb_vertex_t> & parents) const;
 
-  void pageRank_ppv(const std::vector<float> & ppv_map,
-					std::vector<float> & ranks,
+  void pageRank_ppv(const std::vector<double> & ppv_map,
+					std::vector<double> & ranks,
 					bool use_weight);
 
-  void ppv_weights(const std::vector<float> & ppv);
+  void ppv_weights(const std::vector<double> & ppv);
 
   std::ostream & dump_graph(std::ostream & o) const;
 

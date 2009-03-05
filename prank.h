@@ -93,19 +93,19 @@ namespace ukb {
 	  typename std::vector<vertex_descriptor>::iterator v = V.begin();
 	  typename std::vector<vertex_descriptor>::iterator end = V.end();
 	  for (; v != end; ++v) {
-		float rank=0.0;
+		double rank = 0.0;
 		typename graph_traits<G>::in_edge_iterator e, e_end;
 		tie(e, e_end) = in_edges(*v, g);
 		for(; e != e_end; ++e) {
 		  vertex_descriptor u = source(*e, g);
-		  rank += rank_map1[u] * wmap[*e] * out_coef[u];
+		  rank += rank_map1[u] * wmap[*e] * static_cast<double>(out_coef[u]);
 		}
-		float dangling_factor = 0.0;
+		double dangling_factor = 0.0;
 		if (0.0 == out_coef[*v]) {
 		  // dangling link
-		  dangling_factor = damping*rank_map1[*v];
+		  dangling_factor = static_cast<double>(damping)*rank_map1[*v];
 		}
-		rank_map2[*v] = damping*rank + (dangling_factor + 1.0 - damping )*ppv_V[*v];
+		rank_map2[*v] = damping*rank + (dangling_factor + static_cast<double>(1.0 - damping ) )*ppv_V[*v];
 	  }
 	}
 
@@ -127,19 +127,19 @@ namespace ukb {
 	  typename std::vector<vertex_descriptor>::iterator end = V.end();
 	  float norm = 0.0;
 	  for (; v != end; ++v) {
-		float rank=0.0;
+		double rank=0.0;
 		typename graph_traits<G>::in_edge_iterator e, e_end;
 		tie(e, e_end) = in_edges(*v, g);
 		for(; e != e_end; ++e) {
 		  vertex_descriptor u = source(*e, g);
-		  rank += rank_map1[u] * wmap[*e] * out_coef[u];
+		  rank += rank_map1[u] * wmap[*e] * static_cast<double>(out_coef[u]);
 		}
-		float dangling_factor = 0.0;
+		double dangling_factor = 0.0;
 		if (0.0 == out_coef[*v]) {
 		  // dangling link
-		  dangling_factor = damping*rank_map1[*v];
+		  dangling_factor = static_cast<double>(damping)*rank_map1[*v];
 		}
-		rank_map2[*v] = damping*rank + (dangling_factor + 1.0 - damping )*ppv_V[*v];
+		rank_map2[*v] = damping*rank + (dangling_factor + static_cast<double>(1.0 - damping) )*ppv_V[*v];
 		norm += fabs(rank_map2[*v] - rank_map1[*v]);
 	  }
 	  return norm;
@@ -162,7 +162,7 @@ namespace ukb {
 	  float damping = 0.85;    
 	  // Initialize rank_map1 appropriately
 	  {
-		const float init_value = 1.0f/static_cast<float>(V.size());
+		const double init_value = 1.0f/static_cast<double>(V.size());
 		typename graph_traits<G>::vertex_iterator v, end;
 		for (tie(v, end) = vertices(g); v != end; ++v) {
 		  rank_map1[*v]=init_value;
@@ -200,13 +200,13 @@ namespace ukb {
 						wMap_t & wmap,
 						map1_t rank_map1,
 						map2_t rank_map2,
-						float threshold,
+						double threshold,
 						const std::vector<float> & out_coef) {
 
 	  float damping = 0.85;    
 	  // Initialize rank_map1 appropriately
 	  {
-		const float init_value = 1.0f/static_cast<float>(V.size());
+		const double init_value = 1.0f/static_cast<double>(V.size());
 		typename graph_traits<G>::vertex_iterator v, end;
 		for (tie(v, end) = vertices(g); v != end; ++v) {
 		  rank_map1[*v]=init_value;
@@ -216,7 +216,7 @@ namespace ukb {
 	  // Continue iterating until the termination condition is met
     
 	  bool to_map_2 = true;
-	  float residual = 0.0;
+	  double residual = 0.0;
 	  while(true) {
 		// Update to the appropriate rank map
 		if (to_map_2)

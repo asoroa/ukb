@@ -109,7 +109,7 @@ void dis_csent_ppr(const string & input_file,
   try {
     while (cs.read_aw(fh_in)) {
 
-      vector<float> ranks;
+      vector<double> ranks;
       bool ok = calculate_kb_ppr(cs,ranks, with_weight);
       if (!ok) {
 		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
@@ -180,8 +180,8 @@ void dis_csent_classic_prank(const string & input_file,
 
   // Global (static) pageRank over KB
   size_t N = Kb::instance().size();
-  vector<float> ppv(N, 1.0/static_cast<float>(N));
-  vector<float> ranks;
+  vector<double> ppv(N, 1.0/static_cast<double>(N));
+  vector<double> ranks;
   Kb::instance().pageRank_ppv(ppv, ranks, with_w);
 
   try {

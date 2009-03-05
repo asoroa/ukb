@@ -86,7 +86,7 @@ private:
 void fill_disamb_graph(const CSentence & sentence,
 					   DisambGraph & dgraph);
 void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
-					   const std::vector<float> & ppv_ranks);
+					   const std::vector<double> & ppv_ranks);
 
 void disamb_csentence(CSentence & cs, DisambGraph & dgraph);
 

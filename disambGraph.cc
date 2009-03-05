@@ -242,7 +242,7 @@ namespace ukb {
   // using edge weights in kb derived from ppv_rank
 
   void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
-						 const vector<float> & ppv_ranks) {
+						 const vector<double> & ppv_ranks) {
 
   
 	// First, update kb's edge weights

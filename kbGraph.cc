@@ -273,16 +273,16 @@ namespace ukb {
 
 
   void vname_filter(const map<string, Kb_vertex_t> & theMap,
-					const vector<float> & ranks,
+					const vector<double> & ranks,
 					const KbGraph & g,
-					vector<float> & outranks,
+					vector<double> & outranks,
 					vector<string> & vnames) {
 
 	size_t v_m = theMap.size();
 
 	vector<Kb_vertex_t> V(v_m);
 	// empty output vectors
-	vector<float>(v_m).swap(outranks);
+	vector<double>(v_m).swap(outranks);
 	vector<string>(v_m).swap(vnames);
 
 	map<string, Kb_vertex_t>::const_iterator m_it = theMap.begin();
@@ -304,8 +304,8 @@ namespace ukb {
   }
 
 
-  void Kb::filter_ranks_vnames(const vector<float> & ranks,
-							   vector<float> & outranks,
+  void Kb::filter_ranks_vnames(const vector<double> & ranks,
+							   vector<double> & outranks,
 							   vector<string> & vnames,
 							   int filter_mode) const {
 
@@ -682,7 +682,7 @@ namespace ukb {
 	}
   }
 
-  void Kb::ppv_weights(const vector<float> & ppv) {
+  void Kb::ppv_weights(const vector<double> & ppv) {
 
 	graph_traits<KbGraph>::edge_iterator it, end;
 
@@ -723,13 +723,13 @@ namespace ukb {
   }
 						 
 
-  void Kb::pageRank_ppv(const vector<float> & ppv_map,
-						 vector<float> & ranks,
+  void Kb::pageRank_ppv(const vector<double> & ppv_map,
+						 vector<double> & ranks,
 						 bool use_weight) {
 
 	size_t N = num_vertices(g);
-	vector<float>(N, 0.0).swap(ranks); // Initialize rank vector
-	vector<float> rank_tmp(N, 0.0);    // auxiliary rank vector
+	vector<double>(N, 0.0).swap(ranks); // Initialize rank vector
+	vector<double> rank_tmp(N, 0.0);    // auxiliary rank vector
 
 	// ugly ugly hack @@CHANGE ME !!!
 

@@ -66,7 +66,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
     while (cs.read_aw(fh_in)) {
 
       // Initialize rank vector
-      vector<float> ranks;
+      vector<double> ranks;
 
       bool ok = calculate_kb_ppr(cs,ranks, weight);
       if (!ok) {
@@ -82,7 +82,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
 		exit(-1);
       }
 
-	  vector<float> outranks;
+	  vector<double> outranks;
 	  vector<string> vnames;
 
 	  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
