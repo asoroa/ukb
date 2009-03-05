@@ -129,6 +129,7 @@ int main(int argc, char *argv[]) {
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
     ("concepts_in", "Let concept ids in input context. Item must have 5 fields, the fourth being 2 and the last one being the weight.")
     ("verbose,v", "Be verbose.")
+	("nopos", "Don't filter words by Part of Speech.")
     ;
 
   options_description po_desc_prank("pageRank general options");
@@ -187,6 +188,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("kb_binfile")) {
       kb_binfile = vm["kb_binfile"].as<string>();
+    }
+
+    if (vm.count("nopos")) {
+	  glVars::input::filter_pos = false;
     }
 
     if (vm.count("only_words")) {

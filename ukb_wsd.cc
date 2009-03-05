@@ -241,6 +241,7 @@ int main(int argc, char *argv[]) {
     ("version", "Show version.")
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin.")
     ("dict_file,D", value<string>(), "Dictionary text file. Default is dict.txt")
+	("nopos", "Don't filter words by Part of Speech.")
     ;
 
   options_description po_desc_wsd("WSD methods");
@@ -301,6 +302,10 @@ int main(int argc, char *argv[]) {
     if (vm.count("version")) {
       cout << glVars::ukb_version << endl;
       exit(0);
+    }
+
+    if (vm.count("nopos")) {
+	  glVars::input::filter_pos = false;
     }
 
     if (vm.count("ppr")) {
