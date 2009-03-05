@@ -112,7 +112,7 @@ namespace ukb {
 	// Same thing, but calculate l1 norm
 
 	template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
-	double update_pRank_l1(G & g,
+	float update_pRank_l1(G & g,
 						   std::vector<typename graph_traits<G>::vertex_descriptor> & V,
 						   float damping,
 						   ppvMap_t ppv_V,
@@ -200,7 +200,7 @@ namespace ukb {
 						wMap_t & wmap,
 						map1_t rank_map1,
 						map2_t rank_map2,
-						double threshold,
+						float threshold,
 						const std::vector<float> & out_coef) {
 
 	  float damping = 0.85;    
@@ -216,7 +216,7 @@ namespace ukb {
 	  // Continue iterating until the termination condition is met
     
 	  bool to_map_2 = true;
-	  double residual = 0.0;
+	  float residual = 0.0;
 	  while(true) {
 		// Update to the appropriate rank map
 		if (to_map_2)
