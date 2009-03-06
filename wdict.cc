@@ -123,7 +123,7 @@ namespace ukb {
 
 		words[words_I] = fields[0]; // insert word
 		tie(map_value_it, insertedP) = wdicts.insert(make_pair(&words[words_I], WDict_item_t()));
-		words_I++;
+		if (insertedP) words_I++;
 
 		WDict_item_t & item = map_value_it->second;
 
