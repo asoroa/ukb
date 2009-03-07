@@ -3,10 +3,16 @@
 #include <iostream>
 #include <ctime>
 
+#ifdef UKB_VER
+#define UKB_VERSION UKB_VER
+#else
+#define UKB_VERSION "unknown"
+#endif
+
 namespace ukb {
   namespace glVars {
 
-	char ukb_version[] = UKB_VER;
+	char ukb_version[] = UKB_VERSION;
 
 	int verbose = 0;
 
@@ -70,7 +76,7 @@ namespace ukb {
 	//   float  VeronisParam::hubNeighborWeightMin = 0.2;
 	//   float  VeronisParam::hubFreqThreshold = 0.001;
 
-	//   float  PrankParam::freqThreshold = 0.002; // 
+	//   float  PrankParam::freqThreshold = 0.002; //
 	//   int    PrankParam::siblingsCannotBeHubs = 0;
 
 	//   float MclParam::Inflate = 0.0f;
