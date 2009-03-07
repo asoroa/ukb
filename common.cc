@@ -22,18 +22,18 @@ namespace ukb {
 	std::string::size_type start_index, end_index;
 	std::vector<std::string> ret;
 
-	// Skip leading delimiters, to get to the first token                                                  
+	// Skip leading delimiters, to get to the first token
 	start_index = str.find_first_not_of(delims);
 
-	// While found a beginning of a new token                                                              
-	//                                                                                                     
+	// While found a beginning of a new token
+	//
 	while (start_index != std::string::npos)
 	  {
-		// Find the end of this token                                                                       
+		// Find the end of this token
 		end_index = str.find_first_of(delims, start_index);
 
-		// If this is the end of the std::string                                                                 
-		// If this is the end of the string                                                                     
+		// If this is the end of the std::string
+		// If this is the end of the string
 		if (end_index == std::string::npos) {
 		  ret.push_back(str.substr(start_index, str.size() - start_index));
 		  break;
@@ -41,10 +41,21 @@ namespace ukb {
 
 		ret.push_back(str.substr(start_index, end_index - start_index));
 
-		// Find beginning of the next token                                                                 
+		// Find beginning of the next token
 		start_index = str.find_first_not_of(delims, end_index);
 	  }
 
 	return ret;
+  }
+
+  void trim_spaces(std::string &l) {
+
+	std::string res("");
+	std::string::size_type start = l.find_first_not_of(" \t");
+	std::string::size_type end = l.find_last_not_of(" \t");
+	if (start != std::string::npos) {
+	  res = l.substr(start, end - start + 1);
+	}
+	l.swap(res);
   }
 }

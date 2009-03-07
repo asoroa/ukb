@@ -60,10 +60,10 @@ namespace ukb {
   //////////////////////////////////////////////////////7
   // join
 
-  std::string join(const std::string &delim, 
-				   std::vector<std::string>::const_iterator it, 
+  std::string join(const std::string &delim,
+				   std::vector<std::string>::const_iterator it,
 				   std::vector<std::string>::const_iterator end) {
-  
+
 	std::string res("");
 
 	if (it == end) return res;
@@ -80,13 +80,13 @@ namespace ukb {
   void read_wdict_file(const string & fname,
 					   vector<string> & words,
 					   WDict::wdicts_t & wdicts) {
-    
+
 	// optimize IO
 	std::ios::sync_with_stdio(false);
 
 	size_t N = count_lines(fname);
 	vector<string>(N).swap(words);
-    
+
 	std::ifstream fh(fname.c_str(), ofstream::in);
 	if(!fh) {
 	  cerr << "Can't open " << fname << endl;
@@ -102,13 +102,18 @@ namespace ukb {
 	int line_number = 0;
 	bool insertedP;
 	int words_I = 0;
-  
+
 	try {
 	  while(fh) {
+		do {
+		  std::getline(fh, line, '\n');
+		  trim_spaces(line);
+		  line_number++;
+		} while(fh && !line.size());
+
 		vector<string> fields;
-		std::getline(fh, line, '\n');
-		line_number++;
-		char_separator<char> sep(" ");
+
+		char_separator<char> sep(" \t");
 		tokenizer<char_separator<char> > tok(line, sep);
 		copy(tok.begin(), tok.end(), back_inserter(fields));
 		if (fields.size() == 0) continue; // blank line
@@ -173,7 +178,7 @@ namespace ukb {
 	  throw std::runtime_error("Error in read_wdict_file: " + string(e.what()) + " in line " + lexical_cast<string>(line_number));
 	}
   }
-  
+
   WDict::WDict() {
 	read_wdict_file(glVars::dict_filename, words, m_wdicts);
   }
@@ -246,8 +251,8 @@ namespace ukb {
 	return _item.wsyns[i].at(idx + 1);
   }
 
-  float WDict_entries::get_freq(size_t i) const { 
-	if (_item.has_freq) 
+  float WDict_entries::get_freq(size_t i) const {
+	if (_item.has_freq)
 	  return _item.syns_count[i];
 	return 0.0f;
   }

@@ -28,7 +28,7 @@ namespace ukb {
 	WDict_entries entries = WDict::instance().get_entries(w);
 
 	for(size_t i= 0; i < entries.size(); ++i) {
-	
+
 	  const string & syn_str = entries.get_entry(i);
 
 	  bool existP;
@@ -273,18 +273,17 @@ namespace ukb {
   ////////////////////////////////////////////////////////////////
   // CSentence
 
-  // AW file read (create a csentence from a context)
-
-  static bool skip_line(const string &l) {
-
-	if (l.size() == 0) return true;
-	string::const_iterator sIt = l.begin();
-	string::const_iterator sItEnd = l.end();
-	while(sIt != sItEnd && isspace(*sIt)) sIt++;
-	if (sIt == sItEnd) return true;
-	if (*sIt == '#') return true;
-	return false;
+  static bool read_ctx_line(istream & is, string & line, size_t & l_n) {
+	do {
+	  getline(is, line, '\n');
+	  trim_spaces(line);
+	  l_n++;
+	} while(is && !line.size());
+	if(!is) return false;
+	return true;
   }
+
+  // AW file read (create a csentence from a context)
 
   istream & CSentence::read_aw(istream & is) {
 
@@ -292,11 +291,7 @@ namespace ukb {
   size_t l_n = 0;
 
 	if(is) {
-	  do {
-		getline(is, line, '\n');
-		l_n++;
-	  } while(is && skip_line(line));
-	  if(!is) return is;
+	  if(!read_ctx_line(is, line, l_n)) return is;
 
 	  // first line is id
 	  char_separator<char> sep(" ");
@@ -308,11 +303,7 @@ namespace ukb {
 	  cs_id = ctx[0];
 	  vector<string>().swap(ctx);
 	  // next comes the context
-	  do {
-		getline(is, line, '\n');
-		l_n++;
-	  } while(is && skip_line(line));
-	  if(!is) return is;
+	  if(!read_ctx_line(is, line, l_n)) return is;
 
 	  tokenizer<char_separator<char> > tok_ctx(line, sep);
 	  copy(tok_ctx.begin(), tok_ctx.end(), back_inserter(ctx));
@@ -348,8 +339,8 @@ namespace ukb {
 			// No synset for that word.
 			if (glVars::debug::warning) {
 			  cerr << "W: " << fields[0];
-			  if (glVars::input::filter_pos && pos) 
-				cerr << "-" << fields[1]; 
+			  if (glVars::input::filter_pos && pos)
+				cerr << "-" << fields[1];
 			  cerr << " can't be mapped to KB." << endl;
 			}
 		  }
@@ -465,7 +456,7 @@ namespace ukb {
 
 
   // Given a CSentence apply Personalized PageRank and obtain obtain it's
-  // Personalized PageRank Vector (PPV) 
+  // Personalized PageRank Vector (PPV)
   //
   // Initial V is computed by activating the words of the context
 

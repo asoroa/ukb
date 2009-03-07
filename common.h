@@ -1,6 +1,6 @@
 // -*-C++-*-
 
-// common.h 
+// common.h
 // + global variables
 // + constants
 // + singletons
@@ -46,13 +46,13 @@ namespace ukb {
   template<class T>
   void read_atom_from_stream(std::ifstream & is,
 							 T & a) {
-	is.read(reinterpret_cast<char *>(&a), sizeof(a));  
+	is.read(reinterpret_cast<char *>(&a), sizeof(a));
   }
 
-  template<> 
+  template<>
   inline void read_atom_from_stream <std::string> (std::ifstream & is, std::string & str) {
 	size_t len;
-  
+
 	is.read(reinterpret_cast<char *>(&len), sizeof(len));
 	if (len) {
 	  char * aux= new char [len];
@@ -64,7 +64,7 @@ namespace ukb {
 
   template<class Map>
   void read_map_from_stream(std::ifstream & is, Map & map) {
- 
+
 	typedef typename Map::key_type key_type;
 	typedef typename Map::mapped_type data_type;
 	typedef typename Map::value_type value_type;
@@ -84,7 +84,7 @@ namespace ukb {
 	}
   }
 
-  template<class Vector> 
+  template<class Vector>
   void read_vector_from_stream(std::ifstream & is, Vector & v) {
 
 	size_t vSize;
@@ -99,7 +99,7 @@ namespace ukb {
 	}
   }
 
-  template<class Set> 
+  template<class Set>
   void read_set_from_stream(std::ifstream & is, Set & v) {
 
 	size_t vSize;
@@ -128,11 +128,11 @@ namespace ukb {
 															 const std::string & str) {
 
 	size_t len;
-  
+
 	len = str.size();
 	o.write(reinterpret_cast<const char *>(&len), sizeof(len));
 	if (len)
-	  o.write(reinterpret_cast<const char *>(str.c_str()), len);  
+	  o.write(reinterpret_cast<const char *>(str.c_str()), len);
 	return o;
   }
 
@@ -247,7 +247,7 @@ namespace ukb {
 	Generator& g;
   };
 
-  template<typename Generator> 
+  template<typename Generator>
   inline random_functor <Generator>
   make_random_functor(Generator & g) {
 	return random_functor<Generator>(g);
@@ -270,7 +270,7 @@ namespace ukb {
   //   vertex_iterator v_it, v_end;
   //   for(boost::tie(v_it, v_end) = vertices(g); v_it != v_end; ++v_it) {
   //     if (boost::out_degree(*v_it, g) || boost::in_degree(*v_it, g)) {
-      
+
   //     }
   //   }
 
@@ -296,7 +296,7 @@ namespace ukb {
   template < class ValType1, class ValType2, class ValType3 >
   class my_name_writer3 {
   public:
-	my_name_writer3(ValType1 _val1, ValType2 _val2, ValType3 _val3, const std::string & _name1, const std::string & _name2, const std::string & _name3) 
+	my_name_writer3(ValType1 _val1, ValType2 _val2, ValType3 _val3, const std::string & _name1, const std::string & _name2, const std::string & _name3)
 	  : val1(_val1), val2(_val2), val3(_val3), name1(_name1), name2(_name2), name3(_name3) {}
 	template <class VertexOrEdge>
 	void operator()(std::ostream& out, const VertexOrEdge& v) const {
@@ -394,6 +394,9 @@ namespace ukb {
   // split function
 
   std::vector<std::string> split(const std::string & str, const std::string & delims);
+
+  // trim trailing and leading spaces
+  void trim_spaces(std::string &l);
 }
 
 #endif

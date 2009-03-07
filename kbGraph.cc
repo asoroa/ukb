@@ -359,6 +359,7 @@ namespace ukb {
 	while(kbFile) {
 	  vector<string> fields;
 	  std::getline(kbFile, line, '\n');
+	  trim_spaces(line);
 	  line_number++;
 	  char_separator<char> sep(" ");
 	  tokenizer<char_separator<char> > tok(line, sep);
@@ -476,6 +477,7 @@ namespace ukb {
 	  while(kbFile) {
 		vector<string> fields;
 		std::getline(kbFile, line, '\n');
+		trim_spaces(line);
 		line_number++;
 		rel_parse f;
 		if (!parse_line(line, f)) continue;
@@ -702,26 +704,26 @@ namespace ukb {
   template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
   void pageRank_dispatch(G & g,
 						 vector<Kb_vertex_t> & V,
-						 ppvMap_t ppv_map, 
+						 ppvMap_t ppv_map,
 						 wMap_t & wmap,
 						 map1_t rank,
 						 map2_t rank_tmp,
 						 const vector<float> & out_coefs) {
 
-	if (glVars::prank::threshold != 0.0) 
-	  prank::do_pageRank_l1(g, V, 
-							&ppv_map[0], wmap, 
+	if (glVars::prank::threshold != 0.0)
+	  prank::do_pageRank_l1(g, V,
+							&ppv_map[0], wmap,
 							&rank[0], &rank_tmp[0],
 							glVars::prank::threshold,
 							out_coefs);
 	else
-	  prank::do_pageRank(g, V, 
-						 &ppv_map[0], wmap, 
+	  prank::do_pageRank(g, V,
+						 &ppv_map[0], wmap,
 						 &rank[0], &rank_tmp[0],
 						 glVars::prank::num_iterations,
 						 out_coefs);
   }
-						 
+
 
   void Kb::pageRank_ppv(const vector<double> & ppv_map,
 						 vector<double> & ranks,
