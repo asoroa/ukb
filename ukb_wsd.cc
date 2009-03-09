@@ -32,12 +32,12 @@ const char *kb_default_binfile = "kb_wnet.bin";
 
 /* Function used to check that 'opt1' and 'opt2' are not specified
    at the same time. */
-void conflicting_options(const boost::program_options::variables_map& vm, 
+void conflicting_options(const boost::program_options::variables_map& vm,
                          const char* opt1, const char* opt2)
 {
-  if (vm.count(opt1) && !vm[opt1].defaulted() 
+  if (vm.count(opt1) && !vm[opt1].defaulted()
       && vm.count(opt2) && !vm[opt2].defaulted())
-    throw logic_error(string("Conflicting options '") 
+    throw logic_error(string("Conflicting options '")
 					  + opt1 + "' and '" + opt2 + "'.");
 }
 
@@ -48,7 +48,7 @@ void option_dependency(const boost::program_options::variables_map& vm,
 {
   if (vm.count(for_what) && !vm[for_what].defaulted())
     if (vm.count(required_option) == 0 || vm[required_option].defaulted())
-      throw logic_error(string("Option '") + for_what 
+      throw logic_error(string("Option '") + for_what
 						+ "' requires option '" + required_option + "'.");
 }
 
@@ -58,7 +58,7 @@ void option_dependency(const boost::program_options::variables_map& vm,
 
 // Disambiguate using disambiguation graph (dgraph) method
 
-void disamb_dgraph_from_corpus(string & fullname_in, 
+void disamb_dgraph_from_corpus(string & fullname_in,
 							   bool with_weight,
 							   bool out_semcor) {
 
@@ -81,17 +81,17 @@ void disamb_dgraph_from_corpus(string & fullname_in,
       else cs.print_csent_simple(cout);
       cs = CSentence();
     }
-  } 
+  }
   catch (std::exception & e) {
     cerr << "Errore reading " << fullname_in << ":" << e.what() << "\n";
-    throw(e);    
+    throw(e);
   }
 }
 
 void dis_csent_ppr(const string & input_file,
 				   bool with_weight,
 				   bool out_semcor) {
-  
+
   ifstream fh_in(input_file.c_str());
 
   if (!fh_in) {
@@ -101,7 +101,7 @@ void dis_csent_ppr(const string & input_file,
 
   CSentence cs;
 
-  if (glVars::verbose) 
+  if (glVars::verbose)
     cerr << "Adding words to Mcr ...\n";
 
   Kb::instance().add_dictionary(false);
@@ -122,10 +122,10 @@ void dis_csent_ppr(const string & input_file,
       else cs.print_csent_simple(cout);
       cs = CSentence();
     }
-  } 
+  }
   catch (string & e) {
     cerr << "Errore reading " << input_file << ":" << e << "\n";
-    throw(e);    
+    throw(e);
   }
 }
 
@@ -133,7 +133,7 @@ void dis_csent_ppr(const string & input_file,
 void dis_csent_ppr_by_word(const string & input_file,
 						  bool with_weight,
 						  bool out_semcor) {
-  
+
   ifstream fh_in(input_file.c_str());
 
   if (!fh_in) {
@@ -143,14 +143,14 @@ void dis_csent_ppr_by_word(const string & input_file,
 
   CSentence cs;
 
-  if (glVars::verbose) 
+  if (glVars::verbose)
     cerr << "Adding words to Kb ...\n";
 
   Kb::instance().add_dictionary(false);
-  
+
   try {
     while (cs.read_aw(fh_in)) {
-	  
+
       calculate_kb_ppr_by_word_and_disamb(cs, with_weight);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_simple(cout);
@@ -158,17 +158,17 @@ void dis_csent_ppr_by_word(const string & input_file,
       //cout << cs << '\n';
       cs = CSentence();
     }
-  } 
+  }
   catch (string & e) {
     cerr << "Errore reading " << input_file << ":" << e << "\n";
     throw(e);
   }
 }
 
-void dis_csent_classic_prank(const string & input_file, 
+void dis_csent_classic_prank(const string & input_file,
 							 bool with_w,
 							 bool out_semcor) {
-  
+
   ifstream fh_in(input_file.c_str());
 
   if (!fh_in) {
@@ -191,10 +191,10 @@ void dis_csent_classic_prank(const string & input_file,
       else cs.print_csent_simple(cout);
       cs = CSentence();
     }
-  } 
+  }
   catch (string & e) {
     cerr << "Errore reading " << input_file << ":" << e << "\n";
-    throw(e);    
+    throw(e);
   }
 }
 
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   bool opt_do_static_prank = false;
   bool opt_do_test = false;
   bool opt_with_w = false;
-  bool opt_out_semcor = false; 
+  bool opt_out_semcor = false;
 
 
   string cmdline("!!");
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
 	"ukb_wsd -D dict.txt -K kb.bin --ppr input.txt    -> Disambiguate input.txt using PPR technique according to graph kb.bin and dictionary dict.txt\n"
     "ukb_wsd -D dict.txt -K kb.bin --dis_dgraph input.txt -> Disambiguate input.txt using Disambiguation graph technique, according to graph kb.bin and dictionary dict.txt\n"
 	"Options";
-  
+
   //options_description po_desc(desc_header);
 
   options_description po_desc("General");
@@ -256,6 +256,7 @@ int main(int argc, char *argv[]) {
   po_desc_prank.add_options()
     ("with_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
     ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
+    ("prank_threshold", value<float>(), "Threshold for stopping PageRank. Default is zero. Good value is 0.0001.")
     ;
 
   options_description po_desc_output("Output options");
@@ -268,7 +269,7 @@ int main(int argc, char *argv[]) {
 
   options_description po_visible(desc_header);
   po_visible.add(po_desc).add(po_desc_wsd).add(po_desc_prank).add(po_desc_output);
-  
+
   options_description po_hidden("Hidden");
   po_hidden.add_options()
     ("test,t", "(Internal) Do a test.")
@@ -276,19 +277,19 @@ int main(int argc, char *argv[]) {
     ;
   options_description po_all("All options");
   po_all.add(po_visible).add(po_hidden);
-  
+
   positional_options_description po_optdesc;
   po_optdesc.add("input-file", 1);
   //    po_optdesc.add("output-file", 1);
-  
+
   try {
-    
+
     variables_map vm;
     store(command_line_parser(argc, argv).
 		  options(po_all).
 		  positional(po_optdesc).
 		  run(), vm);
-    
+
     notify(vm);
 
 
@@ -324,6 +325,10 @@ int main(int argc, char *argv[]) {
       glVars::prank::num_iterations = vm["prank_iter"].as<size_t>();
     }
 
+	if (vm.count("prank_threshold")) {
+	  glVars::prank::threshold = vm["prank_threshold"].as<float>();
+	}
+
     if (vm.count("dis_dgraph")) {
       opt_disamb_dgraph = true;
     }
@@ -345,7 +350,7 @@ int main(int argc, char *argv[]) {
       }
       glVars::rAlg = alg;
     }
-    
+
     if (vm.count("with_weight")) {
       opt_with_w = true;
     }
@@ -375,6 +380,7 @@ int main(int argc, char *argv[]) {
       glVars::output::monosemous = false;
     }
 
+    conflicting_options(vm, "prank_iter", "prank_threshold");
     conflicting_options(vm, "ppr", "ppr_w2w");
     conflicting_options(vm, "ppr", "static");
     conflicting_options(vm, "ppr_w2w", "static");
