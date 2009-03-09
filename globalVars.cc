@@ -53,6 +53,7 @@ namespace ukb {
 
 	namespace kb {
 	  bool keep_reltypes = false;
+	  bool keep_directed = true;
 	  bool v1_kb = true;
 	  bool filter_src = true;
 	}

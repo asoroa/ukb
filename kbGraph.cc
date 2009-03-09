@@ -502,8 +502,7 @@ namespace ukb {
 	  kb->add_relSource(fields[3]);
 
 	  // last element says if relation is directed
-	  bool directed = (fields.size() > 4 && lexical_cast<int>(fields[4]) != 0);
-
+	  bool directed = glVars::kb::keep_directed && (fields.size() > 4 && lexical_cast<int>(fields[4]) != 0);
 	  // add edge
 	  kb->find_or_insert_edge(u, v, 1.0);
 	  if (!directed)
@@ -576,7 +575,7 @@ namespace ukb {
 		res.w = lexical_cast<float>(val);
 		break;
 	  case 'd':
-		res.directed = lexical_cast<bool>(val);
+		res.directed = glVars::kb::keep_directed && lexical_cast<bool>(val);
 		break;
 	  default:
 		throw runtime_error("parse_line error. Unknown value " + str);

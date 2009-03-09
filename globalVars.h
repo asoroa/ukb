@@ -8,7 +8,7 @@
 #include<string>
 #include<vector>
 
-// For srand & friends 
+// For srand & friends
 
 #include <boost/random/mersenne_twister.hpp>
 
@@ -42,7 +42,7 @@ namespace ukb {
 	}
 
 
-	// Input 
+	// Input
 	namespace input {
 	  // Wether input words must be filtered by pos when attaching them
 	  // to the KB. It also has effects on dictionary.
@@ -61,6 +61,7 @@ namespace ukb {
 	  extern bool keep_reltypes; // Wether edges locally keep the relation types
 	  extern bool v1_kb; // Wether input has v1 format
 	  extern bool filter_src; // Wether input relations should be filtered by relation source
+	  extern bool keep_directed; // Wether we will allow directed edges (default true)
 	}
 
 	extern boost::mt19937 rand_generator;
@@ -99,7 +100,7 @@ namespace ukb {
 
 	//   extern HubsAlg hubsAlg;
 
-  
+
 	//   struct Param {
 	//     // coocurrences with a frequency of 5 or more are retained
 	//     static size_t edgeFreqMin;
