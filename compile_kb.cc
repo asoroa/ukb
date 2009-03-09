@@ -47,7 +47,7 @@ void query (const string & str) {
   }
 }
 
-bool parse_csv(const string & str, 
+bool parse_csv(const string & str,
 			   vector<string> & V) {
 
   typedef tokenizer<char_separator<char> > tokenizer_t;
@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
     ("output,o", value<string>(), "Output file name.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
+    ("undirected,U", "Force undirected graph.")
     ("verbose,v", "Be verbose.")
     ("rtypes,r", "Keep relation types on edges.")
     ;
@@ -165,12 +166,16 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("filter_src")) {
-	  glVars::kb::filter_src = true; 
+	  glVars::kb::filter_src = true;
 	  set_source_rels(vm["filter_src"].as<string>(), src_allowed);
     }
 
     if (vm.count("dump")) {
       opt_dump = true;
+    }
+
+    if (vm.count("undirected")) {
+	  glVars::kb::keep_directed = false;
     }
 
     if (vm.count("rtypes")) {
