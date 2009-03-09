@@ -81,7 +81,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 		  kb.add_token(it->word(), dict_weight);
 		}
 	  }
-      bool ok = calculate_kb_ppr(cs,ranks, prank_weight);
+      bool ok = calculate_kb_ppr(cs,ranks);
       if (!ok) {
 		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 		continue;
@@ -252,12 +252,12 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("prank_weight")) {
-      prank_weight = true;
+	  glVars::prank::use_weight = true;
     }
 
     if (vm.count("dict_weight")) {
       dict_weight = true;
-      prank_weight = true;
+      glVars::prank::use_weight = true;
     }
 
     if (vm.count("static")) {

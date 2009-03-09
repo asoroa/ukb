@@ -60,19 +60,19 @@ namespace ukb {
 	bool is_monosemous() const { return (1 == m_syns.size()); }
 	bool is_synset() const { return m_is_synset; }
 
-	void empty_synsets() { 
-	  std::vector<std::string>().swap(m_syns); 
-	  std::vector<double>().swap(m_ranks); 
+	void empty_synsets() {
+	  std::vector<std::string>().swap(m_syns);
+	  std::vector<double>().swap(m_ranks);
 	  m_disamb = false;
 	}
 	std::vector<std::string> & get_syns_vector() { return m_syns; }
 
-	template <typename G, typename Map> 
+	template <typename G, typename Map>
 	void rank_synsets(G & g, Map rankMap) {
 	  size_t n = m_syns.size();
 	  size_t i;
 	  if (!n) return; // No synsets
-	  for(i = 0; i != n; ++i) 
+	  for(i = 0; i != n; ++i)
 		m_ranks[i] = rankMap[g.get_vertex_by_name(m_syns[i]).first];
 	}
 
@@ -84,7 +84,7 @@ namespace ukb {
 	std::ostream & print_cword_aw(std::ostream & o) const;
 	std::ostream & print_cword_semcor_aw(std::ostream & o) const;
 	friend class CSentence;
-  
+
   private:
 
 	void read_from_stream (std::ifstream & is);
@@ -144,8 +144,8 @@ namespace ukb {
 	std::ostream & print_csent_semcor_aw(std::ostream & o) const;
 
 	std::ostream & print_csent_simple(std::ostream & o) const;
-  
-  private:  
+
+  private:
 	void read_from_stream (std::ifstream & is);
 	std::ofstream & write_to_stream(std::ofstream & o) const;
 	std::vector<CWord> v;
@@ -153,11 +153,9 @@ namespace ukb {
   };
 
   bool calculate_kb_ppr(const CSentence & cs,
-						std::vector<double> & res,
-						bool with_weight);
-  
-  void calculate_kb_ppr_by_word_and_disamb(CSentence & cs,
-										   bool with_weight);
+						std::vector<double> & res);
+
+  void calculate_kb_ppr_by_word_and_disamb(CSentence & cs);
 
   bool calculate_kb_ppv_csentence(CSentence & cs, std::vector<double> & res);
 

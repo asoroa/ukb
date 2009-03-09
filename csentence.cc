@@ -461,8 +461,7 @@ namespace ukb {
   // Initial V is computed by activating the words of the context
 
   bool calculate_kb_ppr(const CSentence & cs,
-						vector<double> & res,
-						bool with_weight) {
+						vector<double> & res) {
 
 	Kb & kb = ukb::Kb::instance();
 	bool aux;
@@ -497,7 +496,7 @@ namespace ukb {
 	  *rit *= div;
 
 	// Execute PageRank
-	kb.pageRank_ppv(ppv, res, with_weight);
+	kb.pageRank_ppv(ppv, res);
 	return true;
   }
 
@@ -506,8 +505,7 @@ namespace ukb {
   // 2. Pagerank
   // 3. use rank for disambiguating word
 
-  void calculate_kb_ppr_by_word_and_disamb(CSentence & cs,
-										   bool with_weight) {
+  void calculate_kb_ppr_by_word_and_disamb(CSentence & cs) {
 
 	Kb & kb = ukb::Kb::instance();
 	bool aux;
@@ -545,7 +543,7 @@ namespace ukb {
 		*rit *= div;
 
 	  // Execute PageRank
-	  kb.pageRank_ppv(ppv, ranks, with_weight);
+	  kb.pageRank_ppv(ppv, ranks);
 	  // disambiguate cw_it
 	  cw_it->rank_synsets(kb, ranks);
 	  cw_it->disamb_cword();
@@ -591,7 +589,7 @@ namespace ukb {
 	  *rit *= div;
 
 	// Execute PageRank
-	kb.pageRank_ppv(ppv, res, false);
+	kb.pageRank_ppv(ppv, res);
 	return true;
   }
 

@@ -59,7 +59,6 @@ void option_dependency(const boost::program_options::variables_map& vm,
 // Disambiguate using disambiguation graph (dgraph) method
 
 void disamb_dgraph_from_corpus(string & fullname_in,
-							   bool with_weight,
 							   bool out_semcor) {
 
   ifstream fh_in(fullname_in.c_str());
@@ -75,7 +74,7 @@ void disamb_dgraph_from_corpus(string & fullname_in,
     while (cs.read_aw(fh_in)) {
       DisambGraph dgraph;
       fill_disamb_graph(cs, dgraph);
-	  pageRank_disg(dgraph.graph(), with_weight);
+	  pageRank_disg(dgraph.graph());
 	  disamb_csentence(cs, dgraph);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_simple(cout);
@@ -89,7 +88,6 @@ void disamb_dgraph_from_corpus(string & fullname_in,
 }
 
 void dis_csent_ppr(const string & input_file,
-				   bool with_weight,
 				   bool out_semcor) {
 
   ifstream fh_in(input_file.c_str());
@@ -110,7 +108,7 @@ void dis_csent_ppr(const string & input_file,
     while (cs.read_aw(fh_in)) {
 
       vector<double> ranks;
-      bool ok = calculate_kb_ppr(cs,ranks, with_weight);
+      bool ok = calculate_kb_ppr(cs,ranks);
       if (!ok) {
 		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
 		cerr << "(No word links to KB ?)\n";
@@ -131,7 +129,6 @@ void dis_csent_ppr(const string & input_file,
 
 
 void dis_csent_ppr_by_word(const string & input_file,
-						  bool with_weight,
 						  bool out_semcor) {
 
   ifstream fh_in(input_file.c_str());
@@ -151,7 +148,7 @@ void dis_csent_ppr_by_word(const string & input_file,
   try {
     while (cs.read_aw(fh_in)) {
 
-      calculate_kb_ppr_by_word_and_disamb(cs, with_weight);
+      calculate_kb_ppr_by_word_and_disamb(cs);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_simple(cout);
 
@@ -166,7 +163,6 @@ void dis_csent_ppr_by_word(const string & input_file,
 }
 
 void dis_csent_classic_prank(const string & input_file,
-							 bool with_w,
 							 bool out_semcor) {
 
   ifstream fh_in(input_file.c_str());
@@ -182,7 +178,7 @@ void dis_csent_classic_prank(const string & input_file,
   size_t N = Kb::instance().size();
   vector<double> ppv(N, 1.0/static_cast<double>(N));
   vector<double> ranks;
-  Kb::instance().pageRank_ppv(ppv, ranks, with_w);
+  Kb::instance().pageRank_ppv(ppv, ranks);
 
   try {
     while (cs.read_aw(fh_in)) {
@@ -211,7 +207,6 @@ int main(int argc, char *argv[]) {
   bool opt_do_ppr_w2w = false;
   bool opt_do_static_prank = false;
   bool opt_do_test = false;
-  bool opt_with_w = false;
   bool opt_out_semcor = false;
 
 
@@ -352,7 +347,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("with_weight")) {
-      opt_with_w = true;
+	  glVars::prank::use_weight = true;
     }
 
 
@@ -405,28 +400,28 @@ int main(int argc, char *argv[]) {
   if(opt_disamb_dgraph) {
     Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
-    disamb_dgraph_from_corpus(fullname_in, opt_with_w, opt_out_semcor);
+    disamb_dgraph_from_corpus(fullname_in, opt_out_semcor);
     goto END;
   }
 
   if (opt_do_ppr) {
     Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
-    dis_csent_ppr(fullname_in, opt_with_w, opt_out_semcor);
+    dis_csent_ppr(fullname_in, opt_out_semcor);
     goto END;
   }
 
   if (opt_do_ppr_w2w) {
     Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
-    dis_csent_ppr_by_word(fullname_in, opt_with_w, opt_out_semcor);
+    dis_csent_ppr_by_word(fullname_in, opt_out_semcor);
     goto END;
   }
 
   if (opt_do_static_prank) {
     Kb::create_from_binfile(kb_binfile);
     cout << cmdline << "\n";
-    dis_csent_classic_prank(fullname_in, opt_with_w, opt_out_semcor);
+    dis_csent_classic_prank(fullname_in, opt_out_semcor);
     goto END;
   }
 

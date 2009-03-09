@@ -871,8 +871,7 @@ namespace ukb {
 
 
   void Kb::pageRank_ppv(const vector<double> & ppv_map,
-						 vector<double> & ranks,
-						 bool use_weight) {
+						vector<double> & ranks) {
 
 	size_t N = num_vertices(g);
 	vector<double>(N, 0.0).swap(ranks); // Initialize rank vector
@@ -886,7 +885,7 @@ namespace ukb {
 	tie(it, end) = vertices(g);
 	copy(it, end, V.begin());
 
-	if (use_weight) {
+	if (glVars::prank::use_weight) {
 	  property_map<Kb::boost_graph_t, edge_weight_t>::type weight_map = get(edge_weight, g);
 	  if(coef_status != 2) {
 		vector<float>(num_vertices(g), 0.0f).swap(out_coefs);
@@ -896,10 +895,6 @@ namespace ukb {
 	  pageRank_dispatch(g, V, &ppv_map[0],
 						weight_map, &ranks[0], &rank_tmp[0],
 						out_coefs);
-// 	  prank::do_pageRank(g, V, &ppv_map[0],
-// 						 weight_map, &ranks[0], &rank_tmp[0],
-// 						 glVars::prank::num_iterations,
-// 						 out_coefs);
 	} else {
 	  typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
 	  prank::constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
@@ -911,10 +906,6 @@ namespace ukb {
 	  pageRank_dispatch(g, V, &ppv_map[0],
 						cte_weight, &ranks[0], &rank_tmp[0],
 						out_coefs);
-// 	  prank::do_pageRank(g, V, &ppv_map[0],
-// 						 cte_weight, &ranks[0], &rank_tmp[0],
-// 						 glVars::prank::num_iterations,
-// 						 out_coefs);
 	}
   }
 

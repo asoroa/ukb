@@ -203,8 +203,7 @@ public:
   bool dijkstra (Kb_vertex_t src, std::vector<Kb_vertex_t> & parents) const;
 
   void pageRank_ppv(const std::vector<double> & ppv_map,
-					std::vector<double> & ranks,
-					bool use_weight);
+					std::vector<double> & ranks);
 
   void ppv_weights(const std::vector<double> & ppv);
 

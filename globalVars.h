@@ -37,6 +37,7 @@ namespace ukb {
 	}
 
 	namespace prank {
+	  extern bool use_weight;
 	  extern size_t num_iterations;
 	  extern float threshold;
 	}

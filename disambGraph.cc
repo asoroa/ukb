@@ -22,7 +22,7 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/filtered_graph.hpp>
 
-// bfs 
+// bfs
 
 #include <boost/graph/visitors.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -73,7 +73,7 @@ namespace ukb {
 	  put(vertex_kbSource, g, v, ukb::Kb::instance().get_vertex_by_name(str).first);
 	  map_it->second = v;
 	} else {
-	  put(vertex_freq, g, map_it->second, 
+	  put(vertex_freq, g, map_it->second,
 		  get(vertex_freq, g, map_it->second) + 1.0);
 	}
 	return map_it->second;
@@ -100,11 +100,11 @@ namespace ukb {
 	}
 	if (tgt != src) return;
 	path_str.push_back(get(vertex_name, kb_g, src));
-  
+
 	vector<Dis_vertex_t> path_v;
 	size_t length = 0;
-	for(vector<string>::iterator v_it = path_str.begin(); 
-		v_it != path_str.end(); 
+	for(vector<string>::iterator v_it = path_str.begin();
+		v_it != path_str.end();
 		++v_it) {
       Dis_vertex_t u = add_dgraph_vertex(*v_it);
       path_v.push_back(u);
@@ -125,7 +125,7 @@ namespace ukb {
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  // vertex_id <-> strings 
+  // vertex_id <-> strings
 
 
   pair<Dis_vertex_t, bool> DisambGraph::get_vertex_by_name(const std::string & str) const {
@@ -163,7 +163,7 @@ namespace ukb {
 	Kb & kb = ukb::Kb::instance();
 	bool existP;
 	Kb_vertex_t src, tgt;
-  
+
 	tie(src, existP) = kb.get_vertex_by_name(src_str);
 	assert(existP);
 
@@ -171,7 +171,7 @@ namespace ukb {
 
 	// insert src vertex in dgraph (fixes a bug)
 	dgraph.add_dgraph_vertex(src_str);
-  
+
 	//fill disamb graph
 
 	for(;s_it != s_end; ++s_it) {
@@ -195,7 +195,7 @@ namespace ukb {
 	Kb & kb = ukb::Kb::instance();
 	bool existP;
 	Kb_vertex_t src, tgt;
-  
+
 	tie(src, existP) = kb.get_vertex_by_name(src_str);
 	assert(existP);
 
@@ -203,7 +203,7 @@ namespace ukb {
 
 	// insert src vertex in dgraph (fixes a bug)
 	dgraph.add_dgraph_vertex(src_str);
-  
+
 	//fill disamb graph
 
 	for(;s_it != s_end; ++s_it) {
@@ -244,9 +244,9 @@ namespace ukb {
   void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
 						 const vector<double> & ppv_ranks) {
 
-  
+
 	// First, update kb's edge weights
-	ukb::Kb::instance().ppv_weights(ppv_ranks);  
+	ukb::Kb::instance().ppv_weights(ppv_ranks);
 
 	vector<CWord>::const_iterator cw_it = cs.begin();
 	vector<CWord>::const_iterator cw_end = cs.end();
@@ -319,7 +319,7 @@ namespace ukb {
 	  sum += *it;
 	assert(sum);
 	float coef = 1.0f / sum;
-	for(it = v.begin(); it != end; ++it) 
+	for(it = v.begin(); it != end; ++it)
 	  *it *= coef;
   }
 
@@ -367,7 +367,7 @@ namespace ukb {
   }
 
   template<typename HProp, typename AProp>
-  void hits_init_ranks(DisambG & g, 
+  void hits_init_ranks(DisambG & g,
 					   vector<Dis_vertex_t>::iterator vit,
 					   vector<Dis_vertex_t>::iterator end,
 					   HProp hProp, AProp aProp, size_t n) {
@@ -422,8 +422,7 @@ namespace ukb {
   // pageRank
   //
 
-  void pageRank_disg(DisambG & g,
-					 bool use_weigth) {
+  void pageRank_disg(DisambG & g) {
 
 	vector<float> map_tmp(num_vertices(g), 0.0f);
 
@@ -440,23 +439,22 @@ namespace ukb {
 	copy_if(vIt, vItEnd, V.begin(), vertex_is_connected<DisambG>(g));
 	//cerr << num_vertices(g) << endl;
 	//cerr << num_connected_vertices(g) << endl;
-  
-	if (use_weigth) {
+
+	if (glVars::prank::use_weight) {
 	  property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
 	  //init_out_coefs(g, V, &out_coefs[0], weight_map);
-	  prank::pageRank_iterate(g, V, ppv, 
+	  prank::pageRank_iterate(g, V, ppv,
 							  weight_map, rank_map, &map_tmp[0], glVars::prank::num_iterations);
 	} else {
-	  prank::pageRank_iterate_now(g, V, ppv, 
-								  rank_map, &map_tmp[0], 
-								  glVars::prank::num_iterations); 
+	  prank::pageRank_iterate_now(g, V, ppv,
+								  rank_map, &map_tmp[0],
+								  glVars::prank::num_iterations);
 
 	}
   }
 
   void pageRank_ppv_disg(DisambG &g,
-						 const map<string, size_t> & syn_n,
-						 bool use_weigth) {
+						 const map<string, size_t> & syn_n) {
 
 	// Fill rank freqs
 
@@ -474,7 +472,7 @@ namespace ukb {
 		cerr << "W: " << syn_n_it->first << " synset not found in dgraph!" << endl;
 		put(vertex_freq, g, *u, 0.0);
 	  }
-	} 
+	}
 
 	assert(total_count);
 	double factor = double(1.0) / static_cast<double>(total_count);
@@ -482,7 +480,7 @@ namespace ukb {
 	// Make freqs a prob. dist
 	tie(u, end) = vertices(g);
 	for(; u != end; ++u) {
-	  put(vertex_freq, g, *u, 
+	  put(vertex_freq, g, *u,
 		  get(vertex_freq, g, *u) * factor);
 	}
 
@@ -502,13 +500,13 @@ namespace ukb {
 	property_map<DisambG, vertex_freq_t>::type ppv_map = get(vertex_freq, g);
 	property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
 
-	if (use_weigth) {
+	if (glVars::prank::use_weight) {
 	  property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
 	  //init_out_coefs(g, V, &out_coefs[0], weight_map);
-	  prank::pageRank_iterate(g, V, ppv_map, weight_map, 
+	  prank::pageRank_iterate(g, V, ppv_map, weight_map,
 							  rank_map, map_tmp, glVars::prank::num_iterations);
 	} else {
-	  prank::pageRank_iterate_now(g, V, ppv_map, 
+	  prank::pageRank_iterate_now(g, V, ppv_map,
 								  rank_map, map_tmp, glVars::prank::num_iterations);
 	}
   }
@@ -517,7 +515,7 @@ namespace ukb {
 
 
   void degreeRank(DisambG & g) {
-	prank::constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1  
+	prank::constant_property_map <Dis_edge_t, float> cte_weight(1); // always return 1
 	property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
 
 	init_degree(g, rank_map, cte_weight);
@@ -531,7 +529,7 @@ namespace ukb {
 
   // read
 
-  Dis_vertex_t read_vertex_from_stream(ifstream & is, 
+  Dis_vertex_t read_vertex_from_stream(ifstream & is,
 									   DisambG & g) {
 
 	string name;
@@ -549,11 +547,11 @@ namespace ukb {
 	return v;
   }
 
-  Dis_edge_t read_edge_from_stream(ifstream & is, 
+  Dis_edge_t read_edge_from_stream(ifstream & is,
 								   DisambG & g) {
 
 	size_t sIdx;
-	size_t tIdx; 
+	size_t tIdx;
 	float freq;
 	//size_t source;
 	bool insertedP;
@@ -750,8 +748,8 @@ namespace ukb {
 						  fg,
 						  //boost::default_writer(),
 						  //make_my_writer(get(vertex_name, g), "label"),
-						  make_my_writer3(get(vertex_name, g), 
-										  get(vertex_rank, g), 
+						  make_my_writer3(get(vertex_name, g),
+										  get(vertex_rank, g),
 										  get(vertex_kbSource, g),
 										  "label", "rank", "kb"),
 						  make_my_writer(get(edge_freq, g), "weigth"));
