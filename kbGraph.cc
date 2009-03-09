@@ -373,13 +373,15 @@ namespace ukb {
 		if (src_allowed.find(fields[3]) == srel_end) continue; // Skip this relation
 	  }
 
+	  Kb_vertex_t u = kb->find_or_insert_synset(fields[0]);
+	  Kb_vertex_t v = kb->find_or_insert_synset(fields[1]);
+
+	  if (u == v) continue; // no self-loops
+
 	  kb->add_relSource(fields[3]);
 
 	  // last element says if relation is directed
 	  bool directed = (fields.size() > 4 && lexical_cast<int>(fields[4]) != 0);
-
-	  Kb_vertex_t u = kb->find_or_insert_synset(fields[0]);
-	  Kb_vertex_t v = kb->find_or_insert_synset(fields[1]);
 
 	  // add edge
 	  kb->find_or_insert_edge(u, v, 1.0);
@@ -485,10 +487,13 @@ namespace ukb {
 		if (glVars::kb::filter_src) {
 		  if (src_allowed.find(f.src) == srel_end) continue; // Skip this relation
 		}
-		kb->add_relSource(f.src);
-
 		Kb_vertex_t u = kb->find_or_insert_synset(f.u);
 		Kb_vertex_t v = kb->find_or_insert_synset(f.v);
+
+		if (u == v) continue; // no self-loops
+
+		kb->add_relSource(f.src);
+
 		float w = f.w ? f.w : 1.0;
 		// add edge
 		Kb_edge_t e1 = kb->find_or_insert_edge(u, v, w);
@@ -712,9 +717,9 @@ namespace ukb {
 
 	if (glVars::prank::threshold != 0.0)
 	  prank::do_pageRank_l1(g, V,
-							&ppv_map[0], wmap,
-							&rank[0], &rank_tmp[0],
-							glVars::prank::threshold,
+							ppv_map, wmap,
+							rank, rank_tmp,
+ 							glVars::prank::threshold,
 							out_coefs);
 	else
 	  prank::do_pageRank(g, V,
