@@ -174,7 +174,8 @@ int main(int argc, char *argv[]) {
   options_description po_desc_prank("pageRank general options");
   po_desc_prank.add_options()
     ("prank_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
-    ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
+    ("prank_iter", value<size_t>(), "Number of iterations in pageRank (good value is 30).")
+    ("prank_threshold", value<float>(), "Threshold for pageRank convergence. Default is 0.0001.")
     ;
 
   options_description po_desc_output("Output options");
@@ -267,7 +268,22 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("prank_iter")) {
-      glVars::prank::num_iterations = vm["prank_iter"].as<size_t>();
+	  size_t iter = vm["prank_iter"].as<size_t>();
+	  if (iter == 0) {
+		cerr << "Error: prank_iter can not be zero!\n";
+		goto END;
+	  }
+      glVars::prank::num_iterations = iter;
+      glVars::prank::threshold = 0.0;
+    }
+
+    if (vm.count("prank_threshold")) {
+	  float th = vm["prank_threshold"].as<float>();
+	  if (th <= 0.0) {
+		cerr << "Error: invalid prank_threshold value " << th << "\n";
+		goto END;
+	  }
+      glVars::prank::threshold = th;
     }
 
     if (vm.count("concepts_in")) {
