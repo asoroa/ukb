@@ -169,6 +169,7 @@ int main(int argc, char *argv[]) {
     ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
     ("verbose,v", "Be verbose.")
 	("nopos", "Don't filter words by Part of Speech.")
+	("wiki", "Usual options for wikipedia (sets --nopos, --only_ctx_words and --only_synsets).")
     ;
 
   options_description po_desc_prank("pageRank general options");
@@ -288,6 +289,12 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("concepts_in")) {
       glVars::csentence::concepts_in = true;
+    }
+
+    if (vm.count("wiki")) {
+	  glVars::input::filter_pos = false;
+	  insert_all_dict = false;
+	  filter_nodes = 2;
     }
 
     if (vm.count("input-file")) {
