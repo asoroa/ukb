@@ -500,6 +500,21 @@ namespace ukb {
 	return true;
   }
 
+
+  // Given 2 vectors (va, vb) return the vector going from va to vb
+  // res[i] = vb[i] - va[1]
+
+  struct va2vb {
+	va2vb(const vector<double> & va, const vector<double> & vb) :
+	  m_va(va), m_vb(vb) {}
+	double operator[](size_t i) const {
+	  return m_vb[i] - m_va[i];
+	}
+  private:
+	const vector<double> & m_va;
+	const vector<double> & m_vb;
+  };
+
   // given a word,
   // 1. put a ppv in the synsets of the rest of words.
   // 2. Pagerank
@@ -545,7 +560,12 @@ namespace ukb {
 	  // Execute PageRank
 	  kb.pageRank_ppv(ppv, ranks);
 	  // disambiguate cw_it
-	  cw_it->rank_synsets(kb, ranks);
+	  if (glVars::csentence::disamb_minus_static) {
+		struct va2vb newrank(ranks, kb.get_static_prank());
+		cw_it->rank_synsets(kb, newrank);
+	  } else {
+		cw_it->rank_synsets(kb, ranks);
+	  }
 	  cw_it->disamb_cword();
 	}
   }
@@ -606,7 +626,12 @@ namespace ukb {
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
-	  cw_it->rank_synsets(kb, ranks);
+	  if (glVars::csentence::disamb_minus_static) {
+		struct va2vb newrank(ranks, kb.get_static_prank());
+		cw_it->rank_synsets(kb, newrank);
+	  } else {
+		cw_it->rank_synsets(kb, ranks);
+	  }
 	  cw_it->disamb_cword();
 	}
   }

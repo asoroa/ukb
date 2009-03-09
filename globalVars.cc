@@ -27,6 +27,7 @@ namespace ukb {
 
 	namespace csentence {
 	  bool concepts_in = false;
+	  bool disamb_minus_static = false;
 	}
 
 	namespace chsq {

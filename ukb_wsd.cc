@@ -245,6 +245,7 @@ int main(int argc, char *argv[]) {
     ("ppr_w2w", "Given a text input file, disambiguate context using Personalized PageRank method word by word (see README).")
     ("static", "Given a text input file, disambiguate context using static pageRank over kb.")
     ("dis_dgraph", "Given a text input file, disambiguate context using disambiguation graph mehod.")
+    ("nostatic", "Substract static ppv to final ranks.")
     ;
 
   options_description po_desc_prank("pageRank general options");
@@ -306,6 +307,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("ppr")) {
       opt_do_ppr= true;
+    }
+
+    if (vm.count("nostatic")) {
+	  glVars::csentence::disamb_minus_static = true;
     }
 
     if (vm.count("ppr_w2w")) {
