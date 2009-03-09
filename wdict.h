@@ -18,7 +18,10 @@ namespace ukb {
   struct WDict_item_t {
 	std::vector<std::string> wsyns;
 	std::vector<float> syns_count;
-	bool has_freq;
+	int has_freq;
+
+	WDict_item_t() : has_freq(-1) {}
+
   };
 
   // Accessor class for WDict entries associated to a word

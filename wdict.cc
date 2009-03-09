@@ -166,11 +166,16 @@ namespace ukb {
 		  }
 
 		  item.wsyns.push_back(concept_id);
-		  if (has_w && weight) {
-			item.has_freq = true;
-			item.syns_count.push_back(weight);
+		  if (has_w) {
+			if (item.has_freq == 0)
+			  throw std::runtime_error ("line mixes weighted and unweighed concepts");
+			item.has_freq = 1;
+			item.syns_count.push_back(weight + 1.0);  // Add 1 to weight (so there is no zero-weighed edge)
+
 		  } else {
-			item.has_freq = false;
+			if (item.has_freq == 1)
+			  throw std::runtime_error ("line mixes weighted and unweighed concepts");
+			item.has_freq = 0;
 		  }
 		}
 	  }
@@ -254,7 +259,7 @@ namespace ukb {
   float WDict_entries::get_freq(size_t i) const {
 	if (_item.has_freq)
 	  return _item.syns_count[i];
-	return 0.0f;
+	return 1.0;
   }
 
 }

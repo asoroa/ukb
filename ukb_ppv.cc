@@ -33,10 +33,15 @@ static int filter_nodes = 0; // 0 -> no filter
                              // 1 -> only words
                              // 2 -> only synsets
 
-void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weight) {
+static bool insert_all_dict = true;
+
+static bool dict_weight = false; // Use W when linking words to concepts
+static bool prank_weight = false; // Use W in prank calculations
+
+void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 
   Kb & kb = Kb::instance();
-  if (glVars::verbose) 
+  if (glVars::verbose)
     cerr << "Reading words ...\n";
 
   ifstream fh_in(fullname_in.c_str());
@@ -52,12 +57,13 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
 
   // add words into Kb
 
-  if (glVars::verbose) 
-    cerr << "Adding words to Kb ...";
+  if (insert_all_dict) {
+	if (glVars::verbose)
+	  cerr << "Adding words to Kb ...";
+	kb.add_dictionary(dict_weight);
+  }
 
-  kb.add_dictionary(false);
-
-  if (glVars::verbose) 
+  if (glVars::verbose)
     Kb::instance().display_info(cerr);
 
   // Read sentences and compute rank vectors
@@ -68,12 +74,20 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
       // Initialize rank vector
       vector<double> ranks;
 
-      bool ok = calculate_kb_ppr(cs,ranks, weight);
+	  if(!insert_all_dict) {
+		// Add CSentence words to graph
+		CSentence::iterator it = cs.begin();
+		CSentence::iterator end = cs.end();
+ 		for(;it != end; ++it) {
+		  kb.add_token(it->word(), dict_weight);
+		}
+	  }
+      bool ok = calculate_kb_ppr(cs,ranks, prank_weight);
       if (!ok) {
 		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 		continue;
       }
-	  
+
       fout.fname = cs.id();
 
       ofstream fo(fout.get_fname().c_str(),  ofstream::out);
@@ -98,7 +112,7 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
   }
 }
 
-void compute_static_ppv(bool with_w) {
+void compute_static_ppv() {
 
   vector<CSentence> vcs;
   CSentence cs;
@@ -107,7 +121,7 @@ void compute_static_ppv(bool with_w) {
   size_t N = Kb::instance().size();
   vector<double> ppv(N, 1.0/static_cast<double>(N));
   vector<double> ranks;
-  Kb::instance().pageRank_ppv(ppv, ranks, with_w);
+  Kb::instance().pageRank_ppv(ppv, ranks, prank_weight);
 
   vector<double> outranks;
   vector<string> vnames;
@@ -126,7 +140,6 @@ int main(int argc, char *argv[]) {
 
   timer load;
 
-  bool opt_with_w = false;
   bool opt_static = false;
 
   string kb_binfile(kb_default_binfile);
@@ -148,7 +161,9 @@ int main(int argc, char *argv[]) {
     ("help,h", "This help page.")
     ("version", "Show version.")
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin")
+    ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
+    ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Implies --prank_weight.")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
     ("concepts_in", "Let concept ids in input context. Item must have 5 fields, the fourth being 2 and the last one being the weight.")
     ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
@@ -158,7 +173,7 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_prank("pageRank general options");
   po_desc_prank.add_options()
-    ("with_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
+    ("prank_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
     ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
     ;
 
@@ -222,6 +237,10 @@ int main(int argc, char *argv[]) {
       filter_nodes = 1;
     }
 
+    if (vm.count("only_ctx_words")) {
+      insert_all_dict = false;
+    }
+
     if (vm.count("only_synsets")) {
       filter_nodes = 2;
     }
@@ -234,8 +253,13 @@ int main(int argc, char *argv[]) {
       glVars::dict_filename = vm["dict_file"].as<string>();
     }
 
-    if (vm.count("with_weight")) {
-      opt_with_w = true;
+    if (vm.count("prank_weight")) {
+      prank_weight = true;
+    }
+
+    if (vm.count("dict_weight")) {
+      dict_weight = true;
+      prank_weight = true;
     }
 
     if (vm.count("static")) {
@@ -260,14 +284,13 @@ int main(int argc, char *argv[]) {
     throw(e);
   }
 
-  if (glVars::verbose)
-    cerr << "Reading binary kb file " << kb_binfile;
-  Kb::create_from_binfile(kb_binfile);
-  if (glVars::verbose)
-    Kb::instance().display_info(cerr);
-
   if (opt_static) {
-	compute_static_ppv(opt_with_w);
+	if (glVars::verbose)
+	  cerr << "Reading binary kb file " << kb_binfile;
+	Kb::create_from_binfile(kb_binfile);
+	if (glVars::verbose)
+	  Kb::instance().display_info(cerr);
+	compute_static_ppv();
 	goto END;
   }
 
@@ -276,7 +299,13 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  compute_sentence_vectors(fullname_in, out_dir, opt_with_w);
+  if (glVars::verbose)
+    cerr << "Reading binary kb file " << kb_binfile;
+  Kb::create_from_binfile(kb_binfile);
+  if (glVars::verbose)
+    Kb::instance().display_info(cerr);
+
+  compute_sentence_vectors(fullname_in, out_dir);
 
  END:
   return 0;
