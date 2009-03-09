@@ -203,6 +203,17 @@ public:
 
   void ppv_weights(const std::vector<double> & ppv);
 
+  // given a source node and a limit (100) return a subgraph by performing a
+  // bfs over the graph.
+  // Output:
+  //  V -> a vector of subgraph nodes
+  //  E -> a map representing subgraph edges
+
+  void get_subgraph(const std::string & src,
+					std::vector<std::string> & V,
+					std::vector<std::vector<std::string> > & E,
+					size_t limit = 100);
+
   std::ostream & dump_graph(std::ostream & o) const;
 
 private:

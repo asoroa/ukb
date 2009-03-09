@@ -151,6 +151,123 @@ namespace ukb {
   }
 
   ////////////////////////////////////////////////////////////////////////////////
+  // Get shortest subgraphs
+
+  class bfs_subg_terminate : public std::exception {};
+
+  struct subg {
+	vector<Kb_vertex_t> V;
+	vector<vector<Kb_vertex_t> > E;
+  };
+
+
+  class bfs_subg_visitor : public default_bfs_visitor {
+
+  public:
+	bfs_subg_visitor(subg & s_, Kb_vertex_t u, int limit)
+	  : m_sg(s_), m_idx(), m_i(0), m_t(0), m_max(limit) {
+	  add_v(u);
+	}
+
+    void tree_edge(Kb_edge_t e, const KbGraph & g)
+	{
+
+	  Kb_vertex_t u = source(e,g);
+	  Kb_vertex_t v = target(e,g);
+
+	  // vertex v is new, but yet undiscovered
+	  int v_i = add_v(v);
+	  if (v_i == -1) return; // max limit reached.
+	  int u_i = get_v(u);
+	  add_e(u_i, v_i);
+
+	  Kb_edge_t aux;
+	  bool existsP;
+	  tie(aux, existsP) = edge(v, u, g);
+	  if (existsP) add_e(v_i, u_i); // as this edge is no more traversed.
+	}
+
+     void non_tree_edge(Kb_edge_t e, const KbGraph & g)
+ 	{
+ 	  // cross edge. source is previously stored for sure. target probably
+ 	  // is, unless max limit was reached
+ 	  int v_i = get_v(target(e,g));
+	  if (v_i == -1) return; // target vertex not stored because max limit.
+ 	  int u_i = get_v(source(e,g));
+
+ 	  add_e(u_i, v_i);
+ 	}
+
+	void discover_vertex(Kb_vertex_t u, const KbGraph & g)
+	{
+	  if (m_t == m_max) throw bfs_subg_terminate();
+	  ++m_t;
+	}
+
+	int add_v(Kb_vertex_t v)
+	{
+	  if(m_i == m_max) return -1;
+	  m_sg.V.push_back(v);
+	  m_idx[v] = m_i;
+	  m_sg.E.push_back(vector<Kb_vertex_t>());
+	  int res = m_i;
+	  ++m_i;
+	  return res;
+	}
+
+	int get_v(Kb_vertex_t v) {
+	  map<Kb_vertex_t, int>::iterator it=m_idx.find(v);
+	  if(it == m_idx.end()) return -1;
+	  return it->second;
+	}
+
+	void add_e(int u_i, int v_i) {
+	  m_sg.E[u_i].push_back(m_sg.V[v_i]);
+	}
+
+  private:
+	subg & m_sg;
+	map<Kb_vertex_t, int> m_idx;
+	int m_i; // num of inserted vertices
+	int m_t; // time
+	int m_max;
+  };
+
+
+  void Kb::get_subgraph(const string & src,
+						 vector<string> & V,
+						 vector<vector<string> > & E,
+						 size_t limit) {
+
+	Kb_vertex_t u;
+	bool aux;
+	tie(u,aux) = get_vertex_by_name(src);
+	if(!aux) return;
+
+	subg sg;
+	bfs_subg_visitor vis(sg, u, limit);
+
+	try {
+	  breadth_first_search(g, u, boost::visitor(vis));
+	} catch (bfs_subg_terminate & ) {}
+
+	size_t N = sg.V.size();
+	vector<string>(N).swap(V);
+	vector<vector<string> >(N).swap(E);
+
+	for(size_t i=0; i < N; ++i) {
+	  V[i] = get(vertex_name, g, sg.V[i]);
+	  size_t m = sg.E[i].size();
+	  vector<string> l(m);
+	  for(size_t j=0; j < m; ++j) {
+		l[j] =  get(vertex_name, g, sg.E[i].at(j));
+	  }
+	  E[i].swap(l);
+	}
+  }
+
+
+  ////////////////////////////////////////////////////////////////////////////////
   // strings <-> vertex_id
 
   pair<Kb_vertex_t, bool> Kb::get_vertex_by_name(const std::string & str,
