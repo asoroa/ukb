@@ -71,6 +71,51 @@ void set_source_rels(const string & str,
 
 }
 
+void iquery() {
+
+  Kb & kb = Kb::instance();
+  KbGraph & g = kb.graph();
+
+  bool aux;
+  Kb_vertex_t u;
+
+  while	(cin) {
+	string str;
+	bool inv = false;
+	cout << "\nQ:";
+	cin >> str;
+	if (str == "q") break;
+	if (str.substr(0, 2) == "i:") {
+	  inv=true;
+	  str = str.substr(2);
+	}
+	tie(u, aux) = kb.get_vertex_by_name(str);
+	if (aux) {
+	  cout << get(vertex_name, g, u);
+	  cout << "\n";
+	  if (!inv) {
+		graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
+		tie(it, end) = out_edges(u, g);
+		for(;it != end; ++it) {
+		  cout << "  ";
+		  cout << get(vertex_name, g, target(*it, g));
+		  cout << ":" << get(edge_weight, g, *it) << "\n";
+		}
+	  } else {
+		graph_traits<Kb::boost_graph_t>::in_edge_iterator iit , iend;
+		tie(iit, iend) = in_edges(u, g);
+		for(;iit != iend; ++iit) {
+		  cout << "  ";
+		  cout << get(vertex_name, g, source(*iit, g));
+		  cout << ":" << get(edge_weight, g, *iit) << "\n";
+		}
+	  }
+	} else {
+	  cout << "\n"<< str << " not present!";
+	}
+  }
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -80,6 +125,7 @@ int main(int argc, char *argv[]) {
 
   bool opt_info = false;
   bool opt_query = false;
+  bool opt_iquery = false;
   bool opt_dump = false;
 
   string fullname_out("kb_wnet.bin");
@@ -117,6 +163,7 @@ int main(int argc, char *argv[]) {
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
     ("output,o", value<string>(), "Output file name.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
+    ("iquery,Q", "Interactively query graph.")
     ("undirected,U", "Force undirected graph.")
     ("verbose,v", "Be verbose.")
     ("rtypes,r", "Keep relation types on edges.")
@@ -158,6 +205,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("info")) {
       opt_info = true;
+    }
+
+    if (vm.count("iquery")) {
+      opt_iquery = true;
     }
 
     if (vm.count("query")) {
@@ -204,6 +255,12 @@ int main(int argc, char *argv[]) {
   if (opt_info) {
     Kb::create_from_binfile(kb_files[0]);
     Kb::instance().display_info(cout);
+    return 0;
+  }
+
+  if (opt_iquery) {
+    Kb::create_from_binfile(kb_files[0]);
+    iquery();
     return 0;
   }
 
