@@ -58,6 +58,7 @@ namespace ukb {
 	bool is_distinguished() const { return m_distinguished; }
 	bool is_disambiguated() const { return m_disamb; }
 	bool is_monosemous() const { return (1 == m_syns.size()); }
+	bool is_synset() const { return m_is_synset; }
 
 	void empty_synsets() { 
 	  std::vector<std::string>().swap(m_syns); 

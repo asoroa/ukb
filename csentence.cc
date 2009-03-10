@@ -41,7 +41,7 @@ namespace ukb {
 		}
 		if (pos != synpos) continue;
 	  }
-	  tie(kb_v, existP) = kb.get_vertex_by_name(syn_str);
+	  tie(kb_v, existP) = kb.get_vertex_by_name(syn_str, Kb::is_concept);
 	  if (existP) {
 		syns.push_back(syn_str);
 		ranks.push_back(0.0f);
@@ -96,7 +96,7 @@ namespace ukb {
   CWord CWord::create_synset_cword(const string & syn, const string & id_, float w) {
 	Kb_vertex_t aux;
 	bool P;
-	tie(aux, P) = ukb::Kb::instance().get_vertex_by_name(syn);
+	tie(aux, P) = ukb::Kb::instance().get_vertex_by_name(syn, Kb::is_concept);
 	if (!P) {
 	  throw std::runtime_error("CWord::create_synset_cword " + syn + " not in KB");
 	  return CWord();
@@ -477,12 +477,12 @@ namespace ukb {
 	double K = 0.0;
 	for(;it != end; ++it) {
 	  //if(!it->is_distinguished()) continue;
-
+	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
 	  //string wpos = it->wpos();
 	  string wpos = it->word();
 
 	  Kb_vertex_t u;
-	  tie(u, aux) = kb.get_vertex_by_name(wpos);
+	  tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
 	  double w = 1.0;
 	  if(glVars::csentence::concepts_in) w = it->get_weight();
 	  if (aux) {
@@ -526,11 +526,11 @@ namespace ukb {
 	  // put ppv to the synsets of words except cw_it
 	  for(CSentence::const_iterator it = cs.begin(); it != cw_end; ++it) {
 		if(it == cw_it) continue;
-
+		unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
 		string wpos = it->word();
 
 		Kb_vertex_t u;
-		tie(u, aux) = kb.get_vertex_by_name(wpos);
+		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
 		double w =  1.0;
 		if(glVars::csentence::concepts_in) w = it->get_weight();
 		if (aux) {
@@ -576,7 +576,7 @@ namespace ukb {
 	for(; cw_it != cw_end; ++cw_it) {
 	  for(size_t i = 0; i != cw_it->size(); ++i) {
 		Kb_vertex_t u;
-		tie(u, aux) = kb.get_vertex_by_name(cw_it->syn(i));
+		tie(u, aux) = kb.get_vertex_by_name(cw_it->syn(i), Kb::is_concept);
 		if (aux) {
 		  ppv[u] = cw_it->rank(i);
 		  K += cw_it->rank(i);
