@@ -98,6 +98,7 @@ namespace ukb {
 		tie(e, e_end) = in_edges(*v, g);
 		for(; e != e_end; ++e) {
 		  vertex_descriptor u = source(*e, g);
+		  if (*v == u) continue; // No self-loops
 		  rank += rank_map1[u] * wmap[*e] * static_cast<double>(out_coef[u]);
 		}
 		double dangling_factor = 0.0;
@@ -132,6 +133,7 @@ namespace ukb {
 		tie(e, e_end) = in_edges(*v, g);
 		for(; e != e_end; ++e) {
 		  vertex_descriptor u = source(*e, g);
+		  if (*v == u) continue; // No self-loops
 		  rank += rank_map1[u] * wmap[*e] * static_cast<double>(out_coef[u]);
 		}
 		double dangling_factor = 0.0;
