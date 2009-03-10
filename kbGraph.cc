@@ -361,7 +361,7 @@ namespace ukb {
 	  std::getline(kbFile, line, '\n');
 	  trim_spaces(line);
 	  line_number++;
-	  char_separator<char> sep(" ");
+	  char_separator<char> sep(" \t");
 	  tokenizer<char_separator<char> > tok(line, sep);
 	  copy(tok.begin(), tok.end(), back_inserter(fields));
 	  if (fields.size() == 0) continue; // blank line
@@ -421,7 +421,7 @@ namespace ukb {
 
 	rel_parse res;
 
-	char_separator<char> sep(" ");
+	char_separator<char> sep(" \t");
 	tokenizer<char_separator<char> > tok(line, sep);
 	tokenizer<char_separator<char> >::iterator it = tok.begin();
 	tokenizer<char_separator<char> >::iterator end = tok.end();

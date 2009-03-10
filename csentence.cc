@@ -294,7 +294,7 @@ namespace ukb {
 	  if(!read_ctx_line(is, line, l_n)) return is;
 
 	  // first line is id
-	  char_separator<char> sep(" ");
+	  char_separator<char> sep(" \t");
 	  vector<string> ctx;
 
 	  tokenizer<char_separator<char> > tok_id(line, sep);
