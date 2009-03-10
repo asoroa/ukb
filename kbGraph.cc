@@ -153,16 +153,20 @@ namespace ukb {
   ////////////////////////////////////////////////////////////////////////////////
   // strings <-> vertex_id
 
-  pair<Kb_vertex_t, bool> Kb::get_vertex_by_name(const std::string & str) const {
+  pair<Kb_vertex_t, bool> Kb::get_vertex_by_name(const std::string & str,
+												 unsigned char flags) const {
 	map<string, Kb_vertex_t>::const_iterator it;
 
-	it = synsetMap.find(str);
-	if (it != synsetMap.end()) return make_pair(it->second, true);
-
+	if(flags & Kb::is_concept) {
+	  it = synsetMap.find(str);
+	  if (it != synsetMap.end()) return make_pair(it->second, true);
+	}
 	// is it a word ?
-	it = wordMap.find(str);
-	if (it == wordMap.end()) return make_pair(Kb_vertex_t(), false);
-	return make_pair(it->second, true);
+	if(flags & Kb::is_word) {
+	  it = wordMap.find(str);
+	  if (it != wordMap.end()) return make_pair(it->second, true);
+	}
+	return make_pair(Kb_vertex_t(), false);
   }
 
   Kb_vertex_t Kb::InsertNode(const string & name, unsigned char flags) {
@@ -179,7 +183,7 @@ namespace ukb {
 	tie(it, insertedP) = synsetMap.insert(make_pair(str, Kb_vertex_t()));
 	if(insertedP) {
 	  // new vertex
-	  it->second = InsertNode(str, 0);
+	  it->second = InsertNode(str, Kb::is_concept);
 	}
 	return it->second;
   }
@@ -587,7 +591,7 @@ namespace ukb {
 	  }
 
 	  Kb_vertex_t u;
-	  tie(u, auxP) = kb.get_vertex_by_name(syns.get_entry(i));
+	  tie(u, auxP) = kb.get_vertex_by_name(syns.get_entry(i), Kb::is_concept);
 	  if(!auxP) {
 		if (glVars::debug::warning)
 		  cerr << "W:Kb::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
@@ -648,7 +652,7 @@ namespace ukb {
 	for(size_t i = 0; i < syns.size(); ++i) {
 	  bool auxP;
 	  Kb_vertex_t v;
-	  tie(v, auxP) = kb.get_vertex_by_name(syns.get_entry(i));
+	  tie(v, auxP) = kb.get_vertex_by_name(syns.get_entry(i), Kb::is_concept);
 	  if(!auxP) {
 		if (glVars::debug::warning)
 		  cerr << "W:Kb::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
@@ -856,7 +860,7 @@ namespace ukb {
 	read_atom_from_stream(is, gloss);
 	Kb_vertex_t v = add_vertex(g);
 	put(vertex_name, g, v, name);
-	put(vertex_flags, g, v, 0);
+	put(vertex_flags, g, v, static_cast<unsigned char>(Kb::is_concept));
 	return v;
   }
 

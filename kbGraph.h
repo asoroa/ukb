@@ -68,11 +68,12 @@ typedef graph_traits < KbGraph >::vertices_size_type Kb_vertex_size_t;
 
 class Kb {
 
-  enum {
-    is_word = 1
-  } vflags;
-
 public:
+
+  enum {
+    is_word = 1,
+	is_concept = 2
+  } vflags;
 
   typedef KbGraph boost_graph_t; // the underlying graph type
 
@@ -104,7 +105,7 @@ public:
   // add_from_txt
   // add relations from synsFile to the graph
 
-  void add_from_txt(const std::string & synsFile, 
+  void add_from_txt(const std::string & synsFile,
 					const std::set<std::string> & rels_source);
 
   // add_relSource
@@ -132,11 +133,12 @@ public:
 
   // Add relation type to edge
 
-  void edge_add_reltype(Kb_edge_t e, const std::string & rel);  
+  void edge_add_reltype(Kb_edge_t e, const std::string & rel);
 
   // Ask for a node
 
-  std::pair<Kb_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
+  std::pair<Kb_vertex_t, bool> get_vertex_by_name(const std::string & str,
+												  unsigned char flags = Kb::is_concept | Kb::is_word) const;
 
   // ask for node properties
 
@@ -154,7 +156,7 @@ public:
 
   // Given a previously calculated rank vector, output 2 vector, probably
   // filtering the nodes.
-  // 
+  //
   // Input params:
   //
   // ranks: previously calculated rank vector
@@ -172,7 +174,7 @@ public:
 						   std::vector<double> & outranks,
 						   std::vector<std::string> & vnames,
 						   int filter_mode) const;
-  
+
 
   // Add a comment to graph
 
@@ -243,4 +245,4 @@ private:
 };
 }
 
-#endif 
+#endif
