@@ -17,7 +17,7 @@
 
 #include <boost/timer.hpp>
 
-// bfs 
+// bfs
 
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/pending/indirect_cmp.hpp>
@@ -94,8 +94,30 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir, bool weigh
     }
   } catch (string & e) {
     cerr << "Errore reading " << fullname_in << ":" << e << "\n";
-    throw(e);    
+    throw(e);
   }
+}
+
+void compute_static_ppv(bool with_w) {
+
+  vector<CSentence> vcs;
+  CSentence cs;
+
+  // Calculate static (static) pageRank over KB
+  size_t N = Kb::instance().size();
+  vector<double> ppv(N, 1.0/static_cast<double>(N));
+  vector<double> ranks;
+  Kb::instance().pageRank_ppv(ppv, ranks, with_w);
+
+  vector<double> outranks;
+  vector<string> vnames;
+
+  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, 2);
+
+  for(size_t i = 0; i < outranks.size(); ++i) {
+	cout << vnames[i] << "\t" << outranks[i] << "\n";
+  }
+
 }
 
 int main(int argc, char *argv[]) {
@@ -105,6 +127,7 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_with_w = false;
+  bool opt_static = false;
 
   string kb_binfile(kb_default_binfile);
 
@@ -116,7 +139,7 @@ int main(int argc, char *argv[]) {
     "ukb_ppv -K kb.bin -D dict.txt -O outdir input.txt\n"
     "  Creates one file per sentence (.ppv extension) with the vector of the PPV vector given the input sentence"
     "Options";
-  
+
   using namespace boost::program_options;
 
   options_description po_desc("General options:");
@@ -128,6 +151,7 @@ int main(int argc, char *argv[]) {
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
     ("concepts_in", "Let concept ids in input context. Item must have 5 fields, the fourth being 2 and the last one being the weight.")
+    ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
     ("verbose,v", "Be verbose.")
 	("nopos", "Don't filter words by Part of Speech.")
     ;
@@ -155,10 +179,10 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_all("All options");
   po_desc_all.add(po_visible).add(po_hidden);
-  
+
   positional_options_description po_optdesc;
   po_optdesc.add("input-file", 1);
-  po_optdesc.add("output-file", 1);  
+  po_optdesc.add("output-file", 1);
 
   try {
     variables_map vm;
@@ -214,6 +238,10 @@ int main(int argc, char *argv[]) {
       opt_with_w = true;
     }
 
+    if (vm.count("static")) {
+	  opt_static=true;
+    }
+
     if (vm.count("prank_iter")) {
       glVars::prank::num_iterations = vm["prank_iter"].as<size_t>();
     }
@@ -232,18 +260,25 @@ int main(int argc, char *argv[]) {
     throw(e);
   }
 
+  if (glVars::verbose)
+    cerr << "Reading binary kb file " << kb_binfile;
+  Kb::create_from_binfile(kb_binfile);
+  if (glVars::verbose)
+    Kb::instance().display_info(cerr);
+
+  if (opt_static) {
+	compute_static_ppv(opt_with_w);
+	goto END;
+  }
+
   if(fullname_in.size() == 0) {
     cout << po_visible << endl;
     return 1;
   }
 
-  if (glVars::verbose) 
-    cerr << "Reading binary kb file " << kb_binfile;
-  Kb::create_from_binfile(kb_binfile);
-  if (glVars::verbose) 
-    Kb::instance().display_info(cerr);
-
   compute_sentence_vectors(fullname_in, out_dir, opt_with_w);
+
+ END:
   return 0;
 }
 
