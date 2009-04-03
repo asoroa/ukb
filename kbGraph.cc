@@ -288,6 +288,7 @@ namespace ukb {
 
   Kb_vertex_t Kb::InsertNode(const string & name, unsigned char flags) {
 	coef_status = 0; // reset out degree coefficients
+	if (static_ranks.size()) vector<double>().swap(static_ranks); // empty static rank vector
 	Kb_vertex_t u = add_vertex(g);
 	put(vertex_name, g, u, name);
 	put(vertex_flags, g, u, flags);
@@ -326,6 +327,7 @@ namespace ukb {
 	tie(e, existsP) = edge(u, v, g);
 	if(!existsP) {
 	  coef_status = 0; // reset out degree coefficients
+	  if (static_ranks.size()) vector<double>().swap(static_ranks); // empty static rank vector
 	  e = add_edge(u, v, g).first;
 	  put(edge_weight, g, e, w);
 	  put(edge_rtype, g, e, static_cast<boost::uint32_t>(0));
@@ -452,6 +454,24 @@ namespace ukb {
 	  vname_filter(synsetMap, ranks, g, outranks, vnames);
 	  break;
 	}
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // Get static pageRank vector
+
+  const std::vector<double> & Kb::get_static_prank() const {
+	if (static_ranks.size()) return static_ranks;
+
+	// Hack to remove const-ness
+    Kb & me = const_cast<Kb &>(*this);
+	vector<double> & ranks = me.static_ranks;
+
+	// Calculate static pageRank
+	size_t N = size();
+	if (N == 0) return static_ranks; // empty graph
+	vector<double> ppv(N, 1.0/static_cast<double>(N));
+	me.pageRank_ppv(ppv, ranks);
+	return static_ranks;
   }
 
 
@@ -1013,6 +1033,7 @@ namespace ukb {
 	std::map<std::string, int> relMap_aux;     // Obsolete map from relation name to relation id
 
 	coef_status = 0;
+	vector<double>().swap(static_ranks); // empty static rank vector
 	read_atom_from_stream(is, id);
 	if (id == magic_id_v1) {
 

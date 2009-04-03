@@ -149,6 +149,11 @@ public:
 
   std::vector<std::string> get_edge_reltypes(Kb_edge_t e) const;
 
+
+  // get static pageRank
+
+  const std::vector<double> & get_static_prank() const;
+
   // Nodes can be synsets or words
 
   bool vertex_is_synset(Kb_vertex_t u) const;
@@ -246,14 +251,15 @@ private:
   std::vector<std::string> rtypes;
 
   std::vector<std::string> notes;        // Command line which created the graph
+
   // Aux variables
 
   std::vector<float> out_coefs;          // aux. vector of out-degree coefficients
   char coef_status;                      // 0 invalid
-                                         // 1 calculated without weights
-                                         // 2 calculated with weights
-
-};
+  // 1 calculated without weights
+  // 2 calculated with weights
+  std::vector<double> static_ranks;       // aux. vector with static prank computation
+  };
 }
 
 #endif

@@ -36,7 +36,6 @@ static int filter_nodes = 0; // 0 -> no filter
 static bool insert_all_dict = true;
 
 static bool dict_weight = false; // Use W when linking words to concepts
-static bool prank_weight = false; // Use W in prank calculations
 
 void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 
@@ -118,10 +117,7 @@ void compute_static_ppv() {
   CSentence cs;
 
   // Calculate static (static) pageRank over KB
-  size_t N = Kb::instance().size();
-  vector<double> ppv(N, 1.0/static_cast<double>(N));
-  vector<double> ranks;
-  Kb::instance().pageRank_ppv(ppv, ranks, prank_weight);
+  const vector<double> & ranks = Kb::instance().get_static_prank();
 
   vector<double> outranks;
   vector<string> vnames;
