@@ -561,7 +561,7 @@ namespace ukb {
 	  kb.pageRank_ppv(ppv, ranks);
 	  // disambiguate cw_it
 	  if (glVars::csentence::disamb_minus_static) {
-		struct va2vb newrank(ranks, kb.get_static_prank());
+		struct va2vb newrank(ranks, kb.static_prank());
 		cw_it->rank_synsets(kb, newrank);
 	  } else {
 		cw_it->rank_synsets(kb, ranks);
@@ -627,7 +627,7 @@ namespace ukb {
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (glVars::csentence::disamb_minus_static) {
-		struct va2vb newrank(ranks, kb.get_static_prank());
+		struct va2vb newrank(ranks, kb.static_prank());
 		cw_it->rank_synsets(kb, newrank);
 	  } else {
 		cw_it->rank_synsets(kb, ranks);

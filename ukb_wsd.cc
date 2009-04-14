@@ -174,7 +174,7 @@ void dis_csent_classic_prank(const string & input_file,
 
   CSentence cs;
 
-  const vector<double> ranks = Kb::instance().get_static_prank();
+  const vector<double> ranks = Kb::instance().static_prank();
 
   try {
     while (cs.read_aw(fh_in)) {
@@ -190,9 +190,35 @@ void dis_csent_classic_prank(const string & input_file,
   }
 }
 
-void test(const string & str) {
-}
 
+void test(const string & input_file,
+		  bool out_semcor) {
+
+  ifstream fh_in(input_file.c_str());
+
+  if (!fh_in) {
+    cerr << "Can't open " << input_file << endl;
+    exit(-1);
+  }
+
+  CSentence cs;
+
+  vector<double> ranks;
+  Kb::instance().indegree_rank(ranks);
+
+  try {
+    while (cs.read_aw(fh_in)) {
+      disamb_csentence_kb(cs, ranks);
+      if (out_semcor) cs.print_csent_semcor_aw(cout);
+      else cs.print_csent_simple(cout);
+      cs = CSentence();
+    }
+  }
+  catch (string & e) {
+    cerr << "Errore reading " << input_file << ":" << e << "\n";
+    throw(e);
+  }
+}
 
 int main(int argc, char *argv[]) {
 
@@ -427,7 +453,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_do_test) {
-    test(fullname_in);
+    test(fullname_in, false);
 	goto END;
   }
 

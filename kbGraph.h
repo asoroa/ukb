@@ -152,7 +152,7 @@ public:
 
   // get static pageRank
 
-  const std::vector<double> & get_static_prank() const;
+  const std::vector<double> & static_prank() const;
 
   // Nodes can be synsets or words
 

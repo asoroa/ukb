@@ -459,7 +459,7 @@ namespace ukb {
   ////////////////////////////////////////////////////////////////////////////////
   // Get static pageRank vector
 
-  const std::vector<double> & Kb::get_static_prank() const {
+  const std::vector<double> & Kb::static_prank() const {
 	if (static_ranks.size()) return static_ranks;
 
 	// Hack to remove const-ness
@@ -473,7 +473,6 @@ namespace ukb {
 	me.pageRank_ppv(ppv, ranks);
 	return static_ranks;
   }
-
 
   ////////////////////////////////////////////////////////////////////////////////
   // Random

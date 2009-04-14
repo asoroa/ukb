@@ -117,7 +117,7 @@ void compute_static_ppv() {
   CSentence cs;
 
   // Calculate static (static) pageRank over KB
-  const vector<double> & ranks = Kb::instance().get_static_prank();
+  const vector<double> & ranks = Kb::instance().static_prank();
 
   vector<double> outranks;
   vector<string> vnames;
