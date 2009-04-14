@@ -619,7 +619,7 @@ namespace ukb {
   //
 
   void disamb_csentence_kb(CSentence & cs,
-							vector<double> & ranks) {
+						   const vector<double> & ranks) {
 
 	Kb & kb = ukb::Kb::instance();
 

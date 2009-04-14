@@ -174,11 +174,7 @@ void dis_csent_classic_prank(const string & input_file,
 
   CSentence cs;
 
-  // Global (static) pageRank over KB
-  size_t N = Kb::instance().size();
-  vector<double> ppv(N, 1.0/static_cast<double>(N));
-  vector<double> ranks;
-  Kb::instance().pageRank_ppv(ppv, ranks);
+  const vector<double> ranks = Kb::instance().get_static_prank();
 
   try {
     while (cs.read_aw(fh_in)) {

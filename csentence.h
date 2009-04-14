@@ -160,6 +160,6 @@ namespace ukb {
   bool calculate_kb_ppv_csentence(CSentence & cs, std::vector<double> & res);
 
   void disamb_csentence_kb(CSentence & cs,
-							std::vector<double> & ranks);
+						   const std::vector<double> & ranks);
 }
 #endif
