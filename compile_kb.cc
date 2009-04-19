@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
        fullname_out = vm["output"].as<string>();
      }
   }
-  catch(exception& e) {
+  catch(std::exception& e) {
     cerr << e.what() << "\n";
     throw(e);
   }

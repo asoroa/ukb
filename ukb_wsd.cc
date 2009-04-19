@@ -204,7 +204,7 @@ void test(const string & input_file,
   CSentence cs;
 
   vector<double> ranks;
-  Kb::instance().indegree_rank(ranks);
+  //Kb::instance().indegree_rank(ranks);
 
   try {
     while (cs.read_aw(fh_in)) {
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
     conflicting_options(vm, "ppr", "static");
     conflicting_options(vm, "ppr_w2w", "static");
   }
-  catch(exception& e) {
+  catch(std::exception& e) {
     cerr << e.what() << "\n";
     throw(e);
   }
