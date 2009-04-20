@@ -7,7 +7,17 @@ You need the following Boost libraries to compile ukb:
       * boost tokenizer
       * boost lexical cast
 
-Then, just run by the standard compilation procedure:
+if you need to compile the boost libraries yourself, make sure you use
+the "--layout=system" and "--build-type=complete" options. Usually,
+after running boost's ./configure script, just edit the produced
+Makefile and change the BJAM_CONFIG variable so it looks like:
+
+BJAM_CONFIG=--layout=system --build-type=complete
+
+and then the usual 'make; make install'
+
+If you have boost properly installed, just run by the standard
+compilation procedure:
 
 # Check dependencies and generate Makefile
 
@@ -22,7 +32,7 @@ Then, just run by the standard compilation procedure:
 #
 #  --with-boost-include
 #            path were the Boost include files reside (default is
-#            /usr/include/boost)
+#            /usr/include)
 #
 #  --with-boost-lib
 #            path were the Boost library files reside (default is /usr/lib)
@@ -34,8 +44,9 @@ Then, just run by the standard compilation procedure:
 
 % make
 
-# The executables are now in the current directory. Now, if you want to
-# install them on a different location, just 'cp' them, or execute
+# The executables are now in the current directory. Now, if you want
+# to install them on a different location (set by the --prefix option
+# of ./configure), just 'cp' them, or execute
 
 % make install
 
