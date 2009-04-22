@@ -290,6 +290,9 @@ int main(int argc, char *argv[]) {
 
   options_description po_hidden("Hidden");
   po_hidden.add_options()
+    ("bcomp_kb_binfile,M", value<string>(), "Backward compatibility with -K.")
+    ("bcomp_dictfile,W", value<string>(), "Backward compatibility with -D.")
+    ("test,t", "(Internal) Do a test.")
     ("test,t", "(Internal) Do a test.")
     ("input-file",value<string>(), "Input file.")
     ;
@@ -355,9 +358,18 @@ int main(int argc, char *argv[]) {
       opt_disamb_dgraph = true;
     }
 
+    if (vm.count("bcomp_dictfile")) {
+      glVars::dict_filename = vm["bcomp_dictfile"].as<string>();
+    }
 
     if (vm.count("dict_file")) {
       glVars::dict_filename = vm["dict_file"].as<string>();
+    }
+
+
+
+    if (vm.count("bcomp_kb_binfile")) {
+      kb_binfile = vm["bcomp_kb_binfile"].as<string>();
     }
 
     if (vm.count("kb_binfile")) {
