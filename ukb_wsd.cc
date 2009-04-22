@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
   string kb_binfile(kb_default_binfile);
 
   bool opt_disamb_dgraph = false;
-  bool opt_do_ppr = false;
+  bool opt_do_ppr = true;
   bool opt_do_ppr_w2w = false;
   bool opt_do_static_prank = false;
   bool opt_do_test = false;
