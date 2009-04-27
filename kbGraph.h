@@ -102,6 +102,11 @@ public:
 
   void write_to_binfile (const std::string & str) const;
 
+  // write_to_textfile
+  // Write kb graph to a text file
+
+  void write_to_textfile (const std::string & fName) const;
+
   // add_from_txt
   // add relations from synsFile to the graph
 

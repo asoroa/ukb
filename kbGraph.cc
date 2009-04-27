@@ -1196,4 +1196,30 @@ namespace ukb {
 	}
 	write_to_stream(fo);
   }
+
+  // text write
+
+  ofstream & write_to_textstream(const KbGraph & g, ofstream & o) {
+
+	graph_traits<KbGraph>::edge_iterator e_it, e_end;
+
+	tie(e_it, e_end) = edges(g);
+	for(; e_it != e_end; ++e_it) {
+	  o << "u:" << get(vertex_name, g, source(*e_it, g)) << " ";
+	  o << "v:" << get(vertex_name, g, target(*e_it, g)) << " d:1";
+	}
+	return o;
+  }
+
+  void Kb::write_to_textfile (const string & fName) const {
+
+	ofstream fo(fName.c_str(),  ofstream::out);
+	if (!fo) {
+	  cerr << "Error: can't create" << fName << endl;
+	  exit(-1);
+	}
+	write_to_textstream(g, fo);
+  }
+
+
 }
