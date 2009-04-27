@@ -37,7 +37,54 @@ static bool insert_all_dict = true;
 
 static bool dict_weight = false; // Use W when linking words to concepts
 
-void compute_sentence_vectors(string & fullname_in, string & out_dir) {
+// - sort all concepts according to their ppv weight, then scan the
+// resulting sequence of concetps with a sliding window of length 100,
+// and truncate the sequence when the difference in scores between the
+// first and last concepts in the window drops below 5% of the
+// highest-scoring concept for this word
+
+
+struct CWSort {
+
+  CWSort(const vector<double> & _v) : v(_v) {}
+  int operator () (const int & i, const int & j) {
+	// Descending order
+	return v[i] > v[j];
+  }
+  const vector<double> & v;
+};
+
+void truncate_ppv(vector<double> & ppv) {
+
+  size_t n = ppv.size();
+  if (n < 100) return;
+
+  vector<int> idx(n);
+
+  for(size_t i=0; i < n; ++i)
+	idx[i] = i;
+  sort(idx.begin(), idx.end(), CWSort(ppv));
+
+  size_t cut_i = 99;
+  double cut_th = ppv[idx[0]]*0.05;
+  for(; cut_i < n; ++cut_i) {
+	if ((ppv[idx[cut_i-99]] - ppv[idx[cut_i]]) < cut_th) break;
+  }
+
+  // truncate ppv
+  for(; cut_i < n; ++cut_i) {
+	ppv[idx[cut_i]] = 0.0;
+  }
+
+  // Normalize result
+
+  normalize_pvector(ppv);
+
+}
+
+void compute_sentence_vectors(string & fullname_in,
+							  string & out_dir,
+							  bool trunc_ppv) {
 
   Kb & kb = Kb::instance();
   if (glVars::verbose)
@@ -100,6 +147,8 @@ void compute_sentence_vectors(string & fullname_in, string & out_dir) {
 
 	  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
 
+	  if (trunc_ppv) truncate_ppv(outranks);
+
 	  for(size_t i = 0; i < outranks.size(); ++i) {
 		fo << vnames[i] << "\t" << outranks[i] << "\n";
 	  }
@@ -137,6 +186,7 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_static = false;
+  bool opt_trppv = false;
 
   string kb_binfile(kb_default_binfile);
 
@@ -179,6 +229,7 @@ int main(int argc, char *argv[]) {
   po_desc_output.add_options()
     ("only_words", "Output only (normalized) PPVs for words.")
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
+    ("trunc_ppv", "Truncate PPV (a la gabrilovich).")
     ;
 
   options_description po_hidden("Hidden");
@@ -293,6 +344,10 @@ int main(int argc, char *argv[]) {
 	  filter_nodes = 2;
     }
 
+    if (vm.count("trunc_ppv")) {
+      opt_trppv = true;
+    }
+
     if (vm.count("input-file")) {
       fullname_in = vm["input-file"].as<string>();
     }
@@ -324,7 +379,7 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     Kb::instance().display_info(cerr);
 
-  compute_sentence_vectors(fullname_in, out_dir);
+  compute_sentence_vectors(fullname_in, out_dir, opt_trppv);
 
  END:
   return 0;
