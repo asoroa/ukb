@@ -54,7 +54,7 @@ struct CWSort {
   const vector<double> & v;
 };
 
-void truncate_ppv(vector<double> & ppv) {
+void truncate_ppv(vector<double> & ppv, float thres) {
 
   size_t n = ppv.size();
   if (n < 100) return;
@@ -66,7 +66,7 @@ void truncate_ppv(vector<double> & ppv) {
   sort(idx.begin(), idx.end(), CWSort(ppv));
 
   size_t cut_i = 99;
-  double cut_th = ppv[idx[0]]*0.05;
+  double cut_th = ppv[idx[0]]*thres;
   for(; cut_i < n; ++cut_i) {
 	if ((ppv[idx[cut_i-99]] - ppv[idx[cut_i]]) < cut_th) break;
   }
@@ -82,9 +82,29 @@ void truncate_ppv(vector<double> & ppv) {
 
 }
 
+// Fill with zero's all values except top k
+
+void top_k(vector<double> & ppv, size_t k) {
+
+  size_t n = ppv.size();
+  if (k >= n) return;
+
+  vector<int> idx(n);
+
+  for(size_t i=0; i < n; ++i)
+	idx[i] = i;
+  sort(idx.begin(), idx.end(), CWSort(ppv));
+
+  for(size_t i = k; i < n; ++i) {
+	ppv[idx[i]] = 0.0;
+  }
+  normalize_pvector(ppv);
+}
+
 void compute_sentence_vectors(string & fullname_in,
 							  string & out_dir,
-							  bool trunc_ppv) {
+							  float trunc_ppv,
+							  bool nozero) {
 
   Kb & kb = Kb::instance();
   if (glVars::verbose)
@@ -147,9 +167,25 @@ void compute_sentence_vectors(string & fullname_in,
 
 	  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
 
-	  if (trunc_ppv) truncate_ppv(outranks);
+	  if (trunc_ppv > 0.0f) {
+		if (trunc_ppv < 1.0f)
+		  truncate_ppv(outranks, trunc_ppv);
+		else {
+		  // For top k calculation
+		  //
+		  //  - fill with zeros all values except top k
+		  //  - set nozero = 1 so only top k are printed
+		  //
+		  // * could be a problem if top k had zeros in it, as they
+		  //   will not be properly printed.
+
+		  top_k(outranks, lexical_cast<size_t>(trunc_ppv));
+		  nozero = true;
+		}
+	  }
 
 	  for(size_t i = 0; i < outranks.size(); ++i) {
+		if (nozero && outranks [i] == 0.0) continue;
 		fo << vnames[i] << "\t" << outranks[i] << "\n";
 	  }
       cs = CSentence();
@@ -186,7 +222,8 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_static = false;
-  bool opt_trppv = false;
+  bool opt_nozero = false;
+  float opt_trppv = 0.0f;
 
   string kb_binfile(kb_default_binfile);
 
@@ -229,7 +266,8 @@ int main(int argc, char *argv[]) {
   po_desc_output.add_options()
     ("only_words", "Output only (normalized) PPVs for words.")
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
-    ("trunc_ppv", "Truncate PPV (a la gabrilovich).")
+    ("trunc_ppv", value<float>(), "Truncate PPV threshold (a la gabrilovich). If arg > 1, return top arg nodes.")
+    ("nozero", "Do not return concepts with zero rank.")
     ;
 
   options_description po_hidden("Hidden");
@@ -345,7 +383,11 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("trunc_ppv")) {
-      opt_trppv = true;
+      opt_trppv = vm["trunc_ppv"].as<float>();
+    }
+
+    if (vm.count("nozero")) {
+      opt_nozero = 1;
     }
 
     if (vm.count("input-file")) {
@@ -379,7 +421,7 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     Kb::instance().display_info(cerr);
 
-  compute_sentence_vectors(fullname_in, out_dir, opt_trppv);
+  compute_sentence_vectors(fullname_in, out_dir, opt_trppv, opt_nozero);
 
  END:
   return 0;
