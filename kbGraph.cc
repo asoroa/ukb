@@ -690,9 +690,8 @@ namespace ukb {
 	  writeV(o, notes);
 	}
 	size_t edge_n = num_edges(g);
-	if (edge_n & 2) edge_n++;
 
-	o << "\n" << num_vertices(g) << " vertices and " << edge_n/2 << " edges" << endl;
+	o << "\n" << num_vertices(g) << " vertices and " << edge_n << " edges.\n(Note that if graph is undirected you should divide the edge number by 2)" << endl;
 	if (rtypes.size()) {
 	  o << "Relations:";
 	  writeV(o, rtypes);
