@@ -100,12 +100,12 @@ public:
   // write_to_binfile
   // Write kb graph to a binary serialization file
 
-  void write_to_binfile (const std::string & str) const;
+  void write_to_binfile (const std::string & str);
 
   // write_to_textfile
   // Write kb graph to a text file
 
-  void write_to_textfile (const std::string & fName) const;
+  void write_to_textfile (const std::string & fName);
 
   // add_from_txt
   // add relations from synsFile to the graph
@@ -242,7 +242,7 @@ private:
 					 const std::set<std::string> & rels_source);
 
   void read_from_stream (std::ifstream & o);
-  std::ofstream & write_to_stream(std::ofstream & o) const;
+  std::ofstream & write_to_stream(std::ofstream & o);
 
   // Private members
   KbGraph g;

@@ -1119,22 +1119,104 @@ namespace ukb {
 
   // write
 
+  //
+  // Auxiliary functions for removing isolated vertices
+  //
+
+  static void get_isolated_list(const KbGraph & g,
+								list<pair<string, Kb_vertex_t> > & visolated) {
+
+	graph_traits<KbGraph>::vertex_iterator vit, vend;
+	tie(vit, vend) = vertices(g);
+	for(;vit != vend; ++vit) {
+	  if (out_degree(*vit, g) + in_degree(*vit, g) == 0)
+		visolated.push_back(make_pair(get(vertex_name, g, *vit), *vit));
+	}
+  }
+
+  struct sort_visolated {
+	int operator()(const pair<string, Kb_vertex_t> & a,const pair<string, Kb_vertex_t> & b) {
+	  return a.second < b.second;
+	}
+  };
+
+
+  static void get_vdeltas(list<pair<string, Kb_vertex_t> > & visolated,
+						  vector<size_t> & vdeltas) {
+
+	visolated.sort(sort_visolated());
+
+	list<pair<string, Kb_vertex_t> >::iterator iso_it = visolated.begin();
+	list<pair<string, Kb_vertex_t> >::iterator iso_end = visolated.end();
+	if (iso_it == iso_end) return; // nothing to do
+	size_t d = 1;
+	size_t i = iso_it->second;
+	size_t m = vdeltas.size();
+	++iso_it;
+
+	while(i < m && iso_it != iso_end) {
+	  if (i == iso_it->second) {
+		++d;
+		++iso_it;
+	  }
+	  vdeltas[i] = d;
+	  ++i;
+	}
+	for(; i < m; ++i)
+	  vdeltas[i] = d;
+  }
+
+  static void map_update(const list<pair<string, Kb_vertex_t> > & visolated,
+						 const vector<size_t> & vdelta,
+						 map<string, Kb_vertex_t> & theMap) {
+
+	// First, erase elements
+
+	map<string, Kb_vertex_t>::iterator it;
+
+	list<pair<string, Kb_vertex_t> >::const_iterator vit = visolated.begin();
+	list<pair<string, Kb_vertex_t> >::const_iterator vend = visolated.end();
+
+	for(; vit != vend; ++vit) {
+	  it = theMap.find(vit->first);
+	  if (it == theMap.end()) continue;
+	  theMap.erase(it);
+	}
+
+	// Second, update vertex ids
+
+	map<string, Kb_vertex_t>::iterator end = theMap.end();
+	for(it = theMap.begin(); it != end; --it) {
+	  it->second -= vdelta[it->second];
+	}
+  }
+
+
+  // write functions
+
   ofstream & write_vertex_to_stream(ofstream & o,
 									const KbGraph & g,
 									const Kb_vertex_t & v) {
 	string name;
 
-	write_atom_to_stream(o, get(vertex_name, g, v));
-	write_atom_to_stream(o, get(vertex_gloss, g, v));
+	if (out_degree(v, g) + in_degree(v, g) != 0) {
+	  write_atom_to_stream(o, get(vertex_name, g, v));
+	  write_atom_to_stream(o, get(vertex_gloss, g, v));
+	}
 	return o;
   }
 
+
   ofstream & write_edge_to_stream(ofstream & o,
 								  const KbGraph & g,
+								  const vector<size_t> & vdelta,
 								  const Kb_edge_t & e) {
 
 	size_t uIdx = get(vertex_index, g, source(e,g));
+	uIdx -= vdelta[uIdx];
 	size_t vIdx = get(vertex_index, g, target(e,g));
+	vIdx -= vdelta[vIdx];
+
 	float w = get(edge_weight, g, e);
 	boost::uint32_t rtype = get(edge_rtype, g, e);
 
@@ -1145,9 +1227,29 @@ namespace ukb {
 	return o;
   }
 
-  ofstream & Kb::write_to_stream(ofstream & o) const {
+  ofstream & Kb::write_to_stream(ofstream & o) {
 
-	// First write maps
+	// First remove isolated vertices and
+	// - get delta vector
+	// - remove from map
+
+	list<pair<string, Kb_vertex_t> > visolated;
+	get_isolated_list(g, visolated);
+	size_t visol_size = visolated.size();
+
+	// - get deltas
+	vector<size_t> vdelta(num_vertices(g), 0);
+	get_vdeltas(visolated, vdelta);
+
+	// - update the map
+
+	map_update(visolated, vdelta, synsetMap);
+	map_update(visolated, vdelta, wordMap);
+
+	// free space from list
+	list<pair<string, Kb_vertex_t> >().swap(visolated);
+
+	// Write maps
 
 	write_atom_to_stream(o, magic_id);
 
@@ -1160,7 +1262,7 @@ namespace ukb {
 
 	write_atom_to_stream(o, magic_id);
 
-	size_t vertex_n = num_vertices(g);
+	size_t vertex_n = num_vertices(g) - visol_size;
 
 	write_atom_to_stream(o, vertex_n);
 	graph_traits<KbGraph>::vertex_iterator v_it, v_end;
@@ -1179,14 +1281,14 @@ namespace ukb {
 
 	tie(e_it, e_end) = edges(g);
 	for(; e_it != e_end; ++e_it) {
-	  write_edge_to_stream(o, g, *e_it);
+	  write_edge_to_stream(o, g, vdelta, *e_it);
 	}
 	write_atom_to_stream(o, magic_id);
 	if(notes.size()) write_vector_to_stream(o, notes);
 	return o;
   }
 
-  void Kb::write_to_binfile (const string & fName) const {
+  void Kb::write_to_binfile (const string & fName) {
 
 	ofstream fo(fName.c_str(),  ofstream::binary|ofstream::out);
 	if (!fo) {
@@ -1210,7 +1312,7 @@ namespace ukb {
 	return o;
   }
 
-  void Kb::write_to_textfile (const string & fName) const {
+  void Kb::write_to_textfile (const string & fName) {
 
 	ofstream fo(fName.c_str(),  ofstream::out);
 	if (!fo) {
