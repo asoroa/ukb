@@ -335,6 +335,20 @@ namespace ukb {
 	return e;
   }
 
+  size_t Kb::unlink_dangling() {
+
+	size_t n = 0;
+	graph_traits<KbGraph>::vertex_iterator it, end;
+	tie(it, end) = vertices(g);
+	for(; it != end; ++it) {
+	  if(out_degree(*it, g) == 0 && in_degree(*it, g) != 0) {
+		clear_vertex(*it, g);
+		++n;
+	  }
+	}
+	return n;
+  }
+
   vector<string>::size_type get_reltype_idx(const string & rel,
 											vector<string> & rtypes) {
 

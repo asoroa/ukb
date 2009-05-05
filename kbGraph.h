@@ -136,6 +136,11 @@ public:
 
   Kb_edge_t find_or_insert_edge(Kb_vertex_t u, Kb_vertex_t v, float w );
 
+  // Unlink dangling_nodes (out_degree == 0).
+  // Return num. of unlinked nodes
+
+  size_t unlink_dangling();
+
   // Add relation type to edge
 
   void edge_add_reltype(Kb_edge_t e, const std::string & rel);
