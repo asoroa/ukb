@@ -1205,7 +1205,7 @@ namespace ukb {
 	tie(e_it, e_end) = edges(g);
 	for(; e_it != e_end; ++e_it) {
 	  o << "u:" << get(vertex_name, g, source(*e_it, g)) << " ";
-	  o << "v:" << get(vertex_name, g, target(*e_it, g)) << " d:1";
+	  o << "v:" << get(vertex_name, g, target(*e_it, g)) << " d:1\n";
 	}
 	return o;
   }
