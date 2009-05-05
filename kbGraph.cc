@@ -1123,71 +1123,43 @@ namespace ukb {
   // Auxiliary functions for removing isolated vertices
   //
 
-  static void get_isolated_list(const KbGraph & g,
-								list<pair<string, Kb_vertex_t> > & visolated) {
+
+  static size_t vdelta_isolated = numeric_limits<size_t>::max();
+
+  static size_t get_vdeltas(const KbGraph & g,
+							vector<size_t> & vdeltas) {
+
+	size_t d = 0;
 
 	graph_traits<KbGraph>::vertex_iterator vit, vend;
 	tie(vit, vend) = vertices(g);
 	for(;vit != vend; ++vit) {
-	  if (out_degree(*vit, g) + in_degree(*vit, g) == 0)
-		visolated.push_back(make_pair(get(vertex_name, g, *vit), *vit));
-	}
-  }
-
-  struct sort_visolated {
-	int operator()(const pair<string, Kb_vertex_t> & a,const pair<string, Kb_vertex_t> & b) {
-	  return a.second < b.second;
-	}
-  };
-
-
-  static void get_vdeltas(list<pair<string, Kb_vertex_t> > & visolated,
-						  vector<size_t> & vdeltas) {
-
-	visolated.sort(sort_visolated());
-
-	list<pair<string, Kb_vertex_t> >::iterator iso_it = visolated.begin();
-	list<pair<string, Kb_vertex_t> >::iterator iso_end = visolated.end();
-	if (iso_it == iso_end) return; // nothing to do
-	size_t d = 1;
-	size_t i = iso_it->second;
-	size_t m = vdeltas.size();
-	++iso_it;
-
-	while(i < m && iso_it != iso_end) {
-	  if (i == iso_it->second) {
+	  if (out_degree(*vit, g) + in_degree(*vit, g) == 0) {
+		// isolated vertex
+		vdeltas[*vit] = vdelta_isolated;
 		++d;
-		++iso_it;
+	  } else {
+		vdeltas[*vit] = d;
 	  }
-	  vdeltas[i] = d;
-	  ++i;
 	}
-	for(; i < m; ++i)
-	  vdeltas[i] = d;
+	return d;
   }
 
-  static void map_update(const list<pair<string, Kb_vertex_t> > & visolated,
-						 const vector<size_t> & vdelta,
+  static void map_update(const vector<size_t> & vdelta,
 						 map<string, Kb_vertex_t> & theMap) {
 
-	// First, erase elements
-
-	map<string, Kb_vertex_t>::iterator it;
-
-	list<pair<string, Kb_vertex_t> >::const_iterator vit = visolated.begin();
-	list<pair<string, Kb_vertex_t> >::const_iterator vend = visolated.end();
-
-	for(; vit != vend; ++vit) {
-	  it = theMap.find(vit->first);
-	  if (it == theMap.end()) continue;
-	  theMap.erase(it);
-	}
-
-	// Second, update vertex ids
-
+	map<string, Kb_vertex_t>::iterator it = theMap.begin();
 	map<string, Kb_vertex_t>::iterator end = theMap.end();
-	for(it = theMap.begin(); it != end; --it) {
-	  it->second -= vdelta[it->second];
+
+	while(it != end) {
+	  if (vdelta[it->second] == vdelta_isolated) {
+		// erase element
+		theMap.erase(it++);
+	  } else {
+		// update vertex id
+		it->second -= vdelta[it->second];
+		++it;
+	  }
 	}
   }
 
@@ -1196,10 +1168,11 @@ namespace ukb {
 
   ofstream & write_vertex_to_stream(ofstream & o,
 									const KbGraph & g,
+									const vector<size_t> & vdelta,
 									const Kb_vertex_t & v) {
 	string name;
 
-	if (out_degree(v, g) + in_degree(v, g) != 0) {
+	if (vdelta[v] != vdelta_isolated) {
 	  write_atom_to_stream(o, get(vertex_name, g, v));
 	  write_atom_to_stream(o, get(vertex_gloss, g, v));
 	}
@@ -1233,21 +1206,16 @@ namespace ukb {
 	// - get delta vector
 	// - remove from map
 
-	list<pair<string, Kb_vertex_t> > visolated;
-	get_isolated_list(g, visolated);
-	size_t visol_size = visolated.size();
-
 	// - get deltas
 	vector<size_t> vdelta(num_vertices(g), 0);
-	get_vdeltas(visolated, vdelta);
+	size_t visol_size = get_vdeltas(g, vdelta);
 
-	// - update the map
+	// - update the maps
 
-	map_update(visolated, vdelta, synsetMap);
-	map_update(visolated, vdelta, wordMap);
-
-	// free space from list
-	list<pair<string, Kb_vertex_t> >().swap(visolated);
+	if (visol_size) {
+	  map_update(vdelta, synsetMap);
+	  map_update(vdelta, wordMap);
+	}
 
 	// Write maps
 
@@ -1269,7 +1237,7 @@ namespace ukb {
 
 	tie(v_it, v_end) = vertices(g);
 	for(; v_it != v_end; ++v_it) {
-	  write_vertex_to_stream(o, g, *v_it);
+	  write_vertex_to_stream(o, g, vdelta, *v_it);
 	}
 
 	write_atom_to_stream(o, magic_id);
