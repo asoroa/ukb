@@ -168,13 +168,13 @@ namespace ukb {
 		  item.wsyns.push_back(concept_id);
 		  if (has_w) {
 			if (item.has_freq == 0)
-			  throw std::runtime_error ("line mixes weighted and unweighed concepts");
+			  throw std::runtime_error (fields[0] + " word has lines mixing weighted and unweighed concepts");
 			item.has_freq = 1;
 			item.syns_count.push_back(weight + 1.0);  // Add 1 to weight (so there is no zero-weighed edge)
 
 		  } else {
 			if (item.has_freq == 1)
-			  throw std::runtime_error ("line mixes weighted and unweighed concepts");
+			  throw std::runtime_error (fields[0] + " word has lines mixing weighted and unweighed concepts");
 			item.has_freq = 0;
 		  }
 		}
