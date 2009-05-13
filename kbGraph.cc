@@ -806,8 +806,9 @@ namespace ukb {
 		  cerr << "W:Kb::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
 		continue;
 	  }
+	  float w = use_w ? syns.get_freq(i) : 1.0;
 	  // (directed) link word -> concept
-	  kb.find_or_insert_edge(u, v, 1.0);
+	  kb.find_or_insert_edge(u, v, w);
 	}
   }
 
