@@ -26,6 +26,9 @@ using namespace boost;
 
 const char *kb_default_binfile = "kb_wnet.bin";
 
+static bool dict_weight = false; // Use W when linking words to concepts
+
+
 // Program options stuff
 
 /* Auxiliary functions for checking input for validity. */
@@ -102,7 +105,7 @@ void dis_csent_ppr(const string & input_file,
   if (glVars::verbose)
     cerr << "Adding words to Mcr ...\n";
 
-  Kb::instance().add_dictionary(false);
+  Kb::instance().add_dictionary(dict_weight);
 
   try {
     while (cs.read_aw(fh_in)) {
@@ -143,7 +146,7 @@ void dis_csent_ppr_by_word(const string & input_file,
   if (glVars::verbose)
     cerr << "Adding words to Kb ...\n";
 
-  Kb::instance().add_dictionary(false);
+  Kb::instance().add_dictionary(dict_weight);
 
   try {
     while (cs.read_aw(fh_in)) {
@@ -258,6 +261,7 @@ int main(int argc, char *argv[]) {
     ("version", "Show version.")
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin.")
     ("dict_file,D", value<string>(), "Dictionary text file. Default is dict.txt")
+    ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Also sets --prank_weight.")
 	("nopos", "Don't filter words by Part of Speech.")
     ;
 
@@ -272,7 +276,7 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_prank("pageRank general options");
   po_desc_prank.add_options()
-    ("with_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
+    ("prank_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
     ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
     ("prank_threshold", value<float>(), "Threshold for stopping PageRank. Default is zero. Good value is 0.0001.")
     ;
@@ -366,7 +370,10 @@ int main(int argc, char *argv[]) {
       glVars::dict_filename = vm["dict_file"].as<string>();
     }
 
-
+    if (vm.count("dict_weight")) {
+      dict_weight = true;
+      glVars::prank::use_weight = true;
+    }
 
     if (vm.count("bcomp_kb_binfile")) {
       kb_binfile = vm["bcomp_kb_binfile"].as<string>();
@@ -385,7 +392,7 @@ int main(int argc, char *argv[]) {
       glVars::rAlg = alg;
     }
 
-    if (vm.count("with_weight")) {
+    if (vm.count("prank_weight")) {
 	  glVars::prank::use_weight = true;
     }
 
