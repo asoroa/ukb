@@ -10,7 +10,7 @@
 /////////////////////////////////////////////////////////////////////
 // pageRank
 //
-// it solves pageRank with the so called power method see  
+// it solves pageRank with the so called power method see
 // @article{langville04,
 // title = {{Deeper Inside PageRank}},
 // author = {A.N. Langville and C.D. Meyer},
@@ -19,7 +19,7 @@
 // pages = {335--380},
 // volume = {1},
 // year = {2004},
-// } 
+// }
 //
 // Note: it correctly handles dangling nodes
 
@@ -40,7 +40,7 @@ namespace ukb {
 	  typedef V value_type;
 	  typedef V reference;
 	  typedef boost::readable_property_map_tag category;
-  
+
 	  constant_property_map(V value) : store(value) {}
 
 	  inline value_type operator[](const key_type& v) const { return store; }
@@ -74,61 +74,27 @@ namespace ukb {
 	  }
 	}
 
-	// 
+	//
 	// Apply one step of pageRank algorithm
 	//
 
 	template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
-	void update_pRank_iter(G & g,
-						   std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-						   float damping,
-						   ppvMap_t ppv_V,
-						   const std::vector<float> & out_coef,
-						   wMap_t & wmap,
-						   const map1_t rank_map1,
-						   map2_t rank_map2) {
-  
-	  typedef typename graph_traits<G>::vertex_descriptor vertex_descriptor;
-  
-	  typename std::vector<vertex_descriptor>::iterator v = V.begin();
-	  typename std::vector<vertex_descriptor>::iterator end = V.end();
-	  for (; v != end; ++v) {
-		double rank = 0.0;
-		typename graph_traits<G>::in_edge_iterator e, e_end;
-		tie(e, e_end) = in_edges(*v, g);
-		for(; e != e_end; ++e) {
-		  vertex_descriptor u = source(*e, g);
-		  if (*v == u) continue; // No self-loops
-		  rank += rank_map1[u] * wmap[*e] * static_cast<double>(out_coef[u]);
-		}
-		double dangling_factor = 0.0;
-		if (0.0 == out_coef[*v]) {
-		  // dangling link
-		  dangling_factor = static_cast<double>(damping)*rank_map1[*v];
-		}
-		rank_map2[*v] = damping*rank + (dangling_factor + static_cast<double>(1.0 - damping ) )*ppv_V[*v];
-	  }
-	}
+	float update_pRank(G & g,
+					   std::vector<typename graph_traits<G>::vertex_descriptor> & V,
+					   float damping,
+					   ppvMap_t ppv_V,
+					   const std::vector<float> & out_coef,
+					   wMap_t & wmap,
+					   const map1_t rank_map1,
+					   map2_t rank_map2) {
 
-	// Same thing, but calculate l1 norm
-
-	template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
-	float update_pRank_l1(G & g,
-						   std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-						   float damping,
-						   ppvMap_t ppv_V,
-						   const std::vector<float> & out_coef,
-						   wMap_t & wmap,
-						   const map1_t rank_map1,
-						   map2_t rank_map2) {
-  
 	  typedef typename graph_traits<G>::vertex_descriptor vertex_descriptor;
-  
+
 	  typename std::vector<vertex_descriptor>::iterator v = V.begin();
 	  typename std::vector<vertex_descriptor>::iterator end = V.end();
 	  float norm = 0.0;
 	  for (; v != end; ++v) {
-		double rank=0.0;
+		double rank = 0.0;
 		typename graph_traits<G>::in_edge_iterator e, e_end;
 		tie(e, e_end) = in_edges(*v, g);
 		for(; e != e_end; ++e) {
@@ -159,9 +125,14 @@ namespace ukb {
 					 map1_t rank_map1,
 					 map2_t rank_map2,
 					 int iterations,
+					 float threshold,
 					 const std::vector<float> & out_coef) {
 
-	  float damping = 0.85;    
+	  if (iterations == 0 && threshold == 0.0)
+		throw std::runtime_error("prank error: iterations and threshold are set to zero!\n");
+	  if (!iterations) iterations = std::numeric_limits<int>::max();
+
+	  float damping = 0.85;
 	  // Initialize rank_map1 appropriately
 	  {
 		const double init_value = 1.0f/static_cast<double>(V.size());
@@ -170,61 +141,17 @@ namespace ukb {
 		  rank_map1[*v]=init_value;
 		}
 	  }
-    
+
 	  // Continue iterating until the termination condition is met
-    
+
 	  bool to_map_2 = true;
+	  float residual = 0.0;
 	  while(iterations--) {
 		// Update to the appropriate rank map
 		if (to_map_2)
-		  update_pRank_iter(g, V, damping, ppv_V, out_coef, wmap, rank_map1, rank_map2);
+		  residual = update_pRank(g, V, damping, ppv_V, out_coef, wmap, rank_map1, rank_map2);
 		else
-		  update_pRank_iter(g, V, damping, ppv_V, out_coef, wmap, rank_map2, rank_map1);
-		// The next iteration will reverse the update mapping
-		to_map_2 = !to_map_2;
-	  }
-
-	  // If we stopped after writing the latest results to rank_map2,
-	  // copy the results back to rank_map1 for the caller
-	  if (!to_map_2) {
-		typename graph_traits<G>::vertex_iterator v, end;
-		for (tie(v, end) = vertices(g); v != end; ++v) {
-		  rank_map1[*v] = rank_map2[*v];
-		}
-	  }
-	}
-
-
-	template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
-	void do_pageRank_l1(G & g,
-						std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-						ppvMap_t ppv_V,
-						wMap_t & wmap,
-						map1_t rank_map1,
-						map2_t rank_map2,
-						float threshold,
-						const std::vector<float> & out_coef) {
-
-	  float damping = 0.85;    
-	  // Initialize rank_map1 appropriately
-	  {
-		const double init_value = 1.0f/static_cast<double>(V.size());
-		typename graph_traits<G>::vertex_iterator v, end;
-		for (tie(v, end) = vertices(g); v != end; ++v) {
-		  rank_map1[*v]=init_value;
-		}
-	  }
-    
-	  // Continue iterating until the termination condition is met
-    
-	  bool to_map_2 = true;
-	  float residual = 0.0;
-	  while(true) {
-		// Update to the appropriate rank map
-		if (to_map_2)
-		  residual = update_pRank_l1(g, V, damping, ppv_V, out_coef, wmap, rank_map1, rank_map2);
-		else
-		  residual = update_pRank_l1(g, V, damping, ppv_V, out_coef, wmap, rank_map2, rank_map1);
+		  residual = update_pRank(g, V, damping, ppv_V, out_coef, wmap, rank_map2, rank_map1);
 		// The next iteration will reverse the update mapping
 		to_map_2 = !to_map_2;
 		if (residual < threshold) break;
@@ -256,29 +183,14 @@ namespace ukb {
 						  wMap_t & wmap,
 						  map1_t rank_map1,
 						  map2_t rank_map2,
-						  int iterations) {
+						  int iterations,
+						  float threshold) {
 
 	  std::vector<float> out_coef(num_vertices(g), 0.0f);
 	  // Initialize out_coef
 	  init_out_coefs(g, V, &out_coef[0], wmap);
-	  do_pageRank(g, V, ppv_V, wmap, rank_map1, rank_map2, iterations, out_coef);
+	  do_pageRank(g, V, ppv_V, wmap, rank_map1, rank_map2, iterations, threshold, out_coef);
 	}
-
-	template<typename G, typename ppvMap_t, typename wMap_t, typename map1_t, typename map2_t>
-	void pageRank_l1(G & g,
-					 std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-					 ppvMap_t ppv_V,
-					 wMap_t & wmap,
-					 map1_t rank_map1,
-					 map2_t rank_map2,
-					 float threshold) {
-
-	  std::vector<float> out_coef(num_vertices(g), 0.0f);
-	  // Initialize out_coef
-	  init_out_coefs(g, V, &out_coef[0], wmap);
-	  do_pageRank_l1(g, V, ppv_V, wmap, rank_map1, rank_map2, threshold, out_coef);
-	}
-
 
 	//
 	// PageRank algorithm without weights
@@ -292,24 +204,12 @@ namespace ukb {
 							  ppvMap_t ppv_V,
 							  map1_t rank_map1,
 							  map2_t rank_map2,
-							  int iterations) {
-  
-	  typedef typename graph_traits<G>::edge_descriptor edge_descriptor;
-	  constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
-	  pageRank_iterate(g, V, ppv_V, cte_weight, rank_map1, rank_map2, iterations);
-	}
+							  int iterations,
+							  float threshold) {
 
-	template<typename G, typename ppvMap_t, typename map1_t, typename map2_t>
-	void pageRank_iterate_l1_now(G & g,
-								 std::vector<typename graph_traits<G>::vertex_descriptor> & V,
-								 ppvMap_t ppv_V,
-								 map1_t rank_map1,
-								 map2_t rank_map2,
-								 float threshold) {
-  
 	  typedef typename graph_traits<G>::edge_descriptor edge_descriptor;
 	  constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
-	  pageRank_iterate_l1(g, V, ppv_V, cte_weight, rank_map1, rank_map2, threshold);
+	  pageRank_iterate(g, V, ppv_V, cte_weight, rank_map1, rank_map2, iterations, threshold);
 	}
 
 	/////////////////////////////////////////////////////////////////////////

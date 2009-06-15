@@ -352,12 +352,24 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("prank_iter")) {
-      glVars::prank::num_iterations = vm["prank_iter"].as<size_t>();
+	  size_t iter = vm["prank_iter"].as<size_t>();
+	  if (iter == 0) {
+		cerr << "Error: prank_iter can not be zero!\n";
+		goto END;
+	  }
+      glVars::prank::num_iterations = iter;
+      glVars::prank::threshold = 0.0;
     }
 
-	if (vm.count("prank_threshold")) {
-	  glVars::prank::threshold = vm["prank_threshold"].as<float>();
-	}
+    if (vm.count("prank_threshold")) {
+	  float th = vm["prank_threshold"].as<float>();
+	  if (th <= 0.0 || th > 1.0) {
+		cerr << "Error: invalid prank_threshold value " << th << "\n";
+		goto END;
+	  }
+      glVars::prank::threshold = th;
+      glVars::prank::num_iterations = 0;
+    }
 
     if (vm.count("dis_dgraph")) {
       opt_disamb_dgraph = true;

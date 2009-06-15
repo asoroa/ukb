@@ -366,11 +366,12 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("prank_threshold")) {
 	  float th = vm["prank_threshold"].as<float>();
-	  if (th <= 0.0) {
+	  if (th <= 0.0 || th > 1.0) {
 		cerr << "Error: invalid prank_threshold value " << th << "\n";
 		goto END;
 	  }
       glVars::prank::threshold = th;
+      glVars::prank::num_iterations = 0;
     }
 
     if (vm.count("concepts_in")) {

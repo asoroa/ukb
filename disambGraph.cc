@@ -444,12 +444,14 @@ namespace ukb {
 	  property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
 	  //init_out_coefs(g, V, &out_coefs[0], weight_map);
 	  prank::pageRank_iterate(g, V, ppv,
-							  weight_map, rank_map, &map_tmp[0], glVars::prank::num_iterations);
+							  weight_map, rank_map, &map_tmp[0],
+							  glVars::prank::num_iterations,
+							  glVars::prank::threshold);
 	} else {
 	  prank::pageRank_iterate_now(g, V, ppv,
 								  rank_map, &map_tmp[0],
-								  glVars::prank::num_iterations);
-
+								  glVars::prank::num_iterations,
+								  glVars::prank::threshold);
 	}
   }
 
@@ -504,10 +506,14 @@ namespace ukb {
 	  property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
 	  //init_out_coefs(g, V, &out_coefs[0], weight_map);
 	  prank::pageRank_iterate(g, V, ppv_map, weight_map,
-							  rank_map, map_tmp, glVars::prank::num_iterations);
+							  rank_map, map_tmp,
+							  glVars::prank::num_iterations,
+							  glVars::prank::threshold);
 	} else {
 	  prank::pageRank_iterate_now(g, V, ppv_map,
-								  rank_map, map_tmp, glVars::prank::num_iterations);
+								  rank_map, map_tmp,
+								  glVars::prank::num_iterations,
+								  glVars::prank::threshold);
 	}
   }
 
