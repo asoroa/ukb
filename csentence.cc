@@ -465,6 +465,7 @@ namespace ukb {
 
 	Kb & kb = ukb::Kb::instance();
 	bool aux;
+	set<string> S;
 
 	// Initialize result vector
 	vector<double> (kb.size(), 0.0).swap(res);
@@ -480,13 +481,17 @@ namespace ukb {
 	  //string wpos = it->wpos();
 	  string wpos = it->word();
 
-	  Kb_vertex_t u;
-	  tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-	  double w = 1.0;
-	  if(glVars::csentence::concepts_in) w = it->get_weight();
+	  set<string>::iterator aux_set;
+	  tie(aux_set, aux) = S.insert(wpos);
 	  if (aux) {
-		ppv[u] = w;
-		K +=w;
+		Kb_vertex_t u;
+		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
+		double w = 1.0;
+		if(glVars::csentence::concepts_in) w = it->get_weight();
+		if (aux) {
+		  ppv[u] = w;
+		  K +=w;
+		}
 	  }
 	}
 	if (K == 0.0) return false;
@@ -532,6 +537,7 @@ namespace ukb {
 	  // Target word must be distinguished.
 	  if(!cw_it->is_distinguished()) continue;
 
+	  set<string> S;
 	  vector<double> ranks;
 	  // Initialize PPV vector
 	  vector<double> ppv(kb.size(), 0.0);
@@ -542,13 +548,17 @@ namespace ukb {
 		unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
 		string wpos = it->word();
 
-		Kb_vertex_t u;
-		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-		double w =  1.0;
-		if(glVars::csentence::concepts_in) w = it->get_weight();
+		set<string>::iterator aux_set;
+		tie(aux_set, aux) = S.insert(wpos);
 		if (aux) {
-		  ppv[u] = w;
-		  K +=w;
+		  Kb_vertex_t u;
+		  tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
+		  double w =  1.0;
+		  if(glVars::csentence::concepts_in) w = it->get_weight();
+		  if (aux) {
+			ppv[u] = w;
+			K +=w;
+		  }
 		}
 	  }
 	  if (K == 0.0) continue;
