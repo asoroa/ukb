@@ -310,6 +310,7 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("verbose")) {
       glVars::verbose = 1;
+      glVars::debug::warning = 1;
     }
 
     if (vm.count("kb_binfile")) {
