@@ -235,7 +235,8 @@ int main(int argc, char *argv[]) {
   bool opt_out_semcor = false;
 
 
-  string cmdline("!!");
+  string cmdline("!! -v ");
+  cmdline += glVars::ukb_version;
   for (int i=0; i < argc; ++i) {
     cmdline += " ";
     cmdline += argv[i];

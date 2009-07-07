@@ -1,10 +1,12 @@
+# Default target of this Makefile
+all::
 
 CCC = @CXX@
 STATIC = @ENABLE_STATIC@
 INCLUDES = -I @BOOST_INCLUDE_DIR@
 LDFLAGS = @LDFLAGS@
-UKB_VER = @PACKAGE_VERSION@
-CCFLAGS = @CCFLAGS@ -DUKB_VER='"$(UKB_VER)"'
+UKB_DEF_VER = @PACKAGE_VERSION@
+
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -20,9 +22,15 @@ SOURCES= common.cc globalVars.cc configFile.cc fileElem.cc kbGraph.cc disambGrap
 
 MEMBERS=$(SOURCES:.cc=.o)
 
-.PHONY: all install clean
+.PHONY: all install clean .FORCE-UKB-VERSION-FILE
 
-all: $(EXEC)
+UKB-VERSION-FILE: .FORCE-UKB-VERSION-FILE
+	@$(SHELL_PATH) ./UKB-VERSION-GEN $(UKB_DEF_VER)
+-include UKB-VERSION-FILE
+
+CCFLAGS = @CCFLAGS@ -DUKB_VER='"$(UKB_VERSION)"'
+
+all:: $(EXEC) UKB-VERSION-FILE
 
 %.o : %.cc
 	$(CCC) -c $(CCFLAGS) -o $@ $(INCLUDES) $<
