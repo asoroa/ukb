@@ -636,6 +636,7 @@ namespace ukb {
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
+	  if (!cw_it->is_distinguished()) continue;
 	  if (glVars::csentence::disamb_minus_static) {
 		struct va2vb newrank(ranks, kb.static_prank());
 		cw_it->rank_synsets(kb, newrank);
