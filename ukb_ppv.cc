@@ -46,15 +46,15 @@ static bool dict_weight = false; // Use W when linking words to concepts
 
 struct CWSort {
 
-  CWSort(const vector<double> & _v) : v(_v) {}
+  CWSort(const vector<float> & _v) : v(_v) {}
   int operator () (const int & i, const int & j) {
 	// Descending order
 	return v[i] > v[j];
   }
-  const vector<double> & v;
+  const vector<float> & v;
 };
 
-void truncate_ppv(vector<double> & ppv, float thres) {
+void truncate_ppv(vector<float> & ppv, float thres) {
 
   size_t n = ppv.size();
   if (n < 100) return;
@@ -66,7 +66,7 @@ void truncate_ppv(vector<double> & ppv, float thres) {
   sort(idx.begin(), idx.end(), CWSort(ppv));
 
   size_t cut_i = 99;
-  double cut_th = ppv[idx[0]]*thres;
+  float cut_th = ppv[idx[0]]*thres;
   for(; cut_i < n; ++cut_i) {
 	if ((ppv[idx[cut_i-99]] - ppv[idx[cut_i]]) < cut_th) break;
   }
@@ -84,7 +84,7 @@ void truncate_ppv(vector<double> & ppv, float thres) {
 
 // Fill with zero's all values except top k
 
-void top_k(vector<double> & ppv, size_t k) {
+void top_k(vector<float> & ppv, size_t k) {
 
   size_t n = ppv.size();
   if (k >= n) return;
@@ -138,7 +138,7 @@ void compute_sentence_vectors(string & fullname_in,
     while (cs.read_aw(fh_in)) {
 
       // Initialize rank vector
-      vector<double> ranks;
+      vector<float> ranks;
 
 	  if(!insert_all_dict) {
 		// Add CSentence words to graph
@@ -162,7 +162,7 @@ void compute_sentence_vectors(string & fullname_in,
 		exit(-1);
       }
 
-	  vector<double> outranks;
+	  vector<float> outranks;
 	  vector<string> vnames;
 
 	  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
@@ -202,9 +202,9 @@ void compute_static_ppv() {
   CSentence cs;
 
   // Calculate static (static) pageRank over KB
-  const vector<double> & ranks = Kb::instance().static_prank();
+  const vector<float> & ranks = Kb::instance().static_prank();
 
-  vector<double> outranks;
+  vector<float> outranks;
   vector<string> vnames;
 
   Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, 2);

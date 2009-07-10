@@ -110,7 +110,7 @@ void dis_csent_ppr(const string & input_file,
   try {
     while (cs.read_aw(fh_in)) {
 
-      vector<double> ranks;
+      vector<float> ranks;
       bool ok = calculate_kb_ppr(cs,ranks);
       if (!ok) {
 		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
@@ -177,7 +177,7 @@ void dis_csent_classic_prank(const string & input_file,
 
   CSentence cs;
 
-  const vector<double> ranks = Kb::instance().static_prank();
+  const vector<float> ranks = Kb::instance().static_prank();
 
   try {
     while (cs.read_aw(fh_in)) {
@@ -206,7 +206,7 @@ void test(const string & input_file,
 
   CSentence cs;
 
-  vector<double> ranks;
+  vector<float> ranks;
   //Kb::instance().indegree_rank(ranks);
 
   try {

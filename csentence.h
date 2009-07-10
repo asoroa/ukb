@@ -43,7 +43,7 @@ namespace ukb {
 	size_type size() const {return m_syns.size(); }
 
 	const std::string & syn(size_t i) const { return m_syns[i];}
-	double rank(size_t i) const { return m_ranks[i];}
+	float rank(size_t i) const { return m_ranks[i];}
 
 	std::string word() const { return w; }
 
@@ -62,7 +62,7 @@ namespace ukb {
 
 	void empty_synsets() {
 	  std::vector<std::string>().swap(m_syns);
-	  std::vector<double>().swap(m_ranks);
+	  std::vector<float>().swap(m_ranks);
 	  m_disamb = false;
 	}
 	std::vector<std::string> & get_syns_vector() { return m_syns; }
@@ -96,7 +96,7 @@ namespace ukb {
 	char m_pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
 	float m_weight;     // Initial weight for PPV
 	std::vector<std::string> m_syns;
-	std::vector<double> m_ranks;
+	std::vector<float> m_ranks;
 	bool m_is_synset; // Wether the cword is just a synset (created with create_synset_cword)
 	bool m_distinguished;
 	bool m_disamb;      // If word is disambiguated, that is, if the synset
@@ -153,13 +153,13 @@ namespace ukb {
   };
 
   bool calculate_kb_ppr(const CSentence & cs,
-						std::vector<double> & res);
+						std::vector<float> & res);
 
   void calculate_kb_ppr_by_word_and_disamb(CSentence & cs);
 
-  bool calculate_kb_ppv_csentence(CSentence & cs, std::vector<double> & res);
+  bool calculate_kb_ppv_csentence(CSentence & cs, std::vector<float> & res);
 
   void disamb_csentence_kb(CSentence & cs,
-						   const std::vector<double> & ranks);
+							const std::vector<float> & ranks);
 }
 #endif

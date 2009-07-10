@@ -16,7 +16,7 @@ namespace ukb {
 
   void fill_syns(const string & w,
 				 vector<string> & syns,
-				 vector<double> & ranks,
+				 vector<float> & ranks,
 				 char pos = 0) {
 
 	//W2Syn & w2syn = W2Syn::instance();
@@ -127,12 +127,12 @@ namespace ukb {
 
   struct CWSort {
 
-	CWSort(const vector<double> & _v) : v(_v) {}
+	CWSort(const vector<float> & _v) : v(_v) {}
 	int operator () (const int & i, const int & j) {
 	  // Descending order
 	  return v[i] > v[j];
 	}
-	const vector<double> & v;
+	const vector<float> & v;
   };
 
   void CWord::disamb_cword() {
@@ -145,7 +145,7 @@ namespace ukb {
 	}
 
 	vector<string> syns(n);
-	vector<double> ranks(n);
+	vector<float> ranks(n);
 	vector<int> idx(n);
 
 	for(size_t i=0; i < n; ++i)
@@ -186,7 +186,7 @@ namespace ukb {
 
   ostream & cw_aw_print_best(ostream & o,
 							 const vector<string> & syns,
-							 const vector<double> & ranks) {
+							 const vector<float> & ranks) {
 	size_t n = syns.size();
 	o << " " << syns[0];
 	for(size_t i = 1; i != n; ++i) {
@@ -198,12 +198,12 @@ namespace ukb {
 
   ostream & cw_aw_print_all(ostream & o,
 							const vector<string> & syns,
-							const vector<double> & ranks) {
-	double rsum = 0.0;
+							const vector<float> & ranks) {
+	float rsum = 0.0;
 	for(size_t i = 0; i != syns.size(); ++i) {
 	  rsum += ranks[i];
 	}
-	double norm_factor = 1.0 / rsum;
+	float norm_factor = 1.0 / rsum;
 	for(size_t i = 0; i != syns.size(); ++i) {
 	  o << " " << syns[i] << "/" << ranks[i]*norm_factor;
 	}
@@ -263,7 +263,7 @@ namespace ukb {
 	read_atom_from_stream(i,m_id);
 	read_atom_from_stream(i,m_pos);
 	read_vector_from_stream(i,m_syns);
-	vector<double>(m_syns.size()).swap(m_ranks); // Init ranks vector
+	vector<float>(m_syns.size()).swap(m_ranks); // Init ranks vector
 	read_atom_from_stream(i,m_distinguished);
 
 	m_disamb = (1 == m_syns.size());
@@ -461,20 +461,20 @@ namespace ukb {
   // Initial V is computed by activating the words of the context
 
   bool calculate_kb_ppr(const CSentence & cs,
-						vector<double> & res) {
+						vector<float> & res) {
 
 	Kb & kb = ukb::Kb::instance();
 	bool aux;
 	set<string> S;
 
 	// Initialize result vector
-	vector<double> (kb.size(), 0.0).swap(res);
+	vector<float> (kb.size(), 0.0).swap(res);
 
 	// Initialize PPV vector
-	vector<double> ppv(kb.size(), 0.0);
+	vector<float> ppv(kb.size(), 0.0);
 	CSentence::const_iterator it = cs.begin();
 	CSentence::const_iterator end = cs.end();
-	double K = 0.0;
+	float K = 0.0;
 	for(;it != end; ++it) {
 	  //if(!it->is_distinguished()) continue;
 	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
@@ -486,7 +486,7 @@ namespace ukb {
 	  if (aux) {
 		Kb_vertex_t u;
 		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-		double w = 1.0;
+		float w = 1.0;
 		if(glVars::csentence::concepts_in) w = it->get_weight();
 		if (aux) {
 		  ppv[u] = w;
@@ -496,8 +496,8 @@ namespace ukb {
 	}
 	if (K == 0.0) return false;
 	// Normalize PPV vector
-	double div = 1.0 / K;
-	for(vector<double>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit)
+	float div = 1.0 / static_cast<float>(K);
+	for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit)
 	  *rit *= div;
 
 	// Execute PageRank
@@ -510,14 +510,14 @@ namespace ukb {
   // res[i] = vb[i] - va[1]
 
   struct va2vb {
-	va2vb(const vector<double> & va, const vector<double> & vb) :
+	va2vb(const vector<float> & va, const vector<float> & vb) :
 	  m_va(va), m_vb(vb) {}
-	double operator[](size_t i) const {
+	float operator[](size_t i) const {
 	  return m_vb[i] - m_va[i];
 	}
   private:
-	const vector<double> & m_va;
-	const vector<double> & m_vb;
+	const vector<float> & m_va;
+	const vector<float> & m_vb;
   };
 
   // given a word,
@@ -538,10 +538,10 @@ namespace ukb {
 	  if(!cw_it->is_distinguished()) continue;
 
 	  set<string> S;
-	  vector<double> ranks;
+	  vector<float> ranks;
 	  // Initialize PPV vector
-	  vector<double> ppv(kb.size(), 0.0);
-	  double K = 0.0;
+	  vector<float> ppv(kb.size(), 0.0);
+	  float K = 0.0;
 	  // put ppv to the synsets of words except cw_it
 	  for(CSentence::const_iterator it = cs.begin(); it != cw_end; ++it) {
 		if(it == cw_it) continue;
@@ -553,7 +553,7 @@ namespace ukb {
 		if (aux) {
 		  Kb_vertex_t u;
 		  tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-		  double w =  1.0;
+		  float w =  1.0;
 		  if(glVars::csentence::concepts_in) w = it->get_weight();
 		  if (aux) {
 			ppv[u] = w;
@@ -563,8 +563,8 @@ namespace ukb {
 	  }
 	  if (K == 0.0) continue;
 	  // Normalize PPV vector
-	  double div = 1.0 / K;
-	  for(vector<double>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit)
+	  float div = 1.0 / static_cast<float>(K);
+	  for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit)
 		*rit *= div;
 
 	  // Execute PageRank
@@ -587,20 +587,20 @@ namespace ukb {
   // (normalized) rank
   //
 
-  bool calculate_kb_ppv_csentence(CSentence & cs, vector<double> & res) {
+  bool calculate_kb_ppv_csentence(CSentence & cs, vector<float> & res) {
 
 	Kb & kb = ukb::Kb::instance();
 	bool aux;
 
 	// Initialize result vector
-	vector<double> (kb.size(), 0.0).swap(res);
+	vector<float> (kb.size(), 0.0).swap(res);
 
 	// Initialize PPV vector
-	vector<double> ppv(kb.size(), 0.0);
+	vector<float> ppv(kb.size(), 0.0);
 
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
-	double K = 0.0;
+	float K = 0.0;
 	for(; cw_it != cw_end; ++cw_it) {
 	  for(size_t i = 0; i != cw_it->size(); ++i) {
 		Kb_vertex_t u;
@@ -614,8 +614,8 @@ namespace ukb {
 
 	if (K == 0.0) return false;
 	// Normalize PPV vector
-	double div = 1.0 / K;
-	for(vector<double>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit)
+	float div = 1.0 / K;
+	for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit)
 	  *rit *= div;
 
 	// Execute PageRank
@@ -629,7 +629,7 @@ namespace ukb {
   //
 
   void disamb_csentence_kb(CSentence & cs,
-						   const vector<double> & ranks) {
+							const vector<float> & ranks) {
 
 	Kb & kb = ukb::Kb::instance();
 

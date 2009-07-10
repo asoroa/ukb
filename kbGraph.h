@@ -162,7 +162,7 @@ public:
 
   // get static pageRank
 
-  const std::vector<double> & static_prank() const;
+  const std::vector<float> & static_prank() const;
 
   // Nodes can be synsets or words
 
@@ -185,8 +185,8 @@ public:
   // outranks: new rank vector
   // vnames: node names
 
-  void filter_ranks_vnames(const std::vector<double> & ranks,
-						   std::vector<double> & outranks,
+  void filter_ranks_vnames(const std::vector<float> & ranks,
+						   std::vector<float> & outranks,
 						   std::vector<std::string> & vnames,
 						   int filter_mode) const;
 
@@ -212,10 +212,10 @@ public:
 
   bool dijkstra (Kb_vertex_t src, std::vector<Kb_vertex_t> & parents) const;
 
-  void pageRank_ppv(const std::vector<double> & ppv_map,
-					std::vector<double> & ranks);
+  void pageRank_ppv(const std::vector<float> & ppv_map,
+					std::vector<float> & ranks);
 
-  void ppv_weights(const std::vector<double> & ppv);
+  void ppv_weights(const std::vector<float> & ppv);
 
   // given a source node and a limit (100) return a subgraph by performing a
   // bfs over the graph.
@@ -267,7 +267,7 @@ private:
   char coef_status;                      // 0 invalid
   // 1 calculated without weights
   // 2 calculated with weights
-  std::vector<double> static_ranks;       // aux. vector with static prank computation
+  std::vector<float> static_ranks;       // aux. vector with static prank computation
   };
 }
 
