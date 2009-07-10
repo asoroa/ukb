@@ -22,7 +22,7 @@ SOURCES= common.cc globalVars.cc configFile.cc fileElem.cc kbGraph.cc disambGrap
 
 MEMBERS=$(SOURCES:.cc=.o)
 
-.PHONY: all install clean .FORCE-UKB-VERSION-FILE
+.PHONY: all install clean .FORCE-UKB-VERSION-FILE UKB-VERSION-FILE
 
 UKB-VERSION-FILE: .FORCE-UKB-VERSION-FILE
 	@$(SHELL_PATH) ./UKB-VERSION-GEN $(UKB_DEF_VER)

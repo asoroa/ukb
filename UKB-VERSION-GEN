@@ -23,5 +23,5 @@ else
 fi
 
 VN=$(expr "$VN" : v*'\(.*\)')
-echo $VN
+#echo $VN
 echo "UKB_VERSION = $VN" >$UVF
