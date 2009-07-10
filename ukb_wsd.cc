@@ -178,7 +178,6 @@ void dis_csent_classic_prank(const string & input_file,
   CSentence cs;
 
   const vector<float> ranks = Kb::instance().static_prank();
-
   try {
     while (cs.read_aw(fh_in)) {
       disamb_csentence_kb(cs, ranks);
@@ -337,6 +336,8 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("ppr")) {
       opt_do_ppr= true;
+	  opt_do_ppr_w2w = false;
+	  opt_do_static_prank = false;
     }
 
     if (vm.count("nostatic")) {
@@ -345,10 +346,14 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("ppr_w2w")) {
       opt_do_ppr_w2w= true;
+	  opt_do_ppr = false;
+	  opt_do_static_prank = false;
     }
 
     if (vm.count("static")) {
       opt_do_static_prank = true;
+	  opt_do_ppr = false;
+	  opt_do_ppr_w2w = false;
     }
 
     if (vm.count("prank_iter")) {
