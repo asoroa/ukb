@@ -83,6 +83,9 @@ pos: part of speech
     a -> adjective
     r -> adverb
 
+However, if the application is called with the '--nopos' command line
+switch, the concept ids can have any format, as long as they don't include
+the '#' character (see program options).
 
 1.2 Compiling the KB
 *********************
@@ -275,6 +278,15 @@ General options:
   -D [ --dict_file ] arg
             Dictionary text file. Default is dict.txt
 
+  --dict_weight
+            If the dictionary has weights attached to the relations, use
+            them when pageRanking. This option also sets --prank_weight.
+
+  --nopos
+	    Do not filter by POS when linking context words to the concepts
+	    they are attached to. When --nopos is set, the concept id's of
+	    the graph can have any format, excluding the '#' character.
+
 You must also choose one wsd method. Currently there are four methods,
 namely, 'ppr', 'ppr_w2w', 'static' and 'dgraph'. All methods perform some
 ranking on the concepts of the KB; disambiguation is then choosing the
@@ -282,7 +294,7 @@ concept associated to a word with maximum rank.
 
   --ppr
             Given a text input file, disambiguate context using Personalized
-            PageRank method.
+            PageRank method. This is the default method.
 
   --ppr_w2w
             Given a text input file, disambiguate context using Personalized
@@ -325,6 +337,20 @@ PageRank general options:
 
   --prank_iter arg
             Number of iterations in PageRank. Default is 30.
+
+  --prank_threshold arg  
+
+            Threshold for stopping PageRank. Default is zero. Good value is
+            0.0001.
+
+The policy for knowing when to stop the pageRank algoithm is the following:
+
+    - iterate until L1 is below threshold or max. number of iterations is reached.
+
+if any of the parameters is set to zero it is discarded. For example,
+setting the iterations number to zero (--prank_iter 0) causes the algorithm
+to stop exclusively when threshold is reached. Setting --prank_iter 0.0
+causes the algoritm to stop when the iterations are done.
 
 Output options:
 
@@ -380,6 +406,14 @@ General options:
             Directory for leaving output PPV files. Default is the current
             directory.
 
+  -C [ --only_ctx_words ]  
+
+           Insert only words appearing in contexts to the graph (default is
+       	   insert all dictionary words).
+
+  --nopos
+           Same as ukb_wsd --nopos option.
+
   --concepts_in
 
             With this option KB nodes can also be part of the input context,
@@ -395,17 +429,17 @@ man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
 	    "00980806-v" concepts of KB are also "activated" with the
 	    specified weight when PageRanking.
 
+  -S [ --static ]          
+
+            Compute static PageRank ppv. Only -K option is needed. Output to
+            STDOUT.
+
   -v [ --verbose ]
             Be verbose.
 
 PageRank general options:
 
-  -w [ --with_weight ]
-            Use weigths in PageRank calculation. Serialized graph edges must
-	    have some weight.
-
-  --prank_iter arg
-            Number of iterations in PageRank. Default is 30.
+  Same as ukb_wsd "PageRank general options"
 
 Output options:
 
