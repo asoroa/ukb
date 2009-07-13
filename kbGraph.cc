@@ -654,7 +654,7 @@ namespace ukb {
 		if (glVars::kb::keep_reltypes && f.rtype.size()) {
 		  kb->edge_add_reltype(e1, f.rtype);
 		}
-		if (!f.directed) {
+		if (!f.directed || !glVars::kb::keep_directed) {
 		  Kb_edge_t e2 = kb->find_or_insert_edge(v, u, w);
 		  if(glVars::kb::keep_reltypes && f.rtype.size()) {
 			string aux = f.irtype.size() ? f.irtype : f.rtype;
