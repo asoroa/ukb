@@ -152,7 +152,8 @@ int main(int argc, char *argv[]) {
 
   set<string> src_allowed;
 
-  string cmdline("cmd:");
+  string cmdline("cmd: !! -v ");
+  cmdline += glVars::ukb_version;
   for (int i=0; i < argc; ++i) {
     cmdline += " ";
     cmdline += argv[i];
