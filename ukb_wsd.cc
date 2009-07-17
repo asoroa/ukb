@@ -226,13 +226,17 @@ int main(int argc, char *argv[]) {
 
   string kb_binfile(kb_default_binfile);
 
-  bool opt_disamb_dgraph = false;
-  bool opt_do_ppr = true;
-  bool opt_do_ppr_w2w = false;
-  bool opt_do_static_prank = false;
+  enum dis_method {
+	dgraph,
+	ppr,
+	ppr_w2w,
+	ppr_static
+  };
+
+  dis_method dmethod = ppr;
+
   bool opt_do_test = false;
   bool opt_out_semcor = false;
-
 
   string cmdline("!! -v ");
   cmdline += glVars::ukb_version;
@@ -335,25 +339,19 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("ppr")) {
-      opt_do_ppr= true;
-	  opt_do_ppr_w2w = false;
-	  opt_do_static_prank = false;
-    }
-
-    if (vm.count("nostatic")) {
-	  glVars::csentence::disamb_minus_static = true;
+	  dmethod = ppr;
     }
 
     if (vm.count("ppr_w2w")) {
-      opt_do_ppr_w2w= true;
-	  opt_do_ppr = false;
-	  opt_do_static_prank = false;
+	  dmethod = ppr_w2w;
     }
 
     if (vm.count("static")) {
-      opt_do_static_prank = true;
-	  opt_do_ppr = false;
-	  opt_do_ppr_w2w = false;
+	  dmethod = ppr_static;
+    }
+
+    if (vm.count("dis_dgraph")) {
+	  dmethod = dgraph;
     }
 
     if (vm.count("prank_iter")) {
@@ -376,8 +374,8 @@ int main(int argc, char *argv[]) {
       glVars::prank::num_iterations = 0;
     }
 
-    if (vm.count("dis_dgraph")) {
-      opt_disamb_dgraph = true;
+    if (vm.count("nostatic")) {
+	  glVars::csentence::disamb_minus_static = true;
     }
 
     if (vm.count("bcomp_dictfile")) {
@@ -439,21 +437,10 @@ int main(int argc, char *argv[]) {
     if (vm.count("no-monosemous")) {
       glVars::output::monosemous = false;
     }
-
-    conflicting_options(vm, "prank_iter", "prank_threshold");
-    conflicting_options(vm, "ppr", "ppr_w2w");
-    conflicting_options(vm, "ppr", "static");
-    conflicting_options(vm, "ppr_w2w", "static");
   }
   catch(std::exception& e) {
     cerr << e.what() << "\n";
     throw(e);
-  }
-
-  if (!opt_disamb_dgraph && !opt_do_ppr && !opt_do_ppr_w2w && !opt_do_static_prank) {
-    cout << po_visible << endl;
-	cout << "Error: please select one wsd method (ppr, ppr_w2w, static or dis_dgraph)" << endl;
-	exit(-1);
   }
 
   if (!fullname_in.size()) {
@@ -462,38 +449,37 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  if(opt_disamb_dgraph) {
-    Kb::create_from_binfile(kb_binfile);
-    cout << cmdline << "\n";
-    disamb_dgraph_from_corpus(fullname_in, opt_out_semcor);
-    goto END;
-  }
-
-  if (opt_do_ppr) {
-    Kb::create_from_binfile(kb_binfile);
-    cout << cmdline << "\n";
-    dis_csent_ppr(fullname_in, opt_out_semcor);
-    goto END;
-  }
-
-  if (opt_do_ppr_w2w) {
-    Kb::create_from_binfile(kb_binfile);
-    cout << cmdline << "\n";
-    dis_csent_ppr_by_word(fullname_in, opt_out_semcor);
-    goto END;
-  }
-
-  if (opt_do_static_prank) {
-    Kb::create_from_binfile(kb_binfile);
-    cout << cmdline << "\n";
-    dis_csent_classic_prank(fullname_in, opt_out_semcor);
-    goto END;
-  }
-
   if (opt_do_test) {
     test(fullname_in, false);
 	goto END;
   }
+
+
+  Kb::create_from_binfile(kb_binfile);
+  cout << cmdline << "\n";
+
+  switch(dmethod) {
+
+  case dgraph:
+    disamb_dgraph_from_corpus(fullname_in, opt_out_semcor);
+    goto END;
+	break;
+  case ppr:
+    dis_csent_ppr(fullname_in, opt_out_semcor);
+    goto END;
+	break;
+
+  case ppr_w2w:
+    dis_csent_ppr_by_word(fullname_in, opt_out_semcor);
+    goto END;
+	break;
+
+  case ppr_static:
+    dis_csent_classic_prank(fullname_in, opt_out_semcor);
+    goto END;
+	break;
+
+  };
 
  END:
   return 0;
