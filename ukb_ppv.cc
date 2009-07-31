@@ -260,6 +260,7 @@ int main(int argc, char *argv[]) {
     ("prank_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
     ("prank_iter", value<size_t>(), "Number of iterations in pageRank (good value is 30).")
     ("prank_threshold", value<float>(), "Threshold for pageRank convergence. Default is 0.0001.")
+    ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
     ;
 
   options_description po_desc_output("Output options");
@@ -372,6 +373,15 @@ int main(int argc, char *argv[]) {
 	  }
       glVars::prank::threshold = th;
       glVars::prank::num_iterations = 0;
+    }
+
+    if (vm.count("prank_damping")) {
+	  float dp = vm["prank_damping"].as<float>();
+	  if (dp <= 0.0 || dp > 1.0) {
+		cerr << "Error: invalid prank_damping value " << dp << "\n";
+		goto END;
+	  }
+      glVars::prank::damping = dp;
     }
 
     if (vm.count("concepts_in")) {

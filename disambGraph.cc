@@ -446,12 +446,14 @@ namespace ukb {
 	  prank::pageRank_iterate(g, V, ppv,
 							  weight_map, rank_map, &map_tmp[0],
 							  glVars::prank::num_iterations,
-							  glVars::prank::threshold);
+							  glVars::prank::threshold,
+							  glVars::prank::damping);
 	} else {
 	  prank::pageRank_iterate_now(g, V, ppv,
 								  rank_map, &map_tmp[0],
 								  glVars::prank::num_iterations,
-								  glVars::prank::threshold);
+								  glVars::prank::threshold,
+								  glVars::prank::damping);
 	}
   }
 
@@ -508,12 +510,14 @@ namespace ukb {
 	  prank::pageRank_iterate(g, V, ppv_map, weight_map,
 							  rank_map, map_tmp,
 							  glVars::prank::num_iterations,
-							  glVars::prank::threshold);
+							  glVars::prank::threshold,
+							  glVars::prank::damping);
 	} else {
 	  prank::pageRank_iterate_now(g, V, ppv_map,
 								  rank_map, map_tmp,
 								  glVars::prank::num_iterations,
-								  glVars::prank::threshold);
+								  glVars::prank::threshold,
+								  glVars::prank::damping);
 	}
   }
 

@@ -126,13 +126,13 @@ namespace ukb {
 					 map2_t rank_map2,
 					 int iterations,
 					 float threshold,
+					 float damping,
 					 const std::vector<float> & out_coef) {
 
 	  if (iterations == 0 && threshold == 0.0)
 		throw std::runtime_error("prank error: iterations and threshold are set to zero!\n");
 	  if (!iterations) iterations = std::numeric_limits<int>::max();
 
-	  float damping = 0.85;
 	  // Initialize rank_map1 appropriately
 	  {
 		const float init_value = 1.0f/static_cast<float>(V.size());
@@ -184,12 +184,13 @@ namespace ukb {
 						  map1_t rank_map1,
 						  map2_t rank_map2,
 						  int iterations,
-						  float threshold) {
+						  float threshold,
+						  float damping) {
 
 	  std::vector<float> out_coef(num_vertices(g), 0.0f);
 	  // Initialize out_coef
 	  init_out_coefs(g, V, &out_coef[0], wmap);
-	  do_pageRank(g, V, ppv_V, wmap, rank_map1, rank_map2, iterations, threshold, out_coef);
+	  do_pageRank(g, V, ppv_V, wmap, rank_map1, rank_map2, iterations, threshold, damping, out_coef);
 	}
 
 	//
@@ -205,11 +206,12 @@ namespace ukb {
 							  map1_t rank_map1,
 							  map2_t rank_map2,
 							  int iterations,
-							  float threshold) {
+							  float threshold,
+							  float damping) {
 
 	  typedef typename graph_traits<G>::edge_descriptor edge_descriptor;
 	  constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
-	  pageRank_iterate(g, V, ppv_V, cte_weight, rank_map1, rank_map2, iterations, threshold);
+	  pageRank_iterate(g, V, ppv_V, cte_weight, rank_map1, rank_map2, iterations, threshold, damping);
 	}
 
 	/////////////////////////////////////////////////////////////////////////

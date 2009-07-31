@@ -41,6 +41,7 @@ namespace ukb {
 	  extern bool use_weight;
 	  extern size_t num_iterations;
 	  extern float threshold;
+	  extern float damping;
 	}
 
 

@@ -39,6 +39,7 @@ namespace ukb {
 	  bool use_weight = false;
 	  size_t num_iterations = 30; // Conservative, but stop if threshold is reached. If zero, just use threshold.
 	  float threshold = 0.0001; // If zero just use num_iterations
+	  float damping = 0.85; // damping factor
 	}
 
 	namespace input {

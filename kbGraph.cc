@@ -885,6 +885,7 @@ namespace ukb {
 						 weight_map, &ranks[0], &rank_tmp[0],
 						 glVars::prank::num_iterations,
 						 glVars::prank::threshold,
+						 glVars::prank::damping,
 						 out_coefs);
 	} else {
 	  typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
@@ -898,6 +899,7 @@ namespace ukb {
 						 cte_weight, &ranks[0], &rank_tmp[0],
 						 glVars::prank::num_iterations,
 						 glVars::prank::threshold,
+						 glVars::prank::damping,
 						 out_coefs);
 	}
   }
