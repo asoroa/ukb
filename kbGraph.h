@@ -200,6 +200,12 @@ public:
   void display_info(std::ostream & o) const;
   size_t size() const {return num_vertices(g); }
 
+  std::pair<size_t, size_t> indeg_maxmin() const;
+  std::pair<size_t, size_t> outdeg_maxmin() const;
+
+  // get how many (strong) components the graph has
+  int components() const;
+
   const std::vector<std::string> & get_comments() const;
 
   // Get a random vertex

@@ -137,6 +137,7 @@ int main(int argc, char *argv[]) {
   timer load;
 
   bool opt_info = false;
+  bool opt_Info = false;
   bool opt_query = false;
   bool opt_iquery = false;
   bool opt_dump = false;
@@ -175,6 +176,7 @@ int main(int argc, char *argv[]) {
     ("version", "Show version.")
     ("filter_src,f", value<string>(), "Filter relations according to their sources.")
     ("info,i", "Give info about some Kb binfile.")
+    ("Info,I", "Give more info about Kb binfile. This option can be computationally expensive.")
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
     ("nodangling", "Recursively remove all dangling nodes from graph.")
     ("output,o", value<string>(), "Output file name.")
@@ -221,6 +223,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("info")) {
       opt_info = true;
+    }
+
+    if (vm.count("Info")) {
+      opt_Info = true;
     }
 
     if (vm.count("iquery")) {
@@ -275,6 +281,26 @@ int main(int argc, char *argv[]) {
   if (opt_info) {
     Kb::create_from_binfile(kb_files[0]);
     Kb::instance().display_info(cout);
+    return 0;
+  }
+
+  if (opt_Info) {
+    Kb::create_from_binfile(kb_files[0]);
+
+	int id_m, id_M;
+	int od_m, od_M;
+	int comp;
+
+    Kb::instance().display_info(cout);
+
+	tie(id_m, id_M) = Kb::instance().indeg_maxmin();
+	tie(od_m, od_M) = Kb::instance().outdeg_maxmin();
+	comp = Kb::instance().components();
+
+	cout << "In degree (max, min):  (" << id_m << ", " << id_M << ")\n";
+	cout << "Out degree (max, min): (" << od_m << ", " << od_M << ")\n";
+	cout << "Number of (strong) components: " << comp << endl;
+
     return 0;
   }
 

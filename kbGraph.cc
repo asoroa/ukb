@@ -36,6 +36,11 @@
 
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 
+// strong components
+
+#include <boost/graph/strong_components.hpp>
+
+
 namespace ukb {
 
   using namespace std;
@@ -712,6 +717,55 @@ namespace ukb {
 	  o << endl;
 	}
   }
+
+
+  std::pair<size_t, size_t> Kb::indeg_maxmin() const {
+
+	size_t m = std::numeric_limits<size_t>::max();
+	size_t M = std::numeric_limits<size_t>::min();
+
+	size_t d;
+
+	graph_traits<KbGraph>::vertex_iterator it, end;
+	tie(it, end) = vertices(g);
+	for(; it != end; ++it) {
+	  d = in_degree(*it, g);
+	  if (d > M) M = d;
+	  if (d < m) m = d;
+	}
+	return make_pair<size_t, size_t>(m, M);
+  }
+
+  std::pair<size_t, size_t> Kb::outdeg_maxmin() const {
+
+	size_t m = std::numeric_limits<size_t>::max();
+	size_t M = std::numeric_limits<size_t>::min();
+
+	size_t d;
+
+	graph_traits<KbGraph>::vertex_iterator it, end;
+	tie(it, end) = vertices(g);
+	for(; it != end; ++it) {
+	  d = out_degree(*it, g);
+	  if (d > M) M = d;
+	  if (d < m) m = d;
+	}
+	return make_pair<size_t, size_t>(m, M);
+  }
+
+
+  int Kb::components() const {
+
+	//	std::vector<int> component(num_vertices(g)), discover_time(num_vertices(g));
+	//	std::vector<default_color_type> color(num_vertices(g));
+	//	std::vector<Vertex> root(num_vertices(g));
+	vector<int> v(num_vertices(g));
+	int i = boost::strong_components(g,&v[0]);
+
+	return i;
+
+  }
+
 
   ////////////////////////////////////////////////////////////////////////////////
   // Add token vertices and link them to synsets
