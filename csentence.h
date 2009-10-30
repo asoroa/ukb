@@ -135,7 +135,7 @@ namespace ukb {
 
 	void distinguished_synsets(std::vector<std::string> & res) const;
 
-	std::istream & read_aw(std::istream & is);
+	std::istream & read_aw(std::istream & is, size_t & l_n);
 
 	void write_to_binfile (const std::string & fName) const;
 	void read_from_binfile (const std::string & fName);

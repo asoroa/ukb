@@ -285,10 +285,9 @@ namespace ukb {
 
   // AW file read (create a csentence from a context)
 
-  istream & CSentence::read_aw(istream & is) {
+  istream & CSentence::read_aw(istream & is, size_t & l_n) {
 
   string line;
-  size_t l_n = 0;
 
 	if(is) {
 	  if(!read_ctx_line(is, line, l_n)) return is;

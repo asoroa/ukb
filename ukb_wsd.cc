@@ -72,9 +72,10 @@ void disamb_dgraph_from_corpus(string & fullname_in,
   }
 
   CSentence cs;
+  size_t l_n = 0;
 
   try {
-    while (cs.read_aw(fh_in)) {
+    while (cs.read_aw(fh_in, l_n)) {
       DisambGraph dgraph;
       fill_disamb_graph(cs, dgraph);
 	  pageRank_disg(dgraph.graph());
@@ -85,7 +86,7 @@ void disamb_dgraph_from_corpus(string & fullname_in,
     }
   }
   catch (std::exception & e) {
-    cerr << "Errore reading " << fullname_in << ":" << e.what() << "\n";
+    cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
     throw(e);
   }
 }
@@ -106,9 +107,10 @@ void dis_csent_ppr(const string & input_file,
     cerr << "Adding words to Mcr ...\n";
 
   Kb::instance().add_dictionary(dict_weight);
+  size_t l_n = 0;
 
   try {
-    while (cs.read_aw(fh_in)) {
+    while (cs.read_aw(fh_in, l_n)) {
 
       vector<float> ranks;
       bool ok = calculate_kb_ppr(cs,ranks);
@@ -124,8 +126,8 @@ void dis_csent_ppr(const string & input_file,
       cs = CSentence();
     }
   }
-  catch (string & e) {
-    cerr << "Errore reading " << input_file << ":" << e << "\n";
+  catch (std::exception & e) {
+    cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
     throw(e);
   }
 }
@@ -147,9 +149,10 @@ void dis_csent_ppr_by_word(const string & input_file,
     cerr << "Adding words to Kb ...\n";
 
   Kb::instance().add_dictionary(dict_weight);
+  size_t l_n = 0;
 
   try {
-    while (cs.read_aw(fh_in)) {
+    while (cs.read_aw(fh_in, l_n)) {
 
       calculate_kb_ppr_by_word_and_disamb(cs);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
@@ -159,8 +162,8 @@ void dis_csent_ppr_by_word(const string & input_file,
       cs = CSentence();
     }
   }
-  catch (string & e) {
-    cerr << "Errore reading " << input_file << ":" << e << "\n";
+  catch (std::exception & e) {
+    cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
     throw(e);
   }
 }
@@ -176,18 +179,18 @@ void dis_csent_classic_prank(const string & input_file,
   }
 
   CSentence cs;
-
+  size_t l_n = 0;
   const vector<float> ranks = Kb::instance().static_prank();
   try {
-    while (cs.read_aw(fh_in)) {
+    while (cs.read_aw(fh_in, l_n)) {
       disamb_csentence_kb(cs, ranks);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_simple(cout);
       cs = CSentence();
     }
   }
-  catch (string & e) {
-    cerr << "Errore reading " << input_file << ":" << e << "\n";
+  catch (std::exception & e) {
+    cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
     throw(e);
   }
 }
@@ -207,17 +210,17 @@ void test(const string & input_file,
 
   vector<float> ranks;
   //Kb::instance().indegree_rank(ranks);
-
+  size_t l_n = 0;
   try {
-    while (cs.read_aw(fh_in)) {
+    while (cs.read_aw(fh_in, l_n)) {
       disamb_csentence_kb(cs, ranks);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
       else cs.print_csent_simple(cout);
       cs = CSentence();
     }
   }
-  catch (string & e) {
-    cerr << "Errore reading " << input_file << ":" << e << "\n";
+  catch (std::exception & e) {
+    cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
     throw(e);
   }
 }

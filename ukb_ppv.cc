@@ -133,9 +133,10 @@ void compute_sentence_vectors(string & fullname_in,
     Kb::instance().display_info(cerr);
 
   // Read sentences and compute rank vectors
+  size_t l_n  = 0;
 
   try {
-    while (cs.read_aw(fh_in)) {
+    while (cs.read_aw(fh_in, l_n)) {
 
       // Initialize rank vector
       vector<float> ranks;
@@ -190,8 +191,8 @@ void compute_sentence_vectors(string & fullname_in,
 	  }
       cs = CSentence();
     }
-  } catch (string & e) {
-    cerr << "Errore reading " << fullname_in << ":" << e << "\n";
+  } catch (std::exception & e) {
+    cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
     throw(e);
   }
 }
