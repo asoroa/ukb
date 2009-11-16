@@ -477,8 +477,8 @@ namespace ukb {
 	for(;it != end; ++it) {
 	  //if(!it->is_distinguished()) continue;
 	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
-	  //string wpos = it->wpos();
-	  string wpos = it->word();
+	  string wpos = it->wpos();
+	  //string wpos = it->word();
 
 	  set<string>::iterator aux_set;
 	  tie(aux_set, aux) = S.insert(wpos);
@@ -545,7 +545,8 @@ namespace ukb {
 	  for(CSentence::const_iterator it = cs.begin(); it != cw_end; ++it) {
 		if(it == cw_it) continue;
 		unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
-		string wpos = it->word();
+		//string wpos = it->word();
+		string wpos = it->wpos();
 
 		set<string>::iterator aux_set;
 		tie(aux_set, aux) = S.insert(wpos);
