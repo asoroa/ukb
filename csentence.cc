@@ -515,6 +515,50 @@ namespace ukb {
   // PageRank in Kb
 
 
+  // Get personalization vector giving an csentence
+  // 'light' wpos
+
+  int cs_pv_vector_w(const CSentence & cs,
+					 vector<float> & pv,
+					 CSentence::const_iterator exclude_word_it) {
+
+	Kb & kb = ukb::Kb::instance();
+	vector<float> (kb.size(), 0.0).swap(pv);
+	bool aux;
+	set<string> S;
+	vector<float> ranks;
+	int inserted_i = 0;
+
+	float K = 0.0;
+	// put pv to the synsets of words except exclude_word
+	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
+		it != end; ++it) {
+	  if(it == exclude_word_it) continue;
+	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
+	  string wpos = it->wpos();
+
+	  set<string>::iterator aux_set;
+	  tie(aux_set, aux) = S.insert(wpos);
+	  if (aux) {
+		Kb_vertex_t u;
+		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
+		float w = glVars::csentence::concepts_in ? it->get_weight() : 1.0;
+		if (aux && w != 0.0) {
+		  pv[u] += w;
+		  K +=w;
+		  inserted_i++;
+		}
+	  }
+	}
+	if (!inserted_i) return 0;
+	// Normalize PPV vector
+	float div = 1.0 / static_cast<float>(K);
+	for(vector<float>::iterator it = pv.begin(), end = pv.end();
+		it != end; ++it) *it *= div;
+	return inserted_i;
+  }
+
+
   // Given a CSentence apply Personalized PageRank and obtain obtain it's
   // Personalized PageRank Vector (PPV)
   //
@@ -524,44 +568,11 @@ namespace ukb {
 						vector<float> & res) {
 
 	Kb & kb = ukb::Kb::instance();
-	bool aux;
-	set<string> S;
-
-	// Initialize result vector
-	vector<float> (kb.size(), 0.0).swap(res);
-
-	// Initialize PPV vector
-	vector<float> ppv(kb.size(), 0.0);
-	CSentence::const_iterator it = cs.begin();
-	CSentence::const_iterator end = cs.end();
-	float K = 0.0;
-	for(;it != end; ++it) {
-	  //if(!it->is_distinguished()) continue;
-	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
-	  string wpos = it->wpos();
-	  //string wpos = it->word();
-
-	  set<string>::iterator aux_set;
-	  tie(aux_set, aux) = S.insert(wpos);
-	  if (aux) {
-		Kb_vertex_t u;
-		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-		float w = 1.0;
-		if(glVars::csentence::concepts_in) w = it->get_weight();
-		if (aux) {
-		  ppv[u] = w;
-		  K +=w;
-		}
-	  }
-	}
-	if (K == 0.0) return false;
-	// Normalize PPV vector
-	float div = 1.0 / static_cast<float>(K);
-	for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit)
-	  *rit *= div;
-
+	vector<float> pv;
+	int aux = cs_pv_vector_w(cs, pv, cs.end());
+	if (!aux) return false;
 	// Execute PageRank
-	kb.pageRank_ppv(ppv, res);
+	kb.pageRank_ppv(pv, res);
 	return true;
   }
 
@@ -588,7 +599,8 @@ namespace ukb {
   void calculate_kb_ppr_by_word_and_disamb(CSentence & cs) {
 
 	Kb & kb = ukb::Kb::instance();
-	bool aux;
+	vector<float> pv;
+	vector<float> ranks;
 
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
@@ -597,45 +609,17 @@ namespace ukb {
 	  // Target word must be distinguished.
 	  if(!cw_it->is_distinguished()) continue;
 
-	  set<string> S;
-	  vector<float> ranks;
-	  // Initialize PPV vector
-	  vector<float> ppv(kb.size(), 0.0);
-	  float K = 0.0;
-	  // put ppv to the synsets of words except cw_it
-	  for(CSentence::const_iterator it = cs.begin(); it != cw_end; ++it) {
-		if(it == cw_it) continue;
-		unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
-		//string wpos = it->word();
-		string wpos = it->wpos();
-
-		set<string>::iterator aux_set;
-		tie(aux_set, aux) = S.insert(wpos);
-		if (aux) {
-		  Kb_vertex_t u;
-		  tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-		  float w =  1.0;
-		  if(glVars::csentence::concepts_in) w = it->get_weight();
-		  if (aux) {
-			ppv[u] = w;
-			K +=w;
-		  }
-		}
-	  }
-	  if (K == 0.0) continue;
-	  // Normalize PPV vector
-	  float div = 1.0 / static_cast<float>(K);
-	  for(vector<float>::iterator rit = ppv.begin(); rit != ppv.end(); ++rit)
-		*rit *= div;
-
+	  int aux = cs_pv_vector_w(cs, pv, cw_it);
 	  // Execute PageRank
-	  kb.pageRank_ppv(ppv, ranks);
-	  // disambiguate cw_it
-	  if (glVars::csentence::disamb_minus_static) {
-		struct va2vb newrank(ranks, kb.static_prank());
-		cw_it->rank_synsets(newrank);
-	  } else {
-		cw_it->rank_synsets(ranks);
+	  if (aux) {
+		kb.pageRank_ppv(pv, ranks);
+		// disambiguate cw_it
+		if (glVars::csentence::disamb_minus_static) {
+		  struct va2vb newrank(ranks, kb.static_prank());
+		  cw_it->rank_synsets(newrank);
+		} else {
+		  cw_it->rank_synsets(ranks);
+		}
 	  }
 	  cw_it->disamb_cword();
 	}
