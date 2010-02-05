@@ -32,6 +32,10 @@ namespace ukb {
 	  extern bool disamb_minus_static;
 	}
 
+	namespace dict {
+	  extern bool use_weight; // Use weights when linking words to concepts
+	}
+
 	namespace chsq {
 	  extern size_t cooc_min;
 	  extern float threshold;

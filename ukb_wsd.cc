@@ -26,9 +26,6 @@ using namespace boost;
 
 const char *kb_default_binfile = "kb_wnet.bin";
 
-static bool dict_weight = false; // Use W when linking words to concepts
-
-
 // Program options stuff
 
 /* Auxiliary functions for checking input for validity. */
@@ -106,7 +103,7 @@ void dis_csent_ppr(const string & input_file,
   if (glVars::verbose)
     cerr << "Adding words to Mcr ...\n";
 
-  Kb::instance().add_dictionary(dict_weight);
+  Kb::instance().add_dictionary(glVars::dict::use_weight);
   size_t l_n = 0;
 
   try {
@@ -148,7 +145,7 @@ void dis_csent_ppr_by_word(const string & input_file,
   if (glVars::verbose)
     cerr << "Adding words to Kb ...\n";
 
-  Kb::instance().add_dictionary(dict_weight);
+  Kb::instance().add_dictionary(glVars::dict::use_weight);
   size_t l_n = 0;
 
   try {
@@ -400,7 +397,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("dict_weight")) {
-      dict_weight = true;
+      glVars::dict::use_weight = true;
       glVars::prank::use_weight = true;
     }
 

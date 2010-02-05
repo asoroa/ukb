@@ -35,8 +35,6 @@ static int filter_nodes = 0; // 0 -> no filter
 
 static bool insert_all_dict = true;
 
-static bool dict_weight = false; // Use W when linking words to concepts
-
 // - sort all concepts according to their ppv weight, then scan the
 // resulting sequence of concetps with a sliding window of length 100,
 // and truncate the sequence when the difference in scores between the
@@ -126,7 +124,7 @@ void compute_sentence_vectors(string & fullname_in,
   if (insert_all_dict) {
 	if (glVars::verbose)
 	  cerr << "Adding words to Kb ...";
-	kb.add_dictionary(dict_weight);
+	kb.add_dictionary(glVars::dict::use_weight);
   }
 
   if (glVars::verbose)
@@ -146,7 +144,7 @@ void compute_sentence_vectors(string & fullname_in,
 		CSentence::iterator it = cs.begin();
 		CSentence::iterator end = cs.end();
  		for(;it != end; ++it) {
-		  kb.add_token(it->word(), dict_weight);
+		  kb.add_token(it->word(), glVars::dict::use_weight);
 		}
 	  }
       bool ok = calculate_kb_ppr(cs,ranks);
@@ -348,7 +346,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("dict_weight")) {
-      dict_weight = true;
+	  glVars::dict::use_weight = true;
       glVars::prank::use_weight = true;
     }
 

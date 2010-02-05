@@ -30,6 +30,10 @@ namespace ukb {
 	  bool disamb_minus_static = false;
 	}
 
+	namespace dict {
+	  bool use_weight = false; // Use weights when linking words to concepts
+	}
+
 	namespace chsq {
 	  size_t cooc_min = 5;
 	  float threshold = 3.84146; // 95.0% confidence;
