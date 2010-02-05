@@ -3,17 +3,13 @@
 #ifndef CSENTENCE_H
 #define CSENTENCE_H
 
-//#include "kbGraph.h"
+#include "kbGraph.h"
 #include <string>
 #include <vector>
 #include <iosfwd>
 #include <boost/graph/graph_traits.hpp>
 
 namespace ukb {
-
-  //typedef std::vector<Kb_vertex_t> CWord;
-
-  //typedef unsigned int Vertex_t; // Achtung!
 
   class CSentence; // forward declaration
 
@@ -30,7 +26,7 @@ namespace ukb {
 
 	explicit CWord() : m_pos(0), m_weight(1.0), m_is_synset(false),m_distinguished(false),
 					   m_disamb(false) {};
-	CWord(const std::string & w_, const std::string & id, char pos, bool is_dist);
+	CWord(const std::string & w_, const std::string & id, char pos, bool is_dist, float wght_ = 0.0);
 	CWord & operator=(const CWord & cw_);
 	~CWord() {};
 
@@ -67,6 +63,17 @@ namespace ukb {
 	}
 	std::vector<std::string> & get_syns_vector() { return m_syns; }
 
+
+	template <typename Map>
+	void rank_synsets(Map rankMap) {
+	  size_t n = m_syns.size();
+	  size_t i;
+	  if (!n) return; // No synsets
+	  for(i = 0; i != n; ++i)
+		m_ranks[i] = rankMap[m_V[i]];
+	}
+
+	// Used in disambGraph
 	template <typename G, typename Map>
 	void rank_synsets(G & g, Map rankMap) {
 	  size_t n = m_syns.size();
@@ -78,7 +85,6 @@ namespace ukb {
 
 	void disamb_cword();
 
-
 	friend std::ostream& operator<<(std::ostream & o, const CWord & cw_);
 	std::ostream & print_cword_simple(std::ostream & o) const;
 	std::ostream & print_cword_aw(std::ostream & o) const;
@@ -87,6 +93,7 @@ namespace ukb {
 
   private:
 
+	bool init();
 	void read_from_stream (std::ifstream & is);
 	std::ofstream & write_to_stream(std::ofstream & o) const;
 	void shuffle_synsets();
@@ -96,6 +103,7 @@ namespace ukb {
 	char m_pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
 	float m_weight;     // Initial weight for PPV
 	std::vector<std::string> m_syns;
+	std::vector<Kb_vertex_t> m_V;
 	std::vector<float> m_ranks;
 	bool m_is_synset; // Wether the cword is just a synset (created with create_synset_cword)
 	bool m_distinguished;
