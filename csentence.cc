@@ -301,6 +301,44 @@ namespace ukb {
 	return true;
   }
 
+  struct ctw_parse_t {
+	string lemma;
+	string pos;
+	string id;
+	int dist; // 0 -> no dist; 1 -> dist; 2 -> concept (no dist)
+	float w;
+
+	ctw_parse_t() : lemma(), pos(), id(), dist(0), w(1.0) {}
+
+  };
+
+  ctw_parse_t parse_ctw(const string & word) {
+
+	ctw_parse_t res;
+
+	char_separator<char> wsep("#", "", keep_empty_tokens);
+	tokenizer<char_separator<char> > wtok(word, wsep);
+	tokenizer<char_separator<char> >::iterator it = wtok.begin();
+	tokenizer<char_separator<char> >::iterator end = wtok.end();
+	if (it == end) return res; // empty line
+	vector<string> fields;
+	copy(it, end, back_inserter(fields));
+	size_t m = fields.size();
+	if (m != 4 && m != 5) {
+	  throw std::runtime_error("Bad word " + word);
+	}
+	res.lemma = fields[0];
+	res.pos = fields[1];
+	res.id = fields[2];
+	res.dist = lexical_cast<int>(fields[3]);
+	if (m == 5)
+	  res.w = lexical_cast<float>(fields[4]);
+	if (res.w < 0.0) {
+	  throw std::runtime_error("Bad word " + word + " : Negative weight");
+	}
+	return res;
+  }
+
   // AW file read (create a csentence from a context)
 
   istream & CSentence::read_aw(istream & is, size_t & l_n) {
@@ -328,36 +366,30 @@ namespace ukb {
 	  int i = 0;
 	  try {
 		for(vector<string>::const_iterator it = ctx.begin(); it != ctx.end(); ++i, ++it) {
-		  vector<string> fields;
-		  char_separator<char> wsep("#");
-		  tokenizer<char_separator<char> > wtok(*it, wsep);
 
-		  copy(wtok.begin(), wtok.end(), back_inserter(fields));
+		  ctw_parse_t ctwp = parse_ctw(*it);
 
-		  if (fields.size() < 4)
-			throw std::runtime_error("Bad word " + *it + " " + lexical_cast<string>(i));
-		  int dist = lexical_cast<int>(fields[3]);
-		  string spos = fields[1];
 		  char pos(0);
-		  if (fields[1].size() && glVars::input::filter_pos) pos = fields[1].at(0);
-		  CWord new_cw(fields[0], fields[2], pos, dist > 0);
-		  if (dist == 2) {
-			new_cw = CWord::create_synset_cword(fields[0], fields[2], 1.0);
+		  if (ctwp.pos.size() && glVars::input::filter_pos) pos = ctwp.pos[0];
+		  CWord new_cw(ctwp.lemma, ctwp.id, pos, ctwp.dist > 0);
+
+		  if (ctwp.dist == 2) {
+			// if(!glVars::csentence::concepts_in) {
+			//   if (glVars::debug::verbose)
+			// 	cerr << "Skipping word " + *it + " in line " + lexical_cast<string>(l_n) + " (is concept and --concepts_in is not set).\n";
+			//   continue;
+			// }
+			new_cw = CWord::create_synset_cword(ctwp.lemma, ctwp.id, ctwp.w);
 		  }
-		  if(glVars::csentence::concepts_in) {
-			if (fields.size() != 5)
-			  throw std::runtime_error("Bad word " + *it + " " + lexical_cast<string>(i) + ": no weight");
-			// optional weight
-			new_cw.set_weight(lexical_cast<float>(fields[4]));
-		  }
+
 		  if (new_cw.size()) {
 			v.push_back(new_cw);
 		  } else {
 			// No synset for that word.
 			if (glVars::debug::warning) {
-			  cerr << "W: " << fields[0];
+			  cerr << "W: " << ctwp.lemma;
 			  if (glVars::input::filter_pos && pos)
-				cerr << "-" << fields[1];
+				cerr << "-" << pos;
 			  cerr << " can't be mapped to KB." << endl;
 			}
 		  }
