@@ -91,6 +91,10 @@ namespace ukb {
 	std::ostream & print_cword_semcor_aw(std::ostream & o) const;
 	friend class CSentence;
 
+	// Debug
+
+	std::ostream & debug(std::ostream & o) const;
+
   private:
 
 	bool init();

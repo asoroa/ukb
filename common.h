@@ -395,8 +395,13 @@ namespace ukb {
 
   std::vector<std::string> split(const std::string & str, const std::string & delims);
 
+  // read non blank line
+
+  std::istream & read_line_noblank(std::istream & is, std::string & line, size_t & l_n);
+
   // trim trailing and leading spaces
   void trim_spaces(std::string &l);
+
 }
 
 #endif

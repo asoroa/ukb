@@ -144,6 +144,28 @@ namespace ukb {
 	return wpos;
   };
 
+  ostream & CWord::debug(ostream & o) const  {
+
+	o << "w: " << w << " \n";
+	o <<  "m_id: " << m_id << string(" \n");
+	o << "m_pos: "  << m_pos << string(" \n");
+	o << "m_weight: "  << lexical_cast<string>(m_weight) << string(" \n");
+	o << "m_is_synset: "  << lexical_cast<bool>(m_is_synset) << string(" \n");
+	o << "m_distinguished: "  << lexical_cast<bool>(m_distinguished) << string(" \n");
+	o << "m_disamb: "  << lexical_cast<bool>(m_disamb) << string(" \n");
+	o << "m_syns: ";
+	writeV(o, m_syns);
+	o << string(" \n");
+	o << "m_V: ";
+	writeV(o, m_V);
+	o << string(" \n");
+	o << "m_ranks: ";
+	writeV(o, m_ranks);
+	o << string(" \n");
+	return o;
+  }
+
+
   struct CWSort {
 
 	CWSort(const vector<float> & _v) : v(_v) {}
@@ -291,16 +313,6 @@ namespace ukb {
   ////////////////////////////////////////////////////////////////
   // CSentence
 
-  static bool read_ctx_line(istream & is, string & line, size_t & l_n) {
-	do {
-	  getline(is, line, '\n');
-	  trim_spaces(line);
-	  l_n++;
-	} while(is && !line.size());
-	if(!is) return false;
-	return true;
-  }
-
   struct ctw_parse_t {
 	string lemma;
 	string pos;
@@ -345,8 +357,7 @@ namespace ukb {
 
   string line;
 
-	if(is) {
-	  if(!read_ctx_line(is, line, l_n)) return is;
+	if(read_line_noblank(is, line, l_n)) {
 
 	  // first line is id
 	  char_separator<char> sep(" \t");
@@ -358,7 +369,7 @@ namespace ukb {
 	  cs_id = ctx[0];
 	  vector<string>().swap(ctx);
 	  // next comes the context
-	  if(!read_ctx_line(is, line, l_n)) return is;
+	  if(!read_line_noblank(is, line, l_n)) return is;
 
 	  tokenizer<char_separator<char> > tok_ctx(line, sep);
 	  copy(tok_ctx.begin(), tok_ctx.end(), back_inserter(ctx));

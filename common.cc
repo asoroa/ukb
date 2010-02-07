@@ -58,4 +58,13 @@ namespace ukb {
 	}
 	l.swap(res);
   }
+
+  std::istream & read_line_noblank(std::istream & is, std::string & line, size_t & l_n) {
+	do {
+	  std::getline(is, line, '\n');
+	  trim_spaces(line);
+	  l_n++;
+	} while(is && !line.size());
+	return is;
+  }
 }

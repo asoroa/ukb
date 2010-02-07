@@ -39,24 +39,6 @@ namespace ukb {
   ////////////////////////////////////////////////
   // Word2Synset stuff
 
-  size_t count_lines(const string & fname) {
-
-	size_t N = 0;
-	std::ifstream fh(fname.c_str(), ofstream::in);
-	if(!fh) {
-	  cerr << "Can't open " << fname << endl;
-	  throw;
-	}
-	// First pass to count total number of words
-
-	while(fh) {
-	  string line;
-	  std::getline(fh, line, '\n');
-	  N++;
-	}
-	return N;
-  }
-
   //////////////////////////////////////////////////////7
   // join
 
@@ -76,6 +58,23 @@ namespace ukb {
 	return res;
   }
 
+
+  size_t count_lines(const string & fname) {
+
+	size_t N = 0;
+	std::ifstream fh(fname.c_str(), ofstream::in);
+	if(!fh) {
+	  cerr << "Can't open " << fname << endl;
+	  throw;
+	}
+	// First pass to count total number of words
+	string line;
+	size_t line_number;
+	while(read_line_noblank(fh, line, line_number)) {
+	  N++;
+	}
+	return N;
+  }
 
   void read_wdict_file(const string & fname,
 					   vector<string> & words,
@@ -99,17 +98,12 @@ namespace ukb {
 	// abandon 04135348-n:4 06081672-n:0 01663408-v:10 00451308-v:7
 
 	string line;
-	int line_number = 0;
+	size_t line_number = 0;
 	bool insertedP;
 	int words_I = 0;
 
 	try {
-	  while(fh) {
-		do {
-		  std::getline(fh, line, '\n');
-		  trim_spaces(line);
-		  line_number++;
-		} while(fh && !line.size());
+	  while(read_line_noblank(fh, line, line_number)) {
 
 		vector<string> fields;
 
