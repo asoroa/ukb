@@ -328,6 +328,8 @@ namespace ukb {
 	Kb_edge_t e;
 	bool existsP;
 
+	if (u == v)
+	  throw runtime_error("Can't insert self loop !");
 	//if (w != 1.0) ++w; // minimum weight is 1
 	tie(e, existsP) = edge(u, v, g);
 	if(!existsP) {

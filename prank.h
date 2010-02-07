@@ -67,7 +67,6 @@ namespace ukb {
 		tie(e, e_end) = out_edges(*v, g);
 		float total_w = 0.0;
 		for(; e != e_end; ++e) {
-		  if(target(*e, g) == *v) continue; // Don't count self loops
 		  total_w += wmap[*e];
 		}
 		W[*v] = 1.0f / total_w;
@@ -99,7 +98,6 @@ namespace ukb {
 		tie(e, e_end) = in_edges(*v, g);
 		for(; e != e_end; ++e) {
 		  vertex_descriptor u = source(*e, g);
-		  if (*v == u) continue; // No self-loops
 		  rank += rank_map1[u] * wmap[*e] * out_coef[u];
 		}
 		float dangling_factor = 0.0;

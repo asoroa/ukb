@@ -48,6 +48,9 @@ namespace ukb {
 	Dis_edge_t e;
 	bool existP;
 
+	if (u == v)
+	  throw runtime_error("Can't insert self loop !");
+
 	map<Kb_vertex_t, Dis_vertex_t>::iterator it;
 
 	tie(e, existP) = edge(u, v, g);
