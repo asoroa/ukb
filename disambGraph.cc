@@ -427,36 +427,44 @@ namespace ukb {
 
   void pageRank_disg(DisambG & g) {
 
-	vector<float> map_tmp(num_vertices(g), 0.0f);
 
-	size_t N = num_connected_vertices(g);
-
-	vector<Dis_vertex_t> V(N);
+	size_t N = num_vertices(g);
+	if (N == 0) return;
 
 	// property maps
-	prank::constant_property_map<Dis_vertex_t, float> ppv(1.0/static_cast<float>(N)); // always return 1/N
+	typedef graph_traits<DisambG>::edge_descriptor edge_descriptor;
+	prank::constant_property_map<edge_descriptor, float> cte_map(1.0); // always return 1
+	property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
 	property_map<DisambG, vertex_rank_t>::type rank_map = get(vertex_rank, g);
 
-	graph_traits<DisambG>::vertex_iterator vIt, vItEnd;
-	tie(vIt, vItEnd) = vertices(g);
-	copy_if(vIt, vItEnd, V.begin(), vertex_is_connected<DisambG>(g));
+	vector<float> out_coefs(N, 0.0f);
+	size_t N_no_isolated;
+	if (glVars::prank::use_weight) {
+	  N_no_isolated = prank::init_out_coefs(g, &out_coefs[0], weight_map);
+	} else {
+	  N_no_isolated = prank::init_out_coefs(g, &out_coefs[0], cte_map);
+	}
+
+	prank::constant_property_map<Dis_vertex_t, float> pv_map(1.0 / N_no_isolated); // always return 1
+	vector<float> map_tmp(N, 0.0f);
+
 	//cerr << num_vertices(g) << endl;
 	//cerr << num_connected_vertices(g) << endl;
 
 	if (glVars::prank::use_weight) {
-	  property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
-	  //init_out_coefs(g, V, &out_coefs[0], weight_map);
-	  prank::pageRank_iterate(g, V, ppv,
-							  weight_map, rank_map, &map_tmp[0],
-							  glVars::prank::num_iterations,
-							  glVars::prank::threshold,
-							  glVars::prank::damping);
+	  prank::do_pageRank(g, N_no_isolated, pv_map,
+						 weight_map, rank_map, &map_tmp[0],
+						 glVars::prank::num_iterations,
+						 glVars::prank::threshold,
+						 glVars::prank::damping,
+						 out_coefs);
 	} else {
-	  prank::pageRank_iterate_now(g, V, ppv,
-								  rank_map, &map_tmp[0],
-								  glVars::prank::num_iterations,
-								  glVars::prank::threshold,
-								  glVars::prank::damping);
+	  prank::do_pageRank(g, N_no_isolated, pv_map,
+						 cte_map, rank_map, &map_tmp[0],
+						 glVars::prank::num_iterations,
+						 glVars::prank::threshold,
+						 glVars::prank::damping,
+						 out_coefs);
 	}
   }
 
@@ -510,17 +518,17 @@ namespace ukb {
 	if (glVars::prank::use_weight) {
 	  property_map<DisambG, edge_freq_t>::type weight_map = get(edge_freq, g);
 	  //init_out_coefs(g, V, &out_coefs[0], weight_map);
-	  prank::pageRank_iterate(g, V, ppv_map, weight_map,
-							  rank_map, map_tmp,
-							  glVars::prank::num_iterations,
-							  glVars::prank::threshold,
-							  glVars::prank::damping);
+	  // prank::pageRank_iterate(g, V, ppv_map, weight_map,
+	  // 						  rank_map, map_tmp,
+	  // 						  glVars::prank::num_iterations,
+	  // 						  glVars::prank::threshold,
+	  // 						  glVars::prank::damping);
 	} else {
-	  prank::pageRank_iterate_now(g, V, ppv_map,
-								  rank_map, map_tmp,
-								  glVars::prank::num_iterations,
-								  glVars::prank::threshold,
-								  glVars::prank::damping);
+	  // prank::pageRank_iterate_now(g, V, ppv_map,
+	  // 							  rank_map, map_tmp,
+	  // 							  glVars::prank::num_iterations,
+	  // 							  glVars::prank::threshold,
+	  // 							  glVars::prank::damping);
 	}
   }
 

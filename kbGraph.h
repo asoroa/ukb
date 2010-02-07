@@ -242,7 +242,7 @@ private:
   static Kb * create();
 
   // Private methods
-  Kb() : coef_status(0) {};
+  Kb() : N_no_isolated(0), coef_status(0) {};
   Kb(const Kb &) {};
   Kb &operator=(const Kb &);
   ~Kb() {};
@@ -270,9 +270,10 @@ private:
   // Aux variables
 
   std::vector<float> out_coefs;          // aux. vector of out-degree coefficients
+  size_t N_no_isolated;                  // Number of non-isolated vertices
   char coef_status;                      // 0 invalid
-  // 1 calculated without weights
-  // 2 calculated with weights
+                                         // 1 calculated without weights
+                                         // 2 calculated with weights
   std::vector<float> static_ranks;       // aux. vector with static prank computation
   };
 }

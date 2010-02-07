@@ -12,6 +12,7 @@
 #include <string>
 #include <map>
 #include <iterator>
+#include <algorithm>
 #include <ostream>
 
 // Tokenizer
@@ -918,40 +919,40 @@ namespace ukb {
   void Kb::pageRank_ppv(const vector<float> & ppv_map,
 						vector<float> & ranks) {
 
+	typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
+	property_map<Kb::boost_graph_t, edge_weight_t>::type weight_map = get(edge_weight, g);
+	prank::constant_property_map <edge_descriptor, float> cte_weight(1.0); // always return 1
+
 	size_t N = num_vertices(g);
+
 	vector<float>(N, 0.0).swap(ranks); // Initialize rank vector
 	vector<float> rank_tmp(N, 0.0);    // auxiliary rank vector
 
-	// ugly ugly hack @@CHANGE ME !!!
-
-	vector<Kb_vertex_t> V(N);
-
-	graph_traits<KbGraph>::vertex_iterator it, end;
-	tie(it, end) = vertices(g);
-	copy(it, end, V.begin());
-
 	if (glVars::prank::use_weight) {
-	  property_map<Kb::boost_graph_t, edge_weight_t>::type weight_map = get(edge_weight, g);
 	  if(coef_status != 2) {
-		vector<float>(num_vertices(g), 0.0f).swap(out_coefs);
-		prank::init_out_coefs(g, V, &out_coefs[0], weight_map);
+		out_coefs.resize(N);
+		fill(out_coefs.begin(), out_coefs.end(), 0.0);
+		N_no_isolated = prank::init_out_coefs(g,  &out_coefs[0], weight_map);
 		coef_status = 2;
 	  }
-	  prank::do_pageRank(g, V, &ppv_map[0],
+	} else {
+	  if(coef_status != 1) {
+		out_coefs.resize(N);
+		fill(out_coefs.begin(), out_coefs.end(), 0.0);
+		N_no_isolated = prank::init_out_coefs(g, &out_coefs[0], cte_weight);
+		coef_status = 1;
+	  }
+	}
+
+	if (glVars::prank::use_weight) {
+	  prank::do_pageRank(g, N_no_isolated, &ppv_map[0],
 						 weight_map, &ranks[0], &rank_tmp[0],
 						 glVars::prank::num_iterations,
 						 glVars::prank::threshold,
 						 glVars::prank::damping,
 						 out_coefs);
 	} else {
-	  typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
-	  prank::constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
-	  if(coef_status != 1) {
-		vector<float>(num_vertices(g), 0.0f).swap(out_coefs);
-		prank::init_out_coefs(g, V, &out_coefs[0], cte_weight);
-		coef_status = 1;
-	  }
-	  prank::do_pageRank(g, V, &ppv_map[0],
+	  prank::do_pageRank(g, N_no_isolated, &ppv_map[0],
 						 cte_weight, &ranks[0], &rank_tmp[0],
 						 glVars::prank::num_iterations,
 						 glVars::prank::threshold,
