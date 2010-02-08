@@ -91,6 +91,15 @@ namespace ukb {
 	  return N;
 	}
 
+	template<typename G, typename coefmap_t>
+	size_t init_out_coefs(const G & g,
+						  coefmap_t W) {
+	  typedef typename graph_traits<G>::edge_descriptor edge_descriptor;
+	  constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
+	  return init_out_coefs(g, W, cte_weight);
+	}
+
+
 	//
 	// Apply one step of pageRank algorithm
 	//

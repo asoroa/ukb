@@ -132,7 +132,12 @@ namespace ukb {
   bool Kb::bfs (Kb_vertex_t src,
 				 std::vector<Kb_vertex_t> & parents) const {
 
-	vector<Kb_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
+	size_t m = num_vertices(g);
+	if(parents.size() == m) {
+	  std::fill(parents.begin(), parents.end(), Kb_vertex_t());
+	} else {
+	  vector<Kb_vertex_t>(m).swap(parents);  // reset parents
+	}
 
 	breadth_first_search(g,
 						 src,
@@ -146,8 +151,14 @@ namespace ukb {
   bool Kb::dijkstra (Kb_vertex_t src,
 					  std::vector<Kb_vertex_t> & parents) const {
 
-	vector<Kb_vertex_t>(num_vertices(g)).swap(parents);  // reset parents
-	vector<float> dist(num_vertices(g));
+	size_t m = num_vertices(g);
+	if(parents.size() == m) {
+	  std::fill(parents.begin(), parents.end(), Kb_vertex_t());
+	} else {
+	  vector<Kb_vertex_t>(m).swap(parents);  // reset parents
+	}
+
+	vector<float> dist(m);
 
 	dijkstra_shortest_paths(g,
 							src,
@@ -487,11 +498,12 @@ namespace ukb {
 	// Hack to remove const-ness
     Kb & me = const_cast<Kb &>(*this);
 	vector<float> & ranks = me.static_ranks;
+	vector<float> outcoefs;
 
-	// Calculate static pageRank
-	size_t N = size();
-	if (N == 0) return static_ranks; // empty graph
-	vector<float> ppv(N, 1.0/static_cast<float>(N));
+	size_t N_no_isolated = prank::init_out_coefs(g, outcoefs);
+
+	if (N_no_isolated == 0) return static_ranks; // empty graph
+	vector<float> ppv(num_vertices(g), 1.0/static_cast<float>(N_no_isolated));
 	me.pageRank_ppv(ppv, ranks);
 	return static_ranks;
   }
@@ -925,7 +937,11 @@ namespace ukb {
 
 	size_t N = num_vertices(g);
 
-	vector<float>(N, 0.0).swap(ranks); // Initialize rank vector
+	if (N == ranks.size()) {
+	  std::fill(ranks.begin(), ranks.end(), 0.0);
+	} else {
+	  vector<float>(N, 0.0).swap(ranks); // Initialize rank vector
+	}
 	vector<float> rank_tmp(N, 0.0);    // auxiliary rank vector
 
 	if (glVars::prank::use_weight) {
