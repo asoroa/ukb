@@ -88,7 +88,7 @@ namespace ukb {
   }
 
   CWord::CWord(const string & w_, const string & id_, char pos_, bool dist_, float wght_)
-	: w(w_), m_id(id_), m_pos(pos_), m_weight(1.0), m_is_synset(false),
+	: w(w_), m_id(id_), m_pos(pos_), m_weight(wght_), m_is_synset(false),
 	  m_distinguished(dist_) {
 	init();
 	m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
@@ -382,7 +382,7 @@ namespace ukb {
 
 		  char pos(0);
 		  if (ctwp.pos.size() && glVars::input::filter_pos) pos = ctwp.pos[0];
-		  CWord new_cw(ctwp.lemma, ctwp.id, pos, ctwp.dist > 0);
+		  CWord new_cw(ctwp.lemma, ctwp.id, pos, ctwp.dist > 0, ctwp.w);
 
 		  if (ctwp.dist == 2) {
 			// if(!glVars::csentence::concepts_in) {
@@ -542,7 +542,7 @@ namespace ukb {
 	  if (aux) {
 		Kb_vertex_t u;
 		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-		float w = glVars::csentence::concepts_in ? it->get_weight() : 1.0;
+		float w = glVars::csentence::pv_no_weight ? 1.0 : it->get_weight();
 		if (aux && w != 0.0) {
 		  pv[u] += w;
 		  K +=w;

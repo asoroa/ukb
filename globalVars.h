@@ -28,6 +28,7 @@ namespace ukb {
 	extern std::string dict_filename;
 
 	namespace csentence {
+	  extern bool pv_no_weight; // Don bot use context word weights when initalizing PV for the context
 	  extern bool concepts_in;
 	  extern bool disamb_minus_static;
 	}
@@ -42,7 +43,7 @@ namespace ukb {
 	}
 
 	namespace prank {
-	  extern bool use_weight;
+	  extern bool use_weight;   // Use weights in pagerank calculations
 	  extern size_t num_iterations;
 	  extern float threshold;
 	  extern float damping;

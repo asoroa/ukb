@@ -26,7 +26,7 @@ namespace ukb {
 
 	explicit CWord() : m_pos(0), m_weight(1.0), m_is_synset(false),m_distinguished(false),
 					   m_disamb(false) {};
-	CWord(const std::string & w_, const std::string & id, char pos, bool is_dist, float wght_ = 0.0);
+	CWord(const std::string & w_, const std::string & id, char pos, bool is_dist, float wght_ = 1.0);
 	CWord & operator=(const CWord & cw_);
 	~CWord() {};
 
