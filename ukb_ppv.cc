@@ -130,6 +130,8 @@ void compute_sentence_vectors(string & fullname_in,
   if (glVars::verbose)
     Kb::instance().display_info(cerr);
 
+
+
   // Read sentences and compute rank vectors
   size_t l_n  = 0;
 
@@ -152,6 +154,14 @@ void compute_sentence_vectors(string & fullname_in,
 		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 		continue;
       }
+
+	  if (glVars::csentence::disamb_minus_static) {
+		const vector<float> & static_ranks = Kb::instance().static_prank();
+		for(size_t s_i = 0, s_m = static_ranks.size();
+			s_i != s_m; ++s_i) {
+		  ranks[s_i] -= static_ranks[s_i];
+		}
+	  }
 
       fout.fname = cs.id();
 
@@ -249,6 +259,7 @@ int main(int argc, char *argv[]) {
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
     ("concepts_in", "Let concept ids in input context. Item must have 5 fields, the fourth being 2 and the last one being the weight.")
     ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
+    ("nostatic", "Substract static ppv to final ranks.")
     ("verbose,v", "Be verbose.")
 	("nopos", "Don't filter words by Part of Speech.")
 	("wiki", "Usual options for wikipedia (sets --nopos, --only_ctx_words and --only_synsets).")
@@ -352,6 +363,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("static")) {
 	  opt_static=true;
+    }
+
+    if (vm.count("nostatic")) {
+	  glVars::csentence::disamb_minus_static = true;
     }
 
     if (vm.count("prank_iter")) {
