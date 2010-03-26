@@ -494,16 +494,17 @@ namespace ukb {
 
   const std::vector<float> & Kb::static_prank() const {
 	if (static_ranks.size()) return static_ranks;
+	size_t N = num_vertices(g);
 
 	// Hack to remove const-ness
     Kb & me = const_cast<Kb &>(*this);
 	vector<float> & ranks = me.static_ranks;
-	vector<float> outcoefs;
+	me.out_coefs.resize(N);
 
-	size_t N_no_isolated = prank::init_out_coefs(g, outcoefs);
+	size_t N_no_isolated = prank::init_out_coefs(g, &me.out_coefs[0]);
 
 	if (N_no_isolated == 0) return static_ranks; // empty graph
-	vector<float> ppv(num_vertices(g), 1.0/static_cast<float>(N_no_isolated));
+	vector<float> ppv(N, 1.0/static_cast<float>(N_no_isolated));
 	me.pageRank_ppv(ppv, ranks);
 	return static_ranks;
   }
