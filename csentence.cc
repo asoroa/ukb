@@ -470,7 +470,7 @@ namespace ukb {
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (cw_it->size() == 0) continue;
 	  if (!cw_it->is_distinguished()) continue;
-	  if (!cw_it->is_disambiguated()) continue;
+	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
 	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
 
 	  cw_it->print_cword_aw(o);
@@ -486,7 +486,7 @@ namespace ukb {
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (cw_it->size() == 0) continue;
 	  if (!cw_it->is_distinguished()) continue;
-	  if (!cw_it->is_disambiguated()) continue;
+	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
 	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
 
 	  cw_it->print_cword_semcor_aw(o);
@@ -502,7 +502,7 @@ namespace ukb {
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (cw_it->size() == 0) continue;
 	  if (!cw_it->is_distinguished()) continue;
-	  if (!cw_it->is_disambiguated()) continue;
+	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
 	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
 	  o << cs_id << " ";
 	  cw_it->print_cword_simple(o);

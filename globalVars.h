@@ -61,8 +61,9 @@ namespace ukb {
 
 	// Output stuff
 	namespace output {
-	  extern bool allranks; // print all ranks (with weights or just best ranks)
+	  extern bool allranks;   // print all ranks (with weights or just best ranks)
 	  extern bool monosemous; // print monosemous words
+	  extern bool ties;       // print also if ties
 	}
 
 	namespace kb {

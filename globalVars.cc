@@ -54,6 +54,7 @@ namespace ukb {
 	namespace output {
 	  bool allranks = false;
 	  bool monosemous = true;
+	  bool ties = false;
 	}
 
 

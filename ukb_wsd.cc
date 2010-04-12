@@ -292,6 +292,7 @@ int main(int argc, char *argv[]) {
     ("allranks", "Write key file with all synsets associated with ranks.")
     ("verbose,v", "Be verbose.")
     ("no-monosemous", "Don't output anything for monosemous words.")
+    ("ties", "Output also in case of ties.")
     ;
 
   options_description po_visible(desc_header);
@@ -446,6 +447,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("no-monosemous")) {
       glVars::output::monosemous = false;
+    }
+
+    if (vm.count("ties")) {
+      glVars::output::ties = true;
     }
   }
   catch(std::exception& e) {
