@@ -16,12 +16,14 @@ BJAM_CONFIG=--layout=system --build-type=complete
 
 and then the usual 'make; make install'
 
-The above procedure changed in boost version 1.39. For installing boost you need
-to call the 'bootstrap.sh' script and then call bjam with the --layout=system
-option, i.e.:
+The above procedure changed in boost version 1.39. For installing higher
+versions of boost you should to call the 'bootstrap.sh' script and then use
+bjam with the --layout=system option, i.e.:
 
+% ./bootstrap
 % ./bjam --layout=system
 
+then again 'make; make install'
 
 If you have boost properly installed, just run by the standard compilation
 procedure:

@@ -272,15 +272,15 @@ The 'ukb_wsd' application has several options:
 General options:
 
   -K [ --kb_binfile ] arg
-            Binary file of KB previously created by the 'compile_kb'
-            application. Default is kb_wnet.bin.
+       Binary file of KB previously created by the 'compile_kb'
+       application. Default is kb_wnet.bin.
 
   -D [ --dict_file ] arg
-            Dictionary text file. Default is dict.txt
+       Dictionary text file. Default is dict.txt
 
   --dict_weight
-            If the dictionary has weights attached to the relations, use
-            them when pageRanking. This option also sets --prank_weight.
+       If the dictionary has weights attached to the relations, use
+       them when pageRanking. This option also sets --prank_weight.
 
   --nopos
 	    Do not filter by POS when linking context words to the concepts
@@ -332,16 +332,15 @@ PageRank over the subgraph.
 PageRank general options:
 
   -w [ --with_weight ]
-            Use weigths in PageRank calculation. Serialized graph edges must
-	    have some weight.
+        Use weigths in PageRank calculation. Serialized graph edges must have
+	    some weight.
 
   --prank_iter arg
-            Number of iterations in PageRank. Default is 30.
+        Number of iterations in PageRank. Default is 30.
 
-  --prank_threshold arg  
+  --prank_threshold arg
 
-            Threshold for stopping PageRank. Default is zero. Good value is
-            0.0001.
+        Threshold for stopping PageRank. Default is zero. Good value is 0.0001.
 
 The policy for knowing when to stop the pageRank algoithm is the following:
 
@@ -352,10 +351,15 @@ setting the iterations number to zero (--prank_iter 0) causes the algorithm
 to stop exclusively when threshold is reached. Setting --prank_iter 0.0
 causes the algoritm to stop when the iterations are done.
 
+  --prank_damping
+
+        Set the damping factor of PageRank equation. Default is 0.85
+
+
 Output options:
 
   --allranks
-            Write key file with all synsets associated with ranks. The
+        Write key file with all synsets associated with ranks. The
 	    system will return all the concepts attached to that word in the
 	    KB, along with a weight, ordered in decreasing order. For
 	    example in the previous example, it would produce the following
@@ -369,10 +373,19 @@ ctx_01 w3  01738104-n/0.24285 02542955-n/0.129899 ... !! cat
 ctx_01 w4  02970821-n/0.16454 06073651-n/0.110485 ... !! hammer
 
   -v [ --verbose ]
-            Be verbose.
+        Be verbose.
 
   --no-monosemous
-            Don't output anything for monosemous words.
+        Don't output anything for monosemous words.
+
+  --ties
+
+        ukb does not return anything when the concepts associated to a target
+        word have the same PageRank value (because the algorithm didn't manage
+        to disambiguate the instance). If --ties is set ukb will return one
+        concept, randomly choosen among possibles (or all concepts with same
+        value if --allranks is set).
+
 
 5. ukb_ppv
 **********
@@ -386,40 +399,49 @@ extract the PPV by executing:
 % ./ukb_ppv -K wn17.bin -D wn17_dict.txt -O /tmp context.txt
 
 The program will create a file named /tmp/ctx_01.ppv with the rank values of
-every node in the KB. The program creates a ppv file for every context in
-the input file. Each file consist on several lines, one per vertex, with 2
-fields each, the vertex name and associated rank. The ranks are normalized
-so that its sum is equal to 1.
+every node in the KB. The program creates a ppv file for every context in the
+input file. Then, each file consist on several lines, one per vertex, with 2
+fields each, the vertex name and associated rank. The ranks are normalized so
+that its sum is equal to 1. The very first line of ppv files is a comment.
 
 The 'ukb_ppv application has several options:
 
 General options:
 
   -K [ --kb_binfile ] arg
-            Binary file of KB previously created by the 'compile_kb'
-            application. Default is kb_wnet.bin.
+
+       Binary file of KB previously created by the 'compile_kb'
+       application. Default is kb_wnet.bin.
+
+  -C [ --only_ctx_words ]
+
+       Create nodes in the graph only for the words appearing in input contexts
+       (default is insert all dictionary words).
 
   -D [ --dict_file ] arg
-            Dictionary text file. Default is dict.txt
+
+       Dictionary text file. Default is dict.txt
+
+  --dict_weight
+
+       If the dictionary has weights attached to the relations, use
+       them when pageRanking. This option also sets --prank_weight.
 
   -O [ --out_dir ] arg
-            Directory for leaving output PPV files. Default is the current
-            directory.
 
-  -C [ --only_ctx_words ]  
-
-           Insert only words appearing in contexts to the graph (default is
-       	   insert all dictionary words).
+        Directory for leaving output PPV files. Default is the current
+        directory.
 
   --nopos
-           Same as ukb_wsd --nopos option.
+
+       Same as ukb_wsd --nopos option.
 
   --concepts_in
 
-            With this option KB nodes can also be part of the input context,
-            and have a weight attached. Fourth field of context "word" must
-            be 2 (not 0 nor 1), and a fifth field specifies the weight. For
-            example, such a context is possible:
+        With this option KB nodes can also be part of the input context, and
+        have a weight attached. Fourth field of context "word" must be 2 (not 0
+        nor 1), and a fifth field specifies the weight. For example, such a
+        context is possible:
 
 ctx_01
 man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
@@ -429,7 +451,7 @@ man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
 	    "00980806-v" concepts of KB are also "activated" with the
 	    specified weight when PageRanking.
 
-  -S [ --static ]          
+  -S [ --static ]
 
             Compute static PageRank ppv. Only -K option is needed. Output to
             STDOUT.
@@ -444,10 +466,12 @@ PageRank general options:
 Output options:
 
   --only_words
-            Output only (normalized) PPVs for dictionary words.
+        Output only (normalized) PPVs for dictionary words.
 
   --only_synsets
-            Output only (normalized) PPVs for KB concepts.
+        Output only (normalized) PPVs for KB concepts.
+  --nozero
+        Do not return concepts with zero rank.
 
 ************************************************************************
 
