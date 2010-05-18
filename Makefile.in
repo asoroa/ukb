@@ -1,8 +1,8 @@
 # Default target of this Makefile
 all::
 
-UKB-VERSION-FILE: .FORCE-UKB-VERSION-FILE @PACKAGE_VERSION@
-	@$(SHELL_PATH) ./UKB-VERSION-GEN 
+UKB-VERSION-FILE:
+	@$(SHELL_PATH) ./UKB-VERSION-GEN @PACKAGE_VERSION@
 -include UKB-VERSION-FILE
 
 
@@ -25,12 +25,12 @@ SOURCES= common.cc globalVars.cc configFile.cc fileElem.cc kbGraph.cc disambGrap
 
 MEMBERS=$(SOURCES:.cc=.o)
 
-.PHONY: all install clean .FORCE-UKB-VERSION-FILE UKB-VERSION-FILE
+.PHONY: all install clean
 
 
 CCFLAGS = @CCFLAGS@ -DUKB_VER='"$(UKB_VERSION)"'
 
-all:: $(EXEC) UKB-VERSION-FILE
+all:: UKB-VERSION-FILE $(EXEC)
 
 %.o : %.cc
 	$(CCC) -c $(CCFLAGS) -o $@ $(INCLUDES) $<
