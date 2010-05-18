@@ -1,10 +1,12 @@
 #include "globalVars.h"
 #include "common.h"
+#include "version.h"
 #include <iostream>
 #include <ctime>
 
-#ifdef UKB_VER
-#define UKB_VERSION UKB_VER
+
+#ifdef UKB_UKB_VERSION
+#define UKB_VERSION UKB_UKB_VERSION
 #else
 #define UKB_VERSION "unknown"
 #endif

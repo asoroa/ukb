@@ -3,7 +3,7 @@
 # taken from git's GIT-VERSION-FILE
 
 DEF_VER=$1
-UVF=UKB-VERSION-FILE
+UVF=version.h
 LF='
 '
 
@@ -23,5 +23,5 @@ else
 fi
 
 VN=$(expr "$VN" : v*'\(.*\)')
-#echo $VN
-echo "UKB_VERSION = $VN" >$UVF
+echo $VN
+echo "#define UKB_UKB_VERSION \"$VN\"" >$UVF

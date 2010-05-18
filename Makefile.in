@@ -1,15 +1,11 @@
 # Default target of this Makefile
 all::
 
-UKB-VERSION-FILE:
-	@$(SHELL_PATH) ./UKB-VERSION-GEN @PACKAGE_VERSION@
--include UKB-VERSION-FILE
-
-
 CCC = @CXX@
 STATIC = @ENABLE_STATIC@
 INCLUDES = -I @BOOST_INCLUDE_DIR@
 LDFLAGS = @LDFLAGS@
+CCFLAGS = @CCFLAGS@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -27,10 +23,14 @@ MEMBERS=$(SOURCES:.cc=.o)
 
 .PHONY: all install clean
 
+all:: $(EXEC)
 
-CCFLAGS = @CCFLAGS@ -DUKB_VER='"$(UKB_VERSION)"'
+version.h: FORCE
+	@$(SHELL_PATH) ./UKB-VERSION-GEN @PACKAGE_VERSION@
 
-all:: UKB-VERSION-FILE $(EXEC)
+globalVars.o: version.h
+
+FORCE:
 
 %.o : %.cc
 	$(CCC) -c $(CCFLAGS) -o $@ $(INCLUDES) $<
@@ -47,3 +47,4 @@ install: $(EXEC)
 clean:
 	find . -type f -name '*.o' | xargs rm -f
 	rm -f $(EXEC)
+	rm -f version.h
