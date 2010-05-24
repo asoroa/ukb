@@ -51,8 +51,8 @@ namespace ukb {
   void trim_spaces(std::string &l) {
 
 	std::string res("");
-	std::string::size_type start = l.find_first_not_of(" \t");
-	std::string::size_type end = l.find_last_not_of(" \t");
+	std::string::size_type start = l.find_first_not_of(" \t\r");
+	std::string::size_type end = l.find_last_not_of(" \t\r");
 	if (start != std::string::npos) {
 	  res = l.substr(start, end - start + 1);
 	}
