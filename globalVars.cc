@@ -29,7 +29,7 @@ namespace ukb {
 
 	namespace csentence {
 	  bool pv_no_weight = false;
-	  bool concepts_in = false;
+	  bool concepts_in = true;
 	  bool disamb_minus_static = false;
 	}
 

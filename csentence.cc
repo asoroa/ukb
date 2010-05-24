@@ -379,7 +379,7 @@ namespace ukb {
 		for(vector<string>::const_iterator it = ctx.begin(); it != ctx.end(); ++i, ++it) {
 
 		  ctw_parse_t ctwp = parse_ctw(*it);
-
+		  if (ctwp.lemma.size() == 0) continue;
 		  char pos(0);
 		  if (ctwp.pos.size() && glVars::input::filter_pos) pos = ctwp.pos[0];
 		  CWord new_cw(ctwp.lemma, ctwp.id, pos, ctwp.dist > 0, ctwp.w);
@@ -533,7 +533,7 @@ namespace ukb {
 	// put pv to the synsets of words except exclude_word
 	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
 		it != end; ++it) {
-	  if(it == exclude_word_it) continue;
+	  if (it == exclude_word_it) continue;
 	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
 	  string wpos = it->wpos();
 

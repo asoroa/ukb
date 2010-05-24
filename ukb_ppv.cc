@@ -257,7 +257,6 @@ int main(int argc, char *argv[]) {
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Also sets --prank_weight.")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
-    ("concepts_in", "Let concept ids in input context. Item must have 5 fields, the fourth being 2 and the last one being the weight.")
     ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
     ("nostatic", "Substract static ppv to final ranks.")
     ("verbose,v", "Be verbose.")
@@ -396,10 +395,6 @@ int main(int argc, char *argv[]) {
 		goto END;
 	  }
       glVars::prank::damping = dp;
-    }
-
-    if (vm.count("concepts_in")) {
-      glVars::csentence::concepts_in = true;
     }
 
     if (vm.count("wiki")) {

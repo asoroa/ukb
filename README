@@ -201,32 +201,56 @@ context representing the sentence "The man killed the a cat with a hammer":
 ctx_01
 man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1
 
-Each of the elements on a context has 4 mandatory fields, separated by the
-'#' character. The four fields are:
+Each of the elements on a context has 4 mandatory fields, and possibly one fifth
+field, separated by the '#' character. The five fields are:
 
-lemma#pos#id#d
+lemma#pos#id#d#w
 
-lemma: the lemma of the word
+lemma: the lemma of the word. Mandatory.
 
-pos: part of speech
+pos: part of speech. 
+
       n -> noun
       v -> verb
       a -> adjective
       r -> adverb
 
-id: the word's id
+	 The pos field is mandatory unless '--nopos' option is set. If so, the field
+	 must be empty, i.e., something like "man##w1#1".
 
-d: a boolean (1 or 0) which indicates if the word has to be
-   disambiguated. Although all words in the context play a role in the
-   disambiguation process, sometimes we are just required to disambiguate a
-   portion of it. For example, if we were required to disambiguate just the
-   word "cat" in the above sentence, we would create an input like:
+id: the word's id. Mandatory.
+
+d: a control number. Mandatory. Can have three values:
+
+   1: disambiguate the the word
+
+   0: do not disambiguate the word but use it for calculating Personalized
+   	  PageRank. Although all words in the context play a role in the
+   	  disambiguation process, sometimes we are just required to disambiguate a
+   	  portion of it. For example, if we were required to disambiguate just the
+   	  word "cat" in the above sentence, we would create an input like:
 
     ctx_01
     man#n#w1#0 kill#v#w2#0 cat#n#w3#1 hammer#n#w4#0
 
     i.e., where just the element 'cat' has a 1 in the last field.
 
+   2: The term represents a KB concept instead of a word.For example, such a
+      context is possible:
+
+ctx_01
+man#n#w1#1 kill#v#w2#1 cat#n#w3#0 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
+00980806-v#v#fake_id#2#0.6
+
+	    that is, apart of the context words, "08249817-n" and
+	    "00980806-v" concepts of KB are also "activated" with the
+	    specified weight when PageRanking.
+
+w: a weight (optional)
+
+   the fifth field (if present) has to be a positive number. The number will be
+   used for calculating the personalized vector for this graph node. In absence,
+   the weight is 1.
 
 4. ukb_wsd
 **********
@@ -435,21 +459,6 @@ General options:
   --nopos
 
        Same as ukb_wsd --nopos option.
-
-  --concepts_in
-
-        With this option KB nodes can also be part of the input context, and
-        have a weight attached. Fourth field of context "word" must be 2 (not 0
-        nor 1), and a fifth field specifies the weight. For example, such a
-        context is possible:
-
-ctx_01
-man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
-00980806-v#v#fake_id#2#0.6
-
-	    that is, apart of the context words, "08249817-n" and
-	    "00980806-v" concepts of KB are also "activated" with the
-	    specified weight when PageRanking.
 
   -S [ --static ]
 
