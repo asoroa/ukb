@@ -14,7 +14,27 @@ namespace ukb {
   using namespace std;
   using namespace boost;
 
-  bool CWord::init() {
+  static CWord::cwtype cast_int_cwtype(int i) {
+	CWord::cwtype res;
+
+	switch(i) {
+	case CWord::cwtoken:
+	  res = CWord::cwtoken;
+	  break;
+	case CWord::cwdist:
+	  res = CWord::cwdist;
+	  break;
+	case CWord::cwsynset:
+	  res = CWord::cwsynset;
+	  break;
+	default:
+	  res = CWord::cwerror;
+	  break;
+	}
+	return res;
+  }
+
+  bool CWord::tie_to_kb() {
 
 	Kb & kb = ukb::Kb::instance();
 	bool existP;
@@ -33,7 +53,7 @@ namespace ukb {
 		// filter synsets by pos
 		char synpos = entries.get_pos(i);
 		if(!synpos) {
-		  throw std::runtime_error("CWord: Error parsing dictionary. " + syn_str + " has no POS\n");
+		  throw std::runtime_error("CWord: dictionary concept " + syn_str + " has no POS\n");
 		}
 		if (m_pos != synpos) continue;
 	  }
@@ -87,11 +107,30 @@ namespace ukb {
 	return true;
   }
 
-  CWord::CWord(const string & w_, const string & id_, char pos_, bool dist_, float wght_)
-	: w(w_), m_id(id_), m_pos(pos_), m_weight(wght_), m_is_synset(false),
-	  m_distinguished(dist_) {
-	init();
-	m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
+  CWord::CWord(const string & w_, const string & id_, char pos_, cwtype type_, float wght_)
+	: w(w_), m_id(id_), m_pos(pos_), m_weight(wght_), m_type(type_) {
+	switch(m_type) {
+	case cwsynset:
+
+	  Kb_vertex_t u;
+	  bool P;
+	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(w, Kb::is_concept);
+	  if (!P) {
+		throw std::runtime_error("CWord concept " + w + " not in KB");
+	  }
+	  m_syns.push_back(w);
+	  m_V.push_back(u);
+	  m_ranks.push_back(0.0f);
+
+	  break;
+	case cwtoken:
+	case cwdist:
+	  tie_to_kb();
+	  m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
+	  break;
+	default:
+	  break;
+	}
   }
 
   CWord & CWord::operator=(const CWord & cw_) {
@@ -101,39 +140,16 @@ namespace ukb {
 	  m_weight = cw_.m_weight;
 	  m_pos = cw_.m_pos;
 	  m_syns = cw_.m_syns;
+	  m_V = cw_.m_V;
 	  m_ranks = cw_.m_ranks;
-	  m_is_synset = cw_.m_is_synset;
-	  m_distinguished = cw_.m_distinguished;
 	  m_disamb = cw_.m_disamb;
 	}
 	return *this;
   }
 
-  // Create a special CWord which is a synset and a weigth.
-
-  CWord CWord::create_synset_cword(const string & syn, const string & id_, float w) {
-	Kb_vertex_t u;
-	bool P;
-	tie(u, P) = ukb::Kb::instance().get_vertex_by_name(syn, Kb::is_concept);
-	if (!P) {
-	  throw std::runtime_error("CWord::create_synset_cword " + syn + " not in KB");
-	  return CWord();
-	}
-	CWord cw;
-	cw.m_weight = w;
-	cw.w = syn;
-	cw.m_id = id_;
-	cw.m_is_synset = true;
-	cw.m_distinguished = false;
-	cw.m_syns.push_back(syn);
-	cw.m_V.push_back(u);
-	cw.m_ranks.push_back(0.0f);
-	return cw;
-  }
-
   string CWord::wpos() const {
 
-	if (m_is_synset) {
+	if (is_synset()) {
 	  std::runtime_error("CWoord::wpos: can't get wpos of Cword synset " + w);
 	}
 	string wpos(w);
@@ -150,8 +166,7 @@ namespace ukb {
 	o <<  "m_id: " << m_id << string(" \n");
 	o << "m_pos: "  << m_pos << string(" \n");
 	o << "m_weight: "  << lexical_cast<string>(m_weight) << string(" \n");
-	o << "m_is_synset: "  << lexical_cast<bool>(m_is_synset) << string(" \n");
-	o << "m_distinguished: "  << lexical_cast<bool>(m_distinguished) << string(" \n");
+	o << "m_distinguished: "  << lexical_cast<int>(m_type) << string(" \n");
 	o << "m_disamb: "  << lexical_cast<bool>(m_disamb) << string(" \n");
 	o << "m_syns: ";
 	writeV(o, m_syns);
@@ -216,7 +231,7 @@ namespace ukb {
 	  o << "-" << cw_.m_pos;
 	if(glVars::csentence::concepts_in)
 	  o << "#" << cw_.m_weight;
-	o << "#" << cw_.m_id << "#" << cw_.m_distinguished << " " << cw_.m_disamb;
+	o << "#" << cw_.m_id << "#" << cw_.m_type << " " << cw_.m_disamb;
 	o << '\n';
 	for(size_t i = 0; i < cw_.m_syns.size(); ++i) {
 	  assert(i < cw_.m_ranks.size());
@@ -293,7 +308,7 @@ namespace ukb {
 	write_atom_to_stream(o,m_id);
 	write_atom_to_stream(o,m_pos);
 	write_vector_to_stream(o,m_syns);
-	write_atom_to_stream(o,m_distinguished);
+	write_atom_to_stream(o,m_type);
 	return o;
 
   };
@@ -305,7 +320,7 @@ namespace ukb {
 	read_atom_from_stream(i,m_pos);
 	read_vector_from_stream(i,m_syns);
 	vector<float>(m_syns.size()).swap(m_ranks); // Init ranks vector
-	read_atom_from_stream(i,m_distinguished);
+	read_atom_from_stream(i,m_type);
 
 	m_disamb = (1 == m_syns.size());
   };
@@ -337,16 +352,21 @@ namespace ukb {
 	copy(it, end, back_inserter(fields));
 	size_t m = fields.size();
 	if (m != 4 && m != 5) {
-	  throw std::runtime_error("Bad word " + word);
+	  throw std::runtime_error(word + " : too few fields.");
 	}
 	res.lemma = fields[0];
 	res.pos = fields[1];
 	res.id = fields[2];
-	res.dist = lexical_cast<int>(fields[3]);
-	if (m == 5)
-	  res.w = lexical_cast<float>(fields[4]);
+	try {
+	  res.dist = lexical_cast<int>(fields[3]);
+	  if (m == 5)
+		res.w = lexical_cast<float>(fields[4]);
+	} catch (boost::bad_lexical_cast &) {
+	  throw std::runtime_error(word + " : Parsing error.");
+	}
+
 	if (res.w < 0.0) {
-	  throw std::runtime_error("Bad word " + word + " : Negative weight");
+	  throw std::runtime_error(word + " : Negative weight.");
 	}
 	return res;
   }
@@ -382,16 +402,7 @@ namespace ukb {
 		  if (ctwp.lemma.size() == 0) continue;
 		  char pos(0);
 		  if (ctwp.pos.size() && glVars::input::filter_pos) pos = ctwp.pos[0];
-		  CWord new_cw(ctwp.lemma, ctwp.id, pos, ctwp.dist > 0, ctwp.w);
-
-		  if (ctwp.dist == 2) {
-			// if(!glVars::csentence::concepts_in) {
-			//   if (glVars::debug::verbose)
-			// 	cerr << "Skipping word " + *it + " in line " + lexical_cast<string>(l_n) + " (is concept and --concepts_in is not set).\n";
-			//   continue;
-			// }
-			new_cw = CWord::create_synset_cword(ctwp.lemma, ctwp.id, ctwp.w);
-		  }
+		  CWord new_cw(ctwp.lemma, ctwp.id, pos, cast_int_cwtype(ctwp.dist), ctwp.w);
 
 		  if (new_cw.size()) {
 			v.push_back(new_cw);
@@ -406,7 +417,7 @@ namespace ukb {
 		  }
 		}
 	  } catch (std::exception & e) {
-		throw std::runtime_error("Context error in line " + lexical_cast<string>(l_n) + " : " + e.what() );
+		throw std::runtime_error("Context error in line " + lexical_cast<string>(l_n) + "\n" + e.what() );
 	  }
 	}
 	return is;

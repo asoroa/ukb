@@ -17,6 +17,13 @@ namespace ukb {
 
   public:
 
+	enum cwtype {
+	  cwtoken = 0,
+	  cwdist = 1,
+	  cwsynset = 2,
+	  cwerror
+	};
+
 	typedef std::vector<std::string>::const_iterator const_iterator;
 	typedef std::vector<std::string>::iterator iterator;
 	typedef std::vector<std::string>::reference reference;
@@ -24,13 +31,10 @@ namespace ukb {
 	typedef std::vector<std::string>::value_type value_type;
 	typedef std::vector<std::string>::size_type size_type;
 
-	explicit CWord() : m_pos(0), m_weight(1.0), m_is_synset(false),m_distinguished(false),
-					   m_disamb(false) {};
-	CWord(const std::string & w_, const std::string & id, char pos, bool is_dist, float wght_ = 1.0);
+	explicit CWord() : m_pos(0), m_weight(1.0), m_type(cwerror), m_disamb(false) {};
+	CWord(const std::string & w_, const std::string & id, char pos, cwtype type, float wght_ = 1.0);
 	CWord & operator=(const CWord & cw_);
 	~CWord() {};
-
-	static CWord create_synset_cword(const std::string & syn_id, const std::string & id_, float w);
 
 	iterator begin() {return m_syns.begin();}
 	iterator end() {return m_syns.end();}
@@ -51,10 +55,10 @@ namespace ukb {
 	float get_weight() const { return m_weight;}
 	void set_weight(float w) { m_weight = w;}
 
-	bool is_distinguished() const { return m_distinguished; }
+	bool is_distinguished() const { return m_type == cwdist; }
 	bool is_disambiguated() const { return m_disamb; }
 	bool is_monosemous() const { return (1 == m_syns.size()); }
-	bool is_synset() const { return m_is_synset; }
+	bool is_synset() const { return m_type == cwsynset; }
 
 	void empty_synsets() {
 	  std::vector<std::string>().swap(m_syns);
@@ -97,7 +101,7 @@ namespace ukb {
 
   private:
 
-	bool init();
+	bool tie_to_kb();
 	void read_from_stream (std::ifstream & is);
 	std::ofstream & write_to_stream(std::ofstream & o) const;
 	void shuffle_synsets();
@@ -109,8 +113,7 @@ namespace ukb {
 	std::vector<std::string> m_syns;
 	std::vector<Kb_vertex_t> m_V;
 	std::vector<float> m_ranks;
-	bool m_is_synset; // Wether the cword is just a synset (created with create_synset_cword)
-	bool m_distinguished;
+	cwtype m_type;
 	bool m_disamb;      // If word is disambiguated, that is, if the synset
 	// are ordered according to their ranks
   };
