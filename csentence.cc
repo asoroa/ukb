@@ -375,50 +375,55 @@ namespace ukb {
 
   string line;
 
-	if(read_line_noblank(is, line, l_n)) {
+  if(read_line_noblank(is, line, l_n)) {
 
-	  // first line is id
-	  char_separator<char> sep(" \t");
-	  vector<string> ctx;
+	// first line is id
+	char_separator<char> sep(" \t");
+	vector<string> ctx;
 
-	  tokenizer<char_separator<char> > tok_id(line, sep);
-	  copy(tok_id.begin(), tok_id.end(), back_inserter(ctx));
-	  if (ctx.size() == 0) return is; // blank line or EOF
-	  cs_id = ctx[0];
-	  vector<string>().swap(ctx);
-	  // next comes the context
-	  if(!read_line_noblank(is, line, l_n)) return is;
+	tokenizer<char_separator<char> > tok_id(line, sep);
+	copy(tok_id.begin(), tok_id.end(), back_inserter(ctx));
+	if (ctx.size() == 0) return is; // blank line or EOF
+	cs_id = ctx[0];
+	vector<string>().swap(ctx);
+	// next comes the context
+	if(!read_line_noblank(is, line, l_n)) return is;
 
-	  tokenizer<char_separator<char> > tok_ctx(line, sep);
-	  copy(tok_ctx.begin(), tok_ctx.end(), back_inserter(ctx));
-	  if (ctx.size() == 0) return is; // blank line or EOF
-	  int i = 0;
-	  try {
-		for(vector<string>::const_iterator it = ctx.begin(); it != ctx.end(); ++i, ++it) {
+	tokenizer<char_separator<char> > tok_ctx(line, sep);
+	copy(tok_ctx.begin(), tok_ctx.end(), back_inserter(ctx));
+	if (ctx.size() == 0) return is; // blank line or EOF
+	int i = 0;
+	try {
+	  for(vector<string>::const_iterator it = ctx.begin(); it != ctx.end(); ++i, ++it) {
 
-		  ctw_parse_t ctwp = parse_ctw(*it);
-		  if (ctwp.lemma.size() == 0) continue;
-		  char pos(0);
-		  if (ctwp.pos.size() && glVars::input::filter_pos) pos = ctwp.pos[0];
-		  CWord new_cw(ctwp.lemma, ctwp.id, pos, cast_int_cwtype(ctwp.dist), ctwp.w);
+		ctw_parse_t ctwp = parse_ctw(*it);
+		if (ctwp.lemma.size() == 0) continue;
+		char pos(0);
+		CWord::cwtype cw_type = cast_int_cwtype(ctwp.dist);
+		if (cw_type != CWord::cwsynset && glVars::input::filter_pos) {
+		  if (!ctwp.pos.size()) throw std::runtime_error(*it + " has no POS.");
+		  if (ctwp.pos.size() != 1) throw std::runtime_error(*it + " has invalid POS (more than 1 char).");
+		  pos = ctwp.pos[0];
+		}
+		CWord new_cw(ctwp.lemma, ctwp.id, pos, cw_type, ctwp.w);
 
-		  if (new_cw.size()) {
-			v.push_back(new_cw);
-		  } else {
-			// No synset for that word.
-			if (glVars::debug::warning) {
-			  cerr << "W: " << ctwp.lemma;
-			  if (glVars::input::filter_pos && pos)
-				cerr << "-" << pos;
-			  cerr << " can't be mapped to KB." << endl;
-			}
+		if (new_cw.size()) {
+		  v.push_back(new_cw);
+		} else {
+		  // No synset for that word.
+		  if (glVars::debug::warning) {
+			cerr << "W: " << ctwp.lemma;
+			if (glVars::input::filter_pos && pos)
+			  cerr << "-" << pos;
+			cerr << " can't be mapped to KB." << endl;
 		  }
 		}
-	  } catch (std::exception & e) {
-		throw std::runtime_error("Context error in line " + lexical_cast<string>(l_n) + "\n" + e.what() );
 	  }
+	} catch (std::exception & e) {
+	  throw std::runtime_error("Context error in line " + lexical_cast<string>(l_n) + "\n" + e.what() );
 	}
-	return is;
+  }
+  return is;
   }
 
 
