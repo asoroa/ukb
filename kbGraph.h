@@ -136,6 +136,8 @@ public:
 
   Kb_edge_t find_or_insert_edge(Kb_vertex_t u, Kb_vertex_t v, float w );
 
+  void unlink_vertex(Kb_vertex_t u);
+
   // Unlink dangling_nodes (out_degree == 0).
   // Return num. of unlinked nodes
 

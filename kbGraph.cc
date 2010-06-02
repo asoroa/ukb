@@ -354,6 +354,10 @@ namespace ukb {
 	return e;
   }
 
+  void Kb::unlink_vertex(Kb_vertex_t u) {
+	clear_vertex(u, g);
+  }
+
   size_t Kb::unlink_dangling() {
 
 	size_t n = 0;
