@@ -149,12 +149,10 @@ namespace ukb {
 
   string CWord::wpos() const {
 
-	if (is_synset()) {
-	  std::runtime_error("CWoord::wpos: can't get wpos of Cword synset " + w);
-	}
-	string wpos(w);
+	if (is_synset()) return word();
+	string wpos(word());
 	char pos = get_pos();
-	if(!glVars::input::filter_pos || pos == 0) return wpos;
+	if(pos == 0) return wpos;
 	wpos.append("#");
 	wpos.append(1,pos);
 	return wpos;
