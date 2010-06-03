@@ -26,6 +26,8 @@ using namespace boost;
 
 const char *kb_default_binfile = "kb_wnet.bin";
 
+static bool insert_all_dict = true;
+
 // Program options stuff
 
 /* Auxiliary functions for checking input for validity. */
@@ -91,6 +93,7 @@ void disamb_dgraph_from_corpus(string & fullname_in,
 void dis_csent_ppr(const string & input_file,
 				   bool out_semcor) {
 
+  Kb & kb = Kb::instance();
   ifstream fh_in(input_file.c_str());
 
   if (!fh_in) {
@@ -100,15 +103,22 @@ void dis_csent_ppr(const string & input_file,
 
   CSentence cs;
 
-  if (glVars::verbose)
-    cerr << "Adding words to Mcr ...\n";
+  if (insert_all_dict) {
+	kb.add_dictionary(glVars::dict::use_weight);
+  }
 
-  Kb::instance().add_dictionary(glVars::dict::use_weight);
   size_t l_n = 0;
 
   try {
     while (cs.read_aw(fh_in, l_n)) {
 
+	  if(!insert_all_dict) {
+		CSentence::iterator it = cs.begin();
+		CSentence::iterator end = cs.end();
+		for(;it != end; ++it) {
+		  kb.add_token(it->word(), glVars::dict::use_weight);
+		}
+	  }
       vector<float> ranks;
       bool ok = calculate_kb_ppr(cs,ranks);
       if (!ok) {
@@ -133,6 +143,7 @@ void dis_csent_ppr(const string & input_file,
 void dis_csent_ppr_by_word(const string & input_file,
 						  bool out_semcor) {
 
+  Kb & kb = Kb::instance();
   ifstream fh_in(input_file.c_str());
 
   if (!fh_in) {
@@ -142,14 +153,22 @@ void dis_csent_ppr_by_word(const string & input_file,
 
   CSentence cs;
 
-  if (glVars::verbose)
-    cerr << "Adding words to Kb ...\n";
-
-  Kb::instance().add_dictionary(glVars::dict::use_weight);
+  if (insert_all_dict) {
+	kb.add_dictionary(glVars::dict::use_weight);
+  }
   size_t l_n = 0;
 
   try {
     while (cs.read_aw(fh_in, l_n)) {
+
+	  if (!insert_all_dict) {
+		// Add CSentence words to graph
+		CSentence::iterator it = cs.begin();
+		CSentence::iterator end = cs.end();
+		for(;it != end; ++it) {
+		  kb.add_token(it->word(), glVars::dict::use_weight);
+		}
+	  }
 
       calculate_kb_ppr_by_word_and_disamb(cs);
       if (out_semcor) cs.print_csent_semcor_aw(cout);
@@ -266,6 +285,7 @@ int main(int argc, char *argv[]) {
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin.")
     ("dict_file,D", value<string>(), "Dictionary text file. Default is dict.txt")
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Also sets --prank_weight.")
+    ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
 	("nopos", "Don't filter words by Part of Speech.")
     ;
 
@@ -334,6 +354,10 @@ int main(int argc, char *argv[]) {
     if (vm.count("version")) {
       cout << glVars::ukb_version << endl;
       exit(0);
+    }
+
+    if (vm.count("only_ctx_words")) {
+      insert_all_dict = false;
     }
 
     if (vm.count("nopos")) {

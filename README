@@ -306,6 +306,11 @@ General options:
        If the dictionary has weights attached to the relations, use
        them when pageRanking. This option also sets --prank_weight.
 
+  -C [ --only_ctx_words ]
+
+       Create nodes in the graph only for the words appearing in input contexts
+       (default is insert all dictionary words).
+
   --nopos
 	    Do not filter by POS when linking context words to the concepts
 	    they are attached to. When --nopos is set, the concept id's of

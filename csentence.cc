@@ -80,20 +80,20 @@ namespace ukb {
 	vector<float>(m_syns.size(), 0.0).swap(m_ranks);
 
 	// Update KB with CWord
-	Kb_vertex_t word_v;
-	Kb_vertex_t wpos_v;
-	Kb_vertex_t w_v;
+	// Kb_vertex_t word_v;
+	// Kb_vertex_t wpos_v;
+	// Kb_vertex_t w_v;
 
 	// Insert word in KB
 
-	word_v = kb.find_or_insert_word(word());
-	w_v = word_v;
-	// If pos then insert wpos and link to word
-	if(m_pos && glVars::input::filter_pos) {
-	  wpos_v = kb.find_or_insert_word(wpos());
-	  kb.find_or_insert_edge(word_v, wpos_v, 1.0);
-	  w_v = wpos_v;
-	}
+	// word_v = kb.find_or_insert_word(word());
+	// w_v = word_v;
+	// // If pos then insert wpos and link to word
+	// if(m_pos && glVars::input::filter_pos) {
+	//   wpos_v = kb.find_or_insert_word(wpos());
+	//   kb.find_or_insert_edge(word_v, wpos_v, 1.0);
+	//   w_v = wpos_v;
+	// }
 
 	// Insert related concepts/synsets
 
@@ -102,7 +102,7 @@ namespace ukb {
 	  pair<Kb_vertex_t, float> uf = str2kb[*it];
 	  m_V.push_back(uf.first);
 	  // tie word to synsets
-	  kb.find_or_insert_edge(w_v, uf.first, uf.second);
+	  //kb.find_or_insert_edge(w_v, uf.first, uf.second);
 	}
 	return true;
   }
