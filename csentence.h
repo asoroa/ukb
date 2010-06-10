@@ -69,7 +69,7 @@ namespace ukb {
 
 
 	template <typename Map>
-	void rank_synsets(Map rankMap) {
+	void rank_synsets(Map rankMap, bool use_prior) {
 	  size_t n = m_syns.size();
 	  size_t i;
 	  if (!n) return; // No synsets

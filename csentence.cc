@@ -623,6 +623,8 @@ namespace ukb {
 	vector<float> pv;
 	vector<float> ranks;
 
+	bool use_prior = glVars::dict::use_weight; // If --dict-weight and ppr_w2w, use priors when ranking synsets
+
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
@@ -637,9 +639,9 @@ namespace ukb {
 		// disambiguate cw_it
 		if (glVars::csentence::disamb_minus_static) {
 		  struct va2vb newrank(ranks, kb.static_prank());
-		  cw_it->rank_synsets(newrank);
+		  cw_it->rank_synsets(newrank, use_prior);
 		} else {
-		  cw_it->rank_synsets(ranks);
+		  cw_it->rank_synsets(ranks, use_prior);
 		}
 	  }
 	  cw_it->disamb_cword();
@@ -705,9 +707,9 @@ namespace ukb {
 	  if (!cw_it->is_distinguished()) continue;
 	  if (glVars::csentence::disamb_minus_static) {
 		struct va2vb newrank(ranks, kb.static_prank());
-		cw_it->rank_synsets(newrank);
+		cw_it->rank_synsets(newrank, false);
 	  } else {
-		cw_it->rank_synsets(ranks);
+		cw_it->rank_synsets(ranks, false);
 	  }
 	  cw_it->disamb_cword();
 	}
