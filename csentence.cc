@@ -538,7 +538,7 @@ namespace ukb {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> (kb.size(), 0.0).swap(pv);
-	bool aux;
+	bool cw_insert_setP;
 	set<string> S;
 	vector<float> ranks;
 	int inserted_i = 0;
@@ -547,14 +547,14 @@ namespace ukb {
 	// put pv to the synsets of words except exclude_word
 	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
 		it != end; ++it) {
+	  string wpos = it->wpos();
+	  set<string>::iterator aux_set;
+	  tie(aux_set, cw_insert_setP) = S.insert(wpos);
 	  if (it == exclude_word_it) continue;
 	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
-	  string wpos = it->wpos();
-
-	  set<string>::iterator aux_set;
-	  tie(aux_set, aux) = S.insert(wpos);
-	  if (aux) {
+	  if (cw_insert_setP) {
 		Kb_vertex_t u;
+		bool aux;
 		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
 		float w = glVars::csentence::pv_no_weight ? 1.0 : it->get_weight();
 		if (aux && w != 0.0) {
