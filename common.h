@@ -395,6 +395,16 @@ namespace ukb {
 
   std::vector<std::string> split(const std::string & str, const std::string & delims);
 
+
+  // join function
+
+  std::string join(const std::string &delim,
+				   std::vector<std::string>::const_iterator it,
+				   std::vector<std::string>::const_iterator end);
+
+  std::string join(const std::string & delim, const std::vector<std::string> & V);
+
+
   // read non blank line
 
   std::istream & read_line_noblank(std::istream & is, std::string & line, size_t & l_n);

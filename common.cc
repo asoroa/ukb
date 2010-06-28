@@ -48,6 +48,27 @@ namespace ukb {
 	return ret;
   }
 
+  std::string join(const std::string &delim,
+				   std::vector<std::string>::const_iterator it,
+				   std::vector<std::string>::const_iterator end) {
+
+	std::string res("");
+
+	if (it == end) return res;
+	--end;
+	for(;it != end; ++it) {
+	  res+=*it;
+	  res+=delim;
+	}
+	res+=*end;
+	return res;
+  }
+
+  std::string join(const std::string & delim, const std::vector<std::string> & V) {
+	return join(delim, V.begin(), V.end());
+  }
+
+
   void trim_spaces(std::string &l) {
 
 	std::string res("");

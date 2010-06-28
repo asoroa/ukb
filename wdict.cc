@@ -38,22 +38,6 @@ namespace ukb {
   //////////////////////////////////////////////////////7
   // join
 
-  std::string join(const std::string &delim,
-				   std::vector<std::string>::const_iterator it,
-				   std::vector<std::string>::const_iterator end) {
-
-	std::string res("");
-
-	if (it == end) return res;
-	--end;
-	for(;it != end; ++it) {
-	  res+=*it;
-	  res+=delim;
-	}
-	res+=*end;
-	return res;
-  }
-
 
   size_t count_lines(const string & fname) {
 
