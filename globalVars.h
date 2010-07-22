@@ -31,6 +31,7 @@ namespace ukb {
 	  extern bool pv_no_weight; // Don bot use context word weights when initalizing PV for the context
 	  extern bool concepts_in;
 	  extern bool disamb_minus_static;
+	  extern bool mult_priors; // multiply priors to tw synsets if --ppr_w2w and --dict_weight are selected
 	}
 
 	namespace dict {

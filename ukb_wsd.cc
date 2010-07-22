@@ -296,6 +296,7 @@ int main(int argc, char *argv[]) {
     ("static", "Given a text input file, disambiguate context using static pageRank over kb.")
     ("dis_dgraph", "Given a text input file, disambiguate context using disambiguation graph mehod.")
     ("nostatic", "Substract static ppv to final ranks.")
+    ("noprior", "Don't multiply priors to target word synsets if --ppr_w2w and --dict_weight are selected.")
     ;
 
   options_description po_desc_prank("pageRank general options");
@@ -411,6 +412,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("nostatic")) {
 	  glVars::csentence::disamb_minus_static = true;
+    }
+
+    if (vm.count("noprior")) {
+	  glVars::csentence::mult_priors = false;
     }
 
     if (vm.count("bcomp_dictfile")) {

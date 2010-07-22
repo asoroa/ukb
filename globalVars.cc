@@ -31,6 +31,7 @@ namespace ukb {
 	  bool pv_no_weight = false;
 	  bool concepts_in = true;
 	  bool disamb_minus_static = false;
+	  bool mult_priors = true;
 	}
 
 	namespace dict {

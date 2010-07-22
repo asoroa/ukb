@@ -623,7 +623,7 @@ namespace ukb {
 	vector<float> pv;
 	vector<float> ranks;
 
-	bool use_prior = glVars::dict::use_weight; // If --dict-weight and ppr_w2w, use priors when ranking synsets
+	bool use_prior = glVars::dict::use_weight && glVars::csentence::mult_priors; // If --dict-weight and ppr_w2w, use priors when ranking synsets
 
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
