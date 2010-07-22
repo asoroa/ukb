@@ -538,19 +538,26 @@ namespace ukb {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> (kb.size(), 0.0).swap(pv);
-	bool cw_insert_setP;
 	set<string> S;
+	set<string>::iterator aux_set;
+	bool cw_insert_setP;
+
 	vector<float> ranks;
 	int inserted_i = 0;
+
+	// First of all, insert exclude_word_it to the set if appropiate
+
+	if (exclude_word_it != cs.end()) {
+	  tie(aux_set, cw_insert_setP) = S.insert(exclude_word_it->wpos());
+	}
 
 	float K = 0.0;
 	// put pv to the synsets of words except exclude_word
 	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
 		it != end; ++it) {
-	  string wpos = it->wpos();
-	  set<string>::iterator aux_set;
-	  tie(aux_set, cw_insert_setP) = S.insert(wpos);
 	  if (it == exclude_word_it) continue;
+	  string wpos = it->wpos();
+	  tie(aux_set, cw_insert_setP) = S.insert(wpos);
 	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
 	  if (cw_insert_setP) {
 		Kb_vertex_t u;
