@@ -76,6 +76,42 @@ namespace ukb {
 	return N;
   }
 
+
+  static pair<string, float> wdict_parse_weight(const string & str) {
+
+	bool has_w;
+	float weight = 0.0f;
+	string concept_id;
+
+	char_separator<char> sf_sep("", ":"); // keep delimiters
+	tokenizer<char_separator<char> > sf_tok(str, sf_sep);
+	vector<string> syn_freq;
+	copy(sf_tok.begin(), sf_tok.end(), back_inserter(syn_freq));
+
+	// Warning. concept-id can have ":" characters in. So, just
+	// take the last field as weight, and join the rest.
+
+	size_t m = syn_freq.size();
+	if (m > 2 ) {
+	  try {
+		weight = lexical_cast<float>(syn_freq[m - 1]);
+		has_w = true;
+	  } catch (boost::bad_lexical_cast &) {
+		// last field wasn't a float. Do nothing.
+	  }
+	}
+	if (has_w) {
+	  if (m == 3) {
+		concept_id = syn_freq[0];
+	  } else {
+		concept_id = join("", syn_freq.begin(), syn_freq.end() - 2);
+	  }
+	} else {
+	  concept_id = join("", syn_freq.begin(), syn_freq.end());
+	}
+	return make_pair(concept_id, weight);
+  }
+
   void read_wdict_file(const string & fname,
 					   vector<string> & words,
 					   WDict::wdicts_t & wdicts) {
@@ -128,48 +164,15 @@ namespace ukb {
 
 		for(; fields_it != fields_end; ++fields_it) {
 
-		  char_separator<char> sf_sep("", ":"); // keep delimiters
-		  tokenizer<char_separator<char> > sf_tok(*fields_it, sf_sep);
-		  vector<string> syn_freq;
-		  copy(sf_tok.begin(), sf_tok.end(), back_inserter(syn_freq));
-
-		  // Warning. concept-id can have ":" characters in. So, just
-		  // take the last field as weight, and join the rest.
-
-		  size_t m = syn_freq.size();
-		  float weight = 0.0f;
-		  bool has_w = false;
-		  if (m > 2 ) {
-			try {
-			  weight = lexical_cast<float>(syn_freq[m - 1]);
-			  has_w = true;
-			} catch (boost::bad_lexical_cast &) {
-			  // last field wasn't a float. Do nothing.
-			}
-		  }
-
+		  float weight;
 		  string concept_id;
-		  if (has_w) {
-			if (m == 3) {
-			  concept_id = syn_freq[0];
-			} else {
-			  concept_id = join("", syn_freq.begin(), syn_freq.end() - 2);
-			}
-		  } else {
-			concept_id = join("", syn_freq.begin(), syn_freq.end());
-		  }
-
+		  tie(concept_id, weight) = wdict_parse_weight(*fields_it);
 		  item.wsyns.push_back(concept_id);
-		  if (has_w) {
-			if (item.has_freq == 0)
-			  throw std::runtime_error (fields[0] + " word has lines mixing weighted and unweighed concepts");
+		  if (glVars::dict::use_weight) {
+			if (weight == 0.0)
+			  throw std::runtime_error ("Error in entry " + fields[0] + ": " + *fields_it + " word has zero weight.");
 			item.has_freq = 1;
-			item.syns_count.push_back(weight + 1.0);  // Add 1 to weight (so there is no zero-weighed edge)
-
-		  } else {
-			if (item.has_freq == 1)
-			  throw std::runtime_error (fields[0] + " word has lines mixing weighted and unweighed concepts");
-			item.has_freq = 0;
+			item.syns_count.push_back(weight);
 		  }
 		}
 	  }
