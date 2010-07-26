@@ -293,6 +293,7 @@ int main(int argc, char *argv[]) {
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin.")
     ("dict_file,D", value<string>(), "Dictionary text file. Default is dict.txt")
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Also sets --prank_weight.")
+    ("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts.")
     ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
 	("nopos", "Don't filter words by Part of Speech.")
 	("dictpos", "Use implicit POS information from the dictionary.")
@@ -442,6 +443,10 @@ int main(int argc, char *argv[]) {
     if (vm.count("dict_weight")) {
       glVars::dict::use_weight = true;
       glVars::prank::use_weight = true;
+    }
+
+    if (vm.count("dict_weight_smooth")) {
+      glVars::dict::weight_smoothfactor = vm["dict_weight_smooth"].as<float>();
     }
 
     if (vm.count("bcomp_kb_binfile")) {

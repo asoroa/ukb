@@ -169,6 +169,7 @@ namespace ukb {
 		  tie(concept_id, weight) = wdict_parse_weight(*fields_it);
 		  item.wsyns.push_back(concept_id);
 		  if (glVars::dict::use_weight) {
+			weight += glVars::dict::weight_smoothfactor;
 			if (weight == 0.0)
 			  throw std::runtime_error ("Error in entry " + fields[0] + ": " + *fields_it + " word has zero weight.");
 			item.has_freq = 1;

@@ -261,6 +261,7 @@ int main(int argc, char *argv[]) {
     ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Also sets --prank_weight.")
+    ("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts.")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
     ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
     ("nostatic", "Substract static ppv to final ranks.")
@@ -368,6 +369,10 @@ int main(int argc, char *argv[]) {
     if (vm.count("dict_weight")) {
 	  glVars::dict::use_weight = true;
       glVars::prank::use_weight = true;
+    }
+
+    if (vm.count("dict_weight_smooth")) {
+      glVars::dict::weight_smoothfactor = vm["dict_weight_smooth"].as<float>();
     }
 
     if (vm.count("static")) {
