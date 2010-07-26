@@ -49,12 +49,9 @@ namespace ukb {
 	  const string & syn_str = entries.get_entry(i);
 	  float syn_freq = glVars::dict::use_weight ? entries.get_freq(i) : 1.0;
 
-	  if(m_pos && glVars::input::filter_pos) {
+	  if(m_pos) {
 		// filter synsets by pos
 		char synpos = entries.get_pos(i);
-		if(!synpos) {
-		  throw std::runtime_error("CWord: dictionary concept " + syn_str + " has no POS\n");
-		}
 		if (m_pos != synpos) continue;
 	  }
 
@@ -89,7 +86,7 @@ namespace ukb {
 	// word_v = kb.find_or_insert_word(word());
 	// w_v = word_v;
 	// // If pos then insert wpos and link to word
-	// if(m_pos && glVars::input::filter_pos) {
+	// if(m_pos) {
 	//   wpos_v = kb.find_or_insert_word(wpos());
 	//   kb.find_or_insert_edge(word_v, wpos_v, 1.0);
 	//   w_v = wpos_v;

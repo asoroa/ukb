@@ -195,9 +195,6 @@ namespace ukb {
 	//return WDict_entries(m_wdicts[&word]);
   }
 
-
-
-
   std::pair<vector<std::string>::const_iterator, vector<std::string>::const_iterator>
   WDict::get_wsyns(const std::string & word) const {
 	vector<string>::const_iterator null_it;
@@ -244,9 +241,10 @@ namespace ukb {
   // WDict_entries
 
   char WDict_entries::get_pos(size_t i) const {
+	if (!glVars::dict::use_pos) return 0;
 	std::string::size_type idx = _item.wsyns[i].find_last_of("-");
-	if (idx == string::npos) return 0;
-	if (idx == _item.wsyns[i].length() - 1) return 0;
+	if (idx == string::npos || idx == _item.wsyns[i].length() - 1)
+	  throw std::runtime_error("Dictionary concept " + _item.wsyns[i] + " has no POS\n");
 	return _item.wsyns[i].at(idx + 1);
   }
 

@@ -806,11 +806,8 @@ namespace ukb {
 
 	  string wpos(word.size() + 2, '#');
 	  string::iterator sit = copy(word.begin(), word.end(), wpos.begin());
-	  char synpos = syns.get_pos(i);
-	  if (glVars::input::filter_pos && synpos) {
-		++sit; // '#' char
-		*sit = syns.get_pos(i); // the pos
-	  }
+	  ++sit; // '#' char
+	  *sit = syns.get_pos(i); // the pos
 
 	  Kb_vertex_t u;
 	  tie(u, auxP) = kb.get_vertex_by_name(syns.get_entry(i), Kb::is_concept);
@@ -904,7 +901,7 @@ namespace ukb {
 	vector<string> wPosV;
 	map<string, vector<Syn_elem> > wPos2Syns;
 
-	if (glVars::input::filter_pos) {
+	if (glVars::dict::use_pos) {
 	  // Create w2wPos and wPos2Syns maps
 
 	  create_w2wpos_maps(token, wPosV, wPos2Syns);

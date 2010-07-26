@@ -228,8 +228,13 @@ int main(int argc, char *argv[]) {
 
   srand(3);
 
-  timer load;
+  enum pos_method {
+	pos,
+	nopos,
+	dictpos
+  };
 
+  pos_method pmethod = pos;
   bool opt_static = false;
   bool opt_nozero = false;
   float opt_trppv = 0.0f;
@@ -261,6 +266,7 @@ int main(int argc, char *argv[]) {
     ("nostatic", "Substract static ppv to final ranks.")
     ("verbose,v", "Be verbose.")
 	("nopos", "Don't filter words by Part of Speech.")
+	("dictpos", "Use implicit POS information from the dictionary.")
 	("wiki", "Usual options for wikipedia (sets --nopos, --only_ctx_words and --only_synsets).")
     ;
 
@@ -328,7 +334,11 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("nopos")) {
-	  glVars::input::filter_pos = false;
+	  pmethod = nopos;
+    }
+
+    if (vm.count("dictpos")) {
+	  pmethod = dictpos;
     }
 
     if (vm.count("only_words")) {
@@ -420,6 +430,22 @@ int main(int argc, char *argv[]) {
     cerr << e.what() << "\n";
     throw(e);
   }
+
+  switch (pmethod) {
+  case pos:
+	glVars::input::filter_pos = true;
+	glVars::dict::use_pos = true;
+	break;
+  case nopos:
+	glVars::input::filter_pos = false;
+	glVars::dict::use_pos = false;
+	break;
+  case dictpos:
+	glVars::input::filter_pos = false;
+	glVars::dict::use_pos = true;
+	break;
+  }
+
 
   if (opt_static) {
 	if (glVars::verbose)
