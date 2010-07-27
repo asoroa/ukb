@@ -149,7 +149,7 @@ namespace ukb {
 	if (is_synset()) return word();
 	string wpos(word());
 	char pos = get_pos();
-	if(pos == 0) return wpos;
+	if(pos == 0 || glVars::prank::lightw) return wpos;
 	wpos.append("#");
 	wpos.append(1,pos);
 	return wpos;

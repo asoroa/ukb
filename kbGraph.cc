@@ -901,7 +901,7 @@ namespace ukb {
 	vector<string> wPosV;
 	map<string, vector<Syn_elem> > wPos2Syns;
 
-	if (glVars::dict::use_pos) {
+	if (glVars::input::filter_pos) {
 	  // Create w2wPos and wPos2Syns maps
 
 	  create_w2wpos_maps(token, wPosV, wPos2Syns);

@@ -36,7 +36,6 @@ namespace ukb {
 
 	namespace dict {
 	  extern bool use_weight; // Use weights when linking words to concepts
-	  extern bool use_pos; // Use implicit POS information present in dictionary
 	  extern float weight_smoothfactor;
 	}
 
@@ -50,6 +49,7 @@ namespace ukb {
 	  extern size_t num_iterations;
 	  extern float threshold;
 	  extern float damping;
+	  extern bool lightw;
 	}
 
 

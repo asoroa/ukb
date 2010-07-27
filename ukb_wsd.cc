@@ -252,15 +252,7 @@ int main(int argc, char *argv[]) {
 	ppr_static
   };
 
-  enum pos_method {
-	pos,
-	nopos,
-	dictpos
-  };
-
-
   dis_method dmethod = ppr;
-  pos_method pmethod = pos;
 
   bool opt_do_test = false;
   bool opt_out_semcor = false;
@@ -296,7 +288,7 @@ int main(int argc, char *argv[]) {
     ("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts.")
     ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
 	("nopos", "Don't filter words by Part of Speech.")
-	("dictpos", "Use implicit POS information from the dictionary.")
+	("poslightw", "Light words instead of wpos when calculating personalization vector.")
     ;
 
   options_description po_desc_wsd("WSD methods");
@@ -372,11 +364,11 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("nopos")) {
-	  pmethod = nopos;
+	  glVars::input::filter_pos = false;
     }
 
-    if (vm.count("dictpos")) {
-	  pmethod = dictpos;
+    if (vm.count("poslightw")) {
+	  glVars::prank::lightw = true;
     }
 
     if (vm.count("ppr")) {
@@ -515,22 +507,6 @@ int main(int argc, char *argv[]) {
     test(fullname_in, false);
 	goto END;
   }
-
-  switch (pmethod) {
-  case pos:
-	glVars::input::filter_pos = true;
-	glVars::dict::use_pos = true;
-	break;
-  case nopos:
-	glVars::input::filter_pos = false;
-	glVars::dict::use_pos = false;
-	break;
-  case dictpos:
-	glVars::input::filter_pos = false;
-	glVars::dict::use_pos = true;
-	break;
-  }
-
 
   Kb::create_from_binfile(kb_binfile);
   cout << cmdline << "\n";

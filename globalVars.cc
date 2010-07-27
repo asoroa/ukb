@@ -36,7 +36,6 @@ namespace ukb {
 
 	namespace dict {
 	  bool use_weight = false; // Use weights when linking words to concepts
-	  bool use_pos = true;
 	  float weight_smoothfactor = 0.0;
 	}
 
@@ -50,6 +49,7 @@ namespace ukb {
 	  size_t num_iterations = 30; // Conservative, but stop if threshold is reached. If zero, just use threshold.
 	  float threshold = 0.0001; // If zero just use num_iterations
 	  float damping = 0.85; // damping factor
+	  bool lightw = false;
 	}
 
 	namespace input {
