@@ -79,35 +79,35 @@ namespace ukb {
 
   static pair<string, float> wdict_parse_weight(const string & str) {
 
-	bool has_w;
+	bool has_w = false;
 	float weight = 0.0f;
-	string concept_id;
+	string concept_id(str);
 
 	char_separator<char> sf_sep("", ":"); // keep delimiters
 	tokenizer<char_separator<char> > sf_tok(str, sf_sep);
 	vector<string> syn_freq;
 	copy(sf_tok.begin(), sf_tok.end(), back_inserter(syn_freq));
 
-	// Warning. concept-id can have ":" characters in. So, just
-	// take the last field as weight, and join the rest.
-
 	size_t m = syn_freq.size();
+
 	if (m > 2 ) {
+	  // Warning. concept-id can have ":" characters in. So, just
+	  // take the last field as weight, and join the rest.
 	  try {
 		weight = lexical_cast<float>(syn_freq[m - 1]);
 		has_w = true;
 	  } catch (boost::bad_lexical_cast &) {
 		// last field wasn't a float. Do nothing.
 	  }
-	}
-	if (has_w) {
-	  if (m == 3) {
-		concept_id = syn_freq[0];
+	  if (has_w) {
+		if (m == 3) {
+		  concept_id = syn_freq[0];
+		} else {
+		  concept_id = join("", syn_freq.begin(), syn_freq.end() - 2);
+		}
 	  } else {
-		concept_id = join("", syn_freq.begin(), syn_freq.end() - 2);
+		concept_id = join("", syn_freq.begin(), syn_freq.end());
 	  }
-	} else {
-	  concept_id = join("", syn_freq.begin(), syn_freq.end());
 	}
 	return make_pair(concept_id, weight);
   }
