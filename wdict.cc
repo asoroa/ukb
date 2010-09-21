@@ -116,9 +116,6 @@ namespace ukb {
 					   vector<string> & words,
 					   WDict::wdicts_t & wdicts) {
 
-	// optimize IO
-	std::ios::sync_with_stdio(false);
-
 	size_t N = count_lines(fname);
 	vector<string>(N).swap(words);
 

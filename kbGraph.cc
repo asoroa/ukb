@@ -697,9 +697,6 @@ namespace ukb {
   void Kb::read_from_txt(const string & synsFileName,
 						 const set<string> & src_allowed) {
 
-	// optimize IO
-	std::ios::sync_with_stdio(false);
-
 	std::ifstream syns_file(synsFileName.c_str(), ofstream::in);
 	if (!syns_file) {
 	  throw runtime_error("Kb::read_from_txt error: Can't open " + synsFileName);
