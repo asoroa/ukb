@@ -18,9 +18,8 @@ namespace ukb {
   struct WDict_item_t {
 	std::vector<std::string> wsyns;
 	std::vector<float> syns_count;
-	int has_freq;
 
-	WDict_item_t() : has_freq(-1) {}
+	WDict_item_t() {}
 
   };
 
