@@ -124,7 +124,7 @@ void compute_sentence_vectors(string & fullname_in,
   if (insert_all_dict) {
 	if (glVars::verbose)
 	  cerr << "Adding words to Kb ...";
-	kb.add_dictionary(glVars::dict::use_weight);
+	kb.add_dictionary();
   }
 
   if (glVars::verbose)
@@ -146,7 +146,7 @@ void compute_sentence_vectors(string & fullname_in,
 		CSentence::iterator it = cs.begin();
 		CSentence::iterator end = cs.end();
  		for(;it != end; ++it) {
-		  kb.add_token(it->word(), glVars::dict::use_weight);
+		  kb.add_token(it->word());
 		}
 	  }
       bool ok = calculate_kb_ppr(cs,ranks);

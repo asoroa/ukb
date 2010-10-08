@@ -167,8 +167,6 @@ namespace ukb {
 			if (weight == 0.0)
 			  throw std::runtime_error ("Error in entry " + fields[0] + ": " + *fields_it + " word has zero weight.");
 			item.syns_count.push_back(weight);
-		  } else {
-			item.syns_count.push_back(1.0f);
 		  }
 		}
 	  }
@@ -220,6 +218,7 @@ namespace ukb {
 	wdicts_t::const_iterator m_end = m_wdicts.end();
 	for(;m_it != m_end; ++m_it) {
 	  const WDict_item_t & item = m_it->second;
+
 	  assert(item.wsyns.size() == item.syns_count.size());
 	  size_t m = item.wsyns.size();
 	  for(size_t i = 0; i != m; ++i) {
@@ -247,6 +246,7 @@ namespace ukb {
   }
 
   float WDict_entries::get_freq(size_t i) const {
+	if (!glVars::dict::use_weight) return 1.0;
 	return _item.syns_count[i];
   }
 

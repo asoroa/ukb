@@ -827,8 +827,7 @@ namespace ukb {
 
   void insert_wpos(const string & word,
 				   vector<string> & wPosV,
-				   map<string, vector<Syn_elem> > & wPos2Syns,
-				   bool use_weights) {
+				   map<string, vector<Syn_elem> > & wPos2Syns) {
 
 	Kb & kb = Kb::instance();
 
@@ -846,16 +845,12 @@ namespace ukb {
 	  vector<Syn_elem>::const_iterator syns_it = wPos2Syns[*wpos_str_it].begin();
 	  vector<Syn_elem>::const_iterator syns_end = wPos2Syns[*wpos_str_it].end();
 	  for(;syns_it != syns_end; ++syns_it) {
-		if (use_weights) {
-		  kb.find_or_insert_edge(wpos_v, syns_it->first, syns_it->second);
-		} else {
-		  kb.find_or_insert_edge(wpos_v, syns_it->first, 1.0);
-		}
+		kb.find_or_insert_edge(wpos_v, syns_it->first, syns_it->second);
 	  }
 	}
   }
 
-  void insert_word(const string & word, bool use_w) {
+  void insert_word(const string & word) {
 
 	Kb & kb = Kb::instance();
 
@@ -874,13 +869,13 @@ namespace ukb {
 		  cerr << "W:Kb::add_tokens: warning: " << syns.get_entry(i) << " is not in KB.\n";
 		continue;
 	  }
-	  float w = use_w ? syns.get_freq(i) : 1.0;
+	  float w = syns.get_freq(i);
 	  // (directed) link word -> concept
 	  kb.find_or_insert_edge(u, v, w);
 	}
   }
 
-  void Kb::add_dictionary(bool with_weight) {
+  void Kb::add_dictionary() {
 
 	WDict & w2syn = WDict::instance();
 
@@ -888,12 +883,12 @@ namespace ukb {
 	vector<string>::const_iterator word_end = w2syn.get_wordlist().end();
 
 	for(; word_it != word_end; ++word_it) {
-	  add_token(*word_it, with_weight);
+	  add_token(*word_it);
 	}
   }
 
 
-  void Kb::add_token(const string & token, bool with_weight) {
+  void Kb::add_token(const string & token) {
 
 	vector<string> wPosV;
 	map<string, vector<Syn_elem> > wPos2Syns;
@@ -904,9 +899,9 @@ namespace ukb {
 	  create_w2wpos_maps(token, wPosV, wPos2Syns);
 
 	  // Add vertices and link them in the KB
-	  insert_wpos(token, wPosV, wPos2Syns, with_weight);
+	  insert_wpos(token, wPosV, wPos2Syns);
 	} else {
-	  insert_word(token, with_weight);
+	  insert_word(token);
 	}
   }
 

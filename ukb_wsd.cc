@@ -104,7 +104,7 @@ void dis_csent_ppr(const string & input_file,
   CSentence cs;
 
   if (insert_all_dict) {
-	kb.add_dictionary(glVars::dict::use_weight);
+	kb.add_dictionary();
   }
 
   size_t l_n = 0;
@@ -116,7 +116,7 @@ void dis_csent_ppr(const string & input_file,
 		CSentence::iterator it = cs.begin();
 		CSentence::iterator end = cs.end();
 		for(;it != end; ++it) {
-		  kb.add_token(it->word(), glVars::dict::use_weight);
+		  kb.add_token(it->word());
 		}
 	  }
       vector<float> ranks;
@@ -154,7 +154,7 @@ void dis_csent_ppr_by_word(const string & input_file,
   CSentence cs;
 
   if (insert_all_dict) {
-	kb.add_dictionary(glVars::dict::use_weight);
+	kb.add_dictionary();
   }
   size_t l_n = 0;
 
@@ -166,7 +166,7 @@ void dis_csent_ppr_by_word(const string & input_file,
 		CSentence::iterator it = cs.begin();
 		CSentence::iterator end = cs.end();
 		for(;it != end; ++it) {
-		  kb.add_token(it->word(), glVars::dict::use_weight);
+		  kb.add_token(it->word());
 		}
 	  }
 

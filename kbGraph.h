@@ -121,8 +121,8 @@ public:
   // Add tokens and link them to their synsets, according to the dictionary.
   // Note: the words are linked to nodes by _directed_ edges
 
-  void add_dictionary(bool with_weight); // Adds all words of the current dictionary
-  void add_token(const std::string & str, bool with_weight); // Add just a word (lemma)
+  void add_dictionary(); // Adds all words of the current dictionary
+  void add_token(const std::string & str); // Add just a word (lemma)
 
   // graph
   // Get the underlying boost graph
