@@ -36,7 +36,7 @@ namespace ukb {
 
 	namespace dict {
 	  bool use_weight = false; // Use weights when linking words to concepts
-	  float weight_smoothfactor = 0.0;
+	  float weight_smoothfactor = 1.0;
 	}
 
 	namespace chsq {
