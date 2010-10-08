@@ -17,10 +17,18 @@ namespace ukb {
 
   public:
 
+	// Type of CWords:
+	//
+	// cwtoken: context word. Affects initial PV calculation but will not be disambiguated.
+	// cwdist: distinguished word: Affects initial PV calculation and will be disambiguated.
+	// cwsynset: concept. Affects initial PV calculation and is not diambiguated
+	// cwnolight: nolight word. Does not affect initial PV calculation and will be disambiguated.
+
 	enum cwtype {
 	  cwtoken = 0,
 	  cwdist = 1,
 	  cwsynset = 2,
+	  cwdistnolight = 3,
 	  cwerror
 	};
 
@@ -55,10 +63,11 @@ namespace ukb {
 	float get_weight() const { return m_weight;}
 	void set_weight(float w) { m_weight = w;}
 
-	bool is_distinguished() const { return m_type == cwdist; }
+	bool is_distinguished() const { return (m_type == cwdist || m_type == cwdistnolight); }
 	bool is_disambiguated() const { return m_disamb; }
 	bool is_monosemous() const { return (1 == m_syns.size()); }
 	bool is_synset() const { return m_type == cwsynset; }
+	bool lightw() const { return !(m_type == cwdistnolight); }
 
 	void empty_synsets() {
 	  std::vector<std::string>().swap(m_syns);

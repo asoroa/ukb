@@ -18,14 +18,17 @@ namespace ukb {
 	CWord::cwtype res;
 
 	switch(i) {
-	case CWord::cwtoken:
+	case 0:
 	  res = CWord::cwtoken;
 	  break;
-	case CWord::cwdist:
+	case 1:
 	  res = CWord::cwdist;
 	  break;
-	case CWord::cwsynset:
+	case 2:
 	  res = CWord::cwsynset;
+	  break;
+	case 3:
+	  res = CWord::cwdistnolight;
 	  break;
 	default:
 	  res = CWord::cwerror;
@@ -47,7 +50,7 @@ namespace ukb {
 	for(size_t i= 0; i < entries.size(); ++i) {
 
 	  const string & syn_str = entries.get_entry(i);
-	  float syn_freq = glVars::dict::use_weight ? entries.get_freq(i) : 1.0;
+	  float syn_freq = entries.get_freq(i);
 
 	  if(m_pos) {
 		// filter synsets by pos
@@ -553,6 +556,7 @@ namespace ukb {
 	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
 		it != end; ++it) {
 	  if (it == exclude_word_it) continue;
+	  if (!it->lightw()) continue;
 	  string wpos = it->wpos();
 	  tie(aux_set, cw_insert_setP) = S.insert(wpos);
 	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
