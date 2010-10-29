@@ -6,6 +6,7 @@
 #include <string>
 #include <iterator>
 #include <map>
+#include <set>
 #include <vector>
 #include <iosfwd>
 
@@ -18,6 +19,8 @@ namespace ukb {
   struct WDict_item_t {
 	std::vector<std::string> wsyns;
 	std::vector<float> syns_count;
+	std::vector<char> m_thepos;
+	std::set<char> m_distpos;
 
 	WDict_item_t() {}
 
@@ -37,6 +40,7 @@ namespace ukb {
 	const std::string & get_entry(size_t i) const { return _item.wsyns[i]; }
 	float get_freq(size_t i) const;
 	char get_pos(size_t i) const;
+	size_t dist_pos() const;
   };
 
 
@@ -51,7 +55,7 @@ namespace ukb {
 
 
 	// old stuff
-	std::pair<std::vector<std::string>::const_iterator, std::vector<std::string>::const_iterator> 
+	std::pair<std::vector<std::string>::const_iterator, std::vector<std::string>::const_iterator>
 	get_wsyns(const std::string & word) const;
 
 	std::pair<std::vector<float>::const_iterator, std::vector<float>::const_iterator>
@@ -59,13 +63,15 @@ namespace ukb {
 
 	bool syn_counts(std::map<std::string, size_t> & res) const;
 
-	const std::vector<std::string> & get_wordlist() const { return words; }
+	const std::vector<std::string> & get_wordlist() const { return m_words; }
 
   private:
 
 	WDict();
 	WDict(const WDict &);
 	WDict & operator=(const WDict &);
+
+	void read_wdict_file(const std::string & fname);
 
   public:
 	// functor for comparing keys
@@ -80,7 +86,7 @@ namespace ukb {
 
   private:
 	wdicts_t m_wdicts;
-	std::vector<std::string> words;
+	std::vector<std::string> m_words;
   };
 }
 #endif

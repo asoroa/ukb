@@ -92,13 +92,17 @@ namespace ukb {
 	return make_pair(concept_id, weight);
   }
 
+  char xtract_pos_cid(const string & str) {
+	std::string::size_type idx = str.find_last_of("-");
+	if (idx == string::npos || idx == str.length() - 1)
+	  throw std::runtime_error("Dictionary concept " + str + " has no POS\n");
+	return str.at(idx + 1);
+  }
 
-  void read_wdict_file(const string & fname,
-					   vector<string> & words,
-					   WDict::wdicts_t & wdicts) {
+  void WDict::read_wdict_file(const string & fname) {
 
 	size_t N = count_lines(fname);
-	vector<string>(N).swap(words);
+	vector<string>(N).swap(m_words);
 
 	std::ifstream fh(fname.c_str(), ofstream::in);
 	if(!fh) {
@@ -134,8 +138,8 @@ namespace ukb {
 		++fields_it;
 		WDict::wdicts_t::iterator map_value_it;
 
-		words[words_I] = fields[0]; // insert word
-		tie(map_value_it, insertedP) = wdicts.insert(make_pair(&words[words_I], WDict_item_t()));
+		m_words[words_I] = fields[0]; // insert word
+		tie(map_value_it, insertedP) = m_wdicts.insert(make_pair(&m_words[words_I], WDict_item_t()));
 		if (insertedP) words_I++;
 
 		WDict_item_t & item = map_value_it->second;
@@ -146,6 +150,17 @@ namespace ukb {
 		  string concept_id;
 		  tie(concept_id, weight) = wdict_parse_weight(*fields_it);
 		  item.wsyns.push_back(concept_id);
+
+		  // POS stuff
+
+		  if(glVars::input::filter_pos) {
+			char pos_c = xtract_pos_cid(concept_id);
+			item.m_distpos.insert(pos_c);
+			item.m_thepos.push_back(pos_c);
+		  }
+
+		  // Weight stuff
+
 		  if (glVars::dict::use_weight) {
 			weight += glVars::dict::weight_smoothfactor;
 			if (weight == 0.0)
@@ -160,7 +175,7 @@ namespace ukb {
   }
 
   WDict::WDict() {
-	read_wdict_file(glVars::dict_filename, words, m_wdicts);
+	read_wdict_file(glVars::dict_filename);
   }
 
   WDict & WDict::instance() {
@@ -223,15 +238,17 @@ namespace ukb {
 
   char WDict_entries::get_pos(size_t i) const {
 	if (!glVars::input::filter_pos) return 0;
-	std::string::size_type idx = _item.wsyns[i].find_last_of("-");
-	if (idx == string::npos || idx == _item.wsyns[i].length() - 1)
-	  throw std::runtime_error("Dictionary concept " + _item.wsyns[i] + " has no POS\n");
-	return _item.wsyns[i].at(idx + 1);
+	return _item.m_thepos[i];
   }
 
   float WDict_entries::get_freq(size_t i) const {
 	if (!glVars::dict::use_weight) return 1.0;
 	return _item.syns_count[i];
+  }
+
+  size_t WDict_entries::dist_pos() const {
+	if (!glVars::input::filter_pos) return 1;
+	return _item.m_distpos.size();
   }
 
 }
