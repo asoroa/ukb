@@ -121,7 +121,7 @@ void compute_sentence_vectors(string & fullname_in,
 
   // add words into Kb
 
-  if (insert_all_dict) {
+  if (!glVars::kb::onlyC && insert_all_dict) {
 	if (glVars::verbose)
 	  cerr << "Adding words to Kb ...";
 	kb.add_dictionary();
@@ -141,7 +141,7 @@ void compute_sentence_vectors(string & fullname_in,
       // Initialize rank vector
       vector<float> ranks;
 
-	  if(!insert_all_dict) {
+	  if(!glVars::kb::onlyC && !insert_all_dict) {
 		// Add CSentence words to graph
 		CSentence::iterator it = cs.begin();
 		CSentence::iterator end = cs.end();
@@ -253,6 +253,7 @@ int main(int argc, char *argv[]) {
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin")
     ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
+    ("concept_graph,G", "Graph is built using just concepts. Words are no more part of the graph.")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
     ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
     ("nostatic", "Substract static ppv to final ranks.")
@@ -345,6 +346,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("only_ctx_words")) {
       insert_all_dict = false;
+    }
+
+    if (vm.count("concept_graph")) {
+	  glVars::kb::onlyC = true;
     }
 
     if (vm.count("only_synsets")) {

@@ -70,6 +70,7 @@ namespace ukb {
 	  bool keep_directed = true;
 	  bool v1_kb = true;
 	  bool filter_src = true;
+	  bool onlyC = false;
 	}
 
 	//   bool word_norep = 0;

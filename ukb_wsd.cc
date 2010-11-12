@@ -103,7 +103,7 @@ void dis_csent_ppr(const string & input_file,
 
   CSentence cs;
 
-  if (insert_all_dict) {
+  if (!glVars::kb::onlyC && insert_all_dict) {
 	kb.add_dictionary();
   }
 
@@ -112,7 +112,7 @@ void dis_csent_ppr(const string & input_file,
   try {
     while (cs.read_aw(fh_in, l_n)) {
 
-	  if(!insert_all_dict) {
+	  if(!glVars::kb::onlyC && !insert_all_dict) {
 		CSentence::iterator it = cs.begin();
 		CSentence::iterator end = cs.end();
 		for(;it != end; ++it) {
@@ -153,7 +153,7 @@ void dis_csent_ppr_by_word(const string & input_file,
 
   CSentence cs;
 
-  if (insert_all_dict) {
+  if (!glVars::kb::onlyC && insert_all_dict) {
 	kb.add_dictionary();
   }
   size_t l_n = 0;
@@ -161,7 +161,7 @@ void dis_csent_ppr_by_word(const string & input_file,
   try {
     while (cs.read_aw(fh_in, l_n)) {
 
-	  if (!insert_all_dict) {
+	  if (!glVars::kb::onlyC && !insert_all_dict) {
 		// Add CSentence words to graph
 		CSentence::iterator it = cs.begin();
 		CSentence::iterator end = cs.end();
@@ -285,6 +285,7 @@ int main(int argc, char *argv[]) {
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin.")
     ("dict_file,D", value<string>(), "Dictionary text file. Default is dict.txt")
     ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
+    ("concept_graph,G", "Graph is built using just concepts. Words are no more part of the graph.")
 	("nopos", "Don't filter words by Part of Speech.")
 	("poslightw", "Light words instead of wpos when calculating personalization vector.")
     ;
@@ -365,6 +366,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("only_ctx_words")) {
       insert_all_dict = false;
+    }
+
+    if (vm.count("concept_graph")) {
+	  glVars::kb::onlyC = true;
     }
 
     if (vm.count("nopos")) {

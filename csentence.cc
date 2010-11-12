@@ -677,7 +677,7 @@ namespace ukb {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
-	int aux = cs_pv_vector_w(cs, pv, cs.end());
+	int aux = glVars::kb::onlyC ? cs_pv_vector_w_onlyC(cs, pv, cs.end()) : cs_pv_vector_w(cs, pv, cs.end());
 	if (!aux) return false;
 	// Execute PageRank
 	kb.pageRank_ppv(pv, res);
@@ -720,7 +720,7 @@ namespace ukb {
 	  // Target word must be distinguished.
 	  if(!cw_it->is_distinguished()) continue;
 
-	  int aux = cs_pv_vector_w(cs, pv, cw_it);
+	  int aux = glVars::kb::onlyC ? cs_pv_vector_w_onlyC(cs, pv, cw_it) : cs_pv_vector_w(cs, pv, cw_it);
 	  // Execute PageRank
 	  if (aux) {
 		kb.pageRank_ppv(pv, ranks);
