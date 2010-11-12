@@ -566,6 +566,107 @@ namespace ukb {
   }
 
 
+  // Update pv of synsets pointed by CWord of token type
+
+  size_t cwtoken_pv_vector_w(const vector<pair<Kb_vertex_t, float> > & m_V,
+							 float normalized_cw_w,
+							 float poslightw_factor,
+							 vector<float> & pv) {
+
+	// cw is the cword node
+	// For each v pointed in V, (i.e., cw->v should be in the graph), init the PV with:
+	//
+	// PV[v] += normalized_cw_w * e[cw->v] / Sum_{cw->u}(e[cw->u])
+	//
+	// Note:
+	//
+	// if poslightw is activated (due tu a bug it was the default up to commit
+	//  656fdc38bcdc csentence.cc: 'light' wpos instead of word in ppv) the
+	//  equation is multiplied by the poslightw_factor, which is:
+	//
+	//           1.0 / num_of_different_pos_of_cw
+
+	// Sum edge weights
+
+	size_t inserted = 0;
+	float EW = 0.0;
+	for(vector<pair<Kb_vertex_t, float> >::const_iterator it = m_V.begin(), end = m_V.end();
+		it != end; ++it) {
+	  EW += it->second;
+	}
+	// Uppdate PV
+	float factor = poslightw_factor * normalized_cw_w / EW;
+	for(vector<pair<Kb_vertex_t, float> >::const_iterator it = m_V.begin(), end = m_V.end();
+		it != end; ++it) {
+	  inserted++;
+	  pv[it->first] += it->second * factor;
+	}
+	return inserted;
+  }
+
+
+  // Get personalization vector giving an csentence
+
+  int cs_pv_vector_w_onlyC(const CSentence & cs,
+						   vector<float> & pv,
+						   CSentence::const_iterator exclude_word_it) {
+
+	Kb & kb = ukb::Kb::instance();
+
+	if (kb.size() == pv.size()) {
+	  std::fill(pv.begin(), pv.end(), 0.0);
+	} else {
+	  vector<float> (kb.size(), 0.0).swap(pv);
+	}
+
+	Kb_vertex_t u;
+	int inserted_i = 0;
+
+	float CW_w = 0.0;
+
+	vector<const CWord *> cs_uniq;
+	set<string> S;
+	bool aux;
+
+	if(exclude_word_it != cs.end()) {
+	  S.insert(exclude_word_it->wpos());
+	}
+
+	// Remove duplicated tokens and get words weight normalization factor
+	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
+		it != end; ++it) {
+	  if (it == exclude_word_it) continue;
+	  if (!it->lightw()) continue;
+	  set<string>::iterator aux_set;
+	  tie(aux_set, aux) = S.insert(it->wpos());
+	  if (!aux) continue; // already inserted
+	  cs_uniq.push_back(&(*it));
+	  CW_w += it->get_weight();
+	}
+	float CW_w_factor = 1.0f / CW_w;
+
+	// put pv to the synsets of words
+	for(vector<const CWord *>::const_iterator it = cs_uniq.begin(), end = cs_uniq.end();
+		it != end; ++it) {
+	  const CWord & cw = **it;
+	  float cw_w = cw.get_weight() * CW_w_factor;
+	  if (cw.type() == CWord::cwsynset) {
+		tie(u, aux) = kb.get_vertex_by_name(cw.word(), Kb::is_concept);
+		assert(aux);
+		pv[u] += cw_w;
+		inserted_i++;
+	  } else {
+		float poslightw_factor = glVars::prank::lightw ? 1.0 / (float) cw.dist_pos() : 1.0;
+		inserted_i += cwtoken_pv_vector_w(cw.V_vector(),
+										  cw_w,
+										  poslightw_factor,
+										  pv);
+	  }
+	}
+	return inserted_i;
+  }
+
+
   // Given a CSentence apply Personalized PageRank and obtain obtain it's
   // Personalized PageRank Vector (PPV)
   //
@@ -597,6 +698,7 @@ namespace ukb {
 	const vector<float> & m_va;
 	const vector<float> & m_vb;
   };
+
 
   // given a word,
   // 1. put a ppv in the synsets of the rest of words.
