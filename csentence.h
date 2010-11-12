@@ -70,21 +70,26 @@ namespace ukb {
 	bool is_synset() const { return m_type == cwsynset; }
 	bool lightw() const { return !(m_type == cwdistnolight); }
 
+	cwtype type() const { return m_type; }
+
 	void empty_synsets() {
 	  std::vector<std::string>().swap(m_syns);
+	  std::vector<std::pair<Kb_vertex_t, float> >().swap(m_V);
 	  std::vector<float>().swap(m_ranks);
 	  m_disamb = false;
 	}
 	std::vector<std::string> & get_syns_vector() { return m_syns; }
-
+	const std::vector<std::pair<Kb_vertex_t, float> > & V_vector() const { return m_V; }
 
 	template <typename Map>
 	void rank_synsets(Map rankMap, bool use_prior) {
 	  size_t n = m_syns.size();
 	  size_t i;
 	  if (!n) return; // No synsets
-	  for(i = 0; i != n; ++i)
-		m_ranks[i] = rankMap[m_V[i]];
+	  for(i = 0; i != n; ++i) {
+		m_ranks[i] = rankMap[m_V[i].first];
+		if (use_prior) m_ranks[i] *= m_V[i].second;
+	  }
 	}
 
 	// Used in disambGraph
@@ -111,7 +116,7 @@ namespace ukb {
 
   private:
 
-	bool tie_to_kb();
+	bool link_dict_concepts();
 	void read_from_stream (std::ifstream & is);
 	std::ofstream & write_to_stream(std::ofstream & o) const;
 	void shuffle_synsets();
@@ -122,7 +127,7 @@ namespace ukb {
 	size_t m_distpos; // N. of different pos for that word in the dictionary
 	float m_weight;     // Initial weight for PPV
 	std::vector<std::string> m_syns;
-	std::vector<Kb_vertex_t> m_V;
+	std::vector<std::pair<Kb_vertex_t, float> > m_V;
 	std::vector<float> m_ranks;
 	cwtype m_type;
 	bool m_disamb;      // If word is disambiguated, that is, if the synset

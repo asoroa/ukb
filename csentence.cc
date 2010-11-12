@@ -37,7 +37,7 @@ namespace ukb {
 	return res;
   }
 
-  bool CWord::tie_to_kb() {
+  bool CWord::link_dict_concepts() {
 
 	Kb & kb = ukb::Kb::instance();
 	bool existP;
@@ -80,30 +80,11 @@ namespace ukb {
 	// Update ranks
 	vector<float>(m_syns.size(), 0.0).swap(m_ranks);
 
-	// Update KB with CWord
-	// Kb_vertex_t word_v;
-	// Kb_vertex_t wpos_v;
-	// Kb_vertex_t w_v;
-
-	// Insert word in KB
-
-	// word_v = kb.find_or_insert_word(word());
-	// w_v = word_v;
-	// // If pos then insert wpos and link to word
-	// if(m_pos) {
-	//   wpos_v = kb.find_or_insert_word(wpos());
-	//   kb.find_or_insert_edge(word_v, wpos_v, 1.0);
-	//   w_v = wpos_v;
-	// }
-
-	// Insert related concepts/synsets
-
+	// Create V vector
 	for(vector<string>::iterator it = m_syns.begin(), end = m_syns.end();
 		it != end; ++it) {
 	  pair<Kb_vertex_t, float> uf = str2kb[*it];
-	  m_V.push_back(uf.first);
-	  // tie word to synsets
-	  //kb.find_or_insert_edge(w_v, uf.first, uf.second);
+	  m_V.push_back(uf);
 	}
 	return true;
   }
@@ -120,13 +101,13 @@ namespace ukb {
 		throw std::runtime_error("CWord concept " + w + " not in KB");
 	  }
 	  m_syns.push_back(w);
-	  m_V.push_back(u);
+	  m_V.push_back(make_pair(u, 1.0f));
 	  m_ranks.push_back(0.0f);
 	  m_distpos = 1;
 	  break;
 	case cwtoken:
 	case cwdist:
-	  tie_to_kb();
+	  link_dict_concepts();
 	  m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
 	  break;
 	default:
@@ -171,7 +152,10 @@ namespace ukb {
 	writeV(o, m_syns);
 	o << string(" \n");
 	o << "m_V: ";
-	writeV(o, m_V);
+	for(vector<pair<Kb_vertex_t, float> >::const_iterator it = m_V.begin(), end = m_V.end();
+		it != end; ++it) {
+	  o << "[" << it->first << ", " << it->second << "], ";
+	}
 	o << string(" \n");
 	o << "m_ranks: ";
 	writeV(o, m_ranks);
