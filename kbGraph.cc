@@ -71,7 +71,7 @@ namespace ukb {
   }
 
   void Kb::create_from_txt(const string & synsFileName,
-							const std::set<std::string> & src_allowed) {
+						   const std::set<std::string> & src_allowed) {
 	if (p_instance) return;
 	Kb *tenp = create();
 
@@ -130,7 +130,7 @@ namespace ukb {
 
 
   bool Kb::bfs (Kb_vertex_t src,
-				 std::vector<Kb_vertex_t> & parents) const {
+				std::vector<Kb_vertex_t> & parents) const {
 
 	size_t m = num_vertices(g);
 	if(parents.size() == m) {
@@ -149,7 +149,7 @@ namespace ukb {
 
 
   bool Kb::dijkstra (Kb_vertex_t src,
-					  std::vector<Kb_vertex_t> & parents) const {
+					 std::vector<Kb_vertex_t> & parents) const {
 
 	size_t m = num_vertices(g);
 	if(parents.size() == m) {
@@ -204,7 +204,7 @@ namespace ukb {
 	  if (existsP) add_e(v_i, u_i); // as this edge is no more traversed.
 	}
 
-     void non_tree_edge(Kb_edge_t e, const KbGraph & g)
+	void non_tree_edge(Kb_edge_t e, const KbGraph & g)
  	{
  	  // cross edge. source is previously stored for sure. target probably
  	  // is, unless max limit was reached
@@ -252,9 +252,9 @@ namespace ukb {
 
 
   void Kb::get_subgraph(const string & src,
-						 vector<string> & V,
-						 vector<vector<string> > & E,
-						 size_t limit) {
+						vector<string> & V,
+						vector<vector<string> > & E,
+						size_t limit) {
 
 	Kb_vertex_t u;
 	bool aux;
@@ -335,7 +335,7 @@ namespace ukb {
   }
 
   Kb_edge_t Kb::find_or_insert_edge(Kb_vertex_t u, Kb_vertex_t v,
-									  float w) {
+									float w) {
 
 	Kb_edge_t e;
 	bool existsP;
@@ -1005,7 +1005,7 @@ namespace ukb {
   // read
 
   Kb_vertex_t read_vertex_from_stream_v1(ifstream & is,
-										  KbGraph & g) {
+										 KbGraph & g) {
 
 	string name;
 
@@ -1017,7 +1017,7 @@ namespace ukb {
   }
 
   Kb_edge_t read_edge_from_stream_v1(ifstream & is,
-									  KbGraph & g) {
+									 KbGraph & g) {
 
 	size_t sIdx;
 	size_t tIdx;
@@ -1040,7 +1040,7 @@ namespace ukb {
   }
 
   Kb_vertex_t read_vertex_from_stream(ifstream & is,
-									   KbGraph & g) {
+									  KbGraph & g) {
 
 	string name;
 	string gloss;
@@ -1054,7 +1054,7 @@ namespace ukb {
   }
 
   Kb_edge_t read_edge_from_stream(ifstream & is,
-								   KbGraph & g) {
+								  KbGraph & g) {
 
 	size_t sIdx;
 	size_t tIdx;
@@ -1085,92 +1085,96 @@ namespace ukb {
 
 	std::map<std::string, int> relMap_aux;     // Obsolete map from relation name to relation id
 
-	coef_status = 0;
-	vector<float>().swap(static_ranks); // empty static rank vector
-	read_atom_from_stream(is, id);
-	if (id == magic_id_v1) {
-
-	  // Backward compatibility with binary v1 format
-
-	  read_set_from_stream(is, relsSource);
-	  read_map_from_stream(is, relMap_aux);
-
-	  read_map_from_stream(is, synsetMap);
-	  read_map_from_stream(is, wordMap);
-	  //read_map_from_stream(is, sourceMap);
-
+	try {
+	  coef_status = 0;
+	  vector<float>().swap(static_ranks); // empty static rank vector
 	  read_atom_from_stream(is, id);
-	  if(id != magic_id_v1) {
-		cerr << "Error: invalid id after reading maps" << endl;
-		exit(-1);
-	  }
+	  if (id == magic_id_v1) {
 
-	  read_atom_from_stream(is, vertex_n);
-	  for(i=0; i<vertex_n; ++i) {
-		read_vertex_from_stream_v1(is, g);
-	  }
+		// Backward compatibility with binary v1 format
 
-	  read_atom_from_stream(is, id);
-	  if(id != magic_id_v1) {
-		cerr << "Error: invalid id after reading vertices" << endl;
-		exit(-1);
-	  }
+		read_set_from_stream(is, relsSource);
+		read_map_from_stream(is, relMap_aux);
 
-	  read_atom_from_stream(is, edge_n);
-	  for(i=0; i<edge_n; ++i) {
-		read_edge_from_stream_v1(is, g);
-	  }
+		read_map_from_stream(is, synsetMap);
+		read_map_from_stream(is, wordMap);
+		//read_map_from_stream(is, sourceMap);
 
-	  read_atom_from_stream(is, id);
-	  if(id != magic_id_v1) {
-		cerr << "Error: invalid id after reading edges" << endl;
-		exit(-1);
-	  }
-	  read_vector_from_stream(is, notes);
-	  if(id != magic_id_v1) {
-		cerr << "Error: invalid id (filename is a kbGraph?)" << endl;
-		exit(-1);
-	  }
-	} else {
-	  // Normal case
-	  read_set_from_stream(is, relsSource);
-	  read_vector_from_stream(is, rtypes);
+		read_atom_from_stream(is, id);
+		if(id != magic_id_v1) {
+		  cerr << "Error: invalid id after reading maps" << endl;
+		  exit(-1);
+		}
 
-	  read_map_from_stream(is, synsetMap);
-	  read_map_from_stream(is, wordMap);
+		read_atom_from_stream(is, vertex_n);
+		for(i=0; i<vertex_n; ++i) {
+		  read_vertex_from_stream_v1(is, g);
+		}
 
-	  read_atom_from_stream(is, id);
-	  if(id != magic_id) {
-		cerr << "Error: invalid id after reading maps" << endl;
-		exit(-1);
-	  }
+		read_atom_from_stream(is, id);
+		if(id != magic_id_v1) {
+		  cerr << "Error: invalid id after reading vertices" << endl;
+		  exit(-1);
+		}
 
-	  read_atom_from_stream(is, vertex_n);
-	  for(i=0; i<vertex_n; ++i) {
-		read_vertex_from_stream(is, g);
-	  }
+		read_atom_from_stream(is, edge_n);
+		for(i=0; i<edge_n; ++i) {
+		  read_edge_from_stream_v1(is, g);
+		}
 
-	  read_atom_from_stream(is, id);
-	  if(id != magic_id) {
-		cerr << "Error: invalid id after reading vertices" << endl;
-		exit(-1);
-	  }
+		read_atom_from_stream(is, id);
+		if(id != magic_id_v1) {
+		  cerr << "Error: invalid id after reading edges" << endl;
+		  exit(-1);
+		}
+		read_vector_from_stream(is, notes);
+		if(id != magic_id_v1) {
+		  cerr << "Error: invalid id (filename is a kbGraph?)" << endl;
+		  exit(-1);
+		}
+	  } else {
+		// Normal case
+		read_set_from_stream(is, relsSource);
+		read_vector_from_stream(is, rtypes);
 
-	  read_atom_from_stream(is, edge_n);
-	  for(i=0; i<edge_n; ++i) {
-		read_edge_from_stream(is, g);
-	  }
+		read_map_from_stream(is, synsetMap);
+		read_map_from_stream(is, wordMap);
 
-	  read_atom_from_stream(is, id);
-	  if(id != magic_id) {
-		cerr << "Error: invalid id after reading edges" << endl;
-		exit(-1);
+		read_atom_from_stream(is, id);
+		if(id != magic_id) {
+		  cerr << "Error: invalid id after reading maps" << endl;
+		  exit(-1);
+		}
+
+		read_atom_from_stream(is, vertex_n);
+		for(i=0; i<vertex_n; ++i) {
+		  read_vertex_from_stream(is, g);
+		}
+
+		read_atom_from_stream(is, id);
+		if(id != magic_id) {
+		  cerr << "Error: invalid id after reading vertices" << endl;
+		  exit(-1);
+		}
+
+		read_atom_from_stream(is, edge_n);
+		for(i=0; i<edge_n; ++i) {
+		  read_edge_from_stream(is, g);
+		}
+
+		read_atom_from_stream(is, id);
+		if(id != magic_id) {
+		  cerr << "Error: invalid id after reading edges" << endl;
+		  exit(-1);
+		}
+		read_vector_from_stream(is, notes);
+		if(id != magic_id) {
+		  cerr << "Error: invalid id (filename is a kbGraph?)" << endl;
+		  exit(-1);
+		}
 	  }
-	  read_vector_from_stream(is, notes);
-	  if(id != magic_id) {
-		cerr << "Error: invalid id (filename is a kbGraph?)" << endl;
-		exit(-1);
-	  }
+	} catch (...) {
+	  throw runtime_error("Error when reading serialized graph (same platform used to compile the KB?)\n");
 	}
 
 	map<string, Kb_vertex_t>::iterator m_it(wordMap.begin());
