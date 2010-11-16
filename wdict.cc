@@ -93,9 +93,12 @@ namespace ukb {
   }
 
   char xtract_pos_cid(const string & str) {
+	std::string::size_type m = str.length();
 	std::string::size_type idx = str.find_last_of("-");
-	if (idx == string::npos || idx == str.length() - 1)
+	if (idx == string::npos || idx == m - 1)
 	  throw std::runtime_error("Dictionary concept " + str + " has no POS\n");
+	if (m - idx > 2)
+	  throw std::runtime_error("Dictionary concept " + str + " has invalid POS (more than 1 char).\n");
 	return str.at(idx + 1);
   }
 
