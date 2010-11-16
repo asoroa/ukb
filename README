@@ -235,7 +235,7 @@ d: a control number. Mandatory. Can have three values:
 
     i.e., where just the element 'cat' has a 1 in the last field.
 
-   2: The term represents a KB concept instead of a word.For example, such a
+   2: The term represents a KB concept instead of a word. For example, such a
       context is possible:
 
 ctx_01
@@ -245,6 +245,22 @@ man#n#w1#1 kill#v#w2#1 cat#n#w3#0 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
 	    that is, apart of the context words, "08249817-n" and
 	    "00980806-v" concepts of KB are also "activated" with the
 	    specified weight when PageRanking.
+
+   3: The word is not used in PageRank calculation but is disambiguated. This
+   	  special value is useful in some occasions. Suppose that in the dictionary
+   	  there is a word with three concepts attached:
+
+man	  man1-n man2-n man3-n
+
+      and that we include all the concepts in the input context associated with
+      some predefined weights:
+
+ctx_01
+man1#n#c1#2#0.6 man2#n#c2#2#0.3 man3#n#c3#2#0.1 man#n#w1#3 ...
+
+    in this case the last token's field is 3, meaning that we want do
+    disambiguate 'man' but we don't want to activate in PageRank, because all
+    its concepts are already in the context with the desired weights.
 
 w: a weight (optional)
 
@@ -296,25 +312,31 @@ The 'ukb_wsd' application has several options:
 General options:
 
   -K [ --kb_binfile ] arg
-       Binary file of KB previously created by the 'compile_kb'
-       application. Default is kb_wnet.bin.
+
+        Binary file of KB previously created by the 'compile_kb'
+        application. Default is kb_wnet.bin.
 
   -D [ --dict_file ] arg
-       Dictionary text file. Default is dict.txt
 
-  --dict_weight
-       If the dictionary has weights attached to the relations, use
-       them when pageRanking. This option also sets --prank_weight.
+        Dictionary text file. Default is dict.txt
 
   -C [ --only_ctx_words ]
 
-       Create nodes in the graph only for the words appearing in input contexts
-       (default is insert all dictionary words).
+        Create nodes in the graph only for the words appearing in input contexts
+        (default is insert all dictionary words).
 
   --nopos
-	    Do not filter by POS when linking context words to the concepts
-	    they are attached to. When --nopos is set, the concept id's of
-	    the graph can have any format, excluding the '#' character.
+
+	    Do not filter by POS when linking context words to the concepts they are
+	    attached to. When --nopos is set, the concept id's of the graph can have
+	    any format, excluding the '#' character.
+
+  --poslightw
+
+	    Activate ('light') word instead of wpos when calculating the
+	    personalization vector in prank. Due to a bug in UKB (up to version
+	    v0.1.4) this was the default behavior. This option has no sense if
+	    --nopos is set.
 
 You must also choose one wsd method. Currently there are four methods,
 namely, 'ppr', 'ppr_w2w', 'static' and 'dgraph'. All methods perform some
@@ -322,20 +344,24 @@ ranking on the concepts of the KB; disambiguation is then choosing the
 concept associated to a word with maximum rank.
 
   --ppr
-            Given a text input file, disambiguate context using Personalized
-            PageRank method. This is the default method.
+
+        Given a text input file, disambiguate context using Personalized
+        PageRank method. This is the default method.
 
   --ppr_w2w
-            Given a text input file, disambiguate context using Personalized
-            PageRank method word by word.
+
+        Given a text input file, disambiguate context using Personalized
+        PageRank method word by word.
 
   --static
-            Given a text input file, disambiguate context using static
-            PageRank over kb.
+
+        Given a text input file, disambiguate context using static PageRank over
+        kb.
 
   --dis_dgraph
-            Given a text input file, disambiguate context using
-            disambiguation graph mehod.
+
+        Given a text input file, disambiguate context using disambiguation graph
+        mehod.
 
 
 The first two methods ('ppr' and 'ppr_w2w'), apply the so called
@@ -358,13 +384,26 @@ of a given context. It does so by calculating shortest paths among the
 concepts involved on a particular context. Then, it applies standard
 PageRank over the subgraph.
 
+More WSD options:
+
+ --nostatic            
+
+        Substract static ppv to final ranks.
+
+ --noprior             
+
+        Don't multiply priors to target word synsets if --ppr_w2w and
+        --dict_weight are selected.
+
 PageRank general options:
 
   -w [ --with_weight ]
+
         Use weigths in PageRank calculation. Serialized graph edges must have
 	    some weight.
 
   --prank_iter arg
+
         Number of iterations in PageRank. Default is 30.
 
   --prank_threshold arg
@@ -385,14 +424,27 @@ causes the algoritm to stop when the iterations are done.
         Set the damping factor of PageRank equation. Default is 0.85
 
 
+Dictionary options:
+
+  --dict_weight
+
+        If the dictionary has weights attached to the relations, use them when
+        pageRanking. This option also sets --prank_weight.
+
+  --dict_weight_smooth arg 
+
+        Smoothing factor to be added to every dictionary concept weight. Default
+        is 1.
+
+
 Output options:
 
   --allranks
-        Write key file with all synsets associated with ranks. The
-	    system will return all the concepts attached to that word in the
-	    KB, along with a weight, ordered in decreasing order. For
-	    example in the previous example, it would produce the following
-	    example:
+
+        Write key file with all synsets associated with ranks. The system will
+	    return all the concepts attached to that word in the KB, along with a
+	    weight, ordered in decreasing order. For example in the previous
+	    example, it would produce the following example:
 
 % ./ukb_wsd --ppr --allranks -K wn17.bin -D wn17_dict.txt context.txt
 !! ./ukb_wsd --ppr --allranks -K wn17.bin -D wn17_dict.txt context.txt
@@ -402,9 +454,11 @@ ctx_01 w3  01738104-n/0.24285 02542955-n/0.129899 ... !! cat
 ctx_01 w4  02970821-n/0.16454 06073651-n/0.110485 ... !! hammer
 
   -v [ --verbose ]
+
         Be verbose.
 
   --no-monosemous
+
         Don't output anything for monosemous words.
 
   --ties
@@ -419,11 +473,10 @@ ctx_01 w4  02970821-n/0.16454 06073651-n/0.110485 ... !! hammer
 5. ukb_ppv
 **********
 
-The 'ukb_ppv' application outputs the ranks of the KB concepts (the
-so-called Personalized PageRank Vector, PPV) after applying a Personalized
-PageRank over it, given an input context. Given the previously
-"context.txt", the "wn17.bin" KB and "wn17_dict.txt" dictionary, we can
-extract the PPV by executing:
+The 'ukb_ppv' application outputs the ranks of the KB concepts (the so-called
+Personalized PageRank Vector, PPV) after applying a Personalized PageRank over
+it, given an input context. Given the previously "context.txt", the "wn17.bin"
+KB and "wn17_dict.txt" dictionary, we can extract the PPV by executing:
 
 % ./ukb_ppv -K wn17.bin -D wn17_dict.txt -O /tmp context.txt
 
@@ -439,22 +492,22 @@ General options:
 
   -K [ --kb_binfile ] arg
 
-       Binary file of KB previously created by the 'compile_kb'
-       application. Default is kb_wnet.bin.
+        Binary file of KB previously created by the 'compile_kb'
+        application. Default is kb_wnet.bin.
 
   -C [ --only_ctx_words ]
 
-       Create nodes in the graph only for the words appearing in input contexts
-       (default is insert all dictionary words).
+        Create nodes in the graph only for the words appearing in input contexts
+        (default is insert all dictionary words).
 
   -D [ --dict_file ] arg
 
-       Dictionary text file. Default is dict.txt
+        Dictionary text file. Default is dict.txt
 
   --dict_weight
 
-       If the dictionary has weights attached to the relations, use
-       them when pageRanking. This option also sets --prank_weight.
+        If the dictionary has weights attached to the relations, use them when
+        pageRanking. This option also sets --prank_weight.
 
   -O [ --out_dir ] arg
 
@@ -463,28 +516,45 @@ General options:
 
   --nopos
 
-       Same as ukb_wsd --nopos option.
+        Same as ukb_wsd --nopos option.
+
+  --poslightw
+
+        Same as ukb_wsd --poslightw option.
+
 
   -S [ --static ]
 
-            Compute static PageRank ppv. Only -K option is needed. Output to
-            STDOUT.
+        Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.
+
+  --nostatic
+
+        Same as ukb_wsd --nostatic option.
 
   -v [ --verbose ]
-            Be verbose.
+
+        Be verbose.
 
 PageRank general options:
 
   Same as ukb_wsd "PageRank general options"
 
+Dictionary options:
+
+  Same as ukb_wsd "Dictionary options"
+
 Output options:
 
   --only_words
+
         Output only (normalized) PPVs for dictionary words.
 
   --only_synsets
+
         Output only (normalized) PPVs for KB concepts.
+
   --nozero
+
         Do not return concepts with zero rank.
 
 ************************************************************************
