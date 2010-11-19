@@ -515,7 +515,8 @@ namespace ukb {
 
 
   // Get personalization vector giving an csentence
-  // 'light' wpos
+  // Precondition: word, wpos and concepts are in the graph
+  // 'light' wpos (or pos if glVars::prank::poslightw is set)
 
   int cs_pv_vector_w(const CSentence & cs,
 					 vector<float> & pv,
@@ -570,7 +571,6 @@ namespace ukb {
 
   size_t cwtoken_pv_vector_w(const vector<pair<Kb_vertex_t, float> > & m_V,
 							 float normalized_cw_w,
-							 float poslightw_factor,
 							 vector<float> & pv) {
 
 	// cw is the cword node
@@ -580,11 +580,7 @@ namespace ukb {
 	//
 	// Note:
 	//
-	// if poslightw is activated (due tu a bug it was the default up to commit
-	//  656fdc38bcdc csentence.cc: 'light' wpos instead of word in ppv) the
-	//  equation is multiplied by the poslightw_factor, which is:
-	//
-	//           1.0 / num_of_different_pos_of_cw
+	// Can not be used when glVars::prank::poslightw is set
 
 	// Sum edge weights
 
@@ -595,7 +591,7 @@ namespace ukb {
 	  EW += it->second;
 	}
 	// Uppdate PV
-	float factor = poslightw_factor * normalized_cw_w / EW;
+	float factor = normalized_cw_w / EW;
 	for(vector<pair<Kb_vertex_t, float> >::const_iterator it = m_V.begin(), end = m_V.end();
 		it != end; ++it) {
 	  inserted++;
@@ -656,10 +652,8 @@ namespace ukb {
 		pv[u] += cw_w;
 		inserted_i++;
 	  } else {
-		float poslightw_factor = glVars::prank::lightw ? 1.0 / (float) cw.dist_pos() : 1.0;
 		inserted_i += cwtoken_pv_vector_w(cw.V_vector(),
 										  cw_w,
-										  poslightw_factor,
 										  pv);
 	  }
 	}
