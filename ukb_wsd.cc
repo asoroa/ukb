@@ -517,6 +517,11 @@ int main(int argc, char *argv[]) {
 	goto END;
   }
 
+  if (glVars::input::filter_pos && glVars::kb::onlyC && glVars::prank::lightw) {
+	cerr << "Conflicting options: you can not set both --concept_graph and --poslightw\n";
+	exit(-1);
+  }
+
   Kb::create_from_binfile(kb_binfile);
   cout << cmdline << "\n";
 
