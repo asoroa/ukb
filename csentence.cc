@@ -71,7 +71,6 @@ namespace ukb {
 	}
 
 	if (m_syns.size() == 0) return false;
-	m_distpos = entries.dist_pos();
 
 	// Shuffle synsets string vector
 	boost::random_number_generator<boost::mt19937, long int> rand_dist(glVars::rand_generator);
@@ -103,7 +102,6 @@ namespace ukb {
 	  m_syns.push_back(w);
 	  m_V.push_back(make_pair(u, 1.0f));
 	  m_ranks.push_back(0.0f);
-	  m_distpos = 1;
 	  break;
 	case cwtoken:
 	case cwdist:

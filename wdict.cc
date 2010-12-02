@@ -158,7 +158,6 @@ namespace ukb {
 
 		  if(glVars::input::filter_pos) {
 			char pos_c = xtract_pos_cid(concept_id);
-			item.m_distpos.insert(pos_c);
 			item.m_thepos.push_back(pos_c);
 		  }
 
@@ -248,10 +247,4 @@ namespace ukb {
 	if (!glVars::dict::use_weight) return 1.0;
 	return _item.syns_count[i];
   }
-
-  size_t WDict_entries::dist_pos() const {
-	if (!glVars::input::filter_pos) return 1;
-	return _item.m_distpos.size();
-  }
-
 }

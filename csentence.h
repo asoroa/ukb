@@ -59,7 +59,6 @@ namespace ukb {
 
 	std::string id() const {return m_id;}
 	char get_pos() const {return m_pos;}
-	size_t dist_pos() const {return m_distpos; }
 
 	float get_weight() const { return m_weight;}
 	void set_weight(float w) { m_weight = w;}
@@ -124,7 +123,6 @@ namespace ukb {
 	std::string w;
 	std::string m_id;
 	char m_pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
-	size_t m_distpos; // N. of different pos for that word in the dictionary
 	float m_weight;     // Initial weight for PPV
 	std::vector<std::string> m_syns;
 	std::vector<std::pair<Kb_vertex_t, float> > m_V;

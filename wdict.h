@@ -20,7 +20,6 @@ namespace ukb {
 	std::vector<std::string> wsyns;
 	std::vector<float> syns_count;
 	std::vector<char> m_thepos;
-	std::set<char> m_distpos;
 
 	WDict_item_t() {}
 
