@@ -17,8 +17,8 @@ namespace ukb {
   // type of dict items
 
   struct WDict_item_t {
-	std::vector<std::string> wsyns;
-	std::vector<float> syns_count;
+	std::vector<std::string> m_wsyns;
+	std::vector<float> m_counts;
 	std::vector<char> m_thepos;
 
 	WDict_item_t() {}
@@ -35,8 +35,8 @@ namespace ukb {
 	WDict_entries(const WDict_item_t & item) : _item(item) {}
 	~WDict_entries() {}
 
-	size_t size() const { return _item.wsyns.size(); }
-	const std::string & get_entry(size_t i) const { return _item.wsyns[i]; }
+	size_t size() const { return _item.m_wsyns.size(); }
+	const std::string & get_entry(size_t i) const { return _item.m_wsyns[i]; }
 	float get_freq(size_t i) const;
 	char get_pos(size_t i) const;
 	size_t dist_pos() const;

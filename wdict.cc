@@ -23,10 +23,10 @@ namespace ukb {
 
   std::ostream & operator<<(std::ostream & o, const WDict_item_t & item) {
 	o << "S: ";
-	writeV(o, item.wsyns);
+	writeV(o, item.m_wsyns);
 	o << "\n";
 	o << "F: ";
-	writeV(o, item.syns_count);
+	writeV(o, item.m_counts);
 	o << endl;
 	return o;
   };
@@ -152,7 +152,7 @@ namespace ukb {
 		  float weight;
 		  string concept_id;
 		  tie(concept_id, weight) = wdict_parse_weight(*fields_it);
-		  item.wsyns.push_back(concept_id);
+		  item.m_wsyns.push_back(concept_id);
 
 		  // POS stuff
 
@@ -167,7 +167,7 @@ namespace ukb {
 			weight += glVars::dict::weight_smoothfactor;
 			if (weight == 0.0)
 			  throw std::runtime_error ("Error in entry " + fields[0] + ": " + *fields_it + " word has zero weight.");
-			item.syns_count.push_back(weight);
+			item.m_counts.push_back(weight);
 		  }
 		}
 	  }
@@ -198,7 +198,7 @@ namespace ukb {
 	vector<string>::const_iterator null_it;
 	wdicts_t::const_iterator map_value_it = m_wdicts.find(&word);
 	if (map_value_it == m_wdicts.end()) return make_pair(null_it, null_it); // null
-	return make_pair(map_value_it->second.wsyns.begin(),map_value_it->second.wsyns.end());
+	return make_pair(map_value_it->second.m_wsyns.begin(),map_value_it->second.m_wsyns.end());
   }
 
 
@@ -207,7 +207,7 @@ namespace ukb {
 	vector<float>::const_iterator null_it;
 	wdicts_t::const_iterator map_value_it = m_wdicts.find(&word);
 	if (map_value_it == m_wdicts.end()) return make_pair(null_it, null_it); // null
-	return make_pair(map_value_it->second.syns_count.begin(),map_value_it->second.syns_count.end());
+	return make_pair(map_value_it->second.m_counts.begin(),map_value_it->second.m_counts.end());
   };
 
 
@@ -220,13 +220,13 @@ namespace ukb {
 	for(;m_it != m_end; ++m_it) {
 	  const WDict_item_t & item = m_it->second;
 
-	  assert(item.wsyns.size() == item.syns_count.size());
-	  size_t m = item.wsyns.size();
+	  assert(item.m_wsyns.size() == item.m_counts.size());
+	  size_t m = item.m_wsyns.size();
 	  for(size_t i = 0; i != m; ++i) {
 		bool insertedP;
 		map<string, size_t>::iterator map_it;
-		size_t synset_n = lexical_cast<size_t>(item.syns_count[i]);
-		tie(map_it, insertedP) = res.insert(make_pair(item.wsyns[i], synset_n));
+		size_t synset_n = lexical_cast<size_t>(item.m_counts[i]);
+		tie(map_it, insertedP) = res.insert(make_pair(item.m_wsyns[i], synset_n));
 		if(!insertedP) {
 		  map_it->second += synset_n;
 		}
@@ -245,6 +245,6 @@ namespace ukb {
 
   float WDict_entries::get_freq(size_t i) const {
 	if (!glVars::dict::use_weight) return 1.0;
-	return _item.syns_count[i];
+	return _item.m_counts[i];
   }
 }
