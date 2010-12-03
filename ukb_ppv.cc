@@ -4,6 +4,7 @@
 #include "fileElem.h"
 #include "kbGraph.h"
 #include "disambGraph.h"
+#include "wdict.h"
 
 #include <string>
 #include <iostream>
@@ -35,6 +36,7 @@ static int filter_nodes = 0; // 0 -> no filter
 
 static bool insert_all_dict = true;
 static bool output_control_line = false;
+static bool output_variants_ppv = false;
 static string cmdline("!! -v ");
 
 // - sort all concepts according to their ppv weight, then scan the
@@ -199,7 +201,11 @@ void compute_sentence_vectors(string & fullname_in,
 		fo << cmdline << "\n";
 	  for(size_t i = 0; i < outranks.size(); ++i) {
 		if (nozero && outranks [i] == 0.0) continue;
-		fo << vnames[i] << "\t" << outranks[i] << "\n";
+		fo << vnames[i] << "\t" << outranks[i];
+		if (output_variants_ppv) {
+		  fo << "\t" << WDict::instance().variant(vnames[i]);
+		}
+		fo << "\n";
 	  }
       cs = CSentence();
     }
@@ -225,7 +231,11 @@ void compute_static_ppv() {
   if (output_control_line)
 	cout << cmdline << "\n";
   for(size_t i = 0; i < outranks.size(); ++i) {
-	cout << vnames[i] << "\t" << outranks[i] << "\n";
+	cout << vnames[i] << "\t" << outranks[i];
+	if (output_variants_ppv) {
+	  cout << "\t" << WDict::instance().variant(vnames[i]);
+	}
+	cout << "\n";
   }
 
 }
@@ -295,6 +305,7 @@ int main(int argc, char *argv[]) {
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
     ("trunc_ppv", value<float>(), "Truncate PPV threshold (a la gabrilovich). If arg > 1, return top arg nodes.")
     ("nozero", "Do not return concepts with zero rank.")
+    ("variants,r", "Write also concept variants in PPV")
     ("control_line,l", "First line in PPV files is control")
     ;
 
@@ -367,6 +378,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("only_synsets")) {
       filter_nodes = 2;
+    }
+
+    if (vm.count("variants")) {
+	  output_variants_ppv = true;
     }
 
     if (vm.count("control_line")) {
