@@ -209,6 +209,39 @@ namespace ukb {
 	return inst;
   }
 
+  void WDict::create_variant_map() {
+
+	for(wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
+		it != end; ++it) {
+	  const string & hw = *(it->first);
+	  const WDict_item_t & elem(it->second);
+	  for(size_t i = 0, m = elem.m_wsyns.size(); i < m; ++i) {
+
+		string hw_sense = hw + "#" + lexical_cast<string>(i + 1);
+
+		map<string, string>::iterator celem_it = m_variants.insert(make_pair(elem.m_wsyns[i], string())).first;
+		string & variant_str = celem_it->second;
+		string comma = variant_str.size() ? string(", ") : string();
+		variant_str.append(comma);
+		variant_str.append(hw_sense);
+	  }
+	}
+  }
+
+  std::string WDict::variant(std::string & concept_id) const {
+
+	static string res("Not in Dictionary");
+	if (m_variants.size() == 0) {
+	  // Remove const'ness
+	  WDict & me = const_cast<WDict &>(*this);
+	  me.create_variant_map();
+	}
+	map<string, string>::const_iterator it = m_variants.find(concept_id);
+	if (it == m_variants.end())
+	  return res;
+	return it->second;
+  }
+
   WDict_entries WDict::get_entries(const std::string & word) const {
 	static WDict_item_t null_entry;
 	wdicts_t::const_iterator map_value_it = m_wdicts.find(&word);

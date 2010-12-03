@@ -52,7 +52,6 @@ namespace ukb {
 
 	WDict_entries get_entries(const std::string & word) const;
 
-
 	// old stuff
 	std::pair<std::vector<std::string>::const_iterator, std::vector<std::string>::const_iterator>
 	get_wsyns(const std::string & word) const;
@@ -64,6 +63,8 @@ namespace ukb {
 
 	const std::vector<std::string> & get_wordlist() const { return m_words; }
 
+	std::string variant(std::string &concept_id) const;
+
   private:
 
 	WDict();
@@ -71,6 +72,8 @@ namespace ukb {
 	WDict & operator=(const WDict &);
 
 	void read_wdict_file(const std::string & fname);
+
+	void create_variant_map();
 
   public:
 	// functor for comparing keys
@@ -86,6 +89,7 @@ namespace ukb {
   private:
 	wdicts_t m_wdicts;
 	std::vector<std::string> m_words;
+	std::map<std::string, std::string> m_variants;
   };
 }
 #endif
