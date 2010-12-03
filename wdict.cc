@@ -123,6 +123,9 @@ namespace ukb {
 	bool insertedP;
 	int words_I = 0;
 
+	typedef map<string, float> ccache_map_t;   // conceptId -> weight
+	map<string, ccache_map_t> concept_cache;
+
 	try {
 	  while(read_line_noblank(fh, line, line_number)) {
 
@@ -147,16 +150,28 @@ namespace ukb {
 
 		WDict_item_t & item = map_value_it->second;
 
+		// Map to track which concepts are already stored for this headword
+		map<string, ccache_map_t>::iterator cache_map_it;
+		cache_map_it = concept_cache.insert(make_pair(fields[0], ccache_map_t())).first;
+		ccache_map_t & ccache = cache_map_it->second;
+
 		for(; fields_it != fields_end; ++fields_it) {
 
 		  float weight;
 		  string concept_id;
 		  tie(concept_id, weight) = wdict_parse_weight(*fields_it);
-		  item.m_wsyns.push_back(concept_id);
+
+		  // See if concept was already there
+		  ccache_map_t::iterator cache_it = ccache.find(concept_id);
+		  bool new_concept = (cache_it == ccache.end());
+
+		  if (new_concept) {
+			item.m_wsyns.push_back(concept_id);
+		  }
 
 		  // POS stuff
 
-		  if(glVars::input::filter_pos) {
+		  if(new_concept && glVars::input::filter_pos) {
 			char pos_c = xtract_pos_cid(concept_id);
 			item.m_thepos.push_back(pos_c);
 		  }
@@ -167,7 +182,16 @@ namespace ukb {
 			weight += glVars::dict::weight_smoothfactor;
 			if (weight == 0.0)
 			  throw std::runtime_error ("Error in entry " + fields[0] + ": " + *fields_it + " word has zero weight.");
-			item.m_counts.push_back(weight);
+			if (new_concept) {
+			  item.m_counts.push_back(weight);
+			} else {
+			  // If not a new concept, see if previous had the same weight
+			  if (weight != cache_it->second)
+				cerr << "Error in entry " + fields[0] + ": " + concept_id + " appears twice with different weights. Skipping.\n";
+			}
+		  }
+		  if (new_concept) {
+			ccache.insert(make_pair(concept_id, weight));
 		  }
 		}
 	  }
