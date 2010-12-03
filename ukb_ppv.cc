@@ -34,6 +34,8 @@ static int filter_nodes = 0; // 0 -> no filter
                              // 2 -> only synsets
 
 static bool insert_all_dict = true;
+static bool output_control_line = false;
+static string cmdline("!! -v ");
 
 // - sort all concepts according to their ppv weight, then scan the
 // resulting sequence of concetps with a sliding window of length 100,
@@ -193,6 +195,8 @@ void compute_sentence_vectors(string & fullname_in,
 		}
 	  }
 
+	  if (output_control_line)
+		fo << cmdline << "\n";
 	  for(size_t i = 0; i < outranks.size(); ++i) {
 		if (nozero && outranks [i] == 0.0) continue;
 		fo << vnames[i] << "\t" << outranks[i] << "\n";
@@ -218,6 +222,8 @@ void compute_static_ppv() {
 
   Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, 2);
 
+  if (output_control_line)
+	cout << cmdline << "\n";
   for(size_t i = 0; i < outranks.size(); ++i) {
 	cout << vnames[i] << "\t" << outranks[i] << "\n";
   }
@@ -233,6 +239,12 @@ int main(int argc, char *argv[]) {
   float opt_trppv = 0.0f;
 
   string kb_binfile(kb_default_binfile);
+
+  cmdline += glVars::ukb_version;
+  for (int i=0; i < argc; ++i) {
+    cmdline += " ";
+    cmdline += argv[i];
+  }
 
   string out_dir(".");
   string fullname_in;
@@ -283,6 +295,7 @@ int main(int argc, char *argv[]) {
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
     ("trunc_ppv", value<float>(), "Truncate PPV threshold (a la gabrilovich). If arg > 1, return top arg nodes.")
     ("nozero", "Do not return concepts with zero rank.")
+    ("control_line,l", "First line in PPV files is control")
     ;
 
   options_description po_hidden("Hidden");
@@ -354,6 +367,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("only_synsets")) {
       filter_nodes = 2;
+    }
+
+    if (vm.count("control_line")) {
+	  output_control_line = true;
     }
 
     if (vm.count("out_dir")) {
