@@ -72,9 +72,11 @@ namespace ukb {
 
 	if (m_syns.size() == 0) return false;
 
-	// Shuffle synsets string vector
-	boost::random_number_generator<boost::mt19937, long int> rand_dist(glVars::rand_generator);
-	std::random_shuffle(m_syns.begin(), m_syns.end(), rand_dist);
+	if(glVars::dict::use_shuffle) {
+		// Shuffle synsets string vector
+		boost::random_number_generator<boost::mt19937, long int> rand_dist(glVars::rand_generator);
+		std::random_shuffle(m_syns.begin(), m_syns.end(), rand_dist);
+	}
 
 	// Update ranks
 	vector<float>(m_syns.size(), 0.0).swap(m_ranks);
