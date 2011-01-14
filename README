@@ -206,7 +206,8 @@ field, separated by the '#' character. The five fields are:
 
 lemma#pos#id#d#w
 
-lemma: the lemma of the word. Mandatory.
+lemma: the lemma of the word (or the concept if if the word is a concept. See
+	   below). Mandatory.
 
 pos: part of speech. 
 
@@ -215,16 +216,17 @@ pos: part of speech.
       a -> adjective
       r -> adverb
 
-	 The pos field is mandatory unless '--nopos' option is set. If so, the field
-	 must be empty, i.e., something like "man##w1#1".
+	 The pos field is mandatory unless '--nopos' option is set (or the word is a
+	 KB concept. See below). If so, the field must be empty, i.e., something
+	 like "man##w1#1".
 
 id: the word's id. Mandatory.
 
 d: a control number. Mandatory. Can have three values:
 
-   1: disambiguate the the word
+   1: disambiguate the the term
 
-   0: do not disambiguate the word but use it for calculating Personalized
+   0: do not disambiguate the term but use it for calculating Personalized
    	  PageRank. Although all words in the context play a role in the
    	  disambiguation process, sometimes we are just required to disambiguate a
    	  portion of it. For example, if we were required to disambiguate just the
@@ -240,13 +242,14 @@ d: a control number. Mandatory. Can have three values:
 
 ctx_01
 man#n#w1#1 kill#v#w2#1 cat#n#w3#0 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
-00980806-v#v#fake_id#2#0.6
+00980806-v##fake_id#2#0.6
 
-	    that is, apart of the context words, "08249817-n" and
-	    "00980806-v" concepts of KB are also "activated" with the
-	    specified weight when PageRanking.
+	    that is, apart of the context words, "08249817-n" and "00980806-v"
+	    concepts of KB are also "activated" with the specified weight when
+	    PageRanking. Note that POS field has no meaning when dealing with
+	    KB concept terms.
 
-   3: The word is not used in PageRank calculation but is disambiguated. This
+   3: The term is not used in PageRank calculation but is disambiguated. This
    	  special value is useful in some occasions. Suppose that in the dictionary
    	  there is a word with three concepts attached:
 
