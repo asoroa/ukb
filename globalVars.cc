@@ -28,7 +28,6 @@ namespace ukb {
 	boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
 	namespace csentence {
-	  bool pv_no_weight = false;
 	  bool concepts_in = true;
 	  bool disamb_minus_static = false;
 	  bool mult_priors = true;

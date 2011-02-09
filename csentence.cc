@@ -541,6 +541,7 @@ namespace ukb {
 		it != end; ++it) {
 	  if (it == exclude_word_it) continue;
 	  if (!it->lightw()) continue;
+	  float w = it->get_weight();
 	  string wpos = it->wpos();
 	  tie(aux_set, cw_insert_setP) = S.insert(wpos);
 	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
@@ -548,7 +549,6 @@ namespace ukb {
 		Kb_vertex_t u;
 		bool aux;
 		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-		float w = glVars::csentence::pv_no_weight ? 1.0 : it->get_weight();
 		if (aux && w != 0.0) {
 		  pv[u] += w;
 		  K +=w;
