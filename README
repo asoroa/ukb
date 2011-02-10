@@ -218,7 +218,7 @@ pos: part of speech.
 
 	 The pos field is mandatory unless '--nopos' option is set (or the word is a
 	 KB concept. See below). If so, the field must be empty, i.e., something
-	 like "man##w1#1".
+	 like "man##w1#1" or "08249817-n##id#2".
 
 id: the word's id. Mandatory.
 
@@ -241,35 +241,36 @@ d: a control number. Mandatory. Can have three values:
       context is possible:
 
 ctx_01
-man#n#w1#1 kill#v#w2#1 cat#n#w3#0 hammer#n#w4#1 08249817-n#n#fake_id#2#0.5
+man#n#w1#1 kill#v#w2#1 cat#n#w3#0 hammer#n#w4#1 08249817-n##fake_id#2#0.5
 00980806-v##fake_id#2#0.6
 
 	    that is, apart of the context words, "08249817-n" and "00980806-v"
-	    concepts of KB are also "activated" with the specified weight when
-	    PageRanking. Note that POS field has no meaning when dealing with
-	    KB concept terms.
+	    concepts of KB are also activated with the specified weight when
+	    PageRanking. Note that POS field has no meaning when dealing with KB
+	    concept terms.
 
    3: The term is not used in PageRank calculation but is disambiguated. This
-   	  special value is useful in some occasions. Suppose that in the dictionary
-   	  there is a word with three concepts attached:
+   	  special value is useful in some circumstances. Suppose that in the
+      dictionary there is a word with three concepts attached:
 
-man	  man1-n man2-n man3-n
+man   man1-n man2-n man3-n
 
       and that we include all the concepts in the input context associated with
       some predefined weights:
 
 ctx_01
-man1#n#c1#2#0.6 man2#n#c2#2#0.3 man3#n#c3#2#0.1 man#n#w1#3 ...
+man1-n##c1#2#0.6 man2-n##c2#2#0.3 man3-n##c3#2#0.1 man#n#w1#3
 
     in this case the last token's field is 3, meaning that we want do
     disambiguate 'man' but we don't want to activate in PageRank, because all
     its concepts are already in the context with the desired weights.
 
+
 w: a weight (optional)
 
-   the fifth field (if present) has to be a positive number. The number will be
-   used for calculating the personalized vector for this graph node. In absence,
-   the weight is 1.
+      the fifth field (if present) has to be a possitive number. The number will
+      be used for calculating the personalized vector for this graph node. In
+      absence, the weight is 1. 
 
 4. ukb_wsd
 **********
@@ -367,14 +368,14 @@ concept associated to a word with maximum rank.
         mehod.
 
 
-The first two methods ('ppr' and 'ppr_w2w'), apply the so called
-"Personalized PageRank" (PPR) over the whole KB. See [1] for further details
-about the PPR method. In general, ppr_w2w yields to better results, but it
-is slower if you want to disambiguate more than one word in a context (i.e.,
-more than one context word has the fourth field filled with 1). In
-particular, the 'ppr' method performs one PageRank calculation for the whole
-context, whereas the 'ppr_w2w' method performs one PageRank computation for
-every word in the context to be disambiguated.
+The first two methods ('ppr' and 'ppr_w2w'), apply the so called "Personalized
+PageRank" (PPR) over the whole KB. See [1] for further details about the PPR
+method. In general, ppr_w2w yields to better results, but it is slower if you
+want to disambiguate more than one word in a context (i.e., more than one
+context word has the fourth field filled with 1). In particular, the 'ppr'
+method performs one PageRank calculation for the whole context, whereas the
+'ppr_w2w' method performs one PageRank computation for every word in the context
+to be disambiguated.
 
 The 'static' method is a baseline. It just calculates a standard (i.e., not
 personalized) PageRank over the KB and disambiguates all context words

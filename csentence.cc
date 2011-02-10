@@ -90,6 +90,13 @@ namespace ukb {
 
   CWord::CWord(const string & w_, const string & id_, char pos_, cwtype type_, float wght_)
 	: w(w_), m_id(id_), m_pos(pos_), m_weight(wght_), m_type(type_) {
+
+	// cwdistnolight are internally cwdist with zero werght
+	if (m_type == cwdistnolight) {
+	  m_type = cwdist;
+	  m_weight = 0;
+	}
+
 	switch(m_type) {
 	case cwsynset:
 
@@ -383,6 +390,9 @@ namespace ukb {
 		if (ctwp.lemma.size() == 0) continue;
 		char pos(0);
 		CWord::cwtype cw_type = cast_int_cwtype(ctwp.dist);
+		if (cw_type == CWord::cwerror) {
+		  throw std::runtime_error(*it + " fourth field is invalid.");
+		}
 		if (cw_type != CWord::cwsynset && glVars::input::filter_pos) {
 		  if (!ctwp.pos.size()) throw std::runtime_error(*it + " has no POS.");
 		  if (ctwp.pos.size() != 1) throw std::runtime_error(*it + " has invalid POS (more than 1 char).");
@@ -540,8 +550,8 @@ namespace ukb {
 	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
 		it != end; ++it) {
 	  if (it == exclude_word_it) continue;
-	  if (!it->lightw()) continue;
 	  float w = it->get_weight();
+	  if (w == 0.0) continue;
 	  string wpos = it->wpos();
 	  tie(aux_set, cw_insert_setP) = S.insert(wpos);
 	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
@@ -630,12 +640,13 @@ namespace ukb {
 	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
 		it != end; ++it) {
 	  if (it == exclude_word_it) continue;
-	  if (!it->lightw()) continue;
+	  float w = it->get_weight();
+	  if (w == 0.0) continue;
 	  set<string>::iterator aux_set;
 	  tie(aux_set, aux) = S.insert(it->wpos());
 	  if (!aux) continue; // already inserted
 	  cs_uniq.push_back(&(*it));
-	  CW_w += it->get_weight();
+	  CW_w += w;
 	}
 	float CW_w_factor = 1.0f / CW_w;
 
