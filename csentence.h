@@ -19,17 +19,17 @@ namespace ukb {
 
 	// Type of CWords:
 	//
-	// cwtoken: context word. Affects initial PV calculation but will not be disambiguated.
-	// cwdist: target word: Affects initial PV calculation and will be disambiguated.
-	// cwsynset: concept. Affects initial PV calculation and is not diambiguated
-	// cwdistnolight: target 'nopv' word. Does not affect initial PV calculation and will be disambiguated.
+	// cw_ctxword: context word. Affects initial PV calculation but is not disambiguated.
+	// cw_tgtword: target word: Affects initial PV calculation and is disambiguated.
+	// cw_concept: concept. Affects initial PV calculation and is not diambiguated
+	// cw_tgtword_nopv: target 'nopv' word. Does not affect initial PV calculation and will be disambiguated.
 
 	enum cwtype {
-	  cwtoken = 0,
-	  cwdist = 1,
-	  cwsynset = 2,
-	  cwdistnolight = 3,
-	  cwerror
+	  cw_ctxword = 0,
+	  cw_tgtword = 1,
+	  cw_concept = 2,
+	  cw_tgtword_nopv = 3,
+	  cw_error
 	};
 
 	typedef std::vector<std::string>::const_iterator const_iterator;
@@ -39,7 +39,7 @@ namespace ukb {
 	typedef std::vector<std::string>::value_type value_type;
 	typedef std::vector<std::string>::size_type size_type;
 
-	explicit CWord() : m_pos(0), m_weight(1.0), m_type(cwerror), m_disamb(false) {};
+	explicit CWord() : m_pos(0), m_weight(1.0), m_type(cw_error), m_disamb(false) {};
 	CWord(const std::string & w_, const std::string & id, char pos, cwtype type, float wght_ = 1.0);
 	CWord & operator=(const CWord & cw_);
 	~CWord() {};
@@ -63,10 +63,10 @@ namespace ukb {
 	float get_weight() const { return m_weight;}
 	void set_weight(float w) { m_weight = w;}
 
-	bool is_distinguished() const { return (m_type == cwdist); }
+	bool is_tgtword() const { return (m_type == cw_tgtword); }
 	bool is_disambiguated() const { return m_disamb; }
 	bool is_monosemous() const { return (1 == m_syns.size()); }
-	bool is_synset() const { return m_type == cwsynset; }
+	bool is_synset() const { return m_type == cw_concept; }
 
 	cwtype type() const { return m_type; }
 

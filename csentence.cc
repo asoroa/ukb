@@ -19,19 +19,19 @@ namespace ukb {
 
 	switch(i) {
 	case 0:
-	  res = CWord::cwtoken;
+	  res = CWord::cw_ctxword;
 	  break;
 	case 1:
-	  res = CWord::cwdist;
+	  res = CWord::cw_tgtword;
 	  break;
 	case 2:
-	  res = CWord::cwsynset;
+	  res = CWord::cw_concept;
 	  break;
 	case 3:
-	  res = CWord::cwdistnolight;
+	  res = CWord::cw_tgtword_nopv;
 	  break;
 	default:
-	  res = CWord::cwerror;
+	  res = CWord::cw_error;
 	  break;
 	}
 	return res;
@@ -91,14 +91,14 @@ namespace ukb {
   CWord::CWord(const string & w_, const string & id_, char pos_, cwtype type_, float wght_)
 	: w(w_), m_id(id_), m_pos(pos_), m_weight(wght_), m_type(type_) {
 
-	// cwdistnolight are internally cwdist with zero werght
-	if (m_type == cwdistnolight) {
-	  m_type = cwdist;
+	// cw_tgtword_nopv are internally cw_tgtword with zero weight
+	if (m_type == cw_tgtword_nopv) {
+	  m_type = cw_tgtword;
 	  m_weight = 0;
 	}
 
 	switch(m_type) {
-	case cwsynset:
+	case cw_concept:
 
 	  Kb_vertex_t u;
 	  bool P;
@@ -110,8 +110,8 @@ namespace ukb {
 	  m_V.push_back(make_pair(u, 1.0f));
 	  m_ranks.push_back(0.0f);
 	  break;
-	case cwtoken:
-	case cwdist:
+	case cw_ctxword:
+	case cw_tgtword:
 	  link_dict_concepts();
 	  m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
 	  break;
@@ -390,10 +390,10 @@ namespace ukb {
 		if (ctwp.lemma.size() == 0) continue;
 		char pos(0);
 		CWord::cwtype cw_type = cast_int_cwtype(ctwp.dist);
-		if (cw_type == CWord::cwerror) {
+		if (cw_type == CWord::cw_error) {
 		  throw std::runtime_error(*it + " fourth field is invalid.");
 		}
-		if (cw_type != CWord::cwsynset && glVars::input::filter_pos) {
+		if (cw_type != CWord::cw_concept && glVars::input::filter_pos) {
 		  if (!ctwp.pos.size()) throw std::runtime_error(*it + " has no POS.");
 		  if (ctwp.pos.size() != 1) throw std::runtime_error(*it + " has invalid POS (more than 1 char).");
 		  pos = ctwp.pos[0];
@@ -458,7 +458,7 @@ namespace ukb {
 	cw_it = v.begin();
 	cw_end = v.end();
 	for(; cw_it != cw_end; ++cw_it) {
-	  if (!cw_it->is_distinguished()) continue;
+	  if (!cw_it->is_tgtword()) continue;
 	  copy(cw_it->begin(), cw_it->end(), back_inserter(res));
 	}
   }
@@ -476,7 +476,7 @@ namespace ukb {
 
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (cw_it->size() == 0) continue;
-	  if (!cw_it->is_distinguished()) continue;
+	  if (!cw_it->is_tgtword()) continue;
 	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
 	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
 
@@ -492,7 +492,7 @@ namespace ukb {
 
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (cw_it->size() == 0) continue;
-	  if (!cw_it->is_distinguished()) continue;
+	  if (!cw_it->is_tgtword()) continue;
 	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
 	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
 
@@ -508,7 +508,7 @@ namespace ukb {
 
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (cw_it->size() == 0) continue;
-	  if (!cw_it->is_distinguished()) continue;
+	  if (!cw_it->is_tgtword()) continue;
 	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
 	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
 	  o << cs_id << " ";
@@ -526,9 +526,9 @@ namespace ukb {
   // Precondition: word, wpos and concepts are in the graph
   // 'light' wpos (or pos if glVars::prank::poslightw is set)
 
-  int cs_pv_vector_w(const CSentence & cs,
-					 vector<float> & pv,
-					 CSentence::const_iterator exclude_word_it) {
+  int pv_from_cs(const CSentence & cs,
+				 vector<float> & pv,
+				 CSentence::const_iterator exclude_word_it) {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> (kb.size(), 0.0).swap(pv);
@@ -577,9 +577,9 @@ namespace ukb {
 
   // Update pv of synsets pointed by CWord of token type
 
-  size_t cwtoken_pv_vector_w(const vector<pair<Kb_vertex_t, float> > & m_V,
-							 float normalized_cw_w,
-							 vector<float> & pv) {
+  size_t update_pv_cw(const vector<pair<Kb_vertex_t, float> > & m_V,
+					  float normalized_cw_w,
+					  vector<float> & pv) {
 
 	// cw is the cword node
 	// For each v pointed in V, (i.e., cw->v should be in the graph), init the PV with:
@@ -609,11 +609,11 @@ namespace ukb {
   }
 
 
-  // Get personalization vector giving an csentence
+  // Get personalization vector giving an csentence. onlyC variant.
 
-  int cs_pv_vector_w_onlyC(const CSentence & cs,
-						   vector<float> & pv,
-						   CSentence::const_iterator exclude_word_it) {
+  int pv_from_cs_onlyC(const CSentence & cs,
+					   vector<float> & pv,
+					   CSentence::const_iterator exclude_word_it) {
 
 	Kb & kb = ukb::Kb::instance();
 
@@ -655,15 +655,15 @@ namespace ukb {
 		it != end; ++it) {
 	  const CWord & cw = **it;
 	  float cw_w = cw.get_weight() * CW_w_factor;
-	  if (cw.type() == CWord::cwsynset) {
+	  if (cw.type() == CWord::cw_concept) {
 		tie(u, aux) = kb.get_vertex_by_name(cw.word(), Kb::is_concept);
 		assert(aux);
 		pv[u] += cw_w;
 		inserted_i++;
 	  } else {
-		inserted_i += cwtoken_pv_vector_w(cw.V_vector(),
-										  cw_w,
-										  pv);
+		inserted_i += update_pv_cw(cw.V_vector(),
+								   cw_w,
+								   pv);
 	  }
 	}
 	return inserted_i;
@@ -680,7 +680,7 @@ namespace ukb {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
-	int aux = glVars::kb::onlyC ? cs_pv_vector_w_onlyC(cs, pv, cs.end()) : cs_pv_vector_w(cs, pv, cs.end());
+	int aux = glVars::kb::onlyC ? pv_from_cs_onlyC(cs, pv, cs.end()) : pv_from_cs(cs, pv, cs.end());
 	if (!aux) return false;
 	// Execute PageRank
 	kb.pageRank_ppv(pv, res);
@@ -721,9 +721,9 @@ namespace ukb {
 	for(; cw_it != cw_end; ++cw_it) {
 
 	  // Target word must be distinguished.
-	  if(!cw_it->is_distinguished()) continue;
+	  if(!cw_it->is_tgtword()) continue;
 
-	  int aux = glVars::kb::onlyC ? cs_pv_vector_w_onlyC(cs, pv, cw_it) : cs_pv_vector_w(cs, pv, cw_it);
+	  int aux = glVars::kb::onlyC ? pv_from_cs_onlyC(cs, pv, cw_it) : pv_from_cs(cs, pv, cw_it);
 	  // Execute PageRank
 	  if (aux) {
 		kb.pageRank_ppv(pv, ranks);
@@ -795,7 +795,7 @@ namespace ukb {
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
-	  if (!cw_it->is_distinguished()) continue;
+	  if (!cw_it->is_tgtword()) continue;
 	  if (glVars::csentence::disamb_minus_static) {
 		struct va2vb newrank(ranks, kb.static_prank());
 		cw_it->rank_synsets(newrank, false);
