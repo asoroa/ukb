@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
   }
   catch(std::exception& e) {
     cerr << e.what() << "\n";
-    throw(e);
+	exit(-1);
   }
 
   if (kb_files.size()==0) {
