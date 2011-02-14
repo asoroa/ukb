@@ -216,7 +216,7 @@ void compute_sentence_vectors(string & fullname_in,
     }
   } catch (std::exception & e) {
     cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
-    throw(e);
+	exit(-1);
   }
 }
 

@@ -86,7 +86,7 @@ void disamb_dgraph_from_corpus(string & fullname_in,
   }
   catch (std::exception & e) {
     cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
-    throw(e);
+    exit(-1);
   }
 }
 
@@ -135,7 +135,7 @@ void dis_csent_ppr(const string & input_file,
   }
   catch (std::exception & e) {
     cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
-    throw(e);
+	exit(-1);
   }
 }
 
@@ -180,7 +180,7 @@ void dis_csent_ppr_by_word(const string & input_file,
   }
   catch (std::exception & e) {
     cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
-    throw(e);
+	exit(-1);
   }
 }
 
@@ -207,7 +207,7 @@ void dis_csent_classic_prank(const string & input_file,
   }
   catch (std::exception & e) {
     cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
-    throw(e);
+	exit(-1);
   }
 }
 
@@ -237,7 +237,7 @@ void test(const string & input_file,
   }
   catch (std::exception & e) {
     cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
-    throw(e);
+	exit(-1);
   }
 }
 

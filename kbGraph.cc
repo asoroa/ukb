@@ -95,7 +95,13 @@ namespace ukb {
 	  cerr << "Error: can't open " << fname << endl;
 	  exit(-1);
 	}
-	tenp->read_from_stream(fi);
+	try {
+	  tenp->read_from_stream(fi);
+	} catch(std::exception& e) {
+	  cerr << e.what() << "\n";
+	  exit(-1);
+	}
+
 	p_instance = tenp;
   }
 
