@@ -27,7 +27,13 @@
 #include <boost/graph/visitors.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/pending/indirect_cmp.hpp>
-#include <boost/pending/integer_range.hpp>
+
+#if BOOST_VERSION > 104400
+  #include <boost/range/irange.hpp>
+#else
+  #include <boost/pending/integer_range.hpp>
+#endif
+
 #include <boost/graph/graph_utility.hpp> // for boost::make_list
 
 namespace ukb {
