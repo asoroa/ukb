@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(ukb, 0.1.5r1)
+AC_INIT(ukb, 0.1.6)
 
 dnl global flags
 

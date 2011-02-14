@@ -1,0 +1,1601 @@
+2010-12-20  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h: New global variable to
+	control wether to shuffle the synsets on CWords
+
+2011-02-14  Aitor Soroa <a.soroa@gmail.com>
+
+	* kbGraph.cc, ukb_ppv.cc, ukb_wsd.cc: Better exception handling.
+
+2011-02-14  Aitor Soroa <a.soroa@gmail.com>
+
+	* common.h, disambGraph.cc, kbGraph.cc, kbGraph.h, ukb_ppv.cc: 
+	Remove deprecated warnings in boost headers.
+
+2011-02-12  Aitor Soroa <a.soroa@gmail.com>
+
+	* compile_kb.cc, ukb_ppv.cc, ukb_wsd.cc: Improved 'Invalid option'
+	error message.
+
+2011-02-10  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: Change names in CSentence; CWord type
+	names and some functions.
+
+2011-02-10  Aitor Soroa <a.soroa@gmail.com>
+
+	* README, csentence.cc, csentence.h: Treat cwdistlight internally as
+	'1' type token with zero weight.
+
+2011-02-09  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h: Remove
+	glVars::csentence::pv_no_weight global var.
+
+2011-01-14  Aitor Soroa <a.soroa@gmail.com>
+
+	* README: README changes
+
+2010-12-03  Aitor Soroa <a.soroa@gmail.com>
+
+	* ukb_ppv.cc: ukb_ppv: add options for printing variant info in PPVs
+	(third field)
+
+2010-12-03  Aitor Soroa <a.soroa@gmail.com>
+
+	* wdict.cc, wdict.h: wdict: create a variants map for storing the
+	variants of a concept.
+
+2010-12-03  Aitor Soroa <a.soroa@gmail.com>
+
+	* ukb_ppv.cc: ukb_ppv: add option for printing version info in PPVs
+
+2010-12-03  Aitor Soroa <a.soroa@gmail.com>
+
+	* wdict.cc: wdict: don't allow to include a dict->concept relation
+	many times
+
+2010-12-02  Aitor Soroa <a.soroa@gmail.com>
+
+	* wdict.cc, wdict.h: wdict: change member variable names
+
+2010-12-02  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h, wdict.cc, wdict.h: Remove unnecessary
+	'distpos' management
+
+2010-11-19  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc: csentence: do not try to model poslightw when
+	graph_onlyC.
+
+2010-11-19  Aitor Soroa <a.soroa@gmail.com>
+
+	* ukb_ppv.cc, ukb_wsd.cc: --concept_graph and --poslightw are
+	conflicting options
+
+2010-11-12  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h, ukb_ppv.cc, ukb_wsd.cc: 
+	Add a new option "--concept_graph" for using graphs comprising just
+	KB concepts (i.e., no dictionary words are inserted to the graph)
+
+2010-11-12  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc: csentence.cc: add new function for initial PV when
+	words are not in graph
+
+2010-11-12  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: csentence.cc: store vertex_id and
+	(cw->cid) weight in cword
+
+2010-10-29  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: csentence: store different pos of
+	cwords
+
+2010-11-16  Aitor Soroa <a.soroa@gmail.com>
+
+	* README: update documentation
+
+2010-11-16  Aitor Soroa <a.soroa@gmail.com>
+
+	* ukb_ppv.cc, ukb_wsd.cc: execs: rearrange options
+
+2010-11-16  Aitor Soroa <a.soroa@gmail.com>
+
+	* kbGraph.cc: kbgraph: throw exception when reading serialized graph
+	fails.
+
+2010-11-16  Aitor Soroa <a.soroa@gmail.com>
+
+	* wdict.cc: wdict.cc: throw error if POS has more than 1 char
+
+2010-10-29  Aitor Soroa <a.soroa@gmail.com>
+
+	* wdict.cc, wdict.h: wdict: Store pos along with concepts. Add
+	'distinct pos' field.
+
+2010-06-28  Aitor Soroa <a.soroa@gmail.com>
+
+	* common.cc, common.h, wdict.cc: Move "join" function to common.h
+
+2010-10-08  Aitor Soroa <a.soroa@gmail.com>
+
+	* globalVars.cc: wdict: default dict weights smoothing to 0, to be
+	back-compatible. Use --dict_weight_smooth 0 for no smoothing.
+
+2010-10-08  Aitor Soroa <a.soroa@gmail.com>
+
+	* kbGraph.cc, kbGraph.h, ukb_ppv.cc, ukb_wsd.cc, wdict.cc: wdict:
+	New round with dict weights.
+
+2010-10-08  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: cword: introduce the
+	CWord::cwdistnolight type.  These are words in the context which has to be disambiguated, but
+	are not used when initializing the graph PV. They are useful when
+	the weights of the word's concepts are known a-priori. For instance,
+	say 'car' has 3 concepts and we know this weights: car_1: 0.2  car_2:0.5 car_3:0.3 we can create a context like: car_1###2#0.2 car_2###2#0.5 car_3###2#0.3 car##w1#3 the last 'cwdistnolight' type is needed to produce the output for
+	'car', but we do not need to further light its associated concepts,
+	as they already do have a weight.
+
+2010-10-08  Aitor Soroa <a.soroa@gmail.com>
+
+	* wdict.cc, wdict.h: Fix yet another bug regarding dict weights.
+
+2010-09-21  Aitor Soroa <a.soroa@gmail.com>
+
+	* kbGraph.cc, wdict.cc: wdict: remove IO optimization.  - It causes problems when integrating ukb to Freeling - It was badly put, as std::ios::sync_with_stdio(false) should be   called before any IO is performed
+
+2010-08-31  Aitor Soroa <a.soroa@gmail.com>
+
+	* wdict.cc: wdict: fix bug which caused a crash when the concepts
+	associated to a word had no weight at all
+
+2010-07-27  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h, kbGraph.cc,
+	ukb_ppv.cc, ukb_wsd.cc, wdict.cc: Add --poslightw option to 'light'
+	word instead of wpos when calculating the personalization vector in
+	prank.  Removes previous "--dictops" option
+
+2010-07-26  Aitor Soroa <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h, ukb_ppv.cc, ukb_wsd.cc, wdict.cc: Add
+	--dict_weight_smooth option to set the weight smoothing factor,
+	which is added to all weights in dict concepts.  This is only useful when using "--dict-weight".  Default is zero. Warning, backwards incompatible change. To have
+	previous behaviour execute: % ukb_wsd --dict_weight --dict_weight_smooth 1.0
+
+2010-07-26  Aitor Soroa <a.soroa@gmail.com>
+
+	* wdict.cc: wdict: refactor code for parsing concept_id:weight
+
+2010-07-26  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h, kbGraph.cc,
+	ukb_ppv.cc, ukb_wsd.cc, wdict.cc: Teach the "--dictpos" option for
+	using implicit POS information in the dictionary.
+
+2010-07-22  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h, ukb_wsd.cc: Add
+	"--noprior" option to parametrize usage of priors when --ppr_w2w and
+	--dict_weight are used.
+
+2010-06-10  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: csentence: multiply priors to tw
+	synsets if --ppr_w2w and --dict_weight are selected Conflicts: 	csentence.h
+
+2010-07-22  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc: Ammend to previous commit.
+
+2010-06-15  Aitor Soroa <a.soroa@gmail.com>
+
+	* csentence.cc: fix bug when tw appears more than once in context
+
+
+2009-04-19  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* configure, configure.in: Adapt autoconf scripts to boost 1.38
+
+2009-04-19  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* compile_kb.cc, ukb_ppv.cc, ukb_wsd.cc: use std::exception instead
+	of unqualified "exception"
+
+2009-04-14  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, kbGraph.cc, kbGraph.h, ukb_ppv.cc, ukb_wsd.cc:
+	kbGraph: Change get_static_prank to static_prank
+
+2009-04-14  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h, ukb_wsd.cc: use new static prank
+	functions
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h, ukb_wsd.cc: Implement
+	--nostatic option for substracting static vector to ppv ranks for
+	disambiguating csentgences
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h, disambGraph.cc, disambGraph.h,
+	globalVars.cc, globalVars.h, kbGraph.cc, kbGraph.h, ukb_ppv.cc,
+	ukb_wsd.cc: Add new global var to control wether to use weights in
+	pageRank calculations.  Until now, it was modeled via local variables in main programs.
+
+2009-04-03  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* kbGraph.cc, kbGraph.h, ukb_ppv.cc: kbGraph.cc: Add static vector
+	member variable to (lazily) store static pageranks ukb_ppv.cc: use
+	the vector
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* ukb_ppv.cc: ukb_ppv.cc: Add --wiki option
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* compile_kb.cc: Add interactive query option
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* globalVars.cc, ukb_ppv.cc: Default to 0.0001 threshold instead of
+	30 iterations in pagerank
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* ukb_ppv.cc, wdict.cc, wdict.h: Add option for using weights when
+	linking words to concepts
+
+2009-03-23  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* ukb_ppv.cc: ukb_ppv.cc: Add --static option for generating static
+	PPV
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* compile_kb.cc: Add -U option to force undirected graphs
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h, kbGraph.cc: Add
+	glVars::kb::keep_directed global variable. If false, force
+	undirected graphs (default true).
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* kbGraph.cc, kbGraph.h: Add KbGraph::get_subgraph function: given a
+	source node and a limit (100) return a subgraph by performing a bfs
+	over the graph.
+
+2009-03-10  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: Use new get_vertex_by_name interface to
+	control wether we are refering to words or concepts
+
+2009-03-10  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* prank.h: Don't allow self-loops in pageRank calculations
+
+2009-03-10  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* kbGraph.cc, kbGraph.h: Control wether we are looking for words or
+	concepts in get_vertex_by_name Because sometimes a form can refer to both dict words _and_ KB
+	concepts (e.g. king in wikipedia)
+
+2009-03-10  Aitor <a.soroa@gmail.com>
+
+	* csentence.cc, kbGraph.cc: Appoend to 6d66c1 and deal when tabs are
+	present between fields
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* ukb_wsd.cc: Add prank_threshold command line option. Still,
+	default to 30 iterations in pagerank
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* kbGraph.cc: Don't store self-loops in graphs!
+
+2009-03-09  Aitor <a.soroa@gmail.com>
+
+	* configure, configure.in: Change version to 0.1.1
+
+2009-03-07  Aitor <a.soroa@gmail.com>
+
+	* common.cc, common.h, csentence.cc, kbGraph.cc, wdict.cc: Remove
+	trailing and leading whitespaces when reading input text lines
+
+2009-03-07  Aitor <a.soroa@gmail.com>
+
+	* globalVars.cc: Let it compile individual files withoud -DUKB_VER
+	directive
+
+2009-03-06  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* wdict.cc: Fix bug. Don't update entry counter if duplicate
+	dictionary entry.
+
+2009-03-05  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* prank.h: Fix bug in prank.h (L1 residuals are float, not double)
+
+2009-03-05  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h, disambGraph.cc, disambGraph.h,
+	kbGraph.cc, kbGraph.h, prank.h, ukb_ppv.cc, ukb_wsd.cc: Use double
+	instead of float in ranks
+
+2009-03-05  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* globalVars.cc: Default threshold to 0.0 (so, use 30 iterations by
+	default)
+
+2009-03-05  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* ukb_ppv.cc, ukb_wsd.cc: Add "--nopos" option to discard POS
+	filtering
+
+2009-03-04  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* kbGraph.cc: Use L1 norm prank if glVars::prank::threshold is not
+	zero. Otherwise, use glVars::prank::num_iterations
+
+2009-03-04  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* prank.h: Adapt pageRank to L1 norm stop criterion
+
+2009-03-04  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h: Add glVars::prank::threshold global
+	var.
+
+2009-03-04  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc: Don't initialize twice rank vector (because
+	kb.pageRank_ppv does it already)
+
+2009-03-04  Aitor <a.soroa@gmail.com>
+
+	* csentence.cc: Use size_t instead of int
+
+2009-02-02  Aitor <a.soroa@gmail.com>
+
+	* Makefile.in, coocGraph.cc, coocGraph.h, hlex_agtree.cc,
+	hlex_agtree.h: Remove coocgraph and hlex_agtree
+
+2009-02-02  Aitor <a.soroa@gmail.com>
+
+	* INSTALL: Change install doc
+
+2009-01-30  Aitor <a.soroa@gmail.com>
+
+	* Makefile.in, configure, configure.in: Add --enable-static option
+	to force static compilation
+
+2009-01-28  Aitor <a.soroa@gmail.com>
+
+	* Makefile.in, compile_kb.cc, configure, configure.in,
+	globalVars.cc, globalVars.h, ukb_ppv.cc, ukb_wsd.cc: Add version
+	management Version number is stored in configure.in file.
+
+2009-01-15  Aitor <a.soroa@gmail.com>
+
+	* configure, configure.in: Check better for boost Filesystem
+
+2009-01-15  Aitor <a.soroa@gmail.com>
+
+	* create_cograph.cc, create_mcrbin.cc: Remove files
+
+2009-01-15  Aitor <a.soroa@gmail.com>
+
+	* COPYING, INSTALL, LICENSE, README: Add documentation
+
+2009-01-15  Aitor <a.soroa@gmail.com>
+
+	* Makefile: Delete Makefile. It must be generated it by configure
+	script.
+
+2009-01-15  Aitor <a.soroa@gmail.com>
+
+	* configure: Add configure script (generated by autoconf)
+
+2009-01-15  Aitor <a.soroa@gmail.com>
+
+	* csentence.cc, ukb_wsd.cc: Remove some options
+
+2009-01-14  Aitor <a.soroa@gmail.com>
+
+	* Makefile.in, configure.in: autoconf stuff
+
+2009-01-14  Aitor <a.soroa@gmail.com>
+
+	* common.h: Add normalize_pvector function
+
+2009-01-14  Aitor <a.soroa@gmail.com>
+
+	* kbGraph.cc, kbGraph.h, ukb_ppv.cc: Add function to retrieve vertex
+	names and ranks given a PPV
+
+2009-01-14  Aitor <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h: Change global var. from
+	glVars::csentence::word_weight to glVars::csentence::concepts_in
+
+2009-01-12  Aitor <a.soroa@gmail.com>
+
+	* compile_kb.cc: Add compile_kb app
+
+2009-01-12  Aitor <a.soroa@gmail.com>
+
+	* ukb_ppv.cc, ukb_sim.cc: Remove ukb_sim to ukb_ppv
+
+2009-01-12  Aitor <a.soroa@gmail.com>
+
+	* ukb_wsd.cc: Output simple (not semcor output). Also, remove
+	unnecessary options.
+
+2009-01-12  Aitor <a.soroa@gmail.com>
+
+	* wdict.cc, wdict.h: Don't return weights if not present on input
+	text
+
+2009-01-09  Aitor <a.soroa@gmail.com>
+
+	* kbGraph.cc, kbGraph.h: Change source recording logic (only store
+	src of inserted relations)
+
+2009-01-07  Aitor <a.soroa@gmail.com>
+
+	* Makefile, ukb_aw.cc, ukb_sentences.cc, ukb_sim.cc, ukb_wsd.cc: 
+	Remove ukb_aw and ukb_sentences and create ukb_wsd and wsd_sim
+
+2009-01-07  Aitor <a.soroa@gmail.com>
+
+	* kbGraph.cc: Minor change (Change a comment).
+
+2009-01-07  Aitor <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h, globalVars.cc, globalVars.h: Rename hr
+	to ppr
+
+2009-01-07  Aitor <a.soroa@gmail.com>
+
+	* configFile.cc: Remove glVars::kb_with_freqs and rename
+	glVars::w2syn_filename
+
+2009-01-07  Aitor <a.soroa@gmail.com>
+
+	* kbGraph.h: Add some comments and rearrange function declarations
+
+2009-01-07  Aitor <a.soroa@gmail.com>
+
+	* Makefile, configFile.cc, create_mcrbin.cc, csentence.cc,
+	csentence.h, disambGraph.cc, disambGraph.h, globalVars.cc,
+	globalVars.h, hlex_agtree.h, kbGraph.cc, kbGraph.h, mcrGraph.cc,
+	mcrGraph.h, ukb_aw.cc, ukb_sentences.cc, wdict.cc: Rename from
+	McrGraph to KbGraph
+
+2009-01-07  Aitor <a.soroa@gmail.com>
+
+	* kGraph.cc, kGraph.h, ukb_aw.cc: Remove kgraph
+
+2009-01-07  Aitor <a.soroa@gmail.com>
+
+	* create_cograph.cc: Remove coocgraph2 reference
+
+2009-01-05  Aitor <a.soroa@gmail.com>
+
+	* 00Readme.txt, Makefile, boost-bug.txt, coocGraph.cc,
+	coocGraph2.cc, coocGraph2.h, create_cograph2.cc, create_mcrbin.cc,
+	dgraph_info.cc, info_ukb.cc, makefile_cooc, sentence.h: Delete
+	really unnecesary files
+
+2008-12-28  ccpsoeta <a.soroa@gmail.com>
+
+	* common.cc, common.h, configFile.cc, configFile.h, coocGraph.cc,
+	coocGraph.h, coocGraph2.cc, coocGraph2.h, create_cograph.cc,
+	create_cograph2.cc, create_mcrbin.cc, csentence.cc, csentence.h,
+	disambGraph.cc, disambGraph.h, fileElem.cc, fileElem.h,
+	globalVars.cc, globalVars.h, hlex_agtree.cc, hlex_agtree.h,
+	info_ukb.cc, kGraph.cc, kGraph.h, mcrGraph.cc, mcrGraph.h, prank.h,
+	ukb_aw.cc, ukb_sentences.cc, wdict.cc, wdict.h: Create ukb namespace
+	and put all there.
+
+2008-12-28  ccpsoeta <a.soroa@gmail.com>
+
+	* configFile.cc, create_mcrbin.cc, globalVars.cc, globalVars.h,
+	ukb_aw.cc, ukb_sentences.cc, wdict.cc, wdict.h: Change
+	glVars::w2s_filename to glVars::dict_filename Also, change switch options in executables (ukb_aw, ukb_sentences)
+
+2008-12-28  ccpsoeta <a.soroa@gmail.com>
+
+	* fileElem.cc: Include boost/version.hpp so conditional compilation
+	does not fail
+
+2008-12-26  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* ukb_aw.cc: Wiki options
+
+2008-12-26  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, mcrGraph.cc, ukb_sentences.cc: Add option for
+	specifying edge weights in input.  Also, add weight option in ukb_sentences
+
+2008-12-26  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h, mcrGraph.cc, wdict.cc,
+	wdict.h: Introduce glVars::input::filter_pos global variable.  If false, don't filter by pos when linking words to kb nodes
+	(default is yes)
+
+2008-12-01  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* mcrGraph.cc, wdict.cc: Adapt parsing functions to concept-ids (and
+	dict entries) with ":" characters in them
+
+2008-12-01  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* Makefile: Add install target Copies binaries to RUNDIR (default ../run)
+
+2008-11-20  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* create_mcrbin.cc, csentence.cc, mcrGraph.cc, ukb_aw.cc,
+	ukb_sentences.cc: Rename MCR to KB
+
+2008-10-13  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* ukb_aw.cc: New option (--dis_dgraph or -D) for performing dgraph
+	based disamb Doesn't require two steps (creating dgraphs and csentences,
+	disambiguating)
+
+2008-10-13  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* create_mcrbin.cc: Add option for dumping graphs (very verbose)
+
+2008-09-30  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* ukb_aw.cc: Output semcor format also in static pageRank
+
+2008-09-11  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc: Fix bug introduced in
+	efeed4cbfd546ce36f3f81ea7c638774fbbf5fb0
+
+2008-09-11  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc: Don't print extra space in keyfiles
+
+2008-09-11  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* ukb_aw.cc: Don't set --allranks when --semcor is provided.
+
+2008-09-02  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* configFile.cc, csentence.cc: Make read_aw function more robust And skip blank lines, etc.
+
+2008-09-02  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h, ukb_sentences.cc: Let context words to
+	be synsets Allow contexts with words like this: 00001740-n#n#w1#2#1.0 which are not words but synsets. Later, when applying
+	calculate_mcr_hr family of functions, PPV attached to the synsets
+	are 'lighten' with the appropiate weight.  Note that the 3rd field, which was previously used to decide wether
+	a word is distinguished, has now a value of '2', stating that the
+	cword is indeed a synset. Synset words can't be distinguished.
+
+2008-08-28  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: Add new output format more general than
+	wa allwords or semcor outputs
+
+2008-08-28  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h, mcrGraph.cc: Add
+	glVars::kb::filter_src variable for optional relation filter by
+	source. Default is yes.
+
+2008-08-28  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* mcrGraph.cc: Fix little bug. Don't store inverse rels if not rtype
+	present.
+
+2008-08-28  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* create_mcrbin.cc, mcrGraph.cc, mcrGraph.h: get rid of
+	"relations_file" (we_relations file), as it is now superseed by new
+	txt input format
+
+2008-08-28  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* globalVars.cc: Set default to read (old) v1 format
+
+2008-08-27  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* create_cograph.cc, create_cograph2.cc, fileElem.cc, fileElem.h,
+	ukb_aw.cc: Fix boost::filesystem compatibility issues Move all file related functions to fileElem
+
+2008-08-26  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* ukb_aw.cc: Fix bug in extract_input_files
+
+2008-08-26  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h: Update serialization functions for
+	reading new format (and also old v1 format)
+
+2008-08-26  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* coocGraph.cc, coocGraph.h, coocGraph2.cc, coocGraph2.h,
+	create_cograph.cc, create_cograph2.cc, create_mcrbin.cc,
+	csentence.cc, csentence.h, disambGraph.cc, disambGraph.h,
+	kGraph.cc, kGraph.h, mcrGraph.cc, mcrGraph.h, ukb_sentences.cc: 
+	Unify function names (with underscores) sed -i s/findOrInsertSynset/find_or_insert_synset/ *.h sed -i
+	s/findOrInsertSynset/find_or_insert_synset/ *.cc sed -i s/findOrInsertWord/find_or_insert_word/ *.h sed -i
+	s/findOrInsertWord/find_or_insert_word/ *.cc sed -i s/findOrInsertEdge/find_or_insert_edge/ *.h sed -i
+	s/findOrInsertEdge/find_or_insert_edge/ *.cc sed -i s/getVertexByName/get_vertex_by_name/ *.h sed -i
+	s/getVertexByName/get_vertex_by_name/ *.cc sed -i s/getVertexName/get_vertex_name/ *.h sed -i
+	s/getVertexName/get_vertex_name/ *.cc sed -i s/vertexIsSynset/vertex_is_synset/ *.h sed -i
+	s/vertexIsSynset/vertex_is_synset/ *.cc sed -i s/vertexIsWord/vertex_is_word/ *.h sed -i
+	s/vertexIsWord/vertex_is_word/ *.cc sed -i s/getRandomVertex/get_random_vertex/ *.h sed -i
+	s/getRandomVertex/get_random_vertex/ *.cc
+
+2008-08-25  Aitor <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h:     Changes in txt input.      * Each relation line has to follow this format:     u:synset v:synset t:rel i:rel s:source d:directed     where     u: source vertex. Mandatory.      v: target vertex. Mandatory.      t: relation type (hyperonym, meronym, etc) of edge u->v.
+	    Optional.  i: (inverse) relation type of edge v->u (hyponym, etc). Optional.      s: source of relation (wn30, mcr17, etc). Optional.      d: wether the relation is directed. Optional, default is
+	    undirected.      * Previous format renamed to v1     * Add support for storing relations types in graph edges     TODO: streaming !!
+
+2008-08-25  Aitor <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h, mcrGraph.cc, mcrGraph.h: 2 changes.
+	1) kyoto format changes 2) edges can store relation types TODO: streaming !!
+
+2008-08-19  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, globalVars.cc, globalVars.h, mcrGraph.cc: Add
+	glVars::debug::warning global variable
+
+2008-08-19  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h, mcrGraph.cc: New KB input format for
+	kyoto. New global var glVars::input::kyoto_kb The format for kyoto KBs is simplified: synset1 synset2 [rel directed] for ex 0120340-n 043892-n // add an undirected rel between synsets
+	0120340-n 043892-n wn30 // add an undirected wn30 rel 0120340-n
+	043892-n wn30 1 // add a directed wn30 rel
+
+2008-08-19  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* coocGraph2.cc, coocGraph2.h, create_cograph2.cc: Add coocGraph2
+	related files.  coocGraph2: directed coocurrence graphs (for hlex etc)
+
+2008-08-08  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* create_mcrbin.cc, mcrGraph.cc, mcrGraph.h: Cleranup mcrGraph + set relations_file to optional (we don't use it anymore, but in
+	  the future will see) + throw standard exceptions + clanup header
+	file and group similar functions together
+
+2008-08-08  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* Makefile, ukb_sentences.cc: Minos changes in Makefile
+
+2008-07-21  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h, globalVars.cc, globalVars.h,
+	ukb_sentences.cc: Add global var glVars::csentence::word_weight If true, words on sentence words can have weights (and must have a
+	5th element). Initial PPV distribution is set according to these
+	weights.
+
+2008-07-21  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h: Separate word nodes and synset nodes When PPV outputs are produced, give option to only output words or
+	synset nodes (normalizing accordingly)
+
+2008-06-23  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* Makefile, coocGraph.cc, coocGraph.h, create_cograph.cc,
+	makefile_cooc: Add dekang lin thesaurus as a coocurrence graph.
+
+2008-06-09  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* Makefile, ukb_aw.cc: Change option from "mcr_prank" to
+	"static_prank"
+
+2008-06-09  Aitor Soroa Etxabe <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h, prank.h: Cache out degree coefficient
+	vector Previously the out degree coefficient vector was recalculated every
+	time pageRank was executes. However, pageRank is executed many times
+	with the same graph, and thus same out-degree coefs.  This patch adds the out_coefs vector to mcrGraph class, and
+	implements the logic for calculating only when necessary (via
+	coef_status variable).
+
+2008-06-09  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, ukb_sentences.cc: - remove old w2syn includes git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@151
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-09  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc, mcrGraph.cc, mcrGraph.h: - Let MCR populate with additional input text files   + add function      void Mcr::add_from_txt(const std::string & synsFile);   + add logic in create_mcrbin which permits several input files
+	    when creating mcr binary serialization git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@150
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-06  ccpsoeta <a.soroa@gmail.com>
+
+	* w2syn.cc, w2syn.h: - remove old w2syn files (now in wdict) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@149
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-06  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile, create_mcrbin.cc, csentence.cc, mcrGraph.cc,
+	mcrGraph.h, ukb_aw.cc, ukb_sentences.cc, wdict.cc, wdict.h: - rename w2syn to wdict - Dictionaries is a mapping btw. words and synsets, possibly with   freqs (index_sense_freq files) - Add a new interface for retrieving the associations - TODO: add more than one language git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@148
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@147
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* hlex_agtree.cc, hlex_agtree.h: + interface for reading hlex agt
+	trees git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@146
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_sentences.cc: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@145
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc: + Add support for:    2 pass hr    output all synsets    semcor output git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@144
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc: + Use generic functions for pageRank git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@143
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h: + move global vars to sub-namespaces + new vars:   prank::num_iterations;   output::allranks;   output::monosemous; git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@142
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h: + graphviz stuff git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@141
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: + Add support to display all synsets
+	with weights when printing output + Add support for semcor output +
+	   Add function for second pass pageRank bool
+	calculate_mcr_ppv_csentence(CSentence & cs, std::vector<float> &
+	res); + fix bug in w2w calculations. PageRank iterations were made
+	  too many times. Now it only computes 1 pageRank for every
+	"distinguished" word git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@140
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc: + Added function for merging Hyperlex graphs
+	(agt) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@139
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* create_cograph.cc: + Adapt ro functions rename in coocGraph.h git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@138
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* coocGraph.cc, coocGraph.h: + Several functions rename + fix ugly
+	error (overflow when using size_t) in chsq calculation git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@137
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* common.h: + move constant property maps to prank.h git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@136
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-06-05  ccpsoeta <a.soroa@gmail.com>
+
+	* prank.h: + generic functions and helpers moved to prank namespace
+	+ constant property map + 2 entry points:     - pageRank_iterate     - pageRank_iterate_now: without weights git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@135
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-04-22  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc, mcrGraph.cc, mcrGraph.h:  + edge weigths no more initialize to 1  + fix bug with coocurrence weights git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@134
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-04-22  ccpsoeta <a.soroa@gmail.com>
+
+	* create_cograph.cc:  + add option to normalize chisq values when prunning git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@133
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-04-22  ccpsoeta <a.soroa@gmail.com>
+
+	* coocGraph.cc, coocGraph.h:  + add functions     bool CoocGraph::normalize_edge_freqs()     std::pair<float, float> CoocGraph::minmax() const git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@132
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-04-17  ccpsoeta <a.soroa@gmail.com>
+
+	* coocGraph.cc: + fix fucking stupid bug in chi square calculation!! git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@131
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-04-17  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile: + optimize with O3 instead of O2 git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@130
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-04-17  ccpsoeta <a.soroa@gmail.com>
+
+	* common.h, create_mcrbin.cc, mcrGraph.cc, mcrGraph.h: + Add
+	"comments" field to mcr graphs + Serialize them + Display them + put
+	cmd line in comment when creating graphs git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@129
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-02-25  ccpsoeta <a.soroa@gmail.com>
+
+	* common.cc: - fix bug in split function git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@128
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-02-25  ccpsoeta <a.soroa@gmail.com>
+
+	* coocGraph.h, create_cograph.cc: - cosmetic changes git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@127
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-02-25  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc: - Add new hr_w2w method by new command-line option --w2w_hr which
+	  calls function void dis_csent_hr_by_word(const string & input_file, 			    bool with_weight); git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@126
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-02-25  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc: - Mcr input (text) relations file can have a new column, sying if
+	relation is undirected git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@125
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-02-25  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: - Add new hr_w2w method by new function   void calculate_mcr_ranks_by_word_and_disamb(CSentence & cs, 	  				      bool with_weight); git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@124
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-02-25  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc: - Add option for specifying relations file git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@123
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-01-10  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.h: + add function for adding rel sources (useful for
+	tracing graph sources) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@122
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-01-10  ccpsoeta <a.soroa@gmail.com>
+
+	* configFile.cc: + fix typo git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@121
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-01-10  ccpsoeta <a.soroa@gmail.com>
+
+	* create_cograph.cc: + add trace in graphs (where cooc and ts
+	sources came from) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@120
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-01-10  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc: + add trace in graphs (where cooc and ts sources
+	came from) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@119
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-01-07  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc: - Add options for storing edge weights. Defaults are:     - Use weights when linking TS words to synsets.      - Don't use weights when linking cooc words.  git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@118
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-01-07  ccpsoeta <a.soroa@gmail.com>
+
+	* create_cograph.cc: - Add threshold option documentation.  git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@117
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-01-07  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc: - Add a comment line with cmdline, so we know exactly which command
+	produced a given key file.  git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@116
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2008-01-07  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc: - minimum weight in mcr graphs is 1. Further weights are then
+	_added_ to 1. Thing is, there can't be edges with zero weights
+	(pageRank calculations should fail) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@115
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-12-18  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@114
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-12-18  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_sentences.cc: - little changes so it compiles with new mcrGraph interface (just
+	add use_weight flags) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@113
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-12-18  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc: - bug fix in merge_ts git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@112
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-12-10  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc:   - add_words and add_tokens now require a parameter (use weights).  git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@110
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-12-10  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc:   - remove add_words   - new option --ts allows merging topic signatures to mcr binfiles git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@109
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-12-10  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h:   - add_tokens and add_words now have a parameter for specifying if     weights associated to words should be used when adding links
+	    from word#pos to synsets git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@108
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-12-10  ccpsoeta <a.soroa@gmail.com>
+
+	* w2syn.cc, w2syn.h:   - Add exception handling when reading from text file   - synsets are associated with (float) weigths instead of simple
+	    (size_t) freqs (Useful for inserting topic-signatures).      Note:  	* syn_counts function translates weights to ints (freqs), as
+		expected * weight vector of a word can be obtained via get_weights function git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@107
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-29  ccpsoeta <a.soroa@gmail.com>
+
+	* 00Readme.txt: - add 2) step git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@103
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-29  ccpsoeta <a.soroa@gmail.com>
+
+	* 00Readme.txt: - add -m option to examples git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@102
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-29  ccpsoeta <a.soroa@gmail.com>
+
+	* 00Readme.txt: - Preprocessing scripts git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@99
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-28  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc:   + show which is the bad word when reading contexts git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@93
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-23  ccpsoeta <a.soroa@gmail.com>
+
+	* makefile_cooc: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@92
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-23  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc:   - Manage 2 maps for nodes: 	_synsetMap for synsets (also word#pos nodes) 	_wordMap for words git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@91
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-23  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h:   - Manage 2 maps for nodes: 	_synsetMap for synsets (also word#pos nodes) 	_wordMap for words git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@90
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-23  ccpsoeta <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h:   - chsq related parameters handled via global variables 	glVars::chsq::cooc_min 	glVars::chsq::threshold git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@89
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-23  ccpsoeta <a.soroa@gmail.com>
+
+	* create_cograph.cc:   - chsq related parameters handled via global variables 	glVars::chsq::cooc_min 	glVars::chsq::threshold   - edge numbers are divided by 2 (being an bidirectional graph) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@88
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-23  ccpsoeta <a.soroa@gmail.com>
+
+	* coocGraph.cc, coocGraph.h:   - chsq related parameters handled via global variables 	glVars::chsq::cooc_min 	glVars::chsq::threshold git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@87
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-20  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h:  - option with_w in calculate_mcr_ranks function is mandatory now  - calculate_mcr_ranks: activate word nodes in ppv, instead of
+	 word#pos nodes (so coocurrence relations can be exploited) - cword has a new function wpos with returns "word#pos"  - rewrite cword << operator git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@86
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-20  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.h:  - option with_w in mcr function is mandatory now git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@85
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-20  ccpsoeta <a.soroa@gmail.com>
+
+	* prank.h:  - remove debug trace git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@84
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-20  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc:  - force boolean option with_w to mcr pagerank related calls (via
+	 csentence.cc calculate_mcr_ranks funtcion) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@83
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-18  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc:   - Support for queries of nodes in mcr graphs git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@82
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-18  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc:   - Support weights in pagerank calulations (huges&ramage) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@81
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-18  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h:   - Unify type name of underlying boost graph to boost_graph_t   - All vertices/edges addings are done via functions findOrInsert*     (change read_from_txt function)   - Simplify functions wich tie words to 'word#pos' and synset nodes   - Support weights in pagerank calulations   - Serialization: read/write edge weights git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@80
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-18  ccpsoeta <a.soroa@gmail.com>
+
+	* kGraph.h:   - Unify type name of underlying boost graph to boost_graph_t git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@79
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-18  ccpsoeta <a.soroa@gmail.com>
+
+	* dgraph_info.cc, disambGraph.h:   - Unify type name of underlying boost graph to boost_graph_t git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@78
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-18  ccpsoeta <a.soroa@gmail.com>
+
+	* create_cograph.cc:   - Use function 	void CoocGraph::remove_isolated_vertices()     for removing isolated vertices of cooGraph once chisq
+	    calculation is done (and graph is pruned) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@77
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-18  ccpsoeta <a.soroa@gmail.com>
+
+	* coocGraph.cc, coocGraph.h:   - add function 	void CoocGraph::remove_isolated_vertices()   - fix buf in write_to_stream git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@76
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-16  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile: - Add coocgGraph stuff git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@75
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-16  ccpsoeta <a.soroa@gmail.com>
+
+	* makefile_cooc: - Makefile for create_cograph.cc graphs git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@74
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-16  ccpsoeta <a.soroa@gmail.com>
+
+	* coocGraph.cc, coocGraph.h, create_cograph.cc: - Deal with coocurrence graphs git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@73
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc:   - make relation file optional git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@72
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc:   - include CooGraph merging git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@71
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@70
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h:   - degree rank git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@69
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* common.h:   - add streaming function template<class Set> ofstream &
+	write_set_to_stream(ofstream & o, const Set & s) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@68
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* prank.h:   - add degree ranking function git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@67
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h:   - add functions:   Mcr_vertex_t findOrInsertNode(const std::string & str);   Mcr_edge_t findOrInsertEdge(Mcr_vertex_t u, Mcr_vertex_t v, float
+	  w = 1.0 ); git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@66
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h:   - add variables for choosing ranking algorithm (defaults to
+	  pageRank) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@65
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-11-15  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc:   - add degree algorithm (via new global variable) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@64
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-26  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h:    - remove add_vertices_mcr_path method    - add vertex_freq (first stage) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@63
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-26  ccpsoeta <a.soroa@gmail.com>
+
+	* prank.h:    - update prank for dealing with dangling nodes git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@62
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@61
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* dgraph_info.cc: - functions for gathering info on dgraphs git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@60
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* kGraph.cc: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@59
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h: - add random stuff git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@58
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h: - add vertex_mcrSource property to dgraphs. Warning! Serialization
+	of previous versions of dgraphs will fail git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@57
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h: - randomly shuffle synsets of cwords (more robust to errors) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@56
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* common.cc, common.h: - add random stuff - play with graphviz output git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@55
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_sentences.cc: - use functions on modules instead of main program git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@54
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-25  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc: - add wdgaph option - add mcr_prank option (use h&r technique with static prank over
+	mcr) - add no-monosemous option (no results for monosemous words) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@53
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-18  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h: - remove (overloaded) function     bool bfs (const std::string & source_synset,
+	    std::vector<Mcr_vertex_t> & synv) const ; - add edge_weigth property - add dijkstra's algorithm stuff - add function   void ppv_weights(const std::vector<float> & ppv); - remove function   void add_tokens(const std::string & word, ...)   and replace it with new function   void add_words(); git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@52
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-17  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h:    - add Dijkstra stuff for creating dismbGraphs (instead of
+	   minimum-length, bfs approach) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@51
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-17  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h:    - add two functions: 	Calculate a CSentence MCR rank vector a la hughes&ramage 	bool calculate_mcr_ranks(const CSentence & cs, 			 	 std::vector<float> & res); 	Disambiguate a CSentence given a PageRank output (over MCR) 	void disamb_csentence_mcr(CSentence & cs,                           	  std::vector<float> & ranks); git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@50
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-17  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc:    - add "--words" command-line switch. If activated, store words
+	     and word#pos nodes in the MCR (a la hughes&ramage) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@49
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-06  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@48
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-06  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc, csentence.h:    - Changes so that CWords store associated ranks with the synsets    - add rank_synsets function to CWords    - add disambiguation function git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@47
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-06  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h:    - change disambiguation functions    - fix bug in pageRank git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@46
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-09-05  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc:    - fix bug in add_tokens git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@45
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-31  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc:    - fix potential little bug git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@44
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-31  ccpsoeta <a.soroa@gmail.com>
+
+	* prank.h:    - cosmetic changes git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@43
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-31  ccpsoeta <a.soroa@gmail.com>
+
+	* common.h:    - cosmetic changes git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@42
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-30  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc:    - As pagerank functions have changed names, update calls
+	   accordingly.  git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@41
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-30  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h:    - make MCR graph directed and bidirectional instead of
+	   undirected. It appears to have backward compatibility with old
+	   streamed mcr files - add function for adding word and word#pos and link them to MCR "a
+	   la" hughes&ramage'07 - add pagerank_ppv which computes pagerank over the whole MCR git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@40
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-30  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h:    - pagerank stuff git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@39
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-30  ccpsoeta <a.soroa@gmail.com>
+
+	* prank.h:    - pagerank generic functions go here git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@38
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-30  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.h: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@37
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-30  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@36
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-30  ccpsoeta <a.soroa@gmail.com>
+
+	* w2syn.cc, w2syn.h:   - change internal representation   - add get_wordlist method git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@35
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-30  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_sentences.cc:   - ukb_sentences computes a vector for each context using
+	  hughes&ramage07 method git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@34
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-28  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc:     + Parametrize using weigths in pagerank via "--with_weights"
+	    option git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@33
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-28  ccpsoeta <a.soroa@gmail.com>
+
+	* kGraph.h: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@32
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-28  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h:     + Add ppv vectors to pagerank     + customize using weigths in pagerank git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@31
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-28  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc:     + graphviz stuff git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@30
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-28  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc:     + fix little bug     + remove wname property from vertices git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@29
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-28  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc:     + "-p" option is now mandatory (--force-default-values option
+	    overrides) git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@28
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-08-28  ccpsoeta <a.soroa@gmail.com>
+
+	* common.h:     + add helper function for writing graphviz files git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@27
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc:    + disamb option can have a directory as input, as well as a
+	   filename. If directory, disambiguate all csentences in that
+	   directory git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@26
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h:    + remove "wname" property from vertices 	- it didn't have any meaning, since vertices (synsets) can have
+		many words (variants) attached git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@25
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h:    + add pageRank_ppv git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@24
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* common.h:    + add an useful property map for pageRank git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@23
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc:    + add freqs managing git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@22
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@21
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* w2syn.cc, w2syn.h:   + Add freqs managing (for calculating PPVs in pageRank)   	+ freqs are taken for WNet git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@20
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* kGraph.cc, kGraph.h:   + hide Kg_dg_ struct from public interface.    + move some member functions to auxiliary, non-member functions git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@19
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-23  ccpsoeta <a.soroa@gmail.com>
+
+	* configFile.cc, globalVars.cc, globalVars.h:   + add 	+ mcr_with_freqs global variable 	+ associated "with_freqs" config option git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@18
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@17
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* info_ukb.cc:   + Utility for knowing info about graphs git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@16
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* globalVars.cc, globalVars.h:   + Global variables git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@15
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* fileElem.cc, fileElem.h:   + File_elem struct for dealing with paths, extensions etc.  git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@14
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* configFile.cc, configFile.h:   + Configuration file git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@13
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* common.cc:   + split function git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@12
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* ukb_aw.cc: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@11
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* w2syn.cc:   + path of file relating names to senses is now a global variable git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@10
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* mcrGraph.cc, mcrGraph.h:   + take relations source into account git-svn-id: svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@9
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* kGraph.cc, kGraph.h: git-svn-id:
+	svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@8
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* disambGraph.cc, disambGraph.h:  + edge_freq is now a float  + fix a bug in fill_graph. The last synset was never inserted in
+	 the dGraph + when updating frequencies of dGraphs, take length of
+	   minimum path into account (add_disamb_edge function)  + disamb_csentence funcion: deal with the case when all sysnets in
+	   a cword have same weigth (no disamb.)  + precompute out weigths of vertives in pageRank git-svn-id: svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@7
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* csentence.cc:  + Add test to see if serialized image is indeed a csentence (with a
+	 magic id) git-svn-id: svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@6
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* create_mcrbin.cc:  + new executable for creating binary images of MCRs (with different
+	 relation sources) git-svn-id: svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@5
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-07-10  ccpsoeta <a.soroa@gmail.com>
+
+	* common.h:  + add writeS function for writing sets to a stream  + add csentence sorting (disambiguating) helper functions  + add graphviz write helper functions  + add split function git-svn-id: svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@4
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-06-08  ccpsoeta <a.soroa@gmail.com>
+
+	* nohup.out: - Delete nohup.out git-svn-id: svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@3
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-06-08  ccpsoeta <a.soroa@gmail.com>
+
+	* Makefile, csentence.cc, csentence.h, disambGraph.cc,
+	disambGraph.h, kGraph.cc, ukb_aw.cc: - change csentence-s so they store synset strings instead of   vertex_ids. This way, it should be easier to integrate kgraphs to   the whole system. *BUT* there must be a bug somewhere...  git-svn-id: svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@2
+	41fde781-4c32-0410-9b47-839176a67e93
+
+2007-06-07  ccpsoeta <a.soroa@gmail.com>
+
+	* Initial import git-svn-id: svn+ssh://siuc04/sc02a1/users/ccpsoeta/svnRep/ukb/Main@1
+	41fde781-4c32-0410-9b47-839176a67e93
+
