@@ -82,11 +82,14 @@ namespace ukb {
 	vector<float>(m_syns.size(), 0.0).swap(m_ranks);
 
 	// Create V vector
+	float wlink = 0.0;
 	for(vector<string>::iterator it = m_syns.begin(), end = m_syns.end();
 		it != end; ++it) {
 	  pair<Kb_vertex_t, float> uf = str2kb[*it];
+	  wlink += uf.second;
 	  m_V.push_back(uf);
 	}
+	m_linkw_factor = 1.0 / wlink;
 	return true;
   }
 
@@ -111,6 +114,7 @@ namespace ukb {
 	  m_syns.push_back(w);
 	  m_V.push_back(make_pair(u, 1.0f));
 	  m_ranks.push_back(0.0f);
+	  m_linkw_factor = 1.0;
 	  break;
 	case cw_ctxword:
 	case cw_tgtword:

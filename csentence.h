@@ -86,7 +86,7 @@ namespace ukb {
 	  if (!n) return; // No synsets
 	  for(i = 0; i != n; ++i) {
 		m_ranks[i] = rankMap[m_V[i].first];
-		if (use_prior) m_ranks[i] *= m_V[i].second;
+		if (use_prior) m_ranks[i] *= m_V[i].second * m_linkw_factor;
 	  }
 	}
 
@@ -126,6 +126,7 @@ namespace ukb {
 	std::vector<std::string> m_syns;
 	std::vector<std::pair<Kb_vertex_t, float> > m_V;
 	std::vector<float> m_ranks;
+	float m_linkw_factor; // 1 / (sum of all link weights)
 	cwtype m_type;
 	bool m_disamb;      // If word is disambiguated, that is, if the synset
 	// are ordered according to their ranks
