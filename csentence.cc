@@ -37,40 +37,47 @@ namespace ukb {
 	return res;
   }
 
-  bool CWord::link_dict_concepts() {
+  size_t CWord::link_dict_concepts(const string & lemma, char pos) {
 
 	Kb & kb = ukb::Kb::instance();
 	bool existP;
+	size_t new_c = 0;
 	map<string, pair<Kb_vertex_t, float> > str2kb;
-	vector<string>::const_iterator str_it;
-	vector<string>::const_iterator str_end;
 
-	WDict_entries entries = WDict::instance().get_entries(w);
+	set<string> syns_S;
+	for(size_t i = 0, m = m_syns.size(); i < m; ++i) {
+	  syns_S.insert(m_syns[i]);
+	  str2kb[m_syns[i]] = m_V[i];
+	}
+
+	WDict_entries entries = WDict::instance().get_entries(lemma);
 
 	for(size_t i= 0; i < entries.size(); ++i) {
 
 	  const string & syn_str = entries.get_entry(i);
 	  float syn_freq = entries.get_freq(i);
 
-	  if(m_pos) {
+	  if(pos) {
 		// filter synsets by pos
 		char synpos = entries.get_pos(i);
-		if (m_pos != synpos) continue;
+		if (pos != synpos) continue;
 	  }
 
 	  Kb_vertex_t syn_v;
 	  tie(syn_v, existP) = kb.get_vertex_by_name(syn_str, Kb::is_concept);
 	  if (existP) {
+		if (!syns_S.insert(syn_str).second) continue; // Synset previously there
 		m_syns.push_back(syn_str);
 		str2kb[syn_str] = make_pair(syn_v, syn_freq);
+		new_c++;
 	  } else {
 		if (glVars::debug::warning) {
-		  cerr << "W:CWord: synset " << syn_str << " of word " << w << " is not in KB" << endl;
+		  cerr << "W:CWord: synset " << syn_str << " of word " << lemma << " is not in KB" << endl;
 		}
 	  }
 	}
 
-	if (m_syns.size() == 0) return false;
+	if (new_c == 0) return 0;
 
 	if(glVars::dict::use_shuffle) {
 		// Shuffle synsets string vector
@@ -82,6 +89,7 @@ namespace ukb {
 	vector<float>(m_syns.size(), 0.0).swap(m_ranks);
 
 	// Create V vector
+	vector<pair<Kb_vertex_t, float> >().swap(m_V); // empty m_V;
 	float wlink = 0.0;
 	for(vector<string>::iterator it = m_syns.begin(), end = m_syns.end();
 		it != end; ++it) {
@@ -90,7 +98,7 @@ namespace ukb {
 	  m_V.push_back(uf);
 	}
 	m_linkw_factor = 1.0 / wlink;
-	return true;
+	return new_c;
   }
 
   CWord::CWord(const string & w_, const string & id_, char pos_, cwtype type_, float wght_)
@@ -118,12 +126,22 @@ namespace ukb {
 	  break;
 	case cw_ctxword:
 	case cw_tgtword:
-	  link_dict_concepts();
+	  link_dict_concepts(w, m_pos);
 	  m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
 	  break;
 	default:
 	  break;
 	}
+  }
+
+  void CWord::attach_lemma(const string & lemma, char pos) {
+	if (!w.size())
+	  throw std::runtime_error("CWord::attach_lemma error: can't attach lemma to an empty CWord.");
+	if (m_type == cw_concept)
+	  throw std::runtime_error("CWord::attach_lemma error: can't attach lemma to a CWord of type cw_concept.");
+	if (glVars::input::filter_pos && !pos)
+	  throw std::runtime_error("CWord::attach_lemma error: no POS.");
+	link_dict_concepts(lemma, pos);
   }
 
   CWord & CWord::operator=(const CWord & cw_) {

@@ -44,6 +44,12 @@ namespace ukb {
 	CWord & operator=(const CWord & cw_);
 	~CWord() {};
 
+	// Attach synsets of a new lemma to the CWord.
+	//
+	// Note, the CWord does not track the lemma
+
+	void attach_lemma(const std::string & lemma, char pos = 0);
+
 	iterator begin() {return m_syns.begin();}
 	iterator end() {return m_syns.end();}
 	const_iterator begin() const {return m_syns.begin();}
@@ -114,7 +120,7 @@ namespace ukb {
 
   private:
 
-	bool link_dict_concepts();
+	size_t link_dict_concepts(const std::string & lemma, char pos);
 	void read_from_stream (std::ifstream & is);
 	std::ofstream & write_to_stream(std::ofstream & o) const;
 	void shuffle_synsets();
