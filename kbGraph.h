@@ -283,7 +283,7 @@ private:
   char coef_status;                      // 0 invalid
                                          // 1 calculated without weights
                                          // 2 calculated with weights
-  std::vector<float> static_ranks;       // aux. vector with static prank computation
+  std::vector<float> static_ppv;         // aux. vector with static prank computation
   };
 }
 

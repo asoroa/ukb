@@ -317,7 +317,7 @@ namespace ukb {
 
   Kb_vertex_t Kb::InsertNode(const string & name, unsigned char flags) {
 	coef_status = 0; // reset out degree coefficients
-	if (static_ranks.size()) vector<float>().swap(static_ranks); // empty static rank vector
+	if (static_ppv.size()) vector<float>().swap(static_ppv); // empty static rank vector
 	Kb_vertex_t u = add_vertex(g);
 	put(vertex_name, g, u, name);
 	put(vertex_flags, g, u, flags);
@@ -358,7 +358,7 @@ namespace ukb {
 	tie(e, existsP) = edge(u, v, g);
 	if(!existsP) {
 	  coef_status = 0; // reset out degree coefficients
-	  if (static_ranks.size()) vector<float>().swap(static_ranks); // empty static rank vector
+	  if (static_ppv.size()) vector<float>().swap(static_ppv); // empty static rank vector
 	  e = add_edge(u, v, g).first;
 	  put(edge_weight, g, e, w);
 	  put(edge_rtype, g, e, static_cast<boost::uint32_t>(0));
@@ -509,20 +509,19 @@ namespace ukb {
   // Get static pageRank vector
 
   const std::vector<float> & Kb::static_prank() const {
-	if (static_ranks.size()) return static_ranks;
+	if (static_ppv.size()) return static_ppv;
 	size_t N = num_vertices(g);
 
 	// Hack to remove const-ness
     Kb & me = const_cast<Kb &>(*this);
-	vector<float> & ranks = me.static_ranks;
 	me.out_coefs.resize(N);
 
 	size_t N_no_isolated = prank::init_out_coefs(g, &me.out_coefs[0]);
 
-	if (N_no_isolated == 0) return static_ranks; // empty graph
-	vector<float> ppv(N, 1.0/static_cast<float>(N_no_isolated));
-	me.pageRank_ppv(ppv, ranks);
-	return static_ranks;
+	if (N_no_isolated == 0) return static_ppv; // empty graph
+	vector<float> pv(N, 1.0/static_cast<float>(N_no_isolated));
+	me.pageRank_ppv(pv, me.static_ppv);
+	return static_ppv;
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -1099,7 +1098,7 @@ namespace ukb {
 
 	try {
 	  coef_status = 0;
-	  vector<float>().swap(static_ranks); // empty static rank vector
+	  vector<float>().swap(static_ppv); // empty static rank vector
 	  read_atom_from_stream(is, id);
 	  if (id == magic_id_v1) {
 
