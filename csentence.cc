@@ -267,11 +267,14 @@ namespace ukb {
   ostream & cw_aw_print_all(ostream & o,
 							const vector<string> & syns,
 							const vector<float> & ranks) {
-	float rsum = 0.0;
-	for(size_t i = 0; i != syns.size(); ++i) {
-	  rsum += ranks[i];
+	float norm_factor = 1.0;
+	if (glVars::output::norm_ranks) {
+	  float rsum = 0.0;
+	  for(size_t i = 0; i != syns.size(); ++i) {
+		rsum += ranks[i];
+	  }
+	  norm_factor *= 1.0 / rsum;
 	}
-	float norm_factor = 1.0 / rsum;
 	for(size_t i = 0; i != syns.size(); ++i) {
 	  o << " " << syns[i] << "/" << ranks[i]*norm_factor;
 	}

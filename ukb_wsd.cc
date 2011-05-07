@@ -321,7 +321,8 @@ int main(int argc, char *argv[]) {
     ("verbose,v", "Be verbose.")
     ("no-monosemous", "Don't output anything for monosemous words.")
     ("ties", "Output also in case of ties.")
-    ;
+    ("rank_nonorm", "Do not normalize the ranks of target words.")
+	;
 
   options_description po_visible(desc_header);
   po_visible.add(po_desc).add(po_desc_wsd).add(po_desc_prank).add(po_desc_dict).add(po_desc_output);
@@ -500,6 +501,11 @@ int main(int argc, char *argv[]) {
     if (vm.count("ties")) {
       glVars::output::ties = true;
     }
+
+    if (vm.count("rank_nonorm")) {
+      glVars::output::norm_ranks = false;
+    }
+
   }
   catch(std::exception& e) {
     cerr << e.what() << "\n";

@@ -60,8 +60,8 @@ namespace ukb {
 	  bool allranks = false;
 	  bool monosemous = true;
 	  bool ties = false;
+	  bool norm_ranks = true;
 	}
-
 
 	RankAlg rAlg = pageRank;
 
