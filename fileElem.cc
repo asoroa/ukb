@@ -4,6 +4,11 @@
 
 // Boost filesystem
 #include <boost/version.hpp>
+
+#if (BOOST_VERSION / 100 % 1000 > 43)
+#define BOOST_FILESYSTEM_VERSION 2
+#endif
+
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
