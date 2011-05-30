@@ -59,6 +59,7 @@ namespace ukb {
 	  // to the KB. It also has effects on dictionary.
 
 	  extern bool filter_pos;
+	  extern bool swallow;        // tries to swallow malformed input
 	}
 
 

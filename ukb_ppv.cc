@@ -287,6 +287,7 @@ int main(int argc, char *argv[]) {
     ("verbose,v", "Be verbose.")
 	("nopos", "Don't filter words by Part of Speech.")
 	("poslightw", "Light words instead of wpos when calculating personalization vector.")
+	("minput", "Do not die when dealing with malformed input.")
 	("wiki", "Usual options for wikipedia (sets --nopos, --only_ctx_words and --only_synsets).")
     ;
 
@@ -367,6 +368,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("poslightw")) {
 	  glVars::prank::lightw = true;
+    }
+
+    if (vm.count("minput")) {
+	  glVars::input::swallow = true;
     }
 
     if (vm.count("only_words")) {

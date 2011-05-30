@@ -288,6 +288,7 @@ int main(int argc, char *argv[]) {
     ("concept_graph,G", "Graph is built using just concepts. Words are no more part of the graph.")
 	("nopos", "Don't filter words by Part of Speech.")
 	("poslightw", "Light words instead of wpos when calculating personalization vector.")
+	("minput", "Do not die when dealing with malformed input.")
     ;
 
   options_description po_desc_wsd("WSD methods");
@@ -379,6 +380,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("poslightw")) {
 	  glVars::prank::lightw = true;
+    }
+
+    if (vm.count("minput")) {
+	  glVars::input::swallow = true;
     }
 
     if (vm.count("ppr")) {
