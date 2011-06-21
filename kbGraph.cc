@@ -80,10 +80,18 @@ namespace ukb {
 						   const std::set<std::string> & src_allowed) {
 	if (p_instance) return;
 	Kb *tenp = create();
-
 	tenp->read_from_txt(synsFileName, src_allowed);
 	p_instance = tenp;
   }
+
+  void Kb::create_from_txt(std::istream & is,
+						   const std::set<std::string> & src_allowed) {
+	if (p_instance) return;
+	Kb *tenp = create();
+	tenp->read_from_txt(is, src_allowed);
+	p_instance = tenp;
+  }
+
 
   void Kb::create_from_binfile(const std::string & fname) {
 
@@ -657,7 +665,7 @@ namespace ukb {
 	return true;
   }
 
-  void Kb::read_from_txt(ifstream & kbFile,
+  void Kb::read_from_txt(istream & kbFile,
 						 const set<string> & src_allowed) {
 	string line;
 	int line_number = 0;
@@ -704,27 +712,19 @@ namespace ukb {
 	}
   }
 
-  void Kb::read_from_txt(const string & synsFileName,
+  void Kb::read_from_txt(const std::string & synsFileName,
 						 const set<string> & src_allowed) {
 
-	std::ifstream syns_file(synsFileName.c_str(), ofstream::in);
-	if (!syns_file) {
+	std::ifstream input_ifs(synsFileName.c_str(), ofstream::in);
+	if (!input_ifs) {
 	  throw runtime_error("Kb::read_from_txt error: Can't open " + synsFileName);
 	}
 	if(glVars::kb::v1_kb) {
-	  read_kb_v1(syns_file, src_allowed, this);
+	  read_kb_v1(input_ifs, src_allowed, this);
 	} else {
-	  this->read_from_txt(syns_file, src_allowed);
+	  std::istream input_is(input_ifs.rdbuf());
+	  this->read_from_txt(input_is, src_allowed);
 	}
-  }
-
-  ////////////////////////////////////////////////7
-  // public function
-
-  void Kb::add_from_txt(const std::string & synsFileName,
-						const set<string> & src_allowed) {
-
-	Kb::instance().read_from_txt(synsFileName, src_allowed);
   }
 
   void Kb::display_info(std::ostream & o) const {

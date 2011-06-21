@@ -98,6 +98,13 @@ public:
   static void create_from_txt(const std::string & synsFile,
 							  const std::set<std::string> & rels_source);
 
+  // same thing, but taking an istream as argument
+
+  static void create_from_txt(std::istream & is,
+							  const std::set<std::string> & rels_source);
+
+
+
   // 2. create_from_binfile
   //    Load a binary snapshot of the graph into memory
 
@@ -114,11 +121,16 @@ public:
 
   void write_to_textfile (const std::string & fName);
 
-  // add_from_txt
+  // read_from_txt
   // add relations from synsFile to the graph
 
-  void add_from_txt(const std::string & synsFile,
-					const std::set<std::string> & rels_source);
+  void read_from_txt(const std::string & synsFile,
+					 const std::set<std::string> & rels_source);
+
+  // add relations from synsFile to the graph given an input stream
+
+  void read_from_txt(std::istream & is,
+					 const std::set<std::string> & rels_source);
 
   // add_relSource
   // add a new relation source
@@ -257,12 +269,6 @@ private:
   ~Kb() {};
 
   Kb_vertex_t InsertNode(const std::string & name, unsigned char flags);
-
-  void read_from_txt(const std::string & relFile,
-					 const std::set<std::string> & rels_source);
-
-  void read_from_txt(std::ifstream & fh,
-					 const std::set<std::string> & rels_source);
 
   void read_from_stream (std::ifstream & o);
   std::ofstream & write_to_stream(std::ofstream & o);
