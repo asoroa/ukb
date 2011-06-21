@@ -261,6 +261,9 @@ private:
   void read_from_txt(const std::string & relFile,
 					 const std::set<std::string> & rels_source);
 
+  void read_from_txt(std::ifstream & fh,
+					 const std::set<std::string> & rels_source);
+
   void read_from_stream (std::ifstream & o);
   std::ofstream & write_to_stream(std::ofstream & o);
 

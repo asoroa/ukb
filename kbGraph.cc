@@ -657,9 +657,8 @@ namespace ukb {
 	return true;
   }
 
-  void read_kb(ifstream & kbFile,
-			   const set<string> & src_allowed,
-			   Kb *kb) {
+  void Kb::read_from_txt(ifstream & kbFile,
+						 const set<string> & src_allowed) {
 	string line;
 	int line_number = 0;
 
@@ -676,26 +675,26 @@ namespace ukb {
 		if (glVars::kb::filter_src) {
 		  if (src_allowed.find(f.src) == srel_end) continue; // Skip this relation
 		}
-		Kb_vertex_t u = kb->find_or_insert_synset(f.u);
-		Kb_vertex_t v = kb->find_or_insert_synset(f.v);
+		Kb_vertex_t u = this->find_or_insert_synset(f.u);
+		Kb_vertex_t v = this->find_or_insert_synset(f.v);
 
 		if (u == v) continue; // no self-loops
 
-		kb->add_relSource(f.src);
+		this->add_relSource(f.src);
 
 		float w = f.w ? f.w : 1.0;
 		// add edge
-		Kb_edge_t e1 = kb->find_or_insert_edge(u, v, w);
+		Kb_edge_t e1 = this->find_or_insert_edge(u, v, w);
 		// relation type
 		if (glVars::kb::keep_reltypes && f.rtype.size()) {
-		  kb->edge_add_reltype(e1, f.rtype);
+		  this->edge_add_reltype(e1, f.rtype);
 		}
 		if (!f.directed || !glVars::kb::keep_directed) {
-		  Kb_edge_t e2 = kb->find_or_insert_edge(v, u, w);
+		  Kb_edge_t e2 = this->find_or_insert_edge(v, u, w);
 		  if(glVars::kb::keep_reltypes && f.rtype.size()) {
 			string aux = f.irtype.size() ? f.irtype : f.rtype;
 			if(aux.size()) {
-			  kb->edge_add_reltype(e2, aux);
+			  this->edge_add_reltype(e2, aux);
 			}
 		  }
 		}
@@ -715,7 +714,7 @@ namespace ukb {
 	if(glVars::kb::v1_kb) {
 	  read_kb_v1(syns_file, src_allowed, this);
 	} else {
-	  read_kb(syns_file, src_allowed, this);
+	  this->read_from_txt(syns_file, src_allowed);
 	}
   }
 
