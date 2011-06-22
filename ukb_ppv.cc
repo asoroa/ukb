@@ -108,8 +108,7 @@ void top_k(vector<float> & ppv, size_t k) {
   normalize_pvector(ppv);
 }
 
-void compute_sentence_vectors(string & fullname_in,
-							  string & out_dir,
+void compute_sentence_vectors(string & out_dir,
 							  float trunc_ppv,
 							  bool nozero) {
 
@@ -117,13 +116,7 @@ void compute_sentence_vectors(string & fullname_in,
   if (glVars::verbose)
     cerr << "Reading words ...\n";
 
-  ifstream fh_in(fullname_in.c_str());
-  File_elem fout(fullname_in, out_dir, ".ppv");
-
-  if (!fh_in) {
-    cerr << "Can't open " << fullname_in << endl;
-    exit(-1);
-  }
+  File_elem fout("lala", out_dir, ".ppv");
 
   vector<CSentence> vcs;
   CSentence cs;
@@ -139,84 +132,77 @@ void compute_sentence_vectors(string & fullname_in,
   if (glVars::verbose)
     Kb::instance().display_info(cerr);
 
-
-
   // Read sentences and compute rank vectors
   size_t l_n  = 0;
 
-  try {
-    while (cs.read_aw(fh_in, l_n)) {
+  while (cs.read_aw(std::cin, l_n)) {
 
-      // Initialize rank vector
-      vector<float> ranks;
+	// Initialize rank vector
+	vector<float> ranks;
 
-	  if(!glVars::kb::onlyC && !insert_all_dict) {
-		// Add CSentence words to graph
-		CSentence::iterator it = cs.begin();
-		CSentence::iterator end = cs.end();
- 		for(;it != end; ++it) {
-		  kb.add_token(it->word());
-		}
+	if(!glVars::kb::onlyC && !insert_all_dict) {
+	  // Add CSentence words to graph
+	  CSentence::iterator it = cs.begin();
+	  CSentence::iterator end = cs.end();
+	  for(;it != end; ++it) {
+		kb.add_token(it->word());
 	  }
-      bool ok = calculate_kb_ppr(cs,ranks);
-      if (!ok) {
-		cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
-		continue;
-      }
+	}
+	bool ok = calculate_kb_ppr(cs,ranks);
+	if (!ok) {
+	  cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
+	  continue;
+	}
 
-	  if (glVars::csentence::disamb_minus_static) {
-		const vector<float> & static_ranks = Kb::instance().static_prank();
-		for(size_t s_i = 0, s_m = static_ranks.size();
-			s_i != s_m; ++s_i) {
-		  ranks[s_i] -= static_ranks[s_i];
-		}
+	if (glVars::csentence::disamb_minus_static) {
+	  const vector<float> & static_ranks = Kb::instance().static_prank();
+	  for(size_t s_i = 0, s_m = static_ranks.size();
+		  s_i != s_m; ++s_i) {
+		ranks[s_i] -= static_ranks[s_i];
 	  }
+	}
 
-      fout.fname = cs.id();
+	fout.fname = cs.id();
 
-      ofstream fo(fout.get_fname().c_str(),  ofstream::out);
-      if (!fo) {
-		cerr << "Error: can't create" << fout.get_fname() << endl;
-		exit(-1);
-      }
+	ofstream fo(fout.get_fname().c_str(),  ofstream::out);
+	if (!fo) {
+	  cerr << "Error: can't create" << fout.get_fname() << endl;
+	  exit(-1);
+	}
 
-	  vector<float> outranks;
-	  vector<string> vnames;
+	vector<float> outranks;
+	vector<string> vnames;
 
-	  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
+	Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
 
-	  if (trunc_ppv > 0.0f) {
-		if (trunc_ppv < 1.0f)
-		  truncate_ppv(outranks, trunc_ppv);
-		else {
-		  // For top k calculation
-		  //
-		  //  - fill with zeros all values except top k
-		  //  - set nozero = 1 so only top k are printed
-		  //
-		  // * could be a problem if top k had zeros in it, as they
-		  //   will not be properly printed.
+	if (trunc_ppv > 0.0f) {
+	  if (trunc_ppv < 1.0f)
+		truncate_ppv(outranks, trunc_ppv);
+	  else {
+		// For top k calculation
+		//
+		//  - fill with zeros all values except top k
+		//  - set nozero = 1 so only top k are printed
+		//
+		// * could be a problem if top k had zeros in it, as they
+		//   will not be properly printed.
 
-		  top_k(outranks, lexical_cast<size_t>(trunc_ppv));
-		  nozero = true;
-		}
+		top_k(outranks, lexical_cast<size_t>(trunc_ppv));
+		nozero = true;
 	  }
+	}
 
-	  if (output_control_line)
-		fo << cmdline << "\n";
-	  for(size_t i = 0; i < outranks.size(); ++i) {
-		if (nozero && outranks [i] == 0.0) continue;
-		fo << vnames[i] << "\t" << outranks[i];
-		if (output_variants_ppv) {
-		  fo << "\t" << WDict::instance().variant(vnames[i]);
-		}
-		fo << "\n";
+	if (output_control_line)
+	  fo << cmdline << "\n";
+	for(size_t i = 0; i < outranks.size(); ++i) {
+	  if (nozero && outranks [i] == 0.0) continue;
+	  fo << vnames[i] << "\t" << outranks[i];
+	  if (output_variants_ppv) {
+		fo << "\t" << WDict::instance().variant(vnames[i]);
 	  }
-      cs = CSentence();
-    }
-  } catch (std::exception & e) {
-    cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
-	exit(-1);
+	  fo << "\n";
+	}
+	cs = CSentence();
   }
 }
 
@@ -263,6 +249,7 @@ int main(int argc, char *argv[]) {
 
   string out_dir(".");
   string fullname_in;
+  ifstream input_ifs;
 
   const char desc_header[] = "ukb_ppv: get personalized PageRank vector if a KB\n"
 	"Usage examples:\n"
@@ -495,10 +482,26 @@ int main(int argc, char *argv[]) {
 	exit(-1);
   }
 
-  if(fullname_in.size() == 0) {
+  if(!fullname_in.size()) {
     cout << po_visible << endl;
-    return 1;
+    cout << "Error: No input" << endl;
+    exit(-1);
   }
+
+  if (fullname_in == "-" ) {
+	// read from <STDIN>
+    cmdline += " <STDIN>";
+	fullname_in = "<STDIN>";
+  } else {
+	input_ifs.open(fullname_in.c_str(), ofstream::in);
+	if (!input_ifs) {
+	  cerr << "Can't open " << fullname_in << endl;
+	  exit(-1);
+	}
+	// redirect std::cin to read from file
+	std::cin.rdbuf(input_ifs.rdbuf());
+  }
+
 
   if (glVars::verbose)
     cerr << "Reading binary kb file " << kb_binfile;
@@ -506,7 +509,12 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     Kb::instance().display_info(cerr);
 
-  compute_sentence_vectors(fullname_in, out_dir, opt_trppv, opt_nozero);
+  try {
+	compute_sentence_vectors(out_dir, opt_trppv, opt_nozero);
+  } catch(std::exception& e) {
+    cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
+	exit(-1);
+  }
 
  END:
   return 0;

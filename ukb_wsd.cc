@@ -60,47 +60,27 @@ void option_dependency(const boost::program_options::variables_map& vm,
 
 // Disambiguate using disambiguation graph (dgraph) method
 
-void disamb_dgraph_from_corpus(string & fullname_in,
+void disamb_dgraph_from_corpus(istream & fh_in,
 							   bool out_semcor) {
-
-  ifstream fh_in(fullname_in.c_str());
-
-  if (!fh_in) {
-    cerr << "Can't open " << fullname_in << endl;
-    exit(-1);
-  }
 
   CSentence cs;
   size_t l_n = 0;
 
-  try {
-    while (cs.read_aw(fh_in, l_n)) {
-      DisambGraph dgraph;
-      fill_disamb_graph(cs, dgraph);
-	  pageRank_disg(dgraph.graph());
-	  disamb_csentence(cs, dgraph);
-      if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_simple(cout);
-      cs = CSentence();
-    }
-  }
-  catch (std::exception & e) {
-    cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
-    exit(-1);
+  while (cs.read_aw(fh_in, l_n)) {
+	DisambGraph dgraph;
+	fill_disamb_graph(cs, dgraph);
+	pageRank_disg(dgraph.graph());
+	disamb_csentence(cs, dgraph);
+	if (out_semcor) cs.print_csent_semcor_aw(cout);
+	else cs.print_csent_simple(cout);
+	cs = CSentence();
   }
 }
 
-void dis_csent_ppr(const string & input_file,
+void dis_csent_ppr(istream & fh_in,
 				   bool out_semcor) {
 
   Kb & kb = Kb::instance();
-  ifstream fh_in(input_file.c_str());
-
-  if (!fh_in) {
-    cerr << "Can't open " << input_file << endl;
-    exit(-1);
-  }
-
   CSentence cs;
 
   if (!glVars::kb::onlyC && insert_all_dict) {
@@ -109,47 +89,35 @@ void dis_csent_ppr(const string & input_file,
 
   size_t l_n = 0;
 
-  try {
-    while (cs.read_aw(fh_in, l_n)) {
+  while (cs.read_aw(fh_in, l_n)) {
 
-	  if(!glVars::kb::onlyC && !insert_all_dict) {
-		CSentence::iterator it = cs.begin();
-		CSentence::iterator end = cs.end();
-		for(;it != end; ++it) {
-		  kb.add_token(it->word());
-		}
+	if(!glVars::kb::onlyC && !insert_all_dict) {
+	  CSentence::iterator it = cs.begin();
+	  CSentence::iterator end = cs.end();
+	  for(;it != end; ++it) {
+		kb.add_token(it->word());
 	  }
-      vector<float> ranks;
-      bool ok = calculate_kb_ppr(cs,ranks);
-      if (!ok) {
-		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-		cerr << "(No word links to KB ?)\n";
-		continue;
-      }
+	}
+	vector<float> ranks;
+	bool ok = calculate_kb_ppr(cs,ranks);
+	if (!ok) {
+	  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+	  cerr << "(No word links to KB ?)\n";
+	  continue;
+	}
 
-      disamb_csentence_kb(cs, ranks);
-      if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_simple(cout);
-      cs = CSentence();
-    }
-  }
-  catch (std::exception & e) {
-    cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
-	exit(-1);
+	disamb_csentence_kb(cs, ranks);
+	if (out_semcor) cs.print_csent_semcor_aw(cout);
+	else cs.print_csent_simple(cout);
+	cs = CSentence();
   }
 }
 
 
-void dis_csent_ppr_by_word(const string & input_file,
+void dis_csent_ppr_by_word(istream & fh_in,
 						  bool out_semcor) {
 
   Kb & kb = Kb::instance();
-  ifstream fh_in(input_file.c_str());
-
-  if (!fh_in) {
-    cerr << "Can't open " << input_file << endl;
-    exit(-1);
-  }
 
   CSentence cs;
 
@@ -158,86 +126,55 @@ void dis_csent_ppr_by_word(const string & input_file,
   }
   size_t l_n = 0;
 
-  try {
-    while (cs.read_aw(fh_in, l_n)) {
+  while (cs.read_aw(fh_in, l_n)) {
 
-	  if (!glVars::kb::onlyC && !insert_all_dict) {
-		// Add CSentence words to graph
-		CSentence::iterator it = cs.begin();
-		CSentence::iterator end = cs.end();
-		for(;it != end; ++it) {
-		  kb.add_token(it->word());
-		}
+	if (!glVars::kb::onlyC && !insert_all_dict) {
+	  // Add CSentence words to graph
+	  CSentence::iterator it = cs.begin();
+	  CSentence::iterator end = cs.end();
+	  for(;it != end; ++it) {
+		kb.add_token(it->word());
 	  }
+	}
 
-      calculate_kb_ppr_by_word_and_disamb(cs);
-      if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_simple(cout);
+	calculate_kb_ppr_by_word_and_disamb(cs);
+	if (out_semcor) cs.print_csent_semcor_aw(cout);
+	else cs.print_csent_simple(cout);
 
-      //cout << cs << '\n';
-      cs = CSentence();
-    }
-  }
-  catch (std::exception & e) {
-    cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
-	exit(-1);
+	//cout << cs << '\n';
+	cs = CSentence();
   }
 }
 
-void dis_csent_classic_prank(const string & input_file,
+void dis_csent_classic_prank(istream & fh_in,
 							 bool out_semcor) {
 
-  ifstream fh_in(input_file.c_str());
-
-  if (!fh_in) {
-    cerr << "Can't open " << input_file << endl;
-    exit(-1);
-  }
 
   CSentence cs;
   size_t l_n = 0;
   const vector<float> ranks = Kb::instance().static_prank();
-  try {
-    while (cs.read_aw(fh_in, l_n)) {
-      disamb_csentence_kb(cs, ranks);
-      if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_simple(cout);
-      cs = CSentence();
-    }
-  }
-  catch (std::exception & e) {
-    cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
-	exit(-1);
+  while (cs.read_aw(fh_in, l_n)) {
+	disamb_csentence_kb(cs, ranks);
+	if (out_semcor) cs.print_csent_semcor_aw(cout);
+	else cs.print_csent_simple(cout);
+	cs = CSentence();
   }
 }
 
 
-void test(const string & input_file,
+void test(istream & fh_in,
 		  bool out_semcor) {
-
-  ifstream fh_in(input_file.c_str());
-
-  if (!fh_in) {
-    cerr << "Can't open " << input_file << endl;
-    exit(-1);
-  }
 
   CSentence cs;
 
   vector<float> ranks;
   //Kb::instance().indegree_rank(ranks);
   size_t l_n = 0;
-  try {
-    while (cs.read_aw(fh_in, l_n)) {
-      disamb_csentence_kb(cs, ranks);
-      if (out_semcor) cs.print_csent_semcor_aw(cout);
-      else cs.print_csent_simple(cout);
-      cs = CSentence();
-    }
-  }
-  catch (std::exception & e) {
-    cerr << "Errore reading " << input_file << " : " << e.what() << "\n";
-	exit(-1);
+  while (cs.read_aw(fh_in, l_n)) {
+	disamb_csentence_kb(cs, ranks);
+	if (out_semcor) cs.print_csent_semcor_aw(cout);
+	else cs.print_csent_simple(cout);
+	cs = CSentence();
   }
 }
 
@@ -266,6 +203,7 @@ int main(int argc, char *argv[]) {
 
   vector<string> input_files;
   string fullname_in;
+  ifstream input_ifs;
 
   using namespace boost::program_options;
 
@@ -523,8 +461,22 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
+  if (fullname_in == "-" ) {
+	// read from <STDIN>
+    cmdline += " <STDIN>";
+	fullname_in = "<STDIN>";
+  } else {
+	input_ifs.open(fullname_in.c_str(), ofstream::in);
+	if (!input_ifs) {
+	  cerr << "Can't open " << fullname_in << endl;
+	  exit(-1);
+	}
+	// redirect std::cin to read from file
+	std::cin.rdbuf(input_ifs.rdbuf());
+  }
+
   if (opt_do_test) {
-    test(fullname_in, false);
+    test(std::cin, false);
 	goto END;
   }
 
@@ -536,29 +488,33 @@ int main(int argc, char *argv[]) {
   Kb::create_from_binfile(kb_binfile);
   cout << cmdline << "\n";
 
-  switch(dmethod) {
+  try {
 
-  case dgraph:
-    disamb_dgraph_from_corpus(fullname_in, opt_out_semcor);
-    goto END;
-	break;
-  case ppr:
-    dis_csent_ppr(fullname_in, opt_out_semcor);
-    goto END;
-	break;
+	switch(dmethod) {
 
-  case ppr_w2w:
-    dis_csent_ppr_by_word(fullname_in, opt_out_semcor);
-    goto END;
-	break;
+	case dgraph:
+	  disamb_dgraph_from_corpus(std::cin, opt_out_semcor);
+	  goto END;
+	  break;
+	case ppr:
+	  dis_csent_ppr(std::cin, opt_out_semcor);
+	  goto END;
+	  break;
+	case ppr_w2w:
+	  dis_csent_ppr_by_word(std::cin, opt_out_semcor);
+	  goto END;
+	  break;
+	case ppr_static:
+	  dis_csent_classic_prank(std::cin, opt_out_semcor);
+	  goto END;
+	  break;
+	};
+  }
+  catch (std::exception & e) {
+    cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
+    exit(-1);
+  }
+  END:
 
-  case ppr_static:
-    dis_csent_classic_prank(fullname_in, opt_out_semcor);
-    goto END;
-	break;
-
-  };
-
- END:
   return 0;
 }
