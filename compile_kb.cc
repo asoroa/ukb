@@ -271,61 +271,60 @@ int main(int argc, char *argv[]) {
 	exit(-1);
   }
 
-  // functions taking an input file argument first
-  try {
-	if (opt_info) {
-	  Kb::create_from_binfile(kb_files.at(0));
-	  Kb::instance().display_info(cout);
-	  return 0;
-	}
 
-	if (opt_Info) {
-	  Kb::create_from_binfile(kb_files.at(0));
-
-	  int id_m, id_M;
-	  int od_m, od_M;
-	  int comp;
-
-	  Kb::instance().display_info(cout);
-
-	  tie(id_m, id_M) = Kb::instance().indeg_maxmin();
-	  tie(od_m, od_M) = Kb::instance().outdeg_maxmin();
-	  comp = Kb::instance().components();
-
-	  cout << "In degree (max, min):  (" << id_m << ", " << id_M << ")\n";
-	  cout << "Out degree (max, min): (" << od_m << ", " << od_M << ")\n";
-	  cout << "Number of (strong) components: " << comp << endl;
-
-	  return 0;
-	}
-
-	if (opt_dang) {
-	  remove_dangling(kb_files.at(0));
-	  return 0;
-	}
-
-	if (opt_iquery) {
-	  Kb::create_from_binfile(kb_files.at(0));
-	  iquery();
-	  return 0;
-	}
-
-	if (opt_dump) {
-	  Kb::create_from_binfile(kb_files.at(0));
-	  Kb::instance().dump_graph(cout);
-	  return 0;
-	}
-
-	if (opt_query) {
-	  Kb::create_from_binfile(kb_files.at(0));
-	  query(query_vertex);
-	  return 1;
-	}
-  }
-  catch(std::out_of_range & e) {
+  if (!kb_files.size()) {
 	cerr << po_desc << "\n";
     cerr << "Error: no input files\n" << endl;
 	exit(1);
+  }
+
+  if (opt_info) {
+	Kb::create_from_binfile(kb_files.at(0));
+	Kb::instance().display_info(cout);
+	return 0;
+  }
+
+  if (opt_Info) {
+	Kb::create_from_binfile(kb_files.at(0));
+
+	int id_m, id_M;
+	int od_m, od_M;
+	int comp;
+
+	Kb::instance().display_info(cout);
+
+	tie(id_m, id_M) = Kb::instance().indeg_maxmin();
+	tie(od_m, od_M) = Kb::instance().outdeg_maxmin();
+	comp = Kb::instance().components();
+
+	cout << "In degree (max, min):  (" << id_m << ", " << id_M << ")\n";
+	cout << "Out degree (max, min): (" << od_m << ", " << od_M << ")\n";
+	cout << "Number of (strong) components: " << comp << endl;
+
+	return 0;
+  }
+
+  if (opt_dang) {
+	remove_dangling(kb_files.at(0));
+	return 0;
+  }
+
+  if (opt_iquery) {
+	Kb::create_from_binfile(kb_files.at(0));
+	iquery();
+	return 0;
+  }
+
+  if (opt_dump) {
+	Kb::create_from_binfile(kb_files.at(0));
+	Kb::instance().dump_graph(cout);
+	return 0;
+  }
+
+  if (opt_query) {
+	Kb::create_from_binfile(kb_files.at(0));
+	query(query_vertex);
+	return 1;
   }
 
   if (glVars::verbose) {
@@ -335,9 +334,8 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     cerr << "Reading relations"<< endl;
 
-  // If no input file, open std::cin
-
-  if (kb_files.size()==0) {
+  // If first input file is "-", open std::cin
+  if (kb_files[0] == "-") {
     cmdline += " <STDIN>";
 	Kb::create_from_txt(std::cin, src_allowed );
   } else {
