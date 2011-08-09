@@ -24,6 +24,7 @@ using namespace std;
 using namespace boost;
 using namespace ukb;
 
+static bool opt_variants = false;
 
 void query (const string & str) {
 
@@ -71,6 +72,20 @@ void set_source_rels(const string & str,
 
 }
 
+void print_iquery_v(KbGraph & g, Kb_vertex_t u, int w = 0, int sp = 0) {
+
+  string hw(get(vertex_name, g, u));
+
+  for (int i = 0; i < sp; ++i)
+	cout << "  ";
+  cout << hw;
+  if (w)
+    cout << ":" << w;
+  if (opt_variants)
+	cout << " " << WDict::instance().variant(hw);
+  cout << "\n";
+}
+
 void iquery() {
 
   Kb & kb = Kb::instance();
@@ -91,24 +106,19 @@ void iquery() {
 	}
 	tie(u, aux) = kb.get_vertex_by_name(str);
 	if (aux) {
-	  cout << get(vertex_name, g, u);
-	  cout << "\n";
+	  print_iquery_v(g, u);
 	  if (!inv) {
-		graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
-		tie(it, end) = out_edges(u, g);
-		for(;it != end; ++it) {
-		  cout << "  ";
-		  cout << get(vertex_name, g, target(*it, g));
-		  cout << ":" << get(edge_weight, g, *it) << "\n";
-		}
+	    graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
+	    tie(it, end) = out_edges(u, g);
+	    for(;it != end; ++it) {
+	      print_iquery_v(g, target(*it, g), get(edge_weight, g, *it), 2);
+	    }
 	  } else {
-		graph_traits<Kb::boost_graph_t>::in_edge_iterator iit , iend;
-		tie(iit, iend) = in_edges(u, g);
-		for(;iit != iend; ++iit) {
-		  cout << "  ";
-		  cout << get(vertex_name, g, source(*iit, g));
-		  cout << ":" << get(edge_weight, g, *iit) << "\n";
-		}
+	    graph_traits<Kb::boost_graph_t>::in_edge_iterator iit , iend;
+	    tie(iit, iend) = in_edges(u, g);
+	    for(;iit != iend; ++iit) {
+	      print_iquery_v(g, source(*iit, g), get(edge_weight, g, *iit), 2);
+	    }
 	  }
 	} else {
 	  cout << "\n"<< str << " not present!";
@@ -181,6 +191,7 @@ int main(int argc, char *argv[]) {
     ("output,o", value<string>(), "Output file name.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
     ("iquery,Q", "Interactively query graph.")
+    ("dict_file,D", value<string>(), "Word to synset map file. Useful only when used when querying (--quey or --iquery).")
     ("undirected,U", "Force undirected graph.")
     ("verbose,v", "Be verbose.")
     ("rtypes,r", "Keep relation types on edges.")
@@ -230,6 +241,11 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("iquery")) {
       opt_iquery = true;
+    }
+
+    if (vm.count("dict_file")) {
+      glVars::dict_filename = vm["dict_file"].as<string>();
+	  opt_variants = true;
     }
 
     if (vm.count("nodangling")) {
