@@ -190,7 +190,11 @@ namespace ukb {
   bool calculate_kb_ppr(const CSentence & cs,
 						std::vector<float> & res);
 
-  void calculate_kb_ppr_by_word_and_disamb(CSentence & cs);
+  bool calculate_kb_ppr_by_word(const CSentence & cs,
+								CSentence::const_iterator tgtw_it,
+								std::vector<float> & ranks);
+
+  int calculate_kb_ppr_by_word_and_disamb(CSentence & cs);
 
   bool calculate_kb_ppv_csentence(CSentence & cs, std::vector<float> & res);
 

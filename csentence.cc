@@ -737,16 +737,38 @@ namespace ukb {
   };
 
 
-  // given a word,
+  // given a word (pointed by tgtw_it),
   // 1. put a ppv in the synsets of the rest of words.
   // 2. Pagerank
   // 3. use rank for disambiguating word
 
-  void calculate_kb_ppr_by_word_and_disamb(CSentence & cs) {
+  bool calculate_kb_ppr_by_word(const CSentence & cs,
+								CSentence::const_iterator tgtw_it,
+								vector<float> & ranks) {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
+
+	int aux = glVars::kb::onlyC ? pv_from_cs_onlyC(cs, pv, tgtw_it) : pv_from_cs(cs, pv, tgtw_it);
+	// Execute PageRank
+	if (aux) {
+	  kb.pageRank_ppv(pv, ranks);
+	}
+	return aux;
+  }
+
+  // given a CSentence
+  // for each target word
+  //   1. put a ppv in the synsets of the rest of words.
+  //   2. Pagerank
+  //   3. use rank for disambiguating word
+
+
+  int calculate_kb_ppr_by_word_and_disamb(CSentence & cs) {
+
+	Kb & kb = ukb::Kb::instance();
 	vector<float> ranks;
+	int success_n = 0;
 
 	bool use_prior = glVars::dict::use_weight && glVars::csentence::mult_priors; // If --dict-weight and ppr_w2w, use priors when ranking synsets
 
@@ -757,11 +779,8 @@ namespace ukb {
 	  // Target word must be distinguished.
 	  if(!cw_it->is_tgtword()) continue;
 
-	  int aux = glVars::kb::onlyC ? pv_from_cs_onlyC(cs, pv, cw_it) : pv_from_cs(cs, pv, cw_it);
-	  // Execute PageRank
-	  if (aux) {
-		kb.pageRank_ppv(pv, ranks);
-		// disambiguate cw_it
+	  if (calculate_kb_ppr_by_word(cs, cw_it, ranks)) {
+		success_n++;
 		if (glVars::csentence::disamb_minus_static) {
 		  struct va2vb newrank(ranks, kb.static_prank());
 		  cw_it->rank_synsets(newrank, use_prior);
@@ -771,6 +790,7 @@ namespace ukb {
 	  }
 	  cw_it->disamb_cword();
 	}
+	return success_n;
   }
 
   //
