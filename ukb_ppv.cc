@@ -42,6 +42,8 @@ static int filter_nodes = 0; // 0 -> no filter
 static bool insert_all_dict = true;
 static bool output_control_line = false;
 static bool output_variants_ppv = false;
+static float trunc_ppv = 0.0;
+static bool nozero = false;
 static string ppv_prefix;
 static string cmdline("!! -v ");
 
@@ -109,61 +111,11 @@ void top_k(vector<float> & ppv, size_t k) {
   normalize_pvector(ppv);
 }
 
-void compute_sentence_vectors(string & out_dir,
-							  float trunc_ppv,
-							  bool nozero) {
 
-  Kb & kb = Kb::instance();
-  if (glVars::verbose)
-    cerr << "Reading words ...\n";
-
-  File_elem fout("lala", out_dir, ".ppv");
-
-  vector<CSentence> vcs;
-  CSentence cs;
-
-  // add words into Kb
-
-  if (!glVars::kb::onlyC && insert_all_dict) {
-	if (glVars::verbose)
-	  cerr << "Adding words to Kb ...";
-	kb.add_dictionary();
-  }
-
-  if (glVars::verbose)
-    Kb::instance().display_info(cerr);
-
-  // Read sentences and compute rank vectors
-  size_t l_n  = 0;
-
-  while (cs.read_aw(std::cin, l_n)) {
-
-	// Initialize rank vector
-	vector<float> ranks;
-
-	if(!glVars::kb::onlyC && !insert_all_dict) {
-	  // Add CSentence words to graph
-	  CSentence::iterator it = cs.begin();
-	  CSentence::iterator end = cs.end();
-	  for(;it != end; ++it) {
-		kb.add_token(it->word());
-	  }
-	}
-	bool ok = calculate_kb_ppr(cs,ranks);
-	if (!ok) {
-	  cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
-	  continue;
-	}
-
-	if (glVars::csentence::disamb_minus_static) {
-	  const vector<float> & static_ranks = Kb::instance().static_prank();
-	  for(size_t s_i = 0, s_m = static_ranks.size();
-		  s_i != s_m; ++s_i) {
-		ranks[s_i] -= static_ranks[s_i];
-	  }
-	}
-
-	fout.fname = ppv_prefix + cs.id();
+static void create_output_ppv(const vector<float> & ranks,
+							  const string & filename,
+							  File_elem & fout) {
+	fout.fname = filename;
 
 	ofstream fo(fout.get_fname().c_str(),  ofstream::out);
 	if (!fo) {
@@ -203,6 +155,100 @@ void compute_sentence_vectors(string & out_dir,
 	  }
 	  fo << "\n";
 	}
+}
+
+static void maybe_add_full_dictionary() {
+
+  // add words into Kb
+
+  Kb & kb = Kb::instance();
+  if (!glVars::kb::onlyC && insert_all_dict) {
+	if (glVars::verbose)
+	  cerr << "Adding words to Kb ...";
+	kb.add_dictionary();
+  }
+
+  if (glVars::verbose)
+    Kb::instance().display_info(cerr);
+}
+
+static void maybe_add_cs_words(CSentence & cs) {
+
+  Kb & kb = Kb::instance();
+  if(!glVars::kb::onlyC && !insert_all_dict) {
+	// Add CSentence words to graph
+	CSentence::iterator it = cs.begin();
+	CSentence::iterator end = cs.end();
+	for(;it != end; ++it) {
+	  kb.add_token(it->word());
+	}
+  }
+}
+
+static void maybe_postproc_ranks(vector<float> & ranks) {
+  if (glVars::csentence::disamb_minus_static) {
+	const vector<float> & static_ranks = Kb::instance().static_prank();
+	for(size_t s_i = 0, s_m = static_ranks.size();
+		s_i != s_m; ++s_i) {
+	  ranks[s_i] -= static_ranks[s_i];
+	}
+  }
+}
+
+void compute_sentence_vectors(string & out_dir) {
+
+  File_elem fout("lala", out_dir, ".ppv");
+
+  vector<CSentence> vcs;
+  CSentence cs;
+
+  maybe_add_full_dictionary();
+
+  // Read sentences and compute rank vectors
+  size_t l_n  = 0;
+  while (cs.read_aw(std::cin, l_n)) {
+	// Initialize rank vector
+	vector<float> ranks;
+	maybe_add_cs_words(cs);
+	bool ok = calculate_kb_ppr(cs,ranks);
+	if (!ok) {
+	  cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
+	  continue;
+	}
+	maybe_postproc_ranks(ranks);
+	create_output_ppv(ranks, ppv_prefix + cs.id(), fout);
+	cs = CSentence();
+  }
+}
+
+void compute_sentence_vectors_w2w(string & out_dir) {
+
+  File_elem fout("lala", out_dir, ".ppv");
+
+  vector<CSentence> vcs;
+  CSentence cs;
+
+  maybe_add_full_dictionary();
+
+  // Read sentences and compute rank vectors
+  size_t l_n  = 0;
+  while (cs.read_aw(std::cin, l_n)) {
+	vector<float> ranks;
+	int w_n = 1;
+	maybe_add_cs_words(cs);
+	for(vector<CWord>::iterator cw_it = cs.begin(), cw_end = cs.end();
+		cw_it != cw_end; ++cw_it, ++w_n) {
+	  if(!cw_it->is_tgtword()) continue;
+	  bool ok = calculate_kb_ppr_by_word(cs, cw_it, ranks);
+	  if (!ok) {
+		cerr << "Error when calculating ranks for word " << cw_it->wpos() << " in csentence " << cs.id() << endl;
+		continue;
+	  }
+	  maybe_postproc_ranks(ranks);
+	  string ofile = cs.id() + "#";
+	  ofile += lexical_cast<string>(w_n);
+	  create_output_ppv(ranks, ppv_prefix + ofile, fout);
+	}
 	cs = CSentence();
   }
 }
@@ -237,8 +283,6 @@ int main(int argc, char *argv[]) {
   srand(3);
 
   bool opt_static = false;
-  bool opt_nozero = false;
-  float opt_trppv = 0.0f;
 
   string kb_binfile(kb_default_binfile);
 
@@ -456,11 +500,11 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("trunc_ppv")) {
-      opt_trppv = vm["trunc_ppv"].as<float>();
+      trunc_ppv = vm["trunc_ppv"].as<float>();
     }
 
     if (vm.count("nozero")) {
-      opt_nozero = 1;
+	  nozero = true;
     }
 
     if (vm.count("input-file")) {
@@ -516,7 +560,7 @@ int main(int argc, char *argv[]) {
     Kb::instance().display_info(cerr);
 
   try {
-	compute_sentence_vectors(out_dir, opt_trppv, opt_nozero);
+	compute_sentence_vectors(out_dir);
   } catch(std::exception& e) {
     cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
 	exit(-1);
