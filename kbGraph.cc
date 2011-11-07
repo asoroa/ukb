@@ -668,15 +668,15 @@ namespace ukb {
   void Kb::read_from_txt(istream & kbFile,
 						 const set<string> & src_allowed) {
 	string line;
-	int line_number = 0;
+	size_t line_number = 0;
 
 	set<string>::const_iterator srel_end = src_allowed.end();
 	try {
 	  while(kbFile) {
 		vector<string> fields;
-		std::getline(kbFile, line, '\n');
-		trim_spaces(line);
-		line_number++;
+		read_line_noblank(kbFile, line, line_number);
+		if(!kbFile) continue;
+		if (line[0] == '#') continue;
 		rel_parse f;
 		if (!parse_line(line, f)) continue;
 
