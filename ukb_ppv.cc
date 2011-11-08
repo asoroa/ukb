@@ -42,6 +42,7 @@ static int filter_nodes = 0; // 0 -> no filter
 static bool insert_all_dict = true;
 static bool output_control_line = false;
 static bool output_variants_ppv = false;
+static string ppv_prefix;
 static string cmdline("!! -v ");
 
 // - sort all concepts according to their ppv weight, then scan the
@@ -162,7 +163,7 @@ void compute_sentence_vectors(string & out_dir,
 	  }
 	}
 
-	fout.fname = cs.id();
+	fout.fname = ppv_prefix + cs.id();
 
 	ofstream fo(fout.get_fname().c_str(),  ofstream::out);
 	if (!fo) {
@@ -300,6 +301,7 @@ int main(int argc, char *argv[]) {
     ("nozero", "Do not return concepts with zero rank.")
     ("variants,r", "Write also concept variants in PPV")
     ("control_line,l", "First line in PPV files is control")
+	("prefix,p", value<string>(), "Prefix added to all output ppv files.")
     ;
 
   options_description po_hidden("Hidden");
@@ -387,6 +389,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("out_dir")) {
       out_dir = vm["out_dir"].as<string>();
+    }
+
+    if (vm.count("prefix")) {
+      ppv_prefix = vm["prefix"].as<string>();
     }
 
     if (vm.count("dict_file")) {
