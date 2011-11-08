@@ -432,7 +432,8 @@ namespace ukb {
 			  v.push_back(new_cw);
 			} else {
 			  // No synset for that word.
-			  throw std::runtime_error(*it + " can't be mapped to KB.");
+			  if (glVars::debug::warning)
+				cerr << "W:" << *it << " can't be mapped to KB.";
 			}
 		  } catch (std::exception & e) {
 			string msg(e.what());
