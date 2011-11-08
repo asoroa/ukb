@@ -196,5 +196,17 @@ namespace ukb {
 
   void disamb_csentence_kb(CSentence & cs,
 							const std::vector<float> & ranks);
+
+
+  // Functions for calculating initial PV given a CSentence
+
+  int pv_from_cs(const CSentence & cs,
+				 std::vector<float> & pv,
+				 CSentence::const_iterator exclude_word_it);
+
+  int pv_from_cs_onlyC(const CSentence & cs,
+					   std::vector<float> & pv,
+					   CSentence::const_iterator exclude_word_it);
+
 }
 #endif
