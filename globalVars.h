@@ -79,6 +79,10 @@ namespace ukb {
 	  extern bool onlyC; // Graph is formed only by concepts. No word is inserted.
 	}
 
+	namespace dGraph {
+	  extern int max_depth;
+	}
+
 	extern boost::mt19937 rand_generator;
 
 	// Maiztasunak

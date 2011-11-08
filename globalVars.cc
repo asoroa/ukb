@@ -74,6 +74,10 @@ namespace ukb {
 	  bool onlyC = false;
 	}
 
+	namespace dGraph {
+	  int max_depth = 6;
+	}
+
 	//   bool word_norep = 0;
 	//   int hub_neighborhood = 0;
 	//   float context_threshold = 0;

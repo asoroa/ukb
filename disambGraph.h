@@ -12,17 +12,13 @@ using boost::property;
 using boost::property_map;
 using boost::vertex_name_t;
 using boost::vertex_name;
-using boost::vertex_rank_t;
-using boost::vertex_rank;
+using boost::edge_weight_t;
+using boost::edge_weight;
 
-enum vertex_freq_t  { vertex_freq};     // vertex freq (for ppv)
-enum vertex_kbSource_t   { vertex_kbSource };     // original MCR vertex index
-enum edge_freq_t    { edge_freq };      // relation id
+enum edge_freq_t    { edge_freq };
 
 namespace boost {
   BOOST_INSTALL_PROPERTY(edge, freq);
-  BOOST_INSTALL_PROPERTY(vertex, freq);
-  BOOST_INSTALL_PROPERTY(vertex, kbSource);
 }
 
 namespace ukb {
@@ -32,11 +28,8 @@ namespace ukb {
 	boost::vecS,
 	boost::undirectedS,
 	//  boost::bidirectionalS,
-	property<vertex_name_t, std::string,          // the synset name (WN1.6)
-			 property<vertex_rank_t, float,
-					  property<vertex_freq_t, double,
-							   property<vertex_kbSource_t, Kb_vertex_t> > > >,
-	property<edge_freq_t, float>
+	property<vertex_name_t, std::string>,          // the synset name
+	property<edge_weight_t, float>
 	> DisambG;
 
   typedef graph_traits<DisambG>::vertex_descriptor Dis_vertex_t;
@@ -48,14 +41,21 @@ namespace ukb {
   public:
 
 	typedef DisambG boost_graph_t; // the underlying graph type
+	typedef graph_traits<DisambG>::vertex_descriptor vertex_t;
+	typedef graph_traits<DisambG>::edge_descriptor edge_t;
+	typedef graph_traits<DisambG >::vertices_size_type vertex_size_t;
+
 
 	DisambGraph();
 
+	size_t size() const {return num_vertices(g); }
 	std::pair<Dis_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
 	void fill_graph(Kb_vertex_t src,
 					Kb_vertex_t tgt,
 					const std::vector<Kb_vertex_t> & parents);
+
+	void fill_graph(const std::set<Kb_edge_t> & E);
 
 	Dis_vertex_t add_dgraph_vertex(const std::string & str);
 	void add_dgraph_edge(Dis_vertex_t u, Dis_vertex_t v, float w = 1.0);
@@ -66,6 +66,13 @@ namespace ukb {
 	DisambG & graph() {return g;}
 	void prune() {}
 	void reset_edge_weigths();
+
+
+	// prank
+
+	void pageRank_ppv(const std::vector<float> & ppv_map,
+					  std::vector<float> & ranks);
+
   private:
 
 	void read_from_stream (std::ifstream & is);
@@ -88,22 +95,35 @@ namespace ukb {
   void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
 						 const std::vector<float> & ppv_ranks);
 
-  void disamb_csentence(CSentence & cs, DisambGraph & dgraph);
+  // dfs version
+
+  void fill_disamb_graph_dfs(const CSentence &cs, DisambGraph & dgraph);
+
+  void disamb_csentence_dgraph(CSentence & cs, DisambGraph & dgraph,
+							   const std::vector<float> & ranks);
 
   // HITS ranking
 
-  void hits(DisambG & g);
+  void hits(DisambG & g, std::vector<float> & ranks);
 
   // PageRank ranking
 
-  void pageRank_disg(DisambG & g);
+  bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
+							std::vector<float> & ranks);
 
-  void pageRank_ppv_disg(DisambG & g,
-						 const std::map<std::string, size_t> & syn_n);
+  bool csentence_dgraph_ppr_w2w(const CSentence & cs, DisambGraph & dgraph,
+								std::vector<float> & ranks,
+								CSentence::const_iterator exclude_word_it);
 
   // Degree ranking
 
-  void degreeRank(DisambG & g);
+  bool dgraph_degree(DisambGraph & dgraph, std::vector<float> & ranks);
+
+  // Static
+
+  bool dgraph_static(DisambGraph & dgraph,
+					 std::vector<float> & ranks);
+
 
   std::ostream & print_complete_csent(std::ostream & o, CSentence & cs, DisambGraph & dgraph);
 

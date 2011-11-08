@@ -247,16 +247,15 @@ namespace ukb {
 
 	/////////////////////////////////////////////////////////////////////////
 
-	template<typename G, typename coefmap_t, typename wmap_t>
+	template<typename G, typename coefmap_t>
 	void init_degree(const G & g,
-					 coefmap_t In,
-					 wmap_t wmap) {
+					 coefmap_t In) {
 
 	  typename graph_traits<G>::vertex_iterator v, v_end;
 
 	  tie(v, v_end) = vertices(g);
 	  for(; v != v_end; ++v) {
-		In[*v] = out_degree(*v, g);
+		In[*v] = in_degree(*v, g);
 	  }
 	}
   }
