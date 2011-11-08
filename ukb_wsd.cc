@@ -28,6 +28,15 @@ const char *kb_default_binfile = "kb_wnet.bin";
 
 static bool insert_all_dict = true;
 
+enum dgraph_rank_methods {
+  dppr,
+  dppr_w2w,
+  ddegree,
+  dstatic
+};
+
+dgraph_rank_methods dgraph_rank_method = dstatic;
+
 // Program options stuff
 
 /* Auxiliary functions for checking input for validity. */
@@ -60,6 +69,29 @@ void option_dependency(const boost::program_options::variables_map& vm,
 
 // Disambiguate using disambiguation graph (dgraph) method
 
+bool rank_dgraph(DisambGraph & dg,
+				 const CSentence & cs,
+				 vector<float> & ranks) {
+
+  bool ok = false;
+  switch(dgraph_rank_method) {
+  case dppr:
+	ok = csentence_dgraph_ppr(cs, dg, ranks);
+	break;
+  case dppr_w2w:
+	cerr << "Method ppr_w2w not implemented (yet)\n";
+	exit(-1);
+	break;
+  case ddegree:
+	ok = dgraph_degree(dg, ranks);
+	break;
+  case dstatic:
+	ok = dgraph_static(dg, ranks);
+	break;
+  }
+  return ok;
+}
+
 void disamb_dgraph_from_corpus(istream & fh_in,
 							   bool out_semcor) {
 
@@ -69,13 +101,46 @@ void disamb_dgraph_from_corpus(istream & fh_in,
   while (cs.read_aw(fh_in, l_n)) {
 	DisambGraph dgraph;
 	fill_disamb_graph(cs, dgraph);
-	pageRank_disg(dgraph.graph());
-	disamb_csentence(cs, dgraph);
+	vector<float> ranks;
+	bool ok = rank_dgraph(dgraph, cs, ranks);
+	if (!ok) {
+	  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+	  cerr << "(No word links to KB ?)\n";
+	  continue;
+	}
+	disamb_csentence_dgraph(cs, dgraph, ranks);
 	if (out_semcor) cs.print_csent_semcor_aw(cout);
 	else cs.print_csent_simple(cout);
 	cs = CSentence();
   }
 }
+
+// Disambiguate using disambiguation graph (dgraph) method
+// using dfs instead of bfs
+
+void disamb_dgraph_from_corpus_dfs(istream & fh_in,
+								   bool out_semcor) {
+
+  CSentence cs;
+  size_t l_n = 0;
+
+  while (cs.read_aw(fh_in, l_n)) {
+	DisambGraph dgraph;
+	fill_disamb_graph_dfs(cs, dgraph);
+	vector<float> ranks;
+	bool ok = rank_dgraph(dgraph, cs, ranks);
+	if (!ok) {
+	  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+	  cerr << "(No word links to KB ?)\n";
+	  continue;
+	}
+	disamb_csentence_dgraph(cs, dgraph, ranks);
+	if (out_semcor) cs.print_csent_semcor_aw(cout);
+	else cs.print_csent_simple(cout);
+	cs = CSentence();
+  }
+}
+
 
 void dis_csent_ppr(istream & fh_in,
 				   bool out_semcor) {
@@ -115,7 +180,7 @@ void dis_csent_ppr(istream & fh_in,
 
 
 void dis_csent_ppr_by_word(istream & fh_in,
-						  bool out_semcor) {
+						   bool out_semcor) {
 
   Kb & kb = Kb::instance();
 
@@ -165,6 +230,11 @@ void dis_csent_classic_prank(istream & fh_in,
 void test(istream & fh_in,
 		  bool out_semcor) {
 
+
+  disamb_dgraph_from_corpus_dfs(fh_in, false);
+
+  return;
+
   CSentence cs;
 
   vector<float> ranks;
@@ -182,8 +252,16 @@ int main(int argc, char *argv[]) {
 
   string kb_binfile(kb_default_binfile);
 
+  map<string, dgraph_rank_methods> map_dgraph_ranks;
+
+  map_dgraph_ranks["ppr"] = dppr;
+  map_dgraph_ranks["degree"] = ddegree;
+  map_dgraph_ranks["static"] = dstatic;
+  map_dgraph_ranks["ppr_w2w"] = dppr_w2w;
+
   enum dis_method {
 	dgraph,
+	dgraph_dfs,
 	ppr,
 	ppr_w2w,
 	ppr_static
@@ -234,7 +312,8 @@ int main(int argc, char *argv[]) {
     ("ppr", "Given a text input file, disambiguate context using Personalized PageRank method.")
     ("ppr_w2w", "Given a text input file, disambiguate context using Personalized PageRank method word by word (see README).")
     ("static", "Given a text input file, disambiguate context using static pageRank over kb.")
-    ("dis_dgraph", "Given a text input file, disambiguate context using disambiguation graph mehod.")
+    ("dgraph", "Given a text input file, disambiguate context using disambiguation graph mehod (bfs).")
+    ("dgraph_dfs", "Given a text input file, disambiguate context using disambiguation graph mehod (dfs).")
     ("nostatic", "Substract static ppv to final ranks.")
     ("noprior", "Don't multiply priors to target word synsets if --ppr_w2w and --dict_weight are selected.")
     ;
@@ -245,6 +324,8 @@ int main(int argc, char *argv[]) {
     ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
     ("prank_threshold", value<float>(), "Threshold for stopping PageRank. Default is zero. Good value is 0.0001.")
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
+    ("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, degree.")
+    ("dgraph_maxdepth", value<string>(), "If dfs_dgraph is choosen, set the maximum depth (default is 6).")
     ;
 
   options_description po_desc_dict("Dictionary options");
@@ -270,7 +351,6 @@ int main(int argc, char *argv[]) {
   po_hidden.add_options()
     ("bcomp_kb_binfile,M", value<string>(), "Backward compatibility with -K.")
     ("bcomp_dictfile,W", value<string>(), "Backward compatibility with -D.")
-    ("test,t", "(Internal) Do a test.")
     ("test,t", "(Internal) Do a test.")
     ("input-file",value<string>(), "Input file.")
     ;
@@ -336,8 +416,12 @@ int main(int argc, char *argv[]) {
 	  dmethod = ppr_static;
     }
 
-    if (vm.count("dis_dgraph")) {
+    if (vm.count("dgraph")) {
 	  dmethod = dgraph;
+    }
+
+    if (vm.count("dgraph_dfs")) {
+	  dmethod = dgraph_dfs;
     }
 
     if (vm.count("prank_iter")) {
@@ -368,6 +452,30 @@ int main(int argc, char *argv[]) {
 	  }
       glVars::prank::damping = dp;
     }
+
+	if (vm.count("dgraph_maxdepth")) {
+	  size_t md = vm["dgraph_maxdepth"].as<size_t>();
+	  if (md == 0) {
+		cerr << "Error: invalid dgraph_maxdepth of zero\n";
+		goto END;
+	  }
+	  glVars::dGraph::max_depth = md;
+	}
+
+	if (vm.count("dgraph_rank")) {
+      string str = vm["dgraph_rank"].as<string>();
+	  map<string, dgraph_rank_methods>::iterator it = map_dgraph_ranks.find(str);
+	  if (it == map_dgraph_ranks.end()) {
+		cerr << "Error: invalid dgraph_rank method. Should be one of: ";
+		for(map<string, dgraph_rank_methods>::iterator iit = map_dgraph_ranks.begin();
+			iit != map_dgraph_ranks.end(); ++iit)
+		  cerr << " " << iit->first;
+		cerr << "\n";
+		goto END;
+	  }
+	  dgraph_rank_method = it->second;
+	}
+
 
     if (vm.count("nostatic")) {
 	  glVars::csentence::disamb_minus_static = true;
@@ -414,7 +522,6 @@ int main(int argc, char *argv[]) {
     if (vm.count("prank_weight")) {
 	  glVars::prank::use_weight = true;
     }
-
 
     if (vm.count("input-file")) {
       fullname_in = vm["input-file"].as<string>();
@@ -486,17 +593,25 @@ int main(int argc, char *argv[]) {
   }
 
   Kb::create_from_binfile(kb_binfile);
+
   cout << cmdline << "\n";
 
   try {
+	if (opt_do_test) {
+	  test(std::cin, false);
+	  goto END;
+	}
 
 	switch(dmethod) {
-
 	case dgraph:
 	  disamb_dgraph_from_corpus(std::cin, opt_out_semcor);
 	  goto END;
 	  break;
-	case ppr:
+	case dgraph_dfs:
+	  disamb_dgraph_from_corpus_dfs(std::cin, opt_out_semcor);
+	  goto END;
+	  break;
+ 	case ppr:
 	  dis_csent_ppr(std::cin, opt_out_semcor);
 	  goto END;
 	  break;
@@ -514,7 +629,7 @@ int main(int argc, char *argv[]) {
     cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
     exit(-1);
   }
-  END:
+ END:
 
   return 0;
 }
