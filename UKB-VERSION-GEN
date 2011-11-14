@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # taken from git's GIT-VERSION-FILE
 
