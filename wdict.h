@@ -16,6 +16,8 @@ namespace ukb {
 
   // type of dict items
 
+  typedef std::map<std::string, float> ccache_map_t;   // conceptId -> weight
+
   struct WDict_item_t {
 	std::vector<std::string> m_wsyns;
 	std::vector<float> m_counts;
@@ -23,6 +25,8 @@ namespace ukb {
 
 	WDict_item_t() {}
 
+	bool parse_concept(const std::string & hw, const std::string & concept_str,
+					   ccache_map_t & ccache);
   };
 
   // Accessor class for WDict entries associated to a word

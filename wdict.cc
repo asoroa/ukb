@@ -59,8 +59,7 @@ namespace ukb {
 
   static pair<string, float> wdict_parse_weight(const string & str) {
 
-	bool has_w = false;
-	float weight = 0.0f;
+	float weight = 0.0f; // default weight is zero (unless glVars::dict:use_weight is false (see below))
 	string concept_id(str);
 
 	char_separator<char> sf_sep("", ":"); // keep delimiters
@@ -74,21 +73,19 @@ namespace ukb {
 	  // Warning. concept-id can have ":" characters in. So, just
 	  // take the last field as weight, and join the rest.
 	  try {
-		weight = lexical_cast<float>(syn_freq[m - 1]);
-		has_w = true;
+		float tmp = lexical_cast<float>(syn_freq[m - 1]);
+		weight = tmp;
+		// reconstruct concept_id without the weight
+		if (m == 3)
+		  concept_id = syn_freq[0];
+		else
+		  concept_id = join("", syn_freq.begin(), syn_freq.end() - 2);
 	  } catch (boost::bad_lexical_cast &) {
 		// last field wasn't a float. Do nothing.
 	  }
-	  if (has_w) {
-		if (m == 3) {
-		  concept_id = syn_freq[0];
-		} else {
-		  concept_id = join("", syn_freq.begin(), syn_freq.end() - 2);
-		}
-	  } else {
-		concept_id = join("", syn_freq.begin(), syn_freq.end());
-	  }
 	}
+	// if glVars::dict:use_weight is false, set weight to 1 regardless
+	if (!glVars::dict::use_weight) weight = 1.0f;
 	return make_pair(concept_id, weight);
   }
 
@@ -96,10 +93,52 @@ namespace ukb {
 	std::string::size_type m = str.length();
 	std::string::size_type idx = str.find_last_of("-");
 	if (idx == string::npos || idx == m - 1)
-	  throw std::runtime_error("Dictionary concept " + str + " has no POS\n");
+	  throw std::runtime_error("Dictionary concept " + str + " has no POS");
 	if (m - idx > 2)
-	  throw std::runtime_error("Dictionary concept " + str + " has invalid POS (more than 1 char).\n");
+	  throw std::runtime_error("Dictionary concept " + str + " has invalid POS (more than 1 char).");
 	return str.at(idx + 1);
+  }
+
+
+  // parse a new concep tand insert it into WDict_item_t (if previously not there)
+  //
+  // return true if concept (as expressed in concept_str) is new, false otherwise
+  // throw if concept_str syntax is invalid
+
+  bool WDict_item_t::parse_concept(const string & hw, const string & concept_str,
+								   ccache_map_t & ccache) {
+	float weight;
+	string concept_id;
+	char pos_c = 0;
+	tie(concept_id, weight) = wdict_parse_weight(concept_str);
+
+	// POS stuff
+	if(glVars::input::filter_pos) {
+	  pos_c = xtract_pos_cid(concept_id);
+	}
+	// Weight stuff
+	if (glVars::dict::use_weight) {
+	  weight += glVars::dict::weight_smoothfactor;
+	  if (weight == 0.0)
+		throw std::runtime_error ("Error in entry " + hw + ": " + concept_str + " word has zero weight.");
+	}
+
+	// See if concept was already there
+	ccache_map_t::iterator cache_it = ccache.find(concept_id);
+	if (cache_it != ccache.end()) {
+	  // If not a new concept, see if previous concept had the same weight
+	  if (glVars::debug::warning && weight != cache_it->second)
+		cerr << "Warning in entry " + hw + ": " + concept_id + " appears twice with different weights. Skipping.\n";
+	  return false;
+	}
+
+	// new concept
+	m_wsyns.push_back(concept_id);
+	m_thepos.push_back(pos_c);
+	m_counts.push_back(weight);
+	// update cache
+	ccache.insert(make_pair(concept_id, weight));
+	return true;
   }
 
   void WDict::read_wdict_file(const string & fname) {
@@ -123,21 +162,20 @@ namespace ukb {
 	bool insertedP;
 	int words_I = 0;
 
-	typedef map<string, float> ccache_map_t;   // conceptId -> weight
 	map<string, ccache_map_t> concept_cache;
 
 	try {
 	  while(read_line_noblank(fh, line, line_number)) {
 
 		vector<string> fields;
-
 		char_separator<char> sep(" \t");
 		tokenizer<char_separator<char> > tok(line, sep);
 		copy(tok.begin(), tok.end(), back_inserter(fields));
 		if (fields.size() == 0) continue; // blank line
 		if (fields.size() < 2) {
-		  cerr << "read_wdict_file error. Bad line: " << line_number << endl;
-		  exit(-1);
+		  if (!glVars::input::swallow) throw std::runtime_error("Bad line.\n");
+		  cerr << "Wdict: line " << line_number <<  ": Bad line (ignoring).\n" ;
+		  continue;
 		}
 		vector<string>::const_iterator fields_it = fields.begin();
 		vector<string>::const_iterator fields_end = fields.end();
@@ -154,49 +192,34 @@ namespace ukb {
 		map<string, ccache_map_t>::iterator cache_map_it;
 		cache_map_it = concept_cache.insert(make_pair(fields[0], ccache_map_t())).first;
 		ccache_map_t & ccache = cache_map_it->second;
-
+		size_t inserted_concepts_N = ccache.size();
 		for(; fields_it != fields_end; ++fields_it) {
-
-		  float weight;
-		  string concept_id;
-		  tie(concept_id, weight) = wdict_parse_weight(*fields_it);
-
-		  // See if concept was already there
-		  ccache_map_t::iterator cache_it = ccache.find(concept_id);
-		  bool new_concept = (cache_it == ccache.end());
-
-		  if (new_concept) {
-			item.m_wsyns.push_back(concept_id);
-		  }
-
-		  // POS stuff
-
-		  if(new_concept && glVars::input::filter_pos) {
-			char pos_c = xtract_pos_cid(concept_id);
-			item.m_thepos.push_back(pos_c);
-		  }
-
-		  // Weight stuff
-
-		  if (glVars::dict::use_weight) {
-			weight += glVars::dict::weight_smoothfactor;
-			if (weight == 0.0)
-			  throw std::runtime_error ("Error in entry " + fields[0] + ": " + *fields_it + " word has zero weight.");
-			if (new_concept) {
-			  item.m_counts.push_back(weight);
+		  try {
+			if (item.parse_concept(fields[0], *fields_it, ccache)) {
+			  inserted_concepts_N++;
+			}
+		  } catch (std::runtime_error & e) {
+			if (glVars::input::swallow) {
+			  if (glVars::debug::warning) {
+				cerr << "Wdict: line " << lexical_cast<string>(line_number) << ": " << e.what() << "(ignoring).\n";
+			  }
 			} else {
-			  // If not a new concept, see if previous had the same weight
-			  if (weight != cache_it->second)
-				cerr << "Error in entry " + fields[0] + ": " + concept_id + " appears twice with different weights. Skipping.\n";
+			  throw e;
 			}
 		  }
-		  if (new_concept) {
-			ccache.insert(make_pair(concept_id, weight));
+		}
+		if (!inserted_concepts_N) {
+		  // we have a headword but all the associated concepts were erroneous
+		  // Erase the headword from the map
+		  if (glVars::debug::warning) {
+			cerr << "Wdict: line " << lexical_cast<string>(line_number) << ". Ignoring headword " << fields[0] << endl;
 		  }
+		  --words_I;
+		  concept_cache.erase(cache_map_it);
 		}
 	  }
 	} catch (std::exception & e) {
-	  throw std::runtime_error("Error in read_wdict_file: " + string(e.what()) + " in line " + lexical_cast<string>(line_number));
+	  throw std::runtime_error("Error in read_wdict_file, line " + lexical_cast<string>(line_number) + "\n" + string(e.what()));
 	}
   }
 
