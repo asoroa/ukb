@@ -37,6 +37,7 @@ namespace ukb {
 	  extern bool use_weight; // Use weights when linking words to concepts
 	  extern float weight_smoothfactor;
 	  extern bool use_shuffle; // Use random shuffle at reading words from dictionary
+	  extern bool swallow; // When reading the dictionary, go ahead even if malformed input
 	}
 
 	namespace chsq {

@@ -37,6 +37,7 @@ namespace ukb {
 	  bool use_weight = false; // Use weights when linking words to concepts
 	  float weight_smoothfactor = 1.0;
 	  bool use_shuffle = false; // Use random shuffle at reading words from dictionary
+	  bool swallow = true;
 	}
 
 	namespace chsq {

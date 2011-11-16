@@ -332,6 +332,7 @@ int main(int argc, char *argv[]) {
   po_desc_dict.add_options()
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Also sets --prank_weight.")
     ("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
+    ("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
     ;
 
   options_description po_desc_output("Output options");
@@ -491,6 +492,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("dict_file")) {
       glVars::dict_filename = vm["dict_file"].as<string>();
+    }
+
+    if (vm.count("dict_strict")) {
+      glVars::dict::swallow = false;
     }
 
     if (vm.count("dict_weight")) {

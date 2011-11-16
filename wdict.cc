@@ -173,7 +173,7 @@ namespace ukb {
 		copy(tok.begin(), tok.end(), back_inserter(fields));
 		if (fields.size() == 0) continue; // blank line
 		if (fields.size() < 2) {
-		  if (!glVars::input::swallow) throw std::runtime_error("Bad line.\n");
+		  if (!glVars::dict::swallow) throw std::runtime_error("Bad line.\n");
 		  cerr << "Wdict: line " << line_number <<  ": Bad line (ignoring).\n" ;
 		  continue;
 		}
@@ -199,7 +199,7 @@ namespace ukb {
 			  inserted_concepts_N++;
 			}
 		  } catch (std::runtime_error & e) {
-			if (glVars::input::swallow) {
+			if (glVars::dict::swallow) {
 			  if (glVars::debug::warning) {
 				cerr << "Wdict: line " << lexical_cast<string>(line_number) << ": " << e.what() << "(ignoring).\n";
 			  }
