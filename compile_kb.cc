@@ -72,7 +72,7 @@ void set_source_rels(const string & str,
 
 }
 
-void print_iquery_v(KbGraph & g, Kb_vertex_t u, int w = 0, int sp = 0) {
+void print_iquery_v(KbGraph & g, Kb_vertex_t u, float w = 0, int sp = 0) {
 
   string hw(get(vertex_name, g, u));
 
