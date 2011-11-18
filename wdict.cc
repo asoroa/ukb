@@ -22,12 +22,10 @@ namespace ukb {
   //const std::string dict_filename = "kb_source/enWN16";
 
   std::ostream & operator<<(std::ostream & o, const WDict_item_t & item) {
-	o << "S: ";
-	writeV(o, item.m_wsyns);
-	o << "\n";
-	o << "F: ";
-	writeV(o, item.m_counts);
-	o << endl;
+	for(size_t i = 0, n = item.m_wsyns.size(); i != n; ++i) {
+	  o << " " << item.m_wsyns[i];
+	  if (glVars::dict::use_weight)  o << ":" << item.m_counts[i];
+	}
 	return o;
   };
 
@@ -55,7 +53,6 @@ namespace ukb {
 	}
 	return N;
   }
-
 
   static pair<string, float> wdict_parse_weight(const string & str) {
 
@@ -100,13 +97,20 @@ namespace ukb {
   }
 
 
-  // parse a new concep tand insert it into WDict_item_t (if previously not there)
-  //
-  // return true if concept (as expressed in concept_str) is new, false otherwise
-  // throw if concept_str syntax is invalid
+  struct pw_pair_t {
+	char p;
+	float w;
 
-  bool WDict_item_t::parse_concept(const string & hw, const string & concept_str,
-								   ccache_map_t & ccache) {
+	pw_pair_t() : p(0), w(0.0f) {}
+	pw_pair_t(char pp, float ww) : p(pp), w(ww) {}
+
+  };
+
+  typedef std::map<std::string, pw_pair_t> ccache_map_t;   // conceptId -> weight
+
+
+  bool parse_concept(const string & hw, const string & concept_str,
+					 ccache_map_t & ccache) {
 	float weight;
 	string concept_id;
 	char pos_c = 0;
@@ -127,24 +131,16 @@ namespace ukb {
 	ccache_map_t::iterator cache_it = ccache.find(concept_id);
 	if (cache_it != ccache.end()) {
 	  // If not a new concept, see if previous concept had the same weight
-	  if (glVars::debug::warning && weight != cache_it->second)
+	  if (glVars::debug::warning && weight != cache_it->second.w)
 		cerr << "Warning in entry " + hw + ": " + concept_id + " appears twice with different weights. Skipping.\n";
 	  return false;
 	}
-
-	// new concept
-	m_wsyns.push_back(concept_id);
-	m_thepos.push_back(pos_c);
-	m_counts.push_back(weight);
-	// update cache
-	ccache.insert(make_pair(concept_id, weight));
+	// update cache with new concept
+	ccache.insert(make_pair(concept_id, pw_pair_t(pos_c, weight)));
 	return true;
   }
 
   void WDict::read_wdict_file(const string & fname) {
-
-	size_t N = count_lines(fname);
-	vector<string>(N).swap(m_words);
 
 	std::ifstream fh(fname.c_str(), ofstream::in);
 	if(!fh) {
@@ -160,7 +156,6 @@ namespace ukb {
 	string line;
 	size_t line_number = 0;
 	bool insertedP;
-	int words_I = 0;
 
 	map<string, ccache_map_t> concept_cache;
 
@@ -180,31 +175,21 @@ namespace ukb {
 		vector<string>::const_iterator fields_it = fields.begin();
 		vector<string>::const_iterator fields_end = fields.end();
 		++fields_it;
-		WDict::wdicts_t::iterator map_value_it;
 
-		m_words[words_I] = fields[0]; // insert word
-		tie(map_value_it, insertedP) = m_wdicts.insert(make_pair(&m_words[words_I], WDict_item_t()));
-		if (insertedP) words_I++;
-
-		WDict_item_t & item = map_value_it->second;
-
-		// Map to track which concepts are already stored for this headword
 		map<string, ccache_map_t>::iterator cache_map_it;
-		cache_map_it = concept_cache.insert(make_pair(fields[0], ccache_map_t())).first;
+		tie(cache_map_it, insertedP) = concept_cache.insert(make_pair(fields[0], ccache_map_t()));
+		if (insertedP) m_words.push_back(fields[0]);
 		ccache_map_t & ccache = cache_map_it->second;
 		size_t inserted_concepts_N = ccache.size();
 		for(; fields_it != fields_end; ++fields_it) {
 		  try {
-			if (item.parse_concept(fields[0], *fields_it, ccache)) {
+			if (parse_concept(fields[0], *fields_it, ccache)) {
 			  inserted_concepts_N++;
 			}
 		  } catch (std::runtime_error & e) {
-			if (glVars::dict::swallow) {
-			  if (glVars::debug::warning) {
-				cerr << "Wdict: line " << lexical_cast<string>(line_number) << ": " << e.what() << "(ignoring).\n";
-			  }
-			} else {
-			  throw e;
+			if (!glVars::dict::swallow) throw e;
+			if (glVars::debug::warning) {
+			  cerr << "Wdict: line " << lexical_cast<string>(line_number) << ": " << e.what() << "(ignoring).\n";
 			}
 		  }
 		}
@@ -214,12 +199,26 @@ namespace ukb {
 		  if (glVars::debug::warning) {
 			cerr << "Wdict: line " << lexical_cast<string>(line_number) << ". Ignoring headword " << fields[0] << endl;
 		  }
-		  --words_I;
+		  m_words.pop_back();
 		  concept_cache.erase(cache_map_it);
 		}
 	  }
 	} catch (std::exception & e) {
 	  throw std::runtime_error("Error in read_wdict_file, line " + lexical_cast<string>(line_number) + "\n" + string(e.what()));
+	}
+
+	// Now fill actual dictionary
+	for(vector<string>::iterator wit = m_words.begin(), wit_end = m_words.end();
+		wit != wit_end; ++wit) {
+	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(&(*wit), WDict_item_t())).first;
+	  WDict_item_t & item = map_value_it->second;
+	  map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(*wit);
+	  for(map<string, pw_pair_t>::iterator dc_it = cache_map_it->second.begin(), dc_end = cache_map_it->second.end();
+	  	  dc_it != dc_end; ++dc_it) {
+	  	item.m_wsyns.push_back(dc_it->first);
+	  	item.m_counts.push_back(dc_it->second.w);
+	  	item.m_thepos.push_back(dc_it->second.p);
+	  }
 	}
   }
 
@@ -327,4 +326,21 @@ namespace ukb {
 	if (!glVars::dict::use_weight) return 1.0;
 	return _item.m_counts[i];
   }
+
+
+  std::ostream & operator<<(std::ostream & o, const WDict & dict) {
+
+	for(vector<string>::const_iterator it = dict.m_words.begin(), end = dict.m_words.end();
+		it != end; ++it) {
+	  WDict::wdicts_t::const_iterator s_it = dict.m_wdicts.find(&(*it));
+	  if (s_it == dict.m_wdicts.end()) {
+		s_it = dict.m_wdicts.end();
+	  }
+	  assert(s_it != dict.m_wdicts.end());
+	  o << *it << s_it->second << "\n";
+	}
+	return o;
+  };
+
+
 }
