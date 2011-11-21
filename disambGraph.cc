@@ -366,9 +366,9 @@ namespace ukb {
 	return k;
   }
 
-  bool csentence_dgraph_ppr_w2w(const CSentence & cs, DisambGraph & dgraph,
-								vector<float> & ranks,
-								CSentence::const_iterator exclude_word_it) {
+  bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
+							vector<float> & ranks,
+							CSentence::const_iterator exclude_word_it) {
 
 	// get pv pointing to KbGraph vertex_t
 	// transform into Dis_vertex_t
@@ -395,7 +395,7 @@ namespace ukb {
 
   bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
 							vector<float> & ranks) {
-	return csentence_dgraph_ppr_w2w(cs, dgraph, ranks, cs.end());
+	return csentence_dgraph_ppr(cs, dgraph, ranks, cs.end());
   }
 
 
@@ -431,9 +431,14 @@ namespace ukb {
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
-	  cw_it->rank_synsets(dgraph, ranks);
-	  cw_it->disamb_cword();
+	  disamb_cword_dgraph(cw_it, dgraph, ranks);
 	}
+  }
+
+  void disamb_cword_dgraph(CSentence::iterator it, DisambGraph & dgraph,
+						   const std::vector<float> & ranks) {
+	it->rank_synsets(dgraph, ranks);
+	it->disamb_cword();
   }
 
   ostream & print_complete_csent(ostream & o, CSentence & cs, DisambGraph & dgraph) {

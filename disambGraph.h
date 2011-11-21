@@ -102,6 +102,10 @@ namespace ukb {
   void disamb_csentence_dgraph(CSentence & cs, DisambGraph & dgraph,
 							   const std::vector<float> & ranks);
 
+  void disamb_cword_dgraph(CSentence::iterator it, DisambGraph & dgraph,
+						   const std::vector<float> & ranks);
+
+
   // HITS ranking
 
   void hits(DisambG & g, std::vector<float> & ranks);
@@ -109,11 +113,11 @@ namespace ukb {
   // PageRank ranking
 
   bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
-							std::vector<float> & ranks);
+							std::vector<float> & ranks,
+							CSentence::const_iterator exclude_word_it);
 
-  bool csentence_dgraph_ppr_w2w(const CSentence & cs, DisambGraph & dgraph,
-								std::vector<float> & ranks,
-								CSentence::const_iterator exclude_word_it);
+  bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
+							std::vector<float> & ranks);
 
   // Degree ranking
 

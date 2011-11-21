@@ -36,6 +36,7 @@ enum dgraph_rank_methods {
 };
 
 dgraph_rank_methods dgraph_rank_method = dstatic;
+bool use_dfs_dgraph = false;
 
 // Program options stuff
 
@@ -69,18 +70,15 @@ void option_dependency(const boost::program_options::variables_map& vm,
 
 // Disambiguate using disambiguation graph (dgraph) method
 
-bool rank_dgraph(DisambGraph & dg,
-				 const CSentence & cs,
+bool rank_dgraph(const CSentence & cs,
+				 DisambGraph & dg,
 				 vector<float> & ranks) {
 
   bool ok = false;
   switch(dgraph_rank_method) {
   case dppr:
-	ok = csentence_dgraph_ppr(cs, dg, ranks);
-	break;
   case dppr_w2w:
-	cerr << "Method ppr_w2w not implemented (yet)\n";
-	exit(-1);
+	ok = csentence_dgraph_ppr(cs, dg, ranks);
 	break;
   case ddegree:
 	ok = dgraph_degree(dg, ranks);
@@ -92,33 +90,15 @@ bool rank_dgraph(DisambGraph & dg,
   return ok;
 }
 
-void disamb_dgraph_from_corpus(istream & fh_in,
-							   bool out_semcor) {
 
-  CSentence cs;
-  size_t l_n = 0;
+void fill_dgraph(CSentence & cs, DisambGraph & dgraph) {
 
-  while (cs.read_aw(fh_in, l_n)) {
-	DisambGraph dgraph;
-	fill_disamb_graph(cs, dgraph);
-	vector<float> ranks;
-	bool ok = rank_dgraph(dgraph, cs, ranks);
-	if (!ok) {
-	  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-	  cerr << "(No word links to KB ?)\n";
-	  continue;
-	}
-	disamb_csentence_dgraph(cs, dgraph, ranks);
-	if (out_semcor) cs.print_csent_semcor_aw(cout);
-	else cs.print_csent_simple(cout);
-	cs = CSentence();
-  }
+  if (use_dfs_dgraph) fill_disamb_graph_dfs(cs, dgraph);
+  else fill_disamb_graph(cs, dgraph);
+
 }
 
-// Disambiguate using disambiguation graph (dgraph) method
-// using dfs instead of bfs
-
-void disamb_dgraph_from_corpus_dfs(istream & fh_in,
+void disamb_dgraph_from_corpus_w2w(istream & fh_in,
 								   bool out_semcor) {
 
   CSentence cs;
@@ -126,9 +106,41 @@ void disamb_dgraph_from_corpus_dfs(istream & fh_in,
 
   while (cs.read_aw(fh_in, l_n)) {
 	DisambGraph dgraph;
-	fill_disamb_graph_dfs(cs, dgraph);
+	fill_dgraph(cs, dgraph);
 	vector<float> ranks;
-	bool ok = rank_dgraph(dgraph, cs, ranks);
+	for(CSentence::iterator cw_it = cs.begin(), cw_end = cs.end();
+		cw_it != cw_end; ++cw_it) {
+	  if(!cw_it->is_tgtword()) continue;
+	  bool ok = csentence_dgraph_ppr(cs, dgraph, ranks, cw_it);
+	  if (!ok) {
+		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+		cerr << "(No word links to KB ?)\n";
+		continue;
+	  }
+	  disamb_cword_dgraph(cw_it, dgraph, ranks);
+	}
+	if (out_semcor) cs.print_csent_semcor_aw(cout);
+	else cs.print_csent_simple(cout);
+	cs = CSentence();
+  }
+}
+
+void disamb_dgraph_from_corpus(istream & fh_in,
+							   bool out_semcor) {
+
+  if (dgraph_rank_method == dppr_w2w) {
+	disamb_dgraph_from_corpus_w2w(fh_in, out_semcor);
+	return;
+  }
+
+  CSentence cs;
+  size_t l_n = 0;
+
+  while (cs.read_aw(fh_in, l_n)) {
+	DisambGraph dgraph;
+	fill_dgraph(cs, dgraph);
+	vector<float> ranks;
+	bool ok = rank_dgraph(cs, dgraph, ranks);
 	if (!ok) {
 	  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
 	  cerr << "(No word links to KB ?)\n";
@@ -231,7 +243,7 @@ void test(istream & fh_in,
 		  bool out_semcor) {
 
 
-  disamb_dgraph_from_corpus_dfs(fh_in, false);
+  disamb_dgraph_from_corpus(fh_in, false);
 
   return;
 
@@ -255,9 +267,9 @@ int main(int argc, char *argv[]) {
   map<string, dgraph_rank_methods> map_dgraph_ranks;
 
   map_dgraph_ranks["ppr"] = dppr;
+  map_dgraph_ranks["ppr_w2w"] = dppr_w2w;
   map_dgraph_ranks["degree"] = ddegree;
   map_dgraph_ranks["static"] = dstatic;
-  map_dgraph_ranks["ppr_w2w"] = dppr_w2w;
 
   enum dis_method {
 	dgraph,
@@ -324,7 +336,7 @@ int main(int argc, char *argv[]) {
     ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
     ("prank_threshold", value<float>(), "Threshold for stopping PageRank. Default is zero. Good value is 0.0001.")
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
-    ("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, degree.")
+    ("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, ppr_w2w, degree.")
     ("dgraph_maxdepth", value<string>(), "If dfs_dgraph is choosen, set the maximum depth (default is 6).")
     ;
 
@@ -609,11 +621,13 @@ int main(int argc, char *argv[]) {
 
 	switch(dmethod) {
 	case dgraph:
+	  use_dfs_dgraph = false; // use bfs
 	  disamb_dgraph_from_corpus(std::cin, opt_out_semcor);
 	  goto END;
 	  break;
 	case dgraph_dfs:
-	  disamb_dgraph_from_corpus_dfs(std::cin, opt_out_semcor);
+	  use_dfs_dgraph = true;
+	  disamb_dgraph_from_corpus(std::cin, opt_out_semcor);
 	  goto END;
 	  break;
  	case ppr:
