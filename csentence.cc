@@ -238,17 +238,10 @@ namespace ukb {
 
 	//KbGraph & g = ukb::Kb::instance().graph();
 
-	o << cw_.w;
+	o << cw_.w << "#";
 	if (cw_.m_pos)
-	  o << "-" << cw_.m_pos;
-	if(glVars::csentence::concepts_in)
-	  o << "#" << cw_.m_weight;
-	o << "#" << cw_.m_id << "#" << cw_.m_type << " " << cw_.m_disamb;
-	o << '\n';
-	for(size_t i = 0; i < cw_.m_syns.size(); ++i) {
-	  assert(i < cw_.m_ranks.size());
-	  o << cw_.m_syns[i] << ":" << cw_.m_ranks[i] << '\n';
-	}
+	  o << cw_.m_pos;
+	o << "#" << cw_.m_id << "#" << cw_.m_type;
 	return o;
   }
 
@@ -437,12 +430,9 @@ namespace ukb {
 			}
 		  } catch (std::exception & e) {
 			string msg(e.what());
-			if (glVars::input::swallow) {
-			  if (glVars::debug::warning) {
-				cerr << msg << "\n";
-			  }
-			} else {
-			  throw std::runtime_error(msg);
+			if (!glVars::input::swallow) throw std::runtime_error(msg);
+			if (glVars::debug::warning) {
+			  cerr << msg << "\n";
 			}
 		  }
 		}
