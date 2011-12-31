@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
     ("prank_threshold", value<float>(), "Threshold for stopping PageRank. Default is zero. Good value is 0.0001.")
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
     ("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, ppr_w2w, degree.")
-    ("dgraph_maxdepth", value<string>(), "If dfs_dgraph is choosen, set the maximum depth (default is 6).")
+    ("dgraph_maxdepth", value<size_t>(), "If dfs_dgraph is choosen, set the maximum depth (default is 6).")
     ;
 
   options_description po_desc_dict("Dictionary options");
