@@ -286,6 +286,20 @@ namespace ukb {
 
   // dfs visitor (should be in kbgraph but ...)
 
+  // implements as dfs with max depth. Here is the main idea (taken form a mail
+  // in boost.users mailing list), due to David Abrahams:
+
+  // It should be pretty easy to see how to a different visitor adaptor, sort of
+  // like time_stamper, which increments a depth count when you discover a
+  // vertex and decrements when you finish it.
+
+  // Then you create a graph adaptor that refers to the depth count, and returns
+  // an empty range for out_edges when the depth reaches your limit.  This
+  // relies on knowing a lot about the structure of the DFS implementation, but
+  // after all, the library documents it, so it should be OK to take advantage
+  // of that.
+
+
   class dfsa_visitor : public default_dfs_visitor {
   public:
 	dfsa_visitor(Kb_vertex_t s, const set<Kb_vertex_t> & S, set<Kb_edge_t> & E)
@@ -310,10 +324,10 @@ namespace ukb {
 	}
 
   private:
-	Kb_vertex_t m_s;     // source vertex
-	const set<Kb_vertex_t> & m_S;
-	set<Kb_edge_t> & m_E;
-	list<Kb_edge_t> m_P; // path of DFS so far
+	Kb_vertex_t m_s;              // source vertex
+	const set<Kb_vertex_t> & m_S; // set of target synsets
+	set<Kb_edge_t> & m_E;         // the result set of edges
+	list<Kb_edge_t> m_P;          // path of DFS so far
 	set<Kb_vertex_t>::const_iterator m_S_end;
   };
 
