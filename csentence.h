@@ -165,6 +165,14 @@ namespace ukb {
 	reference back() {return v.back();}
 	const_reference back() const {return v.back();}
 
+	const CWord & operator[]( int i ) const {
+	  return v[i];
+	}
+
+	CWord & operator[]( int i ) {
+	  return v[i];
+	}
+
 	size_type size() const {return v.size();}
 	std::string id() const {return cs_id;}
 

@@ -105,19 +105,27 @@ void disamb_dgraph_from_corpus_w2w(istream & fh_in,
   size_t l_n = 0;
 
   while (cs.read_aw(fh_in, l_n)) {
-	DisambGraph dgraph;
-	fill_dgraph(cs, dgraph);
-	vector<float> ranks;
-	for(CSentence::iterator cw_it = cs.begin(), cw_end = cs.end();
-		cw_it != cw_end; ++cw_it) {
-	  if(!cw_it->is_tgtword()) continue;
-	  bool ok = csentence_dgraph_ppr(cs, dgraph, ranks, cw_it);
-	  if (!ok) {
-		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-		cerr << "(No word links to KB ?)\n";
-		continue;
+	// fall back to static if csentence has only one word
+	if (cs.size() == 1) {
+      if (glVars::debug::warning)
+		cerr << "dis_csent: using static for context " << cs.id() << endl;
+	  const vector<float> ranks = Kb::instance().static_prank();
+	  disamb_csentence_kb(cs, ranks);
+	} else {
+	  DisambGraph dgraph;
+	  fill_dgraph(cs, dgraph);
+	  vector<float> ranks;
+	  for(CSentence::iterator cw_it = cs.begin(), cw_end = cs.end();
+		  cw_it != cw_end; ++cw_it) {
+		if(!cw_it->is_tgtword()) continue;
+		bool ok = csentence_dgraph_ppr(cs, dgraph, ranks, cw_it);
+		if (!ok) {
+		  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+		  cerr << "(No word links to KB ?)\n";
+		  continue;
+		}
+		disamb_cword_dgraph(cw_it, dgraph, ranks);
 	  }
-	  disamb_cword_dgraph(cw_it, dgraph, ranks);
 	}
 	if (out_semcor) cs.print_csent_semcor_aw(cout);
 	else cs.print_csent_simple(cout);
@@ -137,20 +145,40 @@ void disamb_dgraph_from_corpus(istream & fh_in,
   size_t l_n = 0;
 
   while (cs.read_aw(fh_in, l_n)) {
-	DisambGraph dgraph;
-	fill_dgraph(cs, dgraph);
-	vector<float> ranks;
-	bool ok = rank_dgraph(cs, dgraph, ranks);
-	if (!ok) {
-	  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-	  cerr << "(No word links to KB ?)\n";
-	  continue;
+	// fall back to static if csentence has only one word
+	if (cs.size() == 1) {
+      if (glVars::debug::warning)
+		cerr << "dis_csent: using static for context " << cs.id() << endl;
+	  const vector<float> ranks = Kb::instance().static_prank();
+	  disamb_csentence_kb(cs, ranks);
+	} else {
+	  DisambGraph dgraph;
+	  fill_dgraph(cs, dgraph);
+	  vector<float> ranks;
+	  bool ok = rank_dgraph(cs, dgraph, ranks);
+	  if (!ok) {
+		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+		cerr << "(No word links to KB ?)\n";
+		continue;
+	  }
+	  disamb_csentence_dgraph(cs, dgraph, ranks);
 	}
-	disamb_csentence_dgraph(cs, dgraph, ranks);
 	if (out_semcor) cs.print_csent_semcor_aw(cout);
 	else cs.print_csent_simple(cout);
 	cs = CSentence();
   }
+}
+
+void ppr_csent(CSentence & cs) {
+
+  vector<float> ranks;
+  bool ok = calculate_kb_ppr(cs,ranks);
+  if (!ok) {
+	cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+	cerr << "(No word links to KB ?)\n";
+	return;
+  }
+  disamb_csentence_kb(cs, ranks);
 }
 
 
@@ -167,7 +195,6 @@ void dis_csent_ppr(istream & fh_in,
   size_t l_n = 0;
 
   while (cs.read_aw(fh_in, l_n)) {
-
 	if(!glVars::kb::onlyC && !insert_all_dict) {
 	  CSentence::iterator it = cs.begin();
 	  CSentence::iterator end = cs.end();
@@ -175,15 +202,15 @@ void dis_csent_ppr(istream & fh_in,
 		kb.add_token(it->word());
 	  }
 	}
-	vector<float> ranks;
-	bool ok = calculate_kb_ppr(cs,ranks);
-	if (!ok) {
-	  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-	  cerr << "(No word links to KB ?)\n";
-	  continue;
+	// fall back to static if csentence has only one word
+	if (cs.size() == 1) {
+      if (glVars::debug::warning)
+		cerr << "dis_csent: using static for context " << cs.id() << endl;
+	  const vector<float> ranks = Kb::instance().static_prank();
+	  disamb_csentence_kb(cs, ranks);
+	} else {
+	  ppr_csent(cs);
 	}
-
-	disamb_csentence_kb(cs, ranks);
 	if (out_semcor) cs.print_csent_semcor_aw(cout);
 	else cs.print_csent_simple(cout);
 	cs = CSentence();
@@ -213,8 +240,15 @@ void dis_csent_ppr_by_word(istream & fh_in,
 		kb.add_token(it->word());
 	  }
 	}
-
-	calculate_kb_ppr_by_word_and_disamb(cs);
+	// fall back to static if csentence has only one word
+	if (cs.size() == 1) {
+      if (glVars::debug::warning)
+		cerr << "dis_csent: using static for context " << cs.id() << endl;
+	  const vector<float> ranks = Kb::instance().static_prank();
+	  disamb_csentence_kb(cs, ranks);
+	} else {
+	  calculate_kb_ppr_by_word_and_disamb(cs);
+	}
 	if (out_semcor) cs.print_csent_semcor_aw(cout);
 	else cs.print_csent_simple(cout);
 
