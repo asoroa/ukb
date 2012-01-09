@@ -82,6 +82,7 @@ namespace ukb {
 
 	namespace dGraph {
 	  extern int max_depth;
+	  extern bool stopCosenses;
 	}
 
 	extern boost::mt19937 rand_generator;

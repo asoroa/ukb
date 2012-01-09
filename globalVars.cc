@@ -77,6 +77,7 @@ namespace ukb {
 
 	namespace dGraph {
 	  int max_depth = 6;
+	  bool stopCosenses = false;
 	}
 
 	//   bool word_norep = 0;

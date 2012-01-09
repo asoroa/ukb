@@ -93,7 +93,11 @@ bool rank_dgraph(const CSentence & cs,
 
 void fill_dgraph(CSentence & cs, DisambGraph & dgraph) {
 
-  if (use_dfs_dgraph) fill_disamb_graph_dfs(cs, dgraph);
+  if (use_dfs_dgraph) {
+	if (glVars::dGraph::stopCosenses)
+	  fill_disamb_graph_dfs_nocosenses(cs, dgraph);
+	else fill_disamb_graph_dfs(cs, dgraph);
+  }
   else fill_disamb_graph(cs, dgraph);
 
 }
@@ -357,6 +361,7 @@ int main(int argc, char *argv[]) {
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
     ("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, ppr_w2w, degree.")
     ("dgraph_maxdepth", value<size_t>(), "If dfs_dgraph is choosen, set the maximum depth (default is 6).")
+    ("dgraph_nocosenses", "Stop DFS when finding one co-sense of target word in path.")
     ;
 
   options_description po_desc_dict("Dictionary options");
@@ -492,6 +497,10 @@ int main(int argc, char *argv[]) {
 		goto END;
 	  }
 	  glVars::dGraph::max_depth = md;
+	}
+
+	if (vm.count("dgraph_nocosenses")) {
+	  glVars::dGraph::stopCosenses = true;
 	}
 
 	if (vm.count("dgraph_rank")) {

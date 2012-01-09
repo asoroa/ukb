@@ -302,13 +302,21 @@ namespace ukb {
 
   class dfsa_visitor : public default_dfs_visitor {
   public:
-	dfsa_visitor(Kb_vertex_t s, const set<Kb_vertex_t> & S, set<Kb_edge_t> & E)
-	  : m_s(s), m_S(S), m_E(E), m_P(list<Kb_edge_t> ()), m_S_end(S.end()) {}
+	dfsa_visitor(Kb_vertex_t s, const set<Kb_vertex_t> & S, const set<Kb_vertex_t> & C,
+				 set<Kb_edge_t> & E)
+	  : m_s(s), m_S(S), m_C(C), m_E(E), m_P(list<Kb_edge_t> ()), m_S_end(S.end()), m_C_end(C.end()) {}
 
 	void discover_vertex(Kb_vertex_t u, const dfsa<KbGraph>& ag) {
 	  if (u == m_s) return;
-	  if(m_S.find(u) == m_S_end) return;
+	  if(m_S.find(u) == m_S_end) return; // if u not in S, return
 	  // Insert current path m_P into m_E
+	  // Do nothing if there are cosenses in path
+	  if(m_C.size()) {
+		for(list<Kb_edge_t>::iterator it = m_P.begin(), end = m_P.begin();
+			it != end; ++it) {
+		  if(m_C.find(target(*it, ag)) != m_C_end) return; // if edge target is co-sense, do nothing
+		}
+	  }
 	  m_E.insert(m_P.begin(), m_P.end());
 	}
 
@@ -326,10 +334,50 @@ namespace ukb {
   private:
 	Kb_vertex_t m_s;              // source vertex
 	const set<Kb_vertex_t> & m_S; // set of target synsets
+	const set<Kb_vertex_t> & m_C; // the cosenses of source word
 	set<Kb_edge_t> & m_E;         // the result set of edges
 	list<Kb_edge_t> m_P;          // path of DFS so far
 	set<Kb_vertex_t>::const_iterator m_S_end;
+	set<Kb_vertex_t>::const_iterator m_C_end;
   };
+
+
+  void fill_disamb_graph_dfs_nocosenses(const CSentence &cs, DisambGraph & dgraph) {
+	set<Kb_vertex_t> S;
+	KbGraph g = Kb::instance().graph();
+	dfsa<KbGraph> ag(g, glVars::dGraph::max_depth);
+	map<string, set<Kb_vertex_t> > coSenses;
+
+	// Init S with all target synsets
+	for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
+		cw_it != cw_end; ++cw_it) {
+	  map<string, set<Kb_vertex_t> >::iterator mit;
+	  for(vector<pair<Kb_vertex_t, float> >::const_iterator v_it = cw_it->V_vector().begin(),
+			v_end = cw_it->V_vector().end();
+		  v_it != v_end; ++v_it) {
+		S.insert((*v_it).first);
+	  }
+	}
+
+	std::vector<int> colors(num_vertices(g));
+
+	for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
+		cw_it != cw_end; ++cw_it) {
+	  set<Kb_vertex_t> cosenses;
+	  for(vector<pair<Kb_vertex_t, float> >::const_iterator wit = cw_it->V_vector().begin(), wend = cw_it->V_vector().end();
+		  wit != wend; ++wit) cosenses.insert((*wit).first);
+	  for(vector<pair<Kb_vertex_t, float> >::const_iterator wit = cw_it->V_vector().begin(), wend = cw_it->V_vector().end();
+		  wit != wend; ++wit) {
+		set<Kb_edge_t> subg;
+		Kb_vertex_t src = (*wit).first;
+		dfsa_visitor vis(src, S, cosenses, subg);
+		depth_first_visit(ag, src, vis,
+		 				  make_iterator_property_map(colors.begin(), get(vertex_index, g)));
+		// Now  populate disambGraph with edges in subg
+		dgraph.fill_graph(subg);
+	  }
+	}
+  }
 
   void fill_disamb_graph_dfs(const CSentence &cs, DisambGraph & dgraph) {
 	set<Kb_vertex_t> S;
@@ -349,16 +397,14 @@ namespace ukb {
 	std::vector<int> colors(num_vertices(g));
 
 	for(set<Kb_vertex_t>::iterator it = S.begin(), end = S.end(); it != end; ++it) {
-	  std::fill(colors.begin(), colors.end(), 0);
 	  set<Kb_edge_t> subg;
-	  dfsa_visitor vis(*it, S, subg);
+	  dfsa_visitor vis(*it, S, set<Kb_vertex_t>(), subg);
 	  depth_first_visit(ag, *it, vis,
 						make_iterator_property_map(colors.begin(), get(vertex_index, g)));
 	  // Now  populate disambGraph with edges in subg
 	  dgraph.fill_graph(subg);
 	}
   }
-
 
   // Convert a pv vector of Kb_vertex_t to the equivalent for Dis_vertex_t
 
@@ -445,6 +491,7 @@ namespace ukb {
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
+	  if(!cw_it->is_tgtword()) continue;
 	  disamb_cword_dgraph(cw_it, dgraph, ranks);
 	}
   }
