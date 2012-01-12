@@ -349,30 +349,34 @@ namespace ukb {
 	map<string, set<Kb_vertex_t> > coSenses;
 
 	// Init S with all target synsets
+	// Also, update coSense set for target words
 	for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
 		cw_it != cw_end; ++cw_it) {
-	  map<string, set<Kb_vertex_t> >::iterator mit;
+	  map<string, set<Kb_vertex_t> >::iterator coS_it;
+	  if(cw_it->is_tgtword())
+		coS_it = coSenses.insert(make_pair(cw_it->wpos(), set<Kb_vertex_t> ())).first;
 	  for(vector<pair<Kb_vertex_t, float> >::const_iterator v_it = cw_it->V_vector().begin(),
 			v_end = cw_it->V_vector().end();
 		  v_it != v_end; ++v_it) {
 		S.insert((*v_it).first);
+		if(cw_it->is_tgtword()) (*coS_it).second.insert((*v_it).first);
 	  }
 	}
 
-	std::vector<int> colors(num_vertices(g));
+	std::vector<default_color_type> colors(num_vertices(g));
+	typedef color_traits<default_color_type> Color;
 
 	for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
 		cw_it != cw_end; ++cw_it) {
-	  set<Kb_vertex_t> cosenses;
-	  for(vector<pair<Kb_vertex_t, float> >::const_iterator wit = cw_it->V_vector().begin(), wend = cw_it->V_vector().end();
-		  wit != wend; ++wit) cosenses.insert((*wit).first);
+	  if (!cw_it->is_tgtword()) continue;
+	  set<Kb_vertex_t> & coS = coSenses[cw_it->wpos()];
 	  for(vector<pair<Kb_vertex_t, float> >::const_iterator wit = cw_it->V_vector().begin(), wend = cw_it->V_vector().end();
 		  wit != wend; ++wit) {
 		set<Kb_edge_t> subg;
 		Kb_vertex_t src = (*wit).first;
-		dfsa_visitor vis(src, S, cosenses, subg);
-		depth_first_visit(ag, src, vis,
-		 				  make_iterator_property_map(colors.begin(), get(vertex_index, g)));
+		fill(colors.begin(), colors.end(), Color::white());
+		dfsa_visitor vis(src, S, coS, subg);
+		depth_first_visit(ag, src, vis, &colors[0]);
 		// Now  populate disambGraph with edges in subg
 		dgraph.fill_graph(subg);
 	  }
@@ -381,6 +385,7 @@ namespace ukb {
 
   void fill_disamb_graph_dfs(const CSentence &cs, DisambGraph & dgraph) {
 	set<Kb_vertex_t> S;
+	set<Kb_vertex_t> TW_S;
 	KbGraph g = Kb::instance().graph();
 	dfsa<KbGraph> ag(g, glVars::dGraph::max_depth);
 
@@ -391,16 +396,18 @@ namespace ukb {
 			v_end = cw_it->V_vector().end();
 		  v_it != v_end; ++v_it) {
 		S.insert((*v_it).first);
+		if(cw_it->is_tgtword()) TW_S.insert((*v_it).first);
 	  }
 	}
 
-	std::vector<int> colors(num_vertices(g));
+	std::vector<default_color_type> colors(num_vertices(g));
+	typedef color_traits<default_color_type> Color;
 
-	for(set<Kb_vertex_t>::iterator it = S.begin(), end = S.end(); it != end; ++it) {
+	for(set<Kb_vertex_t>::iterator it = TW_S.begin(), end = TW_S.end(); it != end; ++it) {
+	  fill(colors.begin(), colors.end(), Color::white());
 	  set<Kb_edge_t> subg;
 	  dfsa_visitor vis(*it, S, set<Kb_vertex_t>(), subg);
-	  depth_first_visit(ag, *it, vis,
-						make_iterator_property_map(colors.begin(), get(vertex_index, g)));
+	  depth_first_visit(ag, *it, vis, &colors[0]);
 	  // Now  populate disambGraph with edges in subg
 	  dgraph.fill_graph(subg);
 	}
