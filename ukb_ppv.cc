@@ -112,49 +112,51 @@ void top_k(vector<float> & ppv, size_t k) {
 }
 
 
+static void output_ppv_stream(const vector<float> & ranks, ostream & os) {
+  vector<float> outranks;
+  vector<string> vnames;
+
+  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
+  if (trunc_ppv > 0.0f) {
+	if (trunc_ppv < 1.0f)
+	  truncate_ppv(outranks, trunc_ppv);
+	else {
+	  // For top k calculation
+	  //
+	  //  - fill with zeros all values except top k
+	  //  - set nozero = 1 so only top k are printed
+	  //
+	  // * could be a problem if top k had zeros in it, as they
+	  //   will not be properly printed.
+
+	  top_k(outranks, lexical_cast<size_t>(trunc_ppv));
+	  nozero = true;
+	}
+  }
+
+  if (output_control_line)
+	os << cmdline << "\n";
+  for(size_t i = 0; i < outranks.size(); ++i) {
+	if (nozero && outranks [i] == 0.0) continue;
+	os << vnames[i] << "\t" << outranks[i];
+	if (output_variants_ppv) {
+	  os << "\t" << WDict::instance().variant(vnames[i]);
+	}
+	os << "\n";
+  }
+}
+
 static void create_output_ppv(const vector<float> & ranks,
 							  const string & filename,
 							  File_elem & fout) {
-	fout.fname = filename;
+  fout.fname = filename;
 
-	ofstream fo(fout.get_fname().c_str(),  ofstream::out);
-	if (!fo) {
-	  cerr << "Error: can't create" << fout.get_fname() << endl;
-	  exit(-1);
-	}
-
-	vector<float> outranks;
-	vector<string> vnames;
-
-	Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
-
-	if (trunc_ppv > 0.0f) {
-	  if (trunc_ppv < 1.0f)
-		truncate_ppv(outranks, trunc_ppv);
-	  else {
-		// For top k calculation
-		//
-		//  - fill with zeros all values except top k
-		//  - set nozero = 1 so only top k are printed
-		//
-		// * could be a problem if top k had zeros in it, as they
-		//   will not be properly printed.
-
-		top_k(outranks, lexical_cast<size_t>(trunc_ppv));
-		nozero = true;
-	  }
-	}
-
-	if (output_control_line)
-	  fo << cmdline << "\n";
-	for(size_t i = 0; i < outranks.size(); ++i) {
-	  if (nozero && outranks [i] == 0.0) continue;
-	  fo << vnames[i] << "\t" << outranks[i];
-	  if (output_variants_ppv) {
-		fo << "\t" << WDict::instance().variant(vnames[i]);
-	  }
-	  fo << "\n";
-	}
+  ofstream fo(fout.get_fname().c_str(),  ofstream::out);
+  if (!fo) {
+	cerr << "Error: can't create" << fout.get_fname() << endl;
+	exit(-1);
+  }
+  output_ppv_stream(ranks, fo);
 }
 
 static void maybe_add_full_dictionary() {
@@ -265,17 +267,7 @@ void compute_static_ppv() {
   vector<string> vnames;
 
   Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, 2);
-
-  if (output_control_line)
-	cout << cmdline << "\n";
-  for(size_t i = 0; i < outranks.size(); ++i) {
-	cout << vnames[i] << "\t" << outranks[i];
-	if (output_variants_ppv) {
-	  cout << "\t" << WDict::instance().variant(vnames[i]);
-	}
-	cout << "\n";
-  }
-
+  output_ppv_stream(outranks, cout);
 }
 
 int main(int argc, char *argv[]) {
@@ -520,6 +512,10 @@ int main(int argc, char *argv[]) {
   catch(std::exception& e) {
     cerr << e.what() << "\n";
 	exit(-1);
+  }
+
+  if (glVars::kb::onlyC) {
+	filter_nodes = 0;
   }
 
   if (opt_static) {
