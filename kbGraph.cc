@@ -480,7 +480,6 @@ namespace ukb {
 	  outranks[v_i] = ranks[V[v_i]];
 	  vnames[v_i] = get(vertex_name, g, V[v_i]);
 	}
-	normalize_pvector(outranks);
   }
 
 

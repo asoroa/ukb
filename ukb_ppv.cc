@@ -39,6 +39,8 @@ static int filter_nodes = 0; // 0 -> no filter
                              // 1 -> only words
                              // 2 -> only synsets
 
+static bool opt_normalize_ranks = true;
+
 static bool insert_all_dict = true;
 static bool output_control_line = false;
 static bool output_variants_ppv = false;
@@ -117,6 +119,8 @@ static void output_ppv_stream(const vector<float> & ranks, ostream & os) {
   vector<string> vnames;
 
   Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
+  if (opt_normalize_ranks) normalize_pvector(outranks);
+
   if (trunc_ppv > 0.0f) {
 	if (trunc_ppv < 1.0f)
 	  truncate_ppv(outranks, trunc_ppv);
@@ -334,6 +338,7 @@ int main(int argc, char *argv[]) {
   po_desc_output.add_options()
     ("only_words", "Output only (normalized) PPVs for words.")
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
+    ("rank_nonorm", "Do not normalize the output ranks.")
     ("trunc_ppv", value<float>(), "Truncate PPV threshold (a la gabrilovich). If arg > 1, return top arg nodes.")
     ("nozero", "Do not return concepts with zero rank.")
     ("variants,r", "Write also concept variants in PPV")
@@ -406,6 +411,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("only_ctx_words")) {
       insert_all_dict = false;
+    }
+
+    if (vm.count("rank_nonorm")) {
+	  opt_normalize_ranks = false;
     }
 
     if (vm.count("concept_graph")) {
@@ -515,6 +524,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (glVars::kb::onlyC) {
+	opt_normalize_ranks = false;
 	filter_nodes = 0;
   }
 
