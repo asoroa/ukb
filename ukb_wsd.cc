@@ -367,7 +367,7 @@ int main(int argc, char *argv[]) {
   options_description po_desc_dict("Dictionary options");
   po_desc_dict.add_options()
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Also sets --prank_weight.")
-    ("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
+    ("smooth_dict_weight", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
     ("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
     ;
 
@@ -543,8 +543,8 @@ int main(int argc, char *argv[]) {
       glVars::prank::use_weight = true;
     }
 
-    if (vm.count("dict_weight_smooth")) {
-      glVars::dict::weight_smoothfactor = vm["dict_weight_smooth"].as<float>();
+    if (vm.count("smooth_dict_weight")) {
+      glVars::dict::weight_smoothfactor = vm["smooth_dict_weight"].as<float>();
     }
 
     if (vm.count("bcomp_kb_binfile")) {
