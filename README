@@ -268,7 +268,7 @@ man1-n##c1#2#0.6 man2-n##c2#2#0.3 man3-n##c3#2#0.1 man#n#w1#3
 
 w: a weight (optional)
 
-      the fifth field (if present) has to be a possitive number. The number will
+      the fifth field (if present) has to be a positive number. The number will
       be used for calculating the personalized vector for this graph node. In
       absence, the weight is 1. 
 
