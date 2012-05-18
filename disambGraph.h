@@ -6,6 +6,8 @@
 #include "kbGraph.h"
 #include "csentence.h"
 
+#include <boost/graph/adjacency_list.hpp>
+
 using boost::adjacency_list;
 using boost::graph_traits;
 using boost::property;

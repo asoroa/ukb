@@ -35,13 +35,8 @@ using namespace ukb;
 
 const char *kb_default_binfile = "kb_wnet.bin";
 
-static int filter_nodes = 0; // 0 -> no filter
-                             // 1 -> only words
-                             // 2 -> only synsets
-
 static bool opt_normalize_ranks = true;
 
-static bool insert_all_dict = true;
 static bool output_control_line = false;
 static bool output_variants_ppv = false;
 static float trunc_ppv = 0.0;
@@ -114,11 +109,12 @@ void top_k(vector<float> & ppv, size_t k) {
 }
 
 
-static void output_ppv_stream(const vector<float> & ranks, ostream & os) {
-  vector<float> outranks;
+static void output_ppv_stream(vector<float> & outranks, ostream & os) {
+
+  Kb & kb = Kb::instance();
+
   vector<string> vnames;
 
-  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, filter_nodes);
   if (opt_normalize_ranks) normalize_pvector(outranks);
 
   if (trunc_ppv > 0.0f) {
@@ -142,7 +138,7 @@ static void output_ppv_stream(const vector<float> & ranks, ostream & os) {
 	os << cmdline << "\n";
   for(size_t i = 0; i < outranks.size(); ++i) {
 	if (nozero && outranks [i] == 0.0) continue;
-	os << vnames[i] << "\t" << outranks[i];
+	os << kb.get_vertex_name(i) << "\t" << outranks[i];
 	if (output_variants_ppv) {
 	  os << "\t" << WDict::instance().variant(vnames[i]);
 	}
@@ -150,7 +146,7 @@ static void output_ppv_stream(const vector<float> & ranks, ostream & os) {
   }
 }
 
-static void create_output_ppv(const vector<float> & ranks,
+static void create_output_ppv(vector<float> & ranks,
 							  const string & filename,
 							  File_elem & fout) {
   fout.fname = filename;
@@ -166,29 +162,10 @@ static void create_output_ppv(const vector<float> & ranks,
 static void maybe_add_full_dictionary() {
 
   // add words into Kb
-
-  Kb & kb = Kb::instance();
-  if (!glVars::kb::onlyC && insert_all_dict) {
-	if (glVars::verbose)
-	  cerr << "Adding words to Kb ...";
-	kb.add_dictionary();
-  }
-
-  if (glVars::verbose)
-    Kb::instance().display_info(cerr);
 }
 
 static void maybe_add_cs_words(CSentence & cs) {
 
-  Kb & kb = Kb::instance();
-  if(!glVars::kb::onlyC && !insert_all_dict) {
-	// Add CSentence words to graph
-	CSentence::iterator it = cs.begin();
-	CSentence::iterator end = cs.end();
-	for(;it != end; ++it) {
-	  kb.add_token(it->word());
-	}
-  }
 }
 
 static void maybe_postproc_ranks(vector<float> & ranks) {
@@ -314,9 +291,7 @@ int main(int argc, char *argv[]) {
     ("nostatic", "Substract static ppv to final ranks.")
     ("verbose,v", "Be verbose.")
 	("nopos", "Don't filter words by Part of Speech.")
-	("poslightw", "Light words instead of wpos when calculating personalization vector.")
 	("minput", "Do not die when dealing with malformed input.")
-	("wiki", "Usual options for wikipedia (sets --nopos, --only_ctx_words and --only_synsets).")
     ;
 
   options_description po_desc_prank("pageRank general options");
@@ -336,9 +311,6 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_output("Output options");
   po_desc_output.add_options()
-    ("only_words", "Output only (normalized) PPVs for words.")
-    ("only_synsets", "Output only (normalized) PPVs for synsets.")
-    ("rank_nonorm", "Do not normalize the output ranks.")
     ("trunc_ppv", value<float>(), "Truncate PPV threshold (a la gabrilovich). If arg > 1, return top arg nodes.")
     ("nozero", "Do not return concepts with zero rank.")
     ("variants,r", "Write also concept variants in PPV")
@@ -397,32 +369,8 @@ int main(int argc, char *argv[]) {
 	  glVars::input::filter_pos = false;
     }
 
-    if (vm.count("poslightw")) {
-	  glVars::prank::lightw = true;
-    }
-
     if (vm.count("minput")) {
 	  glVars::input::swallow = true;
-    }
-
-    if (vm.count("only_words")) {
-      filter_nodes = 1;
-    }
-
-    if (vm.count("only_ctx_words")) {
-      insert_all_dict = false;
-    }
-
-    if (vm.count("rank_nonorm")) {
-	  opt_normalize_ranks = false;
-    }
-
-    if (vm.count("concept_graph")) {
-	  glVars::kb::onlyC = true;
-    }
-
-    if (vm.count("only_synsets")) {
-      filter_nodes = 2;
     }
 
     if (vm.count("variants")) {
@@ -477,7 +425,6 @@ int main(int argc, char *argv[]) {
 		goto END;
 	  }
       glVars::prank::num_iterations = iter;
-      glVars::prank::threshold = 0.0;
     }
 
     if (vm.count("prank_threshold")) {
@@ -487,7 +434,6 @@ int main(int argc, char *argv[]) {
 		goto END;
 	  }
       glVars::prank::threshold = th;
-      glVars::prank::num_iterations = 0;
     }
 
     if (vm.count("prank_damping")) {
@@ -497,12 +443,6 @@ int main(int argc, char *argv[]) {
 		goto END;
 	  }
       glVars::prank::damping = dp;
-    }
-
-    if (vm.count("wiki")) {
-	  glVars::input::filter_pos = false;
-	  insert_all_dict = false;
-	  filter_nodes = 2;
     }
 
     if (vm.count("trunc_ppv")) {
@@ -523,11 +463,6 @@ int main(int argc, char *argv[]) {
 	exit(-1);
   }
 
-  if (glVars::kb::onlyC) {
-	opt_normalize_ranks = false;
-	filter_nodes = 0;
-  }
-
   if (opt_static) {
 	if (glVars::verbose)
 	  cerr << "Reading binary kb file " << kb_binfile;
@@ -536,11 +471,6 @@ int main(int argc, char *argv[]) {
 	  Kb::instance().display_info(cerr);
 	compute_static_ppv();
 	goto END;
-  }
-
-  if (glVars::input::filter_pos && glVars::kb::onlyC && glVars::prank::lightw) {
-	cerr << "Conflicting options: you can not set both --concept_graph and --poslightw\n";
-	exit(-1);
   }
 
   if(!fullname_in.size()) {

@@ -95,16 +95,16 @@ namespace ukb {
 
 	vector<string> path_str;
 	Kb_vertex_t pred;
-	KbGraph & kb_g = ukb::Kb::instance().graph();
+	Kb & kb = ukb::Kb::instance();
 
 	pred = parents[tgt];
 	while(tgt != pred) {
-	  path_str.push_back(get(vertex_name, kb_g, tgt));
+	  path_str.push_back(kb.get_vertex_name(tgt));
 	  tgt = pred;
 	  pred = parents[tgt];
 	}
 	if (tgt != src) return;
-	path_str.push_back(get(vertex_name, kb_g, src));
+	path_str.push_back(kb.get_vertex_name(src));
 
 	vector<Dis_vertex_t> path_v;
 	size_t length = 0;
@@ -131,14 +131,14 @@ namespace ukb {
 
 
   void DisambGraph::fill_graph(const set<Kb_edge_t> & E) {
-	KbGraph & kb_g = Kb::instance().graph();
+	Kb & kb = Kb::instance();
 	for(set<Kb_edge_t>::const_iterator it = E.begin(), end = E.end();
 		it != end; ++it) {
-	  Kb_vertex_t uu = source(*it, kb_g);
-	  Kb_vertex_t vv = target(*it, kb_g);
+	  Kb_vertex_t uu = kb.edge_source(*it);
+	  Kb_vertex_t vv = kb.edge_target(*it);
 	  if (uu == vv) continue;
-	  Dis_vertex_t u = add_dgraph_vertex(get(vertex_name, kb_g, uu));
-	  Dis_vertex_t v = add_dgraph_vertex(get(vertex_name, kb_g, vv));
+	  Dis_vertex_t u = add_dgraph_vertex(kb.get_vertex_name(uu));
+	  Dis_vertex_t v = add_dgraph_vertex(kb.get_vertex_name(vv));
 	  add_dgraph_edge(u, v, 1.0);
 	}
   }
@@ -386,8 +386,8 @@ namespace ukb {
   void fill_disamb_graph_dfs(const CSentence &cs, DisambGraph & dgraph) {
 	set<Kb_vertex_t> S;
 	set<Kb_vertex_t> TW_S;
-	KbGraph g = Kb::instance().graph();
-	dfsa<KbGraph> ag(g, glVars::dGraph::max_depth);
+	Kb & kb = Kb::instance();
+	dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
 
 	// Init S with all target synsets
 	for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
@@ -400,7 +400,7 @@ namespace ukb {
 	  }
 	}
 
-	std::vector<default_color_type> colors(num_vertices(g));
+	std::vector<default_color_type> colors(kb.size());
 	typedef color_traits<default_color_type> Color;
 
 	for(set<Kb_vertex_t>::iterator it = TW_S.begin(), end = TW_S.end(); it != end; ++it) {
@@ -425,7 +425,7 @@ namespace ukb {
 	Kb & kb = ukb::Kb::instance();
 	for(size_t i = 0, end = pv.size(); i != end; ++i) {
 	  if (pv[i] == 0.0) continue;
-	  tie(u, P) = dgraph.get_vertex_by_name(get(vertex_name, kb.graph(), i));
+	  tie(u, P) = dgraph.get_vertex_by_name(kb.get_vertex_name(i));
 	  if (!P) continue;
 	  ++k;
 	  pv_dgraph[u] = pv[i];

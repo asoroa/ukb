@@ -50,7 +50,6 @@ namespace ukb {
 	  size_t num_iterations = 30; // Conservative, but stop if threshold is reached. If zero, just use threshold.
 	  float threshold = 0.0001; // If zero just use num_iterations
 	  float damping = 0.85; // damping factor
-	  bool lightw = false;
 	}
 
 	namespace input {
@@ -72,7 +71,6 @@ namespace ukb {
 	  bool keep_directed = true;
 	  bool v1_kb = true;
 	  bool filter_src = true;
-	  bool onlyC = false;
 	}
 
 	namespace dGraph {

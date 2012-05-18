@@ -36,14 +36,14 @@ void query (const string & str) {
 
   tie(u, aux) = kb.get_vertex_by_name(str);
   if (aux) {
-    cout << get(vertex_name, g, u);
+    cout << kb.get_vertex_name(u);
     cout << "\n";
     graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
     tie(it, end) = out_edges(u, g);
     for(;it != end; ++it) {
       cout << "  ";
-      cout << get(vertex_name, g, target(*it, g));
-      cout << ":" << get(edge_weight, g, *it) << "\n";
+      cout << kb.get_vertex_name(kb.edge_target(*it));
+      cout << ":" << g[*it].weight << "\n";
     }
   }
 }
@@ -74,7 +74,7 @@ void set_source_rels(const string & str,
 
 void print_iquery_v(KbGraph & g, Kb_vertex_t u, float w = 0, int sp = 0) {
 
-  string hw(get(vertex_name, g, u));
+  string hw(g[u].name);
 
   for (int i = 0; i < sp; ++i)
 	cout << "  ";
@@ -111,13 +111,13 @@ void iquery() {
 	    graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
 	    tie(it, end) = out_edges(u, g);
 	    for(;it != end; ++it) {
-	      print_iquery_v(g, target(*it, g), get(edge_weight, g, *it), 2);
+	      print_iquery_v(g, target(*it, g), g[*it].weight, 2);
 	    }
 	  } else {
 	    graph_traits<Kb::boost_graph_t>::in_edge_iterator iit , iend;
 	    tie(iit, iend) = in_edges(u, g);
 	    for(;iit != iend; ++iit) {
-	      print_iquery_v(g, source(*iit, g), get(edge_weight, g, *iit), 2);
+	      print_iquery_v(g, source(*iit, g), g[*iit].weight, 2);
 	    }
 	  }
 	} else {
@@ -132,7 +132,8 @@ void remove_dangling(string & fname) {
 
   size_t i = 0;
   do {
-	i = Kb::instance().unlink_dangling();
+	// @@ TODO
+	//i = Kb::instance().unlink_dangling();
 	cout << i << " dangling\n";
   } while (i);
 

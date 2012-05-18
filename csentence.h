@@ -212,10 +212,6 @@ namespace ukb {
 
   // Functions for calculating initial PV given a CSentence
 
-  int pv_from_cs(const CSentence & cs,
-				 std::vector<float> & pv,
-				 CSentence::const_iterator exclude_word_it);
-
   int pv_from_cs_onlyC(const CSentence & cs,
 					   std::vector<float> & pv,
 					   CSentence::const_iterator exclude_word_it);

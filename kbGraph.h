@@ -5,12 +5,12 @@
 
 #include <string>
 #include <iterator>
-#include <fstream>
 #include <map>
 #include <vector>
 #include <set>
 #include <ctime>            // std::time
-#include <iostream>
+#include <iosfwd>
+#include <memory>
 
 // integer types
 
@@ -18,10 +18,15 @@
 
 // graph
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
-
 #include <boost/version.hpp>
+#if BOOST_VERSION < 104100
+#error You need boost version >= 1.41 for compiling this version of ukb.
+#endif
+
+#define BOOST_GRAPH_USE_NEW_CSR_INTERFACE
+#include <boost/graph/compressed_sparse_row_graph.hpp>
+#include <boost/graph/iteration_macros.hpp>
+
 #if BOOST_VERSION > 103800
   #include <boost/property_map/property_map.hpp>
 #else
@@ -30,57 +35,45 @@
 
 #include <boost/graph/properties.hpp>
 
-using boost::adjacency_list;
+using boost::compressed_sparse_row_graph;
 using boost::graph_traits;
 using boost::property;
 using boost::property_map;
-using boost::vertex_name_t;
-using boost::vertex_name;
 using boost::edge_weight_t;
 using boost::edge_weight;
 
 // Properties for graphs
 
-enum vertex_flags_t { vertex_flags};  // flags for vertex (for knowing
-                                      // wether a node is word or
-                                      // synset)
-enum vertex_gloss_t { vertex_gloss};  // gloss of node
-enum edge_id_t      { edge_id };      // relation id
-enum edge_rtype_t   { edge_rtype };  // relation type
-
-namespace boost {
-  BOOST_INSTALL_PROPERTY(vertex, flags);
-  BOOST_INSTALL_PROPERTY(vertex, gloss);
-  BOOST_INSTALL_PROPERTY(edge, id);
-  BOOST_INSTALL_PROPERTY(edge, rtype);
-}
 
 namespace ukb {
 
-  typedef adjacency_list <
-	boost::listS,
-	boost::vecS,
-	boost::bidirectionalS,
-	property<vertex_name_t, std::string,
-			 property<vertex_gloss_t, std::string,
-					  property<vertex_flags_t, unsigned char> > >,
-	property<edge_weight_t, float,
-			 property<edge_rtype_t, boost::uint32_t> >
-	> KbGraph;
+  struct vertex_prop_t {
+	std::string name;
 
+	vertex_prop_t() : name(std::string()) {}
+	vertex_prop_t(const std::string & str) : name(str) {}
+  };
 
-typedef graph_traits<KbGraph>::vertex_descriptor Kb_vertex_t;
-typedef graph_traits<KbGraph>::edge_descriptor Kb_edge_t;
-typedef graph_traits < KbGraph >::vertices_size_type Kb_vertex_size_t;
+  struct edge_prop_t {
+	float weight;
+	boost::uint32_t rtype;
+
+	edge_prop_t() {}
+	edge_prop_t(float w) : weight(w), rtype(0) {}
+	edge_prop_t(float w, boost::uint32_t rt) : weight(w), rtype(rt) {}
+  };
+
+  typedef compressed_sparse_row_graph<boost::bidirectionalS,
+									  vertex_prop_t,
+									  edge_prop_t> KbGraph;
+
+  typedef graph_traits<KbGraph>::vertex_descriptor Kb_vertex_t;
+  typedef graph_traits<KbGraph>::edge_descriptor Kb_edge_t;
+  typedef graph_traits < KbGraph >::vertices_size_type Kb_vertex_size_t;
 
 class Kb {
 
 public:
-
-  enum {
-    is_word = 1,
-	is_concept = 2
-  } vflags;
 
   typedef KbGraph boost_graph_t; // the underlying graph type
 
@@ -135,7 +128,7 @@ public:
   // add_relSource
   // add a new relation source
 
-  void add_relSource(const std::string & str) { if (str.size()) relsSource.insert(str); }
+  void add_relSource(const std::string & str) { if (str.size()) m_relsSource.insert(str); }
 
   // Add tokens and link them to their synsets, according to the dictionary.
   // Note: the words are linked to nodes by _directed_ edges
@@ -146,21 +139,7 @@ public:
   // graph
   // Get the underlying boost graph
 
-  KbGraph & graph() {return g;}
-
-  // Add nodes and relations to the graph
-
-  Kb_vertex_t find_or_insert_synset(const std::string & str);
-  Kb_vertex_t find_or_insert_word(const std::string & str);
-
-  Kb_edge_t find_or_insert_edge(Kb_vertex_t u, Kb_vertex_t v, float w );
-
-  void unlink_vertex(Kb_vertex_t u);
-
-  // Unlink dangling_nodes (out_degree == 0).
-  // Return num. of unlinked nodes
-
-  size_t unlink_dangling();
+  KbGraph & graph() {return *m_g;}
 
   // Add relation type to edge
 
@@ -168,13 +147,15 @@ public:
 
   // Ask for a node
 
-  std::pair<Kb_vertex_t, bool> get_vertex_by_name(const std::string & str,
-												  unsigned char flags = Kb::is_concept | Kb::is_word) const;
+  std::pair<Kb_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
   // ask for node properties
 
-  std::string  get_vertex_name(Kb_vertex_t u) const {return get(vertex_name, g, u);}
-  std::string  get_vertex_gloss(Kb_vertex_t u) const {return get(vertex_gloss, g, u);}
+  std::string get_vertex_name(Kb_vertex_t u) const {return (*m_g)[u].name;}
+  //std::string  get_vertex_gloss(Kb_vertex_t u) const {return get(vertex_gloss, g, u);}
+
+  Kb_vertex_t edge_source(Kb_edge_t e) const { return source(e, *m_g); }
+  Kb_vertex_t edge_target(Kb_edge_t e) const { return target(e, *m_g); }
 
   // ask for edge preperties
 
@@ -184,11 +165,6 @@ public:
   // get static pageRank
 
   const std::vector<float> & static_prank() const;
-
-  // Nodes can be synsets or words
-
-  bool vertex_is_synset(Kb_vertex_t u) const;
-  bool vertex_is_word(Kb_vertex_t u) const;
 
   // Given a previously calculated rank vector, output 2 vector, probably
   // filtering the nodes.
@@ -219,7 +195,7 @@ public:
   // Some useful info
 
   void display_info(std::ostream & o) const;
-  size_t size() const {return num_vertices(g); }
+  size_t size() const {return num_vertices(*m_g); }
 
   std::pair<size_t, size_t> indeg_maxmin() const;
   std::pair<size_t, size_t> outdeg_maxmin() const;
@@ -263,36 +239,33 @@ private:
   static Kb * create();
 
   // Private methods
-  Kb() : N_no_isolated(0), coef_status(0) {};
+  Kb() : m_g(NULL), m_vertexN(0), m_edgeN(0) {};
   Kb(const Kb &) {};
   Kb &operator=(const Kb &);
   ~Kb() {};
 
   Kb_vertex_t InsertNode(const std::string & name, unsigned char flags);
 
-  void read_from_stream (std::ifstream & o);
-  std::ofstream & write_to_stream(std::ofstream & o);
+  void read_from_stream (std::istream & o);
+  std::ostream & write_to_stream(std::ostream & o) const;
 
   // Private members
-  KbGraph g;
-  std::set<std::string> relsSource;
-  std::map<std::string, Kb_vertex_t> synsetMap; // synset name to vertex id
-  std::map<std::string, Kb_vertex_t> wordMap; // synset name to vertex id
+  std::auto_ptr<KbGraph> m_g;
+  std::set<std::string> m_relsSource;              // Relation sources
+  std::map<std::string, Kb_vertex_t> m_synsetMap; // synset name to vertex id
 
   // Registered relation types
 
-  std::vector<std::string> rtypes;
+  std::vector<std::string> m_rtypes;
 
-  std::vector<std::string> notes;        // Command line which created the graph
+  std::vector<std::string> m_notes;        // Command line which created the graph
 
   // Aux variables
 
-  std::vector<float> out_coefs;          // aux. vector of out-degree coefficients
-  size_t N_no_isolated;                  // Number of non-isolated vertices
-  char coef_status;                      // 0 invalid
-                                         // 1 calculated without weights
-                                         // 2 calculated with weights
-  std::vector<float> static_ppv;         // aux. vector with static prank computation
+  std::vector<float> m_out_coefs;          // aux. vector of out-degree coefficients
+  size_t m_vertexN;                        // Number of vertices
+  size_t m_edgeN;                          // Number of edges
+  std::vector<float> m_static_ppv;         // aux. vector with static prank computation
   };
 }
 

@@ -50,7 +50,6 @@ namespace ukb {
 	  extern size_t num_iterations;
 	  extern float threshold;
 	  extern float damping;
-	  extern bool lightw;
 	}
 
 
@@ -77,7 +76,6 @@ namespace ukb {
 	  extern bool v1_kb; // Wether input has v1 format
 	  extern bool filter_src; // Wether input relations should be filtered by relation source
 	  extern bool keep_directed; // Wether we will allow directed edges (default true)
-	  extern bool onlyC; // Graph is formed only by concepts. No word is inserted.
 	}
 
 	namespace dGraph {

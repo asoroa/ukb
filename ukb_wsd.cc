@@ -26,8 +26,6 @@ using namespace boost;
 
 const char *kb_default_binfile = "kb_wnet.bin";
 
-static bool insert_all_dict = true;
-
 enum dgraph_rank_methods {
   dppr,
   dppr_w2w,
@@ -189,12 +187,7 @@ void ppr_csent(CSentence & cs) {
 void dis_csent_ppr(istream & fh_in,
 				   bool out_semcor) {
 
-  Kb & kb = Kb::instance();
   CSentence cs;
-
-  if (!glVars::kb::onlyC && insert_all_dict) {
-	kb.add_dictionary();
-  }
 
   size_t l_n = 0;
 
@@ -218,13 +211,8 @@ void dis_csent_ppr(istream & fh_in,
 void dis_csent_ppr_by_word(istream & fh_in,
 						   bool out_semcor) {
 
-  Kb & kb = Kb::instance();
-
   CSentence cs;
 
-  if (!glVars::kb::onlyC && insert_all_dict) {
-	kb.add_dictionary();
-  }
   size_t l_n = 0;
 
   while (cs.read_aw(fh_in, l_n)) {
@@ -338,7 +326,6 @@ int main(int argc, char *argv[]) {
     ("only_ctx_words,C", "Same as --concept_graph.")
     ("concept_graph,G", "Graph is built using just concepts. Words are no more part of the graph.")
 	("nopos", "Don't filter words by Part of Speech.")
-	("poslightw", "Light words instead of wpos when calculating personalization vector.")
 	("minput", "Do not die when dealing with malformed input.")
     ;
 
@@ -421,20 +408,8 @@ int main(int argc, char *argv[]) {
       exit(0);
     }
 
-    if (vm.count("only_ctx_words")) {
-	  glVars::kb::onlyC = true;
-    }
-
-    if (vm.count("concept_graph")) {
-	  glVars::kb::onlyC = true;
-    }
-
     if (vm.count("nopos")) {
 	  glVars::input::filter_pos = false;
-    }
-
-    if (vm.count("poslightw")) {
-	  glVars::prank::lightw = true;
     }
 
     if (vm.count("minput")) {
@@ -630,11 +605,6 @@ int main(int argc, char *argv[]) {
   if (opt_do_test) {
     test(std::cin, false);
 	goto END;
-  }
-
-  if (glVars::input::filter_pos && glVars::kb::onlyC && glVars::prank::lightw) {
-	cerr << "Conflicting options: you can not set both --concept_graph and --poslightw\n";
-	exit(-1);
   }
 
   Kb::create_from_binfile(kb_binfile);

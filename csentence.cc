@@ -64,7 +64,7 @@ namespace ukb {
 	  }
 
 	  Kb_vertex_t syn_v;
-	  tie(syn_v, existP) = kb.get_vertex_by_name(syn_str, Kb::is_concept);
+	  tie(syn_v, existP) = kb.get_vertex_by_name(syn_str);
 	  if (existP) {
 		if (!syns_S.insert(syn_str).second) continue; // Synset previously there
 		m_syns.push_back(syn_str);
@@ -115,7 +115,7 @@ namespace ukb {
 
 	  Kb_vertex_t u;
 	  bool P;
-	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(w, Kb::is_concept);
+	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(w);
 	  if (!P) {
 		throw std::runtime_error("CWord concept " + w + " not in KB");
 	  }
@@ -163,7 +163,7 @@ namespace ukb {
 	if (is_synset()) return word();
 	string wpos(word());
 	char pos = get_pos();
-	if(pos == 0 || glVars::prank::lightw) return wpos;
+	if(pos == 0) return wpos;
 	wpos.append("#");
 	wpos.append(1,pos);
 	return wpos;
@@ -546,59 +546,6 @@ namespace ukb {
   // PageRank in Kb
 
 
-  // Get personalization vector giving an csentence
-  // Precondition: word, wpos and concepts are in the graph
-  // 'light' wpos (or pos if glVars::prank::poslightw is set)
-
-  int pv_from_cs(const CSentence & cs,
-				 vector<float> & pv,
-				 CSentence::const_iterator exclude_word_it) {
-
-	Kb & kb = ukb::Kb::instance();
-	vector<float> (kb.size(), 0.0).swap(pv);
-	set<string> S;
-	set<string>::iterator aux_set;
-	bool cw_insert_setP;
-
-	vector<float> ranks;
-	int inserted_i = 0;
-
-	// First of all, insert exclude_word_it to the set if appropiate
-
-	if (exclude_word_it != cs.end()) {
-	  tie(aux_set, cw_insert_setP) = S.insert(exclude_word_it->wpos());
-	}
-
-	float K = 0.0;
-	// put pv to the synsets of words except exclude_word
-	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
-		it != end; ++it) {
-	  if (it == exclude_word_it) continue;
-	  float w = it->get_weight();
-	  if (w == 0.0) continue;
-	  string wpos = it->wpos();
-	  tie(aux_set, cw_insert_setP) = S.insert(wpos);
-	  unsigned char sflags = it->is_synset() ? Kb::is_concept : Kb::is_word;
-	  if (cw_insert_setP) {
-		Kb_vertex_t u;
-		bool aux;
-		tie(u, aux) = kb.get_vertex_by_name(wpos, sflags);
-		if (aux && w != 0.0) {
-		  pv[u] += w;
-		  K +=w;
-		  inserted_i++;
-		}
-	  }
-	}
-	if (!inserted_i) return 0;
-	// Normalize PPV vector
-	float div = 1.0 / static_cast<float>(K);
-	for(vector<float>::iterator it = pv.begin(), end = pv.end();
-		it != end; ++it) *it *= div;
-	return inserted_i;
-  }
-
-
   // Update pv of synsets pointed by CWord of token type
 
   size_t update_pv_cw(const vector<pair<Kb_vertex_t, float> > & m_V,
@@ -631,7 +578,6 @@ namespace ukb {
 	}
 	return inserted;
   }
-
 
   // Get personalization vector giving an csentence. onlyC variant.
 
@@ -680,7 +626,7 @@ namespace ukb {
 	  const CWord & cw = **it;
 	  float cw_w = cw.get_weight() * CW_w_factor;
 	  if (cw.type() == CWord::cw_concept) {
-		tie(u, aux) = kb.get_vertex_by_name(cw.word(), Kb::is_concept);
+		tie(u, aux) = kb.get_vertex_by_name(cw.word());
 		assert(aux);
 		pv[u] += cw_w;
 		inserted_i++;
@@ -704,7 +650,7 @@ namespace ukb {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
-	int aux = glVars::kb::onlyC ? pv_from_cs_onlyC(cs, pv, cs.end()) : pv_from_cs(cs, pv, cs.end());
+	int aux = pv_from_cs_onlyC(cs, pv, cs.end());
 	if (!aux) return false;
 	// Execute PageRank
 	kb.pageRank_ppv(pv, res);
@@ -739,7 +685,7 @@ namespace ukb {
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
 
-	int aux = glVars::kb::onlyC ? pv_from_cs_onlyC(cs, pv, tgtw_it) : pv_from_cs(cs, pv, tgtw_it);
+	int aux = pv_from_cs_onlyC(cs, pv, tgtw_it);
 	// Execute PageRank
 	if (aux) {
 	  kb.pageRank_ppv(pv, ranks);
@@ -807,7 +753,7 @@ namespace ukb {
 	for(; cw_it != cw_end; ++cw_it) {
 	  for(size_t i = 0; i != cw_it->size(); ++i) {
 		Kb_vertex_t u;
-		tie(u, aux) = kb.get_vertex_by_name(cw_it->syn(i), Kb::is_concept);
+		tie(u, aux) = kb.get_vertex_by_name(cw_it->syn(i));
 		if (aux) {
 		  ppv[u] = cw_it->rank(i);
 		  K += cw_it->rank(i);
