@@ -23,9 +23,9 @@
 
 #include <boost/version.hpp>
 #if BOOST_VERSION > 103800
-  #include <boost/property_map/property_map.hpp>
+#include <boost/property_map/property_map.hpp>
 #else
-  #include <boost/property_map.hpp>
+#include <boost/property_map.hpp>
 #endif
 
 #include <boost/graph/properties.hpp>
@@ -51,13 +51,13 @@ namespace ukb {
   // Streaming
 
   template<class T>
-  void read_atom_from_stream(std::ifstream & is,
+  void read_atom_from_stream(std::istream & is,
 							 T & a) {
 	is.read(reinterpret_cast<char *>(&a), sizeof(a));
   }
 
   template<>
-  inline void read_atom_from_stream <std::string> (std::ifstream & is, std::string & str) {
+  inline void read_atom_from_stream <std::string> (std::istream & is, std::string & str) {
 	size_t len;
 
 	is.read(reinterpret_cast<char *>(&len), sizeof(len));
@@ -70,7 +70,7 @@ namespace ukb {
   }
 
   template<class Map>
-  void read_map_from_stream(std::ifstream & is, Map & map) {
+  void read_map_from_stream(std::istream & is, Map & map) {
 
 	typedef typename Map::key_type key_type;
 	typedef typename Map::mapped_type data_type;
@@ -92,7 +92,7 @@ namespace ukb {
   }
 
   template<class Vector>
-  void read_vector_from_stream(std::ifstream & is, Vector & v) {
+  void read_vector_from_stream(std::istream & is, Vector & v) {
 
 	size_t vSize;
 	size_t i;
@@ -107,7 +107,7 @@ namespace ukb {
   }
 
   template<class Set>
-  void read_set_from_stream(std::ifstream & is, Set & v) {
+  void read_set_from_stream(std::istream & is, Set & v) {
 
 	size_t vSize;
 	size_t i;
@@ -122,8 +122,8 @@ namespace ukb {
   }
 
   template<class T>
-  std::ofstream & write_atom_to_stream(std::ofstream & o,
-									   const T & a) {
+  std::ostream & write_atom_to_stream(std::ostream & o,
+									  const T & a) {
 
 	o.write(reinterpret_cast<const char *>(&a), sizeof(a));
 
@@ -131,8 +131,8 @@ namespace ukb {
   }
 
   template<>
-  inline std::ofstream & write_atom_to_stream <std::string> (std::ofstream & o,
-															 const std::string & str) {
+  inline std::ostream & write_atom_to_stream <std::string> (std::ostream & o,
+															const std::string & str) {
 
 	size_t len;
 
@@ -144,8 +144,8 @@ namespace ukb {
   }
 
   template<class Map>
-  std::ofstream & write_map_to_stream(std::ofstream & o,
-									  const Map & m) {
+  std::ostream & write_map_to_stream(std::ostream & o,
+									 const Map & m) {
 
 	typename Map::const_iterator map_it, map_end;
 	size_t mapSize;
@@ -164,8 +164,8 @@ namespace ukb {
   }
 
   template<class Set>
-  std::ofstream & write_set_to_stream(std::ofstream & o,
-									  const Set & s) {
+  std::ostream & write_set_to_stream(std::ostream & o,
+									 const Set & s) {
 
 	typename Set::const_iterator set_it, set_end;
 	size_t setSize;
@@ -184,8 +184,8 @@ namespace ukb {
   }
 
   template<class Vector>
-  std::ofstream & write_vector_to_stream(std::ofstream & o,
-										 const Vector & v) {
+  std::ostream & write_vector_to_stream(std::ostream & o,
+										const Vector & v) {
 
 	typename Vector::const_iterator map_it, map_end;
 	size_t vSize;
