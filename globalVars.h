@@ -60,6 +60,7 @@ namespace ukb {
 
 	  extern bool filter_pos;
 	  extern bool swallow;        // tries to swallow malformed input
+	  extern bool weight;
 	}
 
 

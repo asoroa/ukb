@@ -97,6 +97,7 @@ namespace ukb {
 	  wlink += uf.second;
 	  m_V.push_back(uf);
 	}
+	if (wlink == 0) return 0;
 	m_linkw_factor = 1.0 / wlink;
 	return new_c;
   }
@@ -126,7 +127,10 @@ namespace ukb {
 	  break;
 	case cw_ctxword:
 	case cw_tgtword:
-	  link_dict_concepts(w, m_pos);
+	  if (!link_dict_concepts(w, m_pos)) {
+		// empty CWord
+		std::vector<std::string>().swap(m_syns);
+	  }
 	  m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
 	  break;
 	default:
@@ -419,6 +423,8 @@ namespace ukb {
 			  if (ctwp.pos.size() != 1) throw std::runtime_error(*it + " has invalid POS (more than 1 char).");
 			  pos = ctwp.pos[0];
 			}
+			if(!glVars::input::weight)
+			  ctwp.w = 1.0;
 			CWord new_cw(ctwp.lemma, ctwp.id, pos, cw_type, ctwp.w);
 
 			if (new_cw.size()) {
@@ -548,29 +554,25 @@ namespace ukb {
 
   // Update pv of synsets pointed by CWord of token type
 
-  size_t update_pv_cw(const vector<pair<Kb_vertex_t, float> > & m_V,
-					  float normalized_cw_w,
-					  vector<float> & pv) {
-
 	// cw is the cword node
 	// For each v pointed in V, (i.e., cw->v should be in the graph), init the PV with:
 	//
-	// PV[v] += normalized_cw_w * e[cw->v] / Sum_{cw->u}(e[cw->u])
+	// PV[v] += normalized_cw_w * e[cw->v] / Sum_{cw->u}(e[cw->u]) =
+    //        = factor * e[cw->v]
 	//
 	// Note:
 	//
 	// Can not be used when glVars::prank::poslightw is set
 
+
+  size_t update_pv_cw(const vector<pair<Kb_vertex_t, float> > & m_V,
+					  float factor,
+					  vector<float> & pv) {
+
 	// Sum edge weights
 
 	size_t inserted = 0;
-	float EW = 0.0;
-	for(vector<pair<Kb_vertex_t, float> >::const_iterator it = m_V.begin(), end = m_V.end();
-		it != end; ++it) {
-	  EW += it->second;
-	}
 	// Uppdate PV
-	float factor = normalized_cw_w / EW;
 	for(vector<pair<Kb_vertex_t, float> >::const_iterator it = m_V.begin(), end = m_V.end();
 		it != end; ++it) {
 	  inserted++;
@@ -632,7 +634,7 @@ namespace ukb {
 		inserted_i++;
 	  } else {
 		inserted_i += update_pv_cw(cw.V_vector(),
-								   cw_w,
+								   cw_w * cw.get_linkw_factor(),
 								   pv);
 	  }
 	}
@@ -698,7 +700,6 @@ namespace ukb {
   //   1. put a ppv in the synsets of the rest of words.
   //   2. Pagerank
   //   3. use rank for disambiguating word
-
 
   int calculate_kb_ppr_by_word_and_disamb(CSentence & cs) {
 

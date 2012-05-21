@@ -285,13 +285,17 @@ int main(int argc, char *argv[]) {
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin")
     ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
     ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
-    ("concept_graph,G", "Graph is built using just concepts. Words are no more part of the graph.")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
     ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
     ("nostatic", "Substract static ppv to final ranks.")
     ("verbose,v", "Be verbose.")
+    ;
+
+  options_description po_desc_input("Input options");
+  po_desc_input.add_options()
 	("nopos", "Don't filter words by Part of Speech.")
 	("minput", "Do not die when dealing with malformed input.")
+	("ctx_noweight", "Do not use weights of input words (defaut is use context weights).")
     ;
 
   options_description po_desc_prank("pageRank general options");
@@ -304,7 +308,7 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_dict("Dictionary options");
   po_desc_dict.add_options()
-    ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). Also sets --prank_weight.")
+    ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights).")
     ("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
     ("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
     ;
@@ -325,7 +329,7 @@ int main(int argc, char *argv[]) {
     ;
 
   options_description po_visible(desc_header);
-  po_visible.add(po_desc).add(po_desc_prank).add(po_desc_dict).add(po_desc_output);
+  po_visible.add(po_desc).add(po_desc_input).add(po_desc_prank).add(po_desc_dict).add(po_desc_output);
 
   options_description po_desc_all("All options");
   po_desc_all.add(po_visible).add(po_hidden);
@@ -371,6 +375,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("minput")) {
 	  glVars::input::swallow = true;
+    }
+
+    if (vm.count("ctx_noweight")) {
+	  glVars::input::weight = false;
     }
 
     if (vm.count("variants")) {

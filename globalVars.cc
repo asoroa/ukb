@@ -55,6 +55,7 @@ namespace ukb {
 	namespace input {
 	  bool filter_pos = true;
 	  bool swallow = false;
+	  bool weight = true;
 	}
 
 	namespace output {

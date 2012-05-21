@@ -67,6 +67,7 @@ namespace ukb {
 	char get_pos() const {return m_pos;}
 
 	float get_weight() const { return m_weight;}
+	float get_linkw_factor() const { return m_linkw_factor; }
 	void set_weight(float w) { m_weight = w;}
 
 	bool is_tgtword() const { return (m_type == cw_tgtword); }
