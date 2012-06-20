@@ -1,0 +1,14 @@
+
+similarity.pl:
+
+ You need to install ukb_ppv as released in http://ixa2.si.ehu.es/ukb,
+ and use argument --x or change default ($RUNDIR) to specify the
+ directory.
+
+
+similarity.pre.pl:
+
+ You need to install precomputed ppv vectors as released in
+ http://ixa2.si.ehu.es/ukb, and use argument --ppvdir or change
+ default ($PPVDIR) to specify the directory.
+

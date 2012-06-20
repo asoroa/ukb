@@ -1,0 +1,39 @@
+UKBsim: scripts for computing similarities between words
+        using UKB.
+
+author: Eneko Agirre and Aitor Soroa
+
+If you use this software in writing scientific papers, or you use this
+software in any other medium serving scientists or students (e.g. web-sites,
+CD-ROMs) please include the citation [1]
+
+************************************************************************
+
+This is a collection of scripts for performing graph-based lexical
+similarity/relatedness using a pre-existing knowledge base. The
+details of the method are described in [1]. The collection comprises
+two Perl scripts, and depends on the correct instalation of UKB:
+
+* similarity.pl:     computes similarity for pairs of words
+                     using ukb_ppv
+
+* similarity.pre.pl: computes similarity for pairs of words 
+                     based on precalculated probability vectors
+                     (see corresponding release in
+                     http://ixa2.si.ehu.es/ukb)
+
+* Similarity.pm:     provides some vector-similarity formulae
+
+************************************************************************
+
+References
+
+[1] Eneko Agirre, Montse Cuadros, German Rigau and Aitor Soroa. 2010.
+    Exploring Knowledge Bases for Similarity. Proceedings of LREC
+    2010. Valletta, Malta.
+
+
+See also
+
+   LICENSE for copyright and licensing, and INSTALL for generic installation
+   instructions.

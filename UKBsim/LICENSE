@@ -1,0 +1,33 @@
+
+   This program is free software; you can redistribute it and/or modify it
+   under the terms of version 3 of the GNU General Public License as published
+   by the Free Software Foundation. It should be shipped with UKB in the top
+   level directory as the file COPYING.
+
+   This program is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+   more details.
+
+   You should have received a copy of the GNU General Public License, version
+   3, along with this program in the file COPYING; if not, write to the Free
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+
+                                    -*-
+
+   If you use UKBsim software in your scientific research, please cite it
+   appropriately as you would cite a journal or a book. This includes papers
+   published in regular or electronic journals, usage of UKB as a back-end to a
+   database that is accessible via a web interface, or inclusion of UKB in a
+   larger framework of software that is distributed for other people for
+   scientific use.  Include the following citation:
+
+    Eneko Agirre, Montse Cuadros, German Rigau and Aitor Soroa. 2010.
+    Exploring Knowledge Bases for Similarity. Proceedings of LREC
+    2010. Valletta, Malta.
+
+
+                                    -*-
+
+   UKB and UKBsim are held copyright by Eneko Agirre and Aitor Soroa.
