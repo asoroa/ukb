@@ -690,8 +690,8 @@ namespace ukb {
 
 	hits_iterate(g, V.begin(), V.end(), hRank, aRank, 50); // 50 iterations
 
-	vector<Dis_vertex_t>::const_iterator it = V.begin();
-	vector<Dis_vertex_t>::const_iterator end = V.end();
+	//vector<Dis_vertex_t>::const_iterator it = V.begin();
+	//vector<Dis_vertex_t>::const_iterator end = V.end();
 	rank.swap(hRank);
   }
 
