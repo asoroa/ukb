@@ -106,25 +106,30 @@ namespace ukb {
 
   };
 
-  typedef std::map<std::string, pw_pair_t> ccache_map_t;   // conceptId -> weight
+  typedef std::map<Kb_vertex_t, pw_pair_t> ccache_map_t;   // conceptId -> weight
 
-
-  bool parse_concept(const string & hw, const string & concept_str,
+  bool parse_concept(const string & hw, const string & cstr,
 					 ccache_map_t & ccache) {
 	float weight;
-	string concept_id;
+	string concept_str;
+	Kb_vertex_t concept_id;
 	char pos_c = 0;
-	tie(concept_id, weight) = wdict_parse_weight(concept_str);
+	bool aux;
+	tie(concept_str, weight) = wdict_parse_weight(cstr);
+
+	tie(concept_id, aux) = Kb::instance().get_vertex_by_name(concept_str);
+	if (!aux)
+	  return false;
 
 	// POS stuff
 	if(glVars::input::filter_pos) {
-	  pos_c = xtract_pos_cid(concept_id);
+	  pos_c = xtract_pos_cid(concept_str);
 	}
 	// Weight stuff
 	if (glVars::dict::use_weight) {
 	  weight += glVars::dict::weight_smoothfactor;
 	  if (weight == 0.0)
-		throw std::runtime_error ("Error in entry " + hw + ": " + concept_str + " word has zero weight.");
+		throw std::runtime_error ("Error in entry " + hw + ": " + cstr + " word has zero weight.");
 	}
 
 	// See if concept was already there
@@ -132,7 +137,7 @@ namespace ukb {
 	if (cache_it != ccache.end()) {
 	  // If not a new concept, see if previous concept had the same weight
 	  if (glVars::debug::warning && weight != cache_it->second.w)
-		cerr << "Warning in entry " + hw + ": " + concept_id + " appears twice with different weights. Skipping.\n";
+		cerr << "Warning in entry " + hw + ": " + concept_str + " appears twice with different weights. Skipping.\n";
 	  return false;
 	}
 	// update cache with new concept
@@ -208,12 +213,14 @@ namespace ukb {
 	}
 
 	// Now fill actual dictionary
+	if(m_words.size() == 0)
+	  throw std::runtime_error("Error reading dict. No headwords linked to KB");
 	for(vector<string>::iterator wit = m_words.begin(), wit_end = m_words.end();
 		wit != wit_end; ++wit) {
 	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(&(*wit), WDict_item_t())).first;
 	  WDict_item_t & item = map_value_it->second;
 	  map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(*wit);
-	  for(map<string, pw_pair_t>::iterator dc_it = cache_map_it->second.begin(), dc_end = cache_map_it->second.end();
+	  for(ccache_map_t::iterator dc_it = cache_map_it->second.begin(), dc_end = cache_map_it->second.end();
 	  	  dc_it != dc_end; ++dc_it) {
 	  	item.m_wsyns.push_back(dc_it->first);
 	  	item.m_counts.push_back(dc_it->second.w);
@@ -243,7 +250,8 @@ namespace ukb {
 
 		string hw_sense = hw + "#" + lexical_cast<string>(i + 1);
 
-		map<string, string>::iterator celem_it = m_variants.insert(make_pair(elem.m_wsyns[i], string())).first;
+		string synset_str = WDict_entries(elem).get_entry_str(i);
+		map<string, string>::iterator celem_it = m_variants.insert(make_pair(synset_str, string())).first;
 		string & variant_str = celem_it->second;
 		string comma = variant_str.size() ? string(", ") : string();
 		variant_str.append(comma);
@@ -274,50 +282,12 @@ namespace ukb {
 	//return WDict_entries(m_wdicts[&word]);
   }
 
-  std::pair<vector<std::string>::const_iterator, vector<std::string>::const_iterator>
-  WDict::get_wsyns(const std::string & word) const {
-	vector<string>::const_iterator null_it;
-	wdicts_t::const_iterator map_value_it = m_wdicts.find(&word);
-	if (map_value_it == m_wdicts.end()) return make_pair(null_it, null_it); // null
-	return make_pair(map_value_it->second.m_wsyns.begin(),map_value_it->second.m_wsyns.end());
-  }
-
-
-  std::pair<vector<float>::const_iterator, vector<float>::const_iterator>
-  WDict::get_weights(const std::string & word) const {
-	vector<float>::const_iterator null_it;
-	wdicts_t::const_iterator map_value_it = m_wdicts.find(&word);
-	if (map_value_it == m_wdicts.end()) return make_pair(null_it, null_it); // null
-	return make_pair(map_value_it->second.m_counts.begin(),map_value_it->second.m_counts.end());
-  };
-
-
-  bool WDict::syn_counts(map<string, size_t> & res) const {
-
-	map<string, size_t>().swap(res); // empty res
-
-	wdicts_t::const_iterator m_it = m_wdicts.begin();
-	wdicts_t::const_iterator m_end = m_wdicts.end();
-	for(;m_it != m_end; ++m_it) {
-	  const WDict_item_t & item = m_it->second;
-
-	  assert(item.m_wsyns.size() == item.m_counts.size());
-	  size_t m = item.m_wsyns.size();
-	  for(size_t i = 0; i != m; ++i) {
-		bool insertedP;
-		map<string, size_t>::iterator map_it;
-		size_t synset_n = lexical_cast<size_t>(item.m_counts[i]);
-		tie(map_it, insertedP) = res.insert(make_pair(item.m_wsyns[i], synset_n));
-		if(!insertedP) {
-		  map_it->second += synset_n;
-		}
-	  }
-	}
-	return true;
-  }
-
   //////////////////////////////////////////////////////////////
   // WDict_entries
+
+  const std::string & WDict_entries::get_entry_str(size_t i) const {
+	return Kb::instance().get_vertex_name(_item.m_wsyns[i]);
+  }
 
   char WDict_entries::get_pos(size_t i) const {
 	if (!glVars::input::filter_pos) return 0;

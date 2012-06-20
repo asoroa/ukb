@@ -12,13 +12,15 @@
 
 ////////////////////////////////////////
 
+#include "kbGraph.h"
+
 namespace ukb {
 
   // type of dict items
 
 
   struct WDict_item_t {
-	std::vector<std::string> m_wsyns;
+	std::vector<Kb_vertex_t> m_wsyns;
 	std::vector<float> m_counts;
 	std::vector<char> m_thepos;
 
@@ -36,7 +38,8 @@ namespace ukb {
 	~WDict_entries() {}
 
 	size_t size() const { return _item.m_wsyns.size(); }
-	const std::string & get_entry(size_t i) const { return _item.m_wsyns[i]; }
+	Kb_vertex_t get_entry(size_t i) const { return _item.m_wsyns[i]; }
+	const std::string & get_entry_str(size_t i) const;
 	float get_freq(size_t i) const;
 	char get_pos(size_t i) const;
 	size_t dist_pos() const;
@@ -52,18 +55,10 @@ namespace ukb {
 
 	WDict_entries get_entries(const std::string & word) const;
 
-	// old stuff
-	std::pair<std::vector<std::string>::const_iterator, std::vector<std::string>::const_iterator>
-	get_wsyns(const std::string & word) const;
-
-	std::pair<std::vector<float>::const_iterator, std::vector<float>::const_iterator>
-	get_weights(const std::string & word) const;
-
-	bool syn_counts(std::map<std::string, size_t> & res) const;
-
-	const std::vector<std::string> & get_wordlist() const { return m_words; }
+	const std::vector<std::string> & headwords() const { return m_words; }
 
 	std::string variant(std::string &concept_id) const;
+	std::string variant(Kb_vertex_t v) const;
 
 	friend std::ostream& operator<<(std::ostream & o, const WDict & dict);
 

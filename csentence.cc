@@ -39,66 +39,53 @@ namespace ukb {
 
   size_t CWord::link_dict_concepts(const string & lemma, char pos) {
 
-	Kb & kb = ukb::Kb::instance();
-	bool existP;
 	size_t new_c = 0;
-	map<string, pair<Kb_vertex_t, float> > str2kb;
 
-	set<string> syns_S;
-	for(size_t i = 0, m = m_syns.size(); i < m; ++i) {
-	  syns_S.insert(m_syns[i]);
-	  str2kb[m_syns[i]] = m_V[i];
+	set<Kb_vertex_t> syns_S;
+	for(size_t i = 0, m = m_V.size(); i < m; ++i) {
+	  syns_S.insert(m_V[i].first);
 	}
 
 	WDict_entries entries = WDict::instance().get_entries(lemma);
+	if (!entries.size()) return 0;
 
-	for(size_t i= 0; i < entries.size(); ++i) {
+	vector<size_t> sidxV; // synset index vector
+	for(size_t i = 0, m = entries.size(); i < m; ++i)
+	  sidxV.push_back(i);
 
-	  const string & syn_str = entries.get_entry(i);
-	  float syn_freq = entries.get_freq(i);
+	if(glVars::dict::use_shuffle) {
+	  // Shuffle index vector
+	  boost::random_number_generator<boost::mt19937, long int> rand_dist(glVars::rand_generator);
+	  std::random_shuffle(sidxV.begin(), sidxV.end(), rand_dist);
+	}
 
+	for(size_t i= 0, m = sidxV.size(); i < m; ++i) {
+	  size_t idx = sidxV[i];
 	  if(pos) {
 		// filter synsets by pos
-		char synpos = entries.get_pos(i);
+		char synpos = entries.get_pos(idx);
 		if (pos != synpos) continue;
 	  }
-
-	  Kb_vertex_t syn_v;
-	  tie(syn_v, existP) = kb.get_vertex_by_name(syn_str);
-	  if (existP) {
-		if (!syns_S.insert(syn_str).second) continue; // Synset previously there
-		m_syns.push_back(syn_str);
-		str2kb[syn_str] = make_pair(syn_v, syn_freq);
-		new_c++;
-	  } else {
-		if (glVars::debug::warning) {
-		  cerr << "CWord:link_dict_concepts: concept " << syn_str << " of word " << lemma << " is not in KB" << endl;
-		}
-	  }
+	  Kb_vertex_t syn_v = entries.get_entry(idx);
+	  if (!syns_S.insert(syn_v).second) continue; // Synset previously there
+	  const string & syn_str = entries.get_entry_str(idx);
+	  float syn_freq = entries.get_freq(idx);
+	  m_syns.push_back(syn_str);
+	  m_V.push_back(make_pair(syn_v, syn_freq));
+	  new_c++;
 	}
 
 	if (new_c == 0) return 0;
 
-	if(glVars::dict::use_shuffle) {
-	  // Shuffle synsets string vector
-	  boost::random_number_generator<boost::mt19937, long int> rand_dist(glVars::rand_generator);
-	  std::random_shuffle(m_syns.begin(), m_syns.end(), rand_dist);
-	}
+	// (Re)calculate m_linkw_factor
+	float wlink = 0.0;
+	for(vector<pair<Kb_vertex_t, float> >::iterator it = m_V.begin(), end = m_V.end();
+		it != end; ++it) wlink += it->second;
+	if (wlink == 0) return 0;
+	m_linkw_factor = 1.0 / wlink;
 
 	// Update ranks
 	vector<float>(m_syns.size(), 0.0).swap(m_ranks);
-
-	// Create V vector
-	vector<pair<Kb_vertex_t, float> >().swap(m_V); // empty m_V;
-	float wlink = 0.0;
-	for(vector<string>::iterator it = m_syns.begin(), end = m_syns.end();
-		it != end; ++it) {
-	  pair<Kb_vertex_t, float> uf = str2kb[*it];
-	  wlink += uf.second;
-	  m_V.push_back(uf);
-	}
-	if (wlink == 0) return 0;
-	m_linkw_factor = 1.0 / wlink;
 	return new_c;
   }
 

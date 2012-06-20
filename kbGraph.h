@@ -151,7 +151,8 @@ public:
 
   // ask for node properties
 
-  std::string get_vertex_name(Kb_vertex_t u) const {return (*m_g)[u].name;}
+  std::string & get_vertex_name(Kb_vertex_t u) {return (*m_g)[u].name;}
+  const std::string & get_vertex_name(Kb_vertex_t u) const {return (*m_g)[u].name;}
   //std::string  get_vertex_gloss(Kb_vertex_t u) const {return get(vertex_gloss, g, u);}
 
   Kb_vertex_t edge_source(Kb_edge_t e) const { return source(e, *m_g); }
