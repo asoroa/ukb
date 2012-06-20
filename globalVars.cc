@@ -23,7 +23,7 @@ namespace ukb {
 	}
 
 	std::vector<std::string> rel_source;
-	std::string dict_filename = "dict.txt";
+	std::string dict_filename;
 
 	boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 

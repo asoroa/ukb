@@ -223,6 +223,8 @@ namespace ukb {
   }
 
   WDict::WDict() {
+	if(glVars::dict_filename.size() == 0)
+	  throw std::runtime_error("Error: no dict file\n");
 	read_wdict_file(glVars::dict_filename);
   }
 
