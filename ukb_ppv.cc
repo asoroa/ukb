@@ -113,8 +113,6 @@ static void output_ppv_stream(vector<float> & outranks, ostream & os) {
 
   Kb & kb = Kb::instance();
 
-  vector<string> vnames;
-
   if (opt_normalize_ranks) normalize_pvector(outranks);
 
   if (trunc_ppv > 0.0f) {
@@ -137,10 +135,11 @@ static void output_ppv_stream(vector<float> & outranks, ostream & os) {
   if (output_control_line)
 	os << cmdline << "\n";
   for(size_t i = 0; i < outranks.size(); ++i) {
+	string sname = kb.get_vertex_name(i);
 	if (nozero && outranks [i] == 0.0) continue;
-	os << kb.get_vertex_name(i) << "\t" << outranks[i];
+	os << sname << "\t" << outranks[i];
 	if (output_variants_ppv) {
-	  os << "\t" << WDict::instance().variant(vnames[i]);
+	  os << "\t" << WDict::instance().variant(sname);
 	}
 	os << "\n";
   }
@@ -157,15 +156,6 @@ static void create_output_ppv(vector<float> & ranks,
 	exit(-1);
   }
   output_ppv_stream(ranks, fo);
-}
-
-static void maybe_add_full_dictionary() {
-
-  // add words into Kb
-}
-
-static void maybe_add_cs_words(CSentence & cs) {
-
 }
 
 static void maybe_postproc_ranks(vector<float> & ranks) {
@@ -185,14 +175,11 @@ void compute_sentence_vectors(string & out_dir) {
   vector<CSentence> vcs;
   CSentence cs;
 
-  maybe_add_full_dictionary();
-
   // Read sentences and compute rank vectors
   size_t l_n  = 0;
   while (cs.read_aw(std::cin, l_n)) {
 	// Initialize rank vector
 	vector<float> ranks;
-	maybe_add_cs_words(cs);
 	bool ok = calculate_kb_ppr(cs,ranks);
 	if (!ok) {
 	  cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
@@ -211,14 +198,11 @@ void compute_sentence_vectors_w2w(string & out_dir) {
   vector<CSentence> vcs;
   CSentence cs;
 
-  maybe_add_full_dictionary();
-
   // Read sentences and compute rank vectors
   size_t l_n  = 0;
   while (cs.read_aw(std::cin, l_n)) {
 	vector<float> ranks;
 	int w_n = 1;
-	maybe_add_cs_words(cs);
 	for(vector<CWord>::iterator cw_it = cs.begin(), cw_end = cs.end();
 		cw_it != cw_end; ++cw_it, ++w_n) {
 	  if(!cw_it->is_tgtword()) continue;
