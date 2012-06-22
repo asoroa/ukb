@@ -12,6 +12,8 @@
 #include <iosfwd>
 #include <memory>
 
+#include "kbGraph_v16.h"
+
 // integer types
 
 #include <boost/cstdint.hpp>
@@ -162,7 +164,6 @@ public:
 
   std::vector<std::string> get_edge_reltypes(Kb_edge_t e) const;
 
-
   // get static pageRank
 
   const std::vector<float> & static_prank() const;
@@ -233,6 +234,8 @@ public:
 					size_t limit = 100);
 
   std::ostream & dump_graph(std::ostream & o) const;
+
+  static void create_from_kbgraph16(Kb16 & kbg) ;
 
 private:
   // Singleton

@@ -17,7 +17,7 @@ INSTALLDIR = ${bindir}
 EXEC_SRC = ukb_wsd.cc ukb_ppv.cc compile_kb.cc
 EXEC = $(notdir $(basename $(EXEC_SRC)))
 
-SOURCES= common.cc globalVars.cc configFile.cc fileElem.cc kbGraph.cc disambGraph.cc csentence.cc wdict.cc
+SOURCES= common.cc globalVars.cc configFile.cc fileElem.cc kbGraph.cc kbGraph_v16.cc disambGraph.cc csentence.cc wdict.cc
 
 MEMBERS=$(SOURCES:.cc=.o)
 

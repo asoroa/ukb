@@ -111,6 +111,49 @@ namespace ukb {
 	p_instance = tenp;
   }
 
+
+  void Kb::create_from_kbgraph16(Kb16 & kbg) {
+	if (p_instance) return;
+	Kb *tenp = create();
+	precsr16_t<vertex_prop_t, edge_prop_t> precsr16;
+
+	Kb16::boost_graph_t oldg = kbg.g;
+	graph_traits<Kb16::boost_graph_t>::edge_iterator eit, eend;
+	tie(eit, eend) = edges(oldg);
+	for(; eit != eend; ++eit) {
+	  string ustr(get(vertex_name, oldg, source(*eit, oldg)));
+	  string vstr(get(vertex_name, oldg, target(*eit, oldg)));
+	  precsr16.insert_edge(ustr, vstr, get(edge_weight, oldg, *eit), get(edge_rtype, oldg, *eit));
+	}
+
+	KbGraph *new_g = new KbGraph(boost::edges_are_unsorted_multi_pass,
+								 precsr16.E.begin(), precsr16.E.end(),
+								 precsr16.eProp.begin(),
+								 precsr16.m_vsize);
+
+	tenp->m_g.reset(new_g);
+
+	BGL_FORALL_VERTICES(v, *(tenp->m_g), Kb::boost_graph_t) {
+	  (*(tenp->m_g))[v].name = precsr16.vProp[v].name;
+	}
+
+	tenp->m_vertexN = num_vertices(*(tenp->m_g));
+	tenp->m_edgeN = num_edges(*(tenp->m_g));
+	// relation sources
+	std::set<std::string>(kbg.relsSource).swap(tenp->m_relsSource);
+	// vertex map
+	tenp->m_synsetMap.swap(precsr16.m_vMap);
+	// relation types
+	std::vector<std::string>(kbg.rtypes).swap(tenp->m_rtypes);
+	// Notes
+	tenp->m_notes = kbg.notes;
+	tenp->m_notes.push_back("--");
+	tenp->m_notes.push_back("converted_to_csr");
+
+	p_instance = tenp;
+  }
+
+
   ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -869,7 +912,8 @@ namespace ukb {
 		o << "  ";
 		vector<string> r = get_edge_reltypes(*e);
 		writeV(o, r);
-		o << " " << (*m_g)[target(*e, *m_g)].name << "\n";
+		o << " " << (*m_g)[target(*e, *m_g)].name;
+		o << " (" << (*m_g)[*e].weight << ")\n";
 	  }
 	}
 	return o;
@@ -914,7 +958,10 @@ namespace ukb {
 	try {
 	  read_atom_from_stream(is, id);
 	  if (id != magic_id_csr) {
-		throw runtime_error("Error: invalid id");
+		if (id == magic_id_v1 || id == magic_id)
+		  throw runtime_error("Old (pre 2.0) binary serialization format. Convert the graph to new format using the \"convert2csr\" utility.");
+		else
+		  throw runtime_error("Invalid id (same platform used to compile the KB?)");
 	  }
 	  read_set_from_stream(is, m_relsSource);
 	  read_vector_from_stream(is, m_rtypes);
@@ -922,7 +969,7 @@ namespace ukb {
 
 	  read_atom_from_stream(is, id);
 	  if (id != magic_id_csr) {
-		throw runtime_error("Error: invalid id after reading maps");
+		throw runtime_error("Invalid id after reading maps");
 	  }
 
 	  read_atom_from_stream(is, edge_n);
@@ -930,7 +977,7 @@ namespace ukb {
 	  read_atom_from_stream(is, id);
 
 	  if (id != magic_id_csr) {
-		throw runtime_error("Error: invalid id after reading graph sizes");
+		throw runtime_error("Invalid id after reading graph sizes");
 	  }
 	  new_g = new KbGraph();
 
@@ -952,11 +999,11 @@ namespace ukb {
 
 	  read_atom_from_stream(is, id);
 	  if (id != magic_id_csr) {
-		throw runtime_error("Error: invalid id after reading graph");
+		throw runtime_error("Invalid id after reading graph");
 	  }
 	  read_vector_from_stream(is, m_notes);
-	} catch (...) {
-	  throw runtime_error("Error when reading serialized graph (same platform used to compile the KB?)\n");
+	} catch (std::exception & e) {
+	  throw runtime_error(string("Error when reading serialized graph: ") + e.what());
 	}
 
 	m_g.reset(new_g);
