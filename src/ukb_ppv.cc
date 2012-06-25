@@ -266,12 +266,10 @@ int main(int argc, char *argv[]) {
   po_desc.add_options()
     ("help,h", "This help page.")
     ("version", "Show version.")
-    ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin")
-    ("only_ctx_words,C", "Insert only words appearing in contexts to the graph (default is insert all dictionary words).")
-    ("dict_file,D", value<string>(), "Word to synset map file (default is dict.txt.")
+    ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb).")
     ("out_dir,O", value<string>(), "Directory for leaving output PPV files. Default is current directory.")
     ("static,S", "Compute static PageRank ppv. Only -K option is needed. Output to STDOUT.")
-    ("nostatic", "Substract static ppv to final ranks.")
+    ("dict_file,D", value<string>(), "Word to synset map file.")
     ("verbose,v", "Be verbose.")
     ;
 
@@ -285,7 +283,7 @@ int main(int argc, char *argv[]) {
   options_description po_desc_prank("pageRank general options");
   po_desc_prank.add_options()
     ("prank_weight,w", "Use weigths in pageRank calculation. Serialized graph edges must have some weight.")
-    ("prank_iter", value<size_t>(), "Number of iterations in pageRank (good value is 30).")
+    ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
     ("prank_threshold", value<float>(), "Threshold for pageRank convergence. Default is 0.0001.")
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
     ;
@@ -299,15 +297,19 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_output("Output options");
   po_desc_output.add_options()
-    ("trunc_ppv", value<float>(), "Truncate PPV threshold (a la gabrilovich). If arg > 1, return top arg nodes.")
+    ("nostatic", "Substract static ppv to final ranks.")
+    ("trunc_ppv", value<float>(), "Truncate PPV threshold. If arg > 1, return top arg nodes.")
+    ("trunc_topK", value<size_t>(), "Return top arg nodes.")
     ("nozero", "Do not return concepts with zero rank.")
-    ("variants,r", "Write also concept variants in PPV")
-    ("control_line,l", "First line in PPV files is control")
+    ("variants,r", "Write also concept variants in PPV.")
+    ("control_line,l", "First line in PPV files is control.")
 	("prefix,p", value<string>(), "Prefix added to all output ppv files.")
     ;
 
   options_description po_hidden("Hidden");
   po_hidden.add_options()
+    ("only_ctx_words,C", value<string>(), "Backward compatibility with -C.")
+    ("only_synsets", "Output only (normalized) PPVs for synsets.")
     ("input-file",value<string>(), "Input file.")
     ("output-file",value<string>(), "Output file.")
     ;
@@ -439,6 +441,15 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("trunc_ppv")) {
       trunc_ppv = vm["trunc_ppv"].as<float>();
+    }
+
+    if (vm.count("trunc_topK")) {
+	  size_t topK = vm["trunc_topK"].as<size_t>();
+	  if(!topK) {
+		cerr << "Error: trunc_topK is zero\n.";
+		goto END;
+	  }
+      trunc_ppv = topK;
     }
 
     if (vm.count("nozero")) {

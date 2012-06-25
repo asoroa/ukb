@@ -24,8 +24,6 @@ using namespace boost;
 // Global variables
 
 
-const char *kb_default_binfile = "kb_wnet.bin";
-
 enum dgraph_rank_methods {
   dppr,
   dppr_w2w,
@@ -273,7 +271,7 @@ void test(istream & fh_in,
 
 int main(int argc, char *argv[]) {
 
-  string kb_binfile(kb_default_binfile);
+  string kb_binfile("");
 
   map<string, dgraph_rank_methods> map_dgraph_ranks;
 
@@ -283,7 +281,7 @@ int main(int argc, char *argv[]) {
   map_dgraph_ranks["static"] = dstatic;
 
   enum dis_method {
-	dgraph,
+	dgraph_bfs,
 	dgraph_dfs,
 	ppr,
 	ppr_w2w,
@@ -321,8 +319,8 @@ int main(int argc, char *argv[]) {
   po_desc.add_options()
     ("help,h", "This page")
     ("version", "Show version.")
-    ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb). Default is kb_wnet.bin.")
-    ("dict_file,D", value<string>(), "Dictionary text file. Default is dict.txt")
+    ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb).")
+    ("dict_file,D", value<string>(), "Dictionary text file.")
     ;
 
   options_description po_desc_wsd("WSD methods");
@@ -330,7 +328,7 @@ int main(int argc, char *argv[]) {
     ("ppr", "Given a text input file, disambiguate context using Personalized PageRank method.")
     ("ppr_w2w", "Given a text input file, disambiguate context using Personalized PageRank method word by word (see README).")
     ("static", "Given a text input file, disambiguate context using static pageRank over kb.")
-    ("dgraph", "Given a text input file, disambiguate context using disambiguation graph mehod (bfs).")
+    ("dgraph_bfs", "Given a text input file, disambiguate context using disambiguation graph mehod (bfs).")
     ("dgraph_dfs", "Given a text input file, disambiguate context using disambiguation graph mehod (dfs).")
     ("nostatic", "Substract static ppv to final ranks.")
     ("noprior", "Don't multiply priors to target word synsets if --ppr_w2w and --dict_weight are selected.")
@@ -350,8 +348,8 @@ int main(int argc, char *argv[]) {
     ("prank_threshold", value<float>(), "Threshold for stopping PageRank. Default is zero. Good value is 0.0001.")
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
     ("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, ppr_w2w, degree.")
-    ("dgraph_maxdepth", value<size_t>(), "If dfs_dgraph is choosen, set the maximum depth (default is 6).")
-    ("dgraph_nocosenses", "Stop DFS when finding one co-sense of target word in path.")
+    ("dgraph_maxdepth", value<size_t>(), "If --dgraph_dfs is set, specify the maximum depth (default is 6).")
+    ("dgraph_nocosenses", "If --dgraph_dfs, stop DFS when finding one co-sense of target word in path.")
     ;
 
   options_description po_desc_dict("Dictionary options");
@@ -363,7 +361,6 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_output("Output options");
   po_desc_output.add_options()
-    ("semcor", "Output Semcor key file.")
     ("allranks", "Write key file with all synsets associated with ranks.")
     ("verbose,v", "Be verbose.")
     ("no-monosemous", "Don't output anything for monosemous words.")
@@ -378,6 +375,9 @@ int main(int argc, char *argv[]) {
   po_hidden.add_options()
     ("bcomp_kb_binfile,M", value<string>(), "Backward compatibility with -K.")
     ("bcomp_dictfile,W", value<string>(), "Backward compatibility with -D.")
+    ("only_ctx_words,C", value<string>(), "Backward compatibility with -C.")
+    ("semcor", "Output Semcor key file.")
+    ("dgraph", value<string>(), "Backward compatibility with --dgraph.")
     ("test,t", "(Internal) Do a test.")
     ("input-file",value<string>(), "Input file.")
     ;
@@ -435,8 +435,12 @@ int main(int argc, char *argv[]) {
 	  dmethod = ppr_static;
     }
 
+    if (vm.count("dgraph_bfs")) {
+	  dmethod = dgraph_bfs;
+    }
+
     if (vm.count("dgraph")) {
-	  dmethod = dgraph;
+	  dmethod = dgraph_bfs;
     }
 
     if (vm.count("dgraph_dfs")) {
@@ -450,7 +454,6 @@ int main(int argc, char *argv[]) {
 		goto END;
 	  }
       glVars::prank::num_iterations = iter;
-      glVars::prank::threshold = 0.0;
     }
 
     if (vm.count("prank_threshold")) {
@@ -460,7 +463,6 @@ int main(int argc, char *argv[]) {
 		goto END;
 	  }
       glVars::prank::threshold = th;
-      glVars::prank::num_iterations = 0;
     }
 
     if (vm.count("prank_damping")) {
@@ -625,7 +627,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	switch(dmethod) {
-	case dgraph:
+	case dgraph_bfs:
 	  use_dfs_dgraph = false; // use bfs
 	  disamb_dgraph_from_corpus(std::cin, opt_out_semcor);
 	  goto END;
