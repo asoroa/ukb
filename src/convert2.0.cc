@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
   glVars::kb::v1_kb = false; // Use v2 format
   glVars::kb::filter_src = false; // by default, don't filter relations by src
 
-  const char desc_header[] = "convert2csr: convert a 1.6 serialized graph to 2.0\n"
+  const char desc_header[] = "convert2.0: convert a 1.6 serialized graph to 2.0\n"
     "Usage:\n"
     "compile_kb -o output.bin kb_v16.bin -> Convert kb_v16.bin to output.bin.\n"
     "Options:";

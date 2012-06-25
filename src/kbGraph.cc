@@ -148,7 +148,7 @@ namespace ukb {
 	// Notes
 	tenp->m_notes = kbg.notes;
 	tenp->m_notes.push_back("--");
-	tenp->m_notes.push_back("converted_to_csr");
+	tenp->m_notes.push_back("converted_to_2.0");
 
 	p_instance = tenp;
   }
@@ -959,7 +959,7 @@ namespace ukb {
 	  read_atom_from_stream(is, id);
 	  if (id != magic_id_csr) {
 		if (id == magic_id_v1 || id == magic_id)
-		  throw runtime_error("Old (pre 2.0) binary serialization format. Convert the graph to new format using the \"convert2csr\" utility.");
+		  throw runtime_error("Old (pre 2.0) binary serialization format. Convert the graph to new format using the \"convert2.0\" utility.");
 		else
 		  throw runtime_error("Invalid id (same platform used to compile the KB?)");
 	  }
