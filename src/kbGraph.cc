@@ -824,16 +824,14 @@ namespace ukb {
 
   int Kb::components() const {
 
-	//	std::vector<int> component(num_vertices(g)), discover_time(num_vertices(g));
-	//	std::vector<default_color_type> color(num_vertices(g));
-	//	std::vector<Vertex> root(num_vertices(g));
 	vector<size_t> v(num_vertices(*m_g));
-	// int i = boost::strong_components(g,
-	// 								 root_map(make_iterator_property_map(v.begin(),
-	// 																	 get(vertex_index, *m_g))));
+	boost::iterator_property_map<
+	  std::vector<size_t>::iterator,
+	  boost::property_map<KbGraph, boost::vertex_index_t>::type> pm(v.begin(), get(boost::vertex_index, *m_g));
 
-	// @@ TODO
-	return 0;
+	int i = boost::strong_components(*m_g, pm);
+
+	return i;
 
   }
 
