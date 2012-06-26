@@ -650,7 +650,7 @@ namespace ukb {
 	  }
 	  char f = str[0];
 	  string val = str.substr(2);
-
+	  if(!val.size()) continue;
 	  switch (f) {
 	  case 'u':
 		res.u = val;
@@ -691,13 +691,13 @@ namespace ukb {
 	precsr_t csr_pre;
 
 	set<string>::const_iterator srel_end = src_allowed.end();
-	try {
-	  while(kbFile) {
-		vector<string> fields;
-		read_line_noblank(kbFile, line, line_number);
-		if(!kbFile) continue;
-		if (line[0] == '#') continue;
-		rel_parse f;
+	while(kbFile) {
+	  vector<string> fields;
+	  read_line_noblank(kbFile, line, line_number);
+	  if(!kbFile) continue;
+	  if (line[0] == '#') continue;
+	  rel_parse f;
+	  try {
 		if (!parse_line(line, f)) continue;
 
 		if (glVars::kb::filter_src) {
@@ -727,9 +727,13 @@ namespace ukb {
 		if (!f.directed || !glVars::kb::keep_directed) {
 		  csr_pre.insert_edge(f.v, f.u, w, rtype_idx);
 		}
+	  } catch (std::exception & e) {
+		string msg(string(e.what()) + " in line " + lexical_cast<string>(line_number));
+		if(!glVars::input::swallow) throw std::runtime_error(msg);
+		if (glVars::debug::warning) {
+		  cerr << msg << " (Skipping)\n";
+		}
 	  }
-	} catch (std::exception & e) {
-	  throw std::runtime_error(string(e.what()) + " in line " + lexical_cast<string>(line_number));
 	}
 
 	KbGraph *new_g = new KbGraph(boost::edges_are_unsorted_multi_pass,
@@ -801,7 +805,7 @@ namespace ukb {
 	  if (d > M) M = d;
 	  if (d < m) m = d;
 	}
-	return make_pair<size_t, size_t>(m, M);
+	return make_pair<size_t, size_t>(M, m);
   }
 
   std::pair<size_t, size_t> Kb::outdeg_maxmin() const {
@@ -818,7 +822,7 @@ namespace ukb {
 	  if (d > M) M = d;
 	  if (d < m) m = d;
 	}
-	return make_pair<size_t, size_t>(m, M);
+	return make_pair<size_t, size_t>(M, m);
   }
 
 

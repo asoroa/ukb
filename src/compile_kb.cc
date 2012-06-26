@@ -176,6 +176,7 @@ int main(int argc, char *argv[]) {
     ("filter_src,f", value<string>(), "Filter relations according to their sources.")
     ("undirected,U", "Force undirected graph.")
     ("rtypes,r", "Keep relation types on edges.")
+	("minput", "Do not die when dealing with malformed input.")
 	("note", value<string>(), "Add a comment to the graph.")
 	;
 
@@ -267,6 +268,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("rtypes")) {
 	  glVars::kb::keep_reltypes = true;
+    }
+
+    if (vm.count("minput")) {
+	  glVars::input::swallow = true;
     }
 
     if (vm.count("input-file")) {
