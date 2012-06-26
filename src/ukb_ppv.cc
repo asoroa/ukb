@@ -308,8 +308,9 @@ int main(int argc, char *argv[]) {
 
   options_description po_hidden("Hidden");
   po_hidden.add_options()
-    ("only_ctx_words,C", value<string>(), "Backward compatibility with -C.")
+    ("only_ctx_words,C", "Backward compatibility with -C.")
     ("only_synsets", "Output only (normalized) PPVs for synsets.")
+    ("concept_graph,G", "Backward compatibility with -G.")
     ("input-file",value<string>(), "Input file.")
     ("output-file",value<string>(), "Output file.")
     ;

@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
   const char desc_header[] = "ukb_wsd: perform WSD with KB based algorithm\n"
     "Usage examples:\n"
 	"ukb_wsd -D dict.txt -K kb.bin --ppr input.txt    -> Disambiguate input.txt using PPR technique according to graph kb.bin and dictionary dict.txt\n"
-    "ukb_wsd -D dict.txt -K kb.bin --dis_dgraph input.txt -> Disambiguate input.txt using Disambiguation graph technique, according to graph kb.bin and dictionary dict.txt\n"
+    "ukb_wsd -D dict.txt -K kb.bin --dgraph_dfs input.txt -> Disambiguate input.txt using disambiguation graph technique, according to graph kb.bin and dictionary dict.txt\n"
 	"Options";
 
   //options_description po_desc(desc_header);
@@ -375,9 +375,10 @@ int main(int argc, char *argv[]) {
   po_hidden.add_options()
     ("bcomp_kb_binfile,M", value<string>(), "Backward compatibility with -K.")
     ("bcomp_dictfile,W", value<string>(), "Backward compatibility with -D.")
-    ("only_ctx_words,C", value<string>(), "Backward compatibility with -C.")
+    ("only_ctx_words,C", "Backward compatibility with -C.")
+    ("concept_graph,G", "Backward compatibility with -G.")
     ("semcor", "Output Semcor key file.")
-    ("dgraph", value<string>(), "Backward compatibility with --dgraph.")
+    ("dgraph", "Backward compatibility with --dgraph.")
     ("test,t", "(Internal) Do a test.")
     ("input-file",value<string>(), "Input file.")
     ;
