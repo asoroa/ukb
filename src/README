@@ -687,7 +687,85 @@ The 'ukb_ppv application has several options:
 
   Prefix added to all output ppv files.
 
-* 6. References
+* 6. compile_kb
+
+Use 'compile_kb' for creating biary serializations of graphs (See "1.2
+Compiling the KB section")
+
+** 6.1 Command-line options
+
+The main purpose of compile_kb is to compile binary graphs, but it also can
+be used to obtain information from already compiled graphs.
+
+*** Options for creating binary graphs
+
+  -o [ --output ] arg
+
+  Output file name.
+
+  -f [ --filter_src ] arg
+
+  Filter relations according to their sources. See "1.3 Filtering relations
+  by source" section)
+
+  -U [ --undirected ]
+
+  Force undirected graph. Edges are undirected, regardless of what "d:"
+  field says.
+
+  -r [ --rtypes ]
+
+  Keep relation types on edges.
+
+  --minput
+
+  Do not exit when dealing with malformed input.
+
+  --note
+
+  Add a comment to the binary graph. The note will be appended to the actual
+  command line which created the serialized graph.
+
+Note: if the input file name is "-", compile_kb reads the input from
+standard input, so you can do things like:
+
+% cat g1.txt g2.txt | ./compile_kb -o g.bin -
+
+You can add a comment to track the source files used to create the binary
+graph:
+
+% cat g1.txt g2.txt | ./compile_kb --note "g1.txt g2.txt" -o g.bin -
+
+*** Options for querying graphs
+
+  -i [ --info ]
+
+  Give info about some Kb binfile.
+
+  -I [ --Info ]
+
+  Give more info about Kb binfile. This option can be computationally
+  expensive, as it also calculates the strong components on the graph.
+
+  --dump
+
+  Dump a serialized graph. Warning: very verbose!.
+
+  -q [ --query ] arg
+
+  Given a vertex name, display its relations.
+
+  -Q [ --iquery ]
+
+  Interactively query graph.
+
+  -D [ --dict_file ] arg
+
+  Word to synset map file. Useful only when used when querying (--quey or
+  --iquery).
+
+
+* 7. References
 
 [1] Eneko Agirre and Aitor Soroa. 2009. Personalizing PageRank for Word
     Sense Disambiguation. Proceedings of the 12th conference of the European
