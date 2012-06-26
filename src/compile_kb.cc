@@ -126,20 +126,6 @@ void iquery() {
   }
 }
 
-void remove_dangling(string & fname) {
-
-  Kb::create_from_binfile(fname);
-
-  size_t i = 0;
-  do {
-	// @@ TODO
-	//i = Kb::instance().unlink_dangling();
-	cout << i << " dangling\n";
-  } while (i);
-
-  Kb::instance().write_to_binfile("kk.bin");
-}
-
 int main(int argc, char *argv[]) {
 
   srand(3);
@@ -151,7 +137,6 @@ int main(int argc, char *argv[]) {
   bool opt_query = false;
   bool opt_iquery = false;
   bool opt_dump = false;
-  bool opt_dang = false;
 
   string fullname_out("kb_wnet.bin");
   vector<string> kb_files;
@@ -188,7 +173,6 @@ int main(int argc, char *argv[]) {
     ("info,i", "Give info about some Kb binfile.")
     ("Info,I", "Give more info about Kb binfile. This option can be computationally expensive.")
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
-    ("nodangling", "Recursively remove all dangling nodes from graph.")
     ("output,o", value<string>(), "Output file name.")
     ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
     ("iquery,Q", "Interactively query graph.")
@@ -249,8 +233,6 @@ int main(int argc, char *argv[]) {
 	  opt_variants = true;
     }
 
-    if (vm.count("nodangling")) {
-      opt_dang = true;
     }
 
     if (vm.count("query")) {
@@ -318,11 +300,6 @@ int main(int argc, char *argv[]) {
 	cout << "Out degree (max, min): (" << od_m << ", " << od_M << ")\n";
 	cout << "Number of (strong) components: " << comp << endl;
 
-	return 0;
-  }
-
-  if (opt_dang) {
-	remove_dangling(kb_files.at(0));
 	return 0;
   }
 
