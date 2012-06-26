@@ -139,9 +139,8 @@ int main(int argc, char *argv[]) {
   bool opt_dump = false;
 
   string fullname_out("kb_wnet.bin");
-  vector<string> kb_files;
+  string kb_file;
   string query_vertex;
-
 
   glVars::kb::v1_kb = false; // Use v2 format
   glVars::kb::filter_src = false; // by default, don't filter relations by src
@@ -157,36 +156,48 @@ int main(int argc, char *argv[]) {
 
   const char desc_header[] = "compile_kb: create a serialized image of the KB\n"
     "Usage:\n"
-    "compile_kb [-o output.bin] [-f \"src1, src2\"] kb_file.txt kb_file.txt ... -> Create a KB image reading relations textfiles.\n"
+    "compile_kb -o output.bin [-f \"src1, src2\"] kb_file.txt kb_file.txt ... -> Create a KB image reading relations textfiles.\n"
     "compile_kb -i kb_file.bin -> Get info of a previously compiled KB.\n"
     "compile_kb -q concept-id kb_file.bin -> Query a node on a previously compiled KB.\n"
     "Options:";
 
   using namespace boost::program_options;
 
-  options_description po_desc(desc_header);
-
+  options_description po_desc("General options");
   po_desc.add_options()
     ("help,h", "This help page.")
     ("version", "Show version.")
+    ("verbose,v", "Be verbose.")
+    ;
+
+  options_description po_desc_create("Options for creating binary graphs");
+  po_desc_create.add_options()
+    ("output,o", value<string>(), "Output file name.")
     ("filter_src,f", value<string>(), "Filter relations according to their sources.")
+    ("undirected,U", "Force undirected graph.")
+    ("rtypes,r", "Keep relation types on edges.")
+	("note", value<string>(), "Add a comment to the graph.")
+	;
+
+  options_description po_desc_query("Options for querying over binary graphs");
+  po_desc_query.add_options()
     ("info,i", "Give info about some Kb binfile.")
     ("Info,I", "Give more info about Kb binfile. This option can be computationally expensive.")
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
-    ("output,o", value<string>(), "Output file name.")
-    ("query,q", value<string>(), "Given a vertex name, display its coocurrences.")
+    ("query,q", value<string>(), "Given a vertex name, display its relations.")
     ("iquery,Q", "Interactively query graph.")
     ("dict_file,D", value<string>(), "Word to synset map file. Useful only when used when querying (--quey or --iquery).")
-    ("undirected,U", "Force undirected graph.")
-    ("verbose,v", "Be verbose.")
-    ("rtypes,r", "Keep relation types on edges.")
+	;
+
+  options_description po_hidden("Hidden");
+  po_hidden.add_options()
+    ("input-file",value<string>(), "Input files.")
     ;
-  options_description po_desc_hide("Hidden");
-  po_desc_hide.add_options()
-    ("input-file",value<vector<string> >(), "Input files.")
-    ;
+  options_description po_visible(desc_header);
+  po_visible.add(po_desc).add(po_desc_create).add(po_desc_query);
+
   options_description po_desc_all("All options");
-  po_desc_all.add(po_desc).add(po_desc_hide);
+  po_desc_all.add(po_visible).add(po_hidden);
 
   positional_options_description po_optdesc;
   po_optdesc.add("input-file", -1);
@@ -203,7 +214,7 @@ int main(int argc, char *argv[]) {
     // If asked for help, don't do anything more
 
     if (vm.count("help")) {
-      cout << po_desc << endl;
+      cout << po_visible << endl;
       exit(0);
     }
 
@@ -233,6 +244,7 @@ int main(int argc, char *argv[]) {
 	  opt_variants = true;
     }
 
+    if (vm.count("note")) {
     }
 
     if (vm.count("query")) {
@@ -258,7 +270,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("input-file")) {
-      kb_files = vm["input-file"].as<vector<string> >();
+      kb_file = vm["input-file"].as<string>();
     }
 
      if (vm.count("output")) {
@@ -270,21 +282,20 @@ int main(int argc, char *argv[]) {
 	exit(-1);
   }
 
-
-  if (!kb_files.size()) {
-	cerr << po_desc << "\n";
+  if (!kb_file.size()) {
+	cerr << po_visible << "\n";
     cerr << "Error: no input files\n" << endl;
 	exit(1);
   }
 
   if (opt_info) {
-	Kb::create_from_binfile(kb_files.at(0));
+	Kb::create_from_binfile(kb_file);
 	Kb::instance().display_info(cout);
 	return 0;
   }
 
   if (opt_Info) {
-	Kb::create_from_binfile(kb_files.at(0));
+	Kb::create_from_binfile(kb_file);
 
 	int id_m, id_M;
 	int od_m, od_M;
@@ -304,21 +315,21 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_iquery) {
-	Kb::create_from_binfile(kb_files.at(0));
+	Kb::create_from_binfile(kb_file);
 	iquery();
 	return 0;
   }
 
   if (opt_dump) {
-	Kb::create_from_binfile(kb_files.at(0));
+	Kb::create_from_binfile(kb_file);
 	Kb::instance().dump_graph(cout);
 	return 0;
   }
 
   if (opt_query) {
-	Kb::create_from_binfile(kb_files.at(0));
+	Kb::create_from_binfile(kb_file);
 	query(query_vertex);
-	return 1;
+	return 0;
   }
 
   if (glVars::verbose) {
@@ -328,16 +339,19 @@ int main(int argc, char *argv[]) {
   if (glVars::verbose)
     cerr << "Reading relations"<< endl;
 
-  // If first input file is "-", open std::cin
-  if (kb_files[0] == "-") {
-    cmdline += " <STDIN>";
-	Kb::create_from_txt(std::cin, src_allowed );
-  } else {
-	Kb::create_from_txt(kb_files[0], src_allowed );
-	for(size_t i=1; i < kb_files.size(); ++i) {
-	  Kb::instance().read_from_txt(kb_files[i], src_allowed);
+  try {
+	// If first input file is "-", open std::cin
+	if (kb_file == "-") {
+	  cmdline += " <STDIN>";
+	  Kb::create_from_txt(std::cin, src_allowed );
+	} else {
+	  Kb::create_from_txt(kb_file, src_allowed );
 	}
+  }  catch(std::exception& e) {
+    cerr << e.what() << "\n";
+	exit(-1);
   }
+
 
   if (glVars::verbose)
     cerr << "Writing binary file: "<< fullname_out<< endl;
