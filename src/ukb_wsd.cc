@@ -304,6 +304,9 @@ int main(int argc, char *argv[]) {
   string fullname_in;
   ifstream input_ifs;
 
+  size_t iterations = 0;
+  float thresh = 0.0;
+
   using namespace boost::program_options;
 
   const char desc_header[] = "ukb_wsd: perform WSD with KB based algorithm\n"
@@ -449,21 +452,19 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("prank_iter")) {
-	  size_t iter = vm["prank_iter"].as<size_t>();
-	  if (iter == 0) {
+	  iterations = vm["prank_iter"].as<size_t>();
+	  if (iterations == 0) {
 		cerr << "Error: prank_iter can not be zero!\n";
 		goto END;
 	  }
-      glVars::prank::num_iterations = iter;
     }
 
     if (vm.count("prank_threshold")) {
-	  float th = vm["prank_threshold"].as<float>();
-	  if (th <= 0.0 || th > 1.0) {
-		cerr << "Error: invalid prank_threshold value " << th << "\n";
+	  thresh = vm["prank_threshold"].as<float>();
+	  if (thresh <= 0.0 || thresh > 1.0) {
+		cerr << "Error: invalid prank_threshold value " << thresh << "\n";
 		goto END;
 	  }
-      glVars::prank::threshold = th;
     }
 
     if (vm.count("prank_damping")) {
@@ -596,6 +597,22 @@ int main(int argc, char *argv[]) {
     cout << po_visible << endl;
     cout << "Error: No input" << endl;
     exit(-1);
+  }
+
+  // Manage iterations/threshold
+  if (iterations && thresh != 0.0) {
+	// user specified both
+	glVars::prank::num_iterations = iterations;
+	glVars::prank::threshold = thresh;
+  } else {
+	if (iterations) {
+	  glVars::prank::num_iterations = iterations;
+	  glVars::prank::threshold = 0.0;
+	}
+	if (thresh != 0.0) {
+	  glVars::prank::num_iterations = 0;
+	  glVars::prank::threshold = thresh;
+	}
   }
 
   if (fullname_in == "-" ) {
