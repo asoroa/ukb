@@ -53,6 +53,71 @@ namespace ukb {
   using namespace std;
   using namespace boost;
 
+  ////////////////////////////////////////////////////////////////////////////////
+  // etype_t
+
+  int etype_t::strpos(const std::string & tstr) const {
+
+	int res = 1;
+	vector<string>::const_iterator it = m_strtypes.begin();
+	vector<string>::const_iterator end = m_strtypes.end();
+	for(;it != end; ++it) {
+	  if (*it == tstr) break;
+	  res++;
+	}
+	if(it == end) return -1;
+	return res;
+  }
+
+  size_t etype_t::stradd(const std::string & tstr) {
+	m_strtypes.push_back(tstr);
+	size_t pos = m_strtypes.size();
+	if (pos > 32)
+	  throw runtime_error("etype_t:::add_type error: too many relation types !");
+	return pos;
+  }
+
+  void etype_t::add_type(const string & tstr, etype_t::value_type & thevalue) {
+
+	int pos = strpos(tstr);
+	if (pos == -1)
+	  pos = stradd(tstr);
+	thevalue |= (value_type(1) << pos);
+  }
+
+  bool etype_t::has_type(const string & tstr, etype_t::value_type thevalue) const {
+
+	int pos = strpos(tstr);
+	if (pos == -1)
+	  return false;
+	return (thevalue & (value_type(1) << pos));
+  }
+
+  std::vector<std::string> etype_t::tvector(etype_t::value_type m) const {
+	vector<string> res;
+	if (m_strtypes.size() == 0) return res;
+
+	vector<string>::size_type idx = 0;
+	value_type i(1);
+	while(idx < 32) {
+	  if (m & i) {
+		res.push_back(m_strtypes[idx]);
+	  }
+	  idx++;
+	  i <<= 1;
+	}
+	return res;
+  }
+
+  void etype_t::read_from_stream (std::istream & o) {
+	read_vector_from_stream(o, m_strtypes);
+  }
+
+  std::ostream & etype_t::write_to_stream(std::ostream & o) const {
+	write_vector_to_stream(o, m_strtypes);
+	return o;
+  }
+
 
   ////////////////////////////////////////////////////////////////////////////////
   // Class Kb
@@ -115,7 +180,7 @@ namespace ukb {
   void Kb::create_from_kbgraph16(Kb16 & kbg) {
 	if (p_instance) return;
 	Kb *tenp = create();
-	precsr16_t<vertex_prop_t, edge_prop_t> precsr16;
+	precsr_t precsr16;
 
 	Kb16::boost_graph_t oldg = kbg.g;
 	graph_traits<Kb16::boost_graph_t>::edge_iterator eit, eend;
@@ -144,7 +209,7 @@ namespace ukb {
 	// vertex map
 	tenp->m_synsetMap.swap(precsr16.m_vMap);
 	// relation types
-	std::vector<std::string>(kbg.rtypes).swap(tenp->m_rtypes);
+	tenp->m_rtypes.m_strtypes.swap(kbg.rtypes);
 	// Notes
 	tenp->m_notes = kbg.notes;
 	tenp->m_notes.push_back("--");
@@ -366,48 +431,12 @@ namespace ukb {
 	return make_pair(Kb_vertex_t(), false);
   }
 
-  vector<string>::size_type get_reltype_idx(const string & rel,
-											vector<string> & m_rtypes) {
-
-	vector<string>::iterator it = m_rtypes.begin();
-	vector<string>::iterator end = m_rtypes.end();
-	vector<string>::size_type idx = 0;
-
-	for(;it != end; ++it) {
-	  if (*it == rel) break;
-	  ++idx;
-	}
-	if (it == end) {
-	  // new relation type
-	  m_rtypes.push_back(rel);
-	}
-	if (idx > 31) {
-	  throw runtime_error("get_rtype_idx error: too many relation types !");
-	}
-	return idx;
-  }
-
   void Kb::edge_add_reltype(Kb_edge_t e, const string & rel) {
-	boost::uint32_t m = (*m_g)[e].rtype;
-	vector<string>::size_type idx = get_reltype_idx(rel, m_rtypes);
-	m |= (1UL << idx);
-	(*m_g)[e].rtype = m;
+	m_rtypes.add_type(rel, (*m_g)[e].etype);
   }
 
   std::vector<std::string> Kb::get_edge_reltypes(Kb_edge_t e) const {
-	vector<string> res;
-	if (m_rtypes.size() == 0) return res;
-	boost::uint32_t m = (*m_g)[e].rtype;
-	vector<string>::size_type idx = 0;
-	boost::uint32_t i = 1;
-	while(idx < 32) {
-	  if (m & i) {
-		res.push_back(m_rtypes[idx]);
-	  }
-	  idx++;
-	  i <<= 1;
-	}
-	return res;
+	return m_rtypes.tvector((*m_g)[e].etype);
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -494,117 +523,6 @@ namespace ukb {
 
   ////////////////////////////////////////////////////////////////////////////////
   // read from textfile and create graph
-
-
-  // temporary struct for create CSR
-
-
-  struct precsr_t {
-
-  private:
-
-	typedef pair<Kb_vertex_t, Kb_vertex_t> vertex_pair_t;
-
-	struct precsr_edge_comp
-	  : std::binary_function<vertex_pair_t, vertex_pair_t, bool> {
-	  bool operator()(const vertex_pair_t & e1, const vertex_pair_t & e2) const {
-		return e1.first == e2.first && e1.second == e2.second;
-	  }
-	};
-
-	struct precsr_edge_hash
-	  : std::unary_function<vertex_pair_t, std::size_t> {
-
-	  std::size_t operator()(const vertex_pair_t & e) const {
-
-		std::size_t seed = 0;
-		boost::hash_combine(seed, e.first);
-		boost::hash_combine(seed, e.second);
-		return seed;
-	  }
-	};
-
-	struct precsr_edge_sort_p {
-	  precsr_edge_sort_p() {}
-	  int operator()(const vertex_pair_t & e1,
-					 const vertex_pair_t & e2) {
-		return e1.first - e2.first;
-	  }
-	};
-
-  public:
-
-	vector<vertex_pair_t>                     E;
-	vector<vertex_prop_t>                     vProp;
-	vector<edge_prop_t>                       eProp;
-
-	size_t m_vsize;
-	size_t m_esize;
-
-	precsr_t() : m_vsize(0), m_esize(0) {};
-
-	// used by read_kb
-
-	typedef boost::unordered_map<vertex_pair_t, size_t,
-								 precsr_edge_hash,
-								 precsr_edge_comp> edge_map_t;
-	typedef std::map<std::string, Kb_vertex_t> vertex_map_t;
-
-	edge_map_t m_eMap;
-	vertex_map_t m_vMap;
-
-	// void sort_edges() {
-	//   sort(E.begin(), E.end(), precsr_edge_sort_p);
-	// }
-
-
-	// Add a relation type to edge. Also, update kbC rtype list.
-
-	void edge_add_reltype(size_t e_i,
-						  boost::uint32_t idx) {
-
-	  boost::uint32_t m = eProp[e_i].rtype;
-	  m |= (1UL << idx);
-	  eProp[e_i].rtype = m;
-	}
-
-	Kb_vertex_t insert_vertex(const string & ustr) {
-
-	  bool insertedP;
-	  vertex_map_t::iterator vit;
-
-	  tie(vit, insertedP) = m_vMap.insert(make_pair(ustr, m_vsize));
-	  if(insertedP) {
-		vProp.push_back(vertex_prop_t(ustr));
-		++m_vsize;
-	  }
-	  return vit->second;
-	}
-
-	size_t insert_edge(const string & ustr,
-					   const string & vstr,
-					   float w,
-					   boost::uint32_t rtype) {
-
-	  Kb_vertex_t u = insert_vertex(ustr);
-	  Kb_vertex_t v = insert_vertex(vstr);
-
-	  edge_map_t::iterator eit;
-	  edge_map_t::key_type k = make_pair(u, v);
-	  bool insertedP;
-
-	  tie(eit, insertedP) = m_eMap.insert(make_pair(k, m_esize));
-	  if(insertedP) {
-		E.push_back(k);
-		eProp.push_back(edge_prop_t(w));
-		++m_esize;
-	  }
-	  // add rtype
-	  edge_add_reltype(eit->second, rtype);
-
-	  return eit->second;
-	};
-  };
 
 
   // Line format:
@@ -714,18 +632,17 @@ namespace ukb {
 		// add edge
 
 		// relation type
-		boost::uint32_t rtype_idx(0);
+		// empty f.rtype unless glVars::kb::keep_reltypes
 
-		if (glVars::kb::keep_reltypes && f.rtype.size()) {
-		  rtype_idx = get_reltype_idx(f.rtype, m_rtypes);
-		}
+		if (!glVars::kb::keep_reltypes)
+		  string().swap(f.rtype);
 
-		csr_pre.insert_edge(f.u, f.v, w, rtype_idx);
+		csr_pre.insert_edge(f.u, f.v, w, f.rtype);
 
 		// Insert v->u if undirected relation
 
 		if (!f.directed || !glVars::kb::keep_directed) {
-		  csr_pre.insert_edge(f.v, f.u, w, rtype_idx);
+		  csr_pre.insert_edge(f.v, f.u, w, f.rtype);
 		}
 	  } catch (std::exception & e) {
 		string msg(string(e.what()) + " in line " + lexical_cast<string>(line_number));
@@ -785,7 +702,7 @@ namespace ukb {
 	o << "\n" << num_vertices(*m_g) << " vertices and " << edge_n << " edges.\n(Note that if graph is undirected you should divide the edge number by 2)" << endl;
 	if (m_rtypes.size()) {
 	  o << "Relations:";
-	  writeV(o, m_rtypes);
+	  writeV(o, m_rtypes.m_strtypes);
 	  o << endl;
 	}
   }
@@ -941,12 +858,12 @@ namespace ukb {
   edge_prop_t read_edge_prop_from_stream(istream & is) {
 
 	float w;
-	boost::uint32_t rtype;
+	etype_t::value_type etype;
 
 	read_atom_from_stream(is, w);
-	read_atom_from_stream(is, rtype);
+	read_atom_from_stream(is, etype);
 
-	return edge_prop_t(w, rtype);
+	return edge_prop_t(w, etype);
 
   }
 
@@ -966,7 +883,7 @@ namespace ukb {
 		  throw runtime_error("Invalid id (same platform used to compile the KB?)");
 	  }
 	  read_set_from_stream(is, m_relsSource);
-	  read_vector_from_stream(is, m_rtypes);
+	  m_rtypes.read_from_stream(is);
 	  read_map_from_stream(is, m_synsetMap);
 
 	  read_atom_from_stream(is, id);
@@ -1028,7 +945,7 @@ namespace ukb {
   ostream & write_edge_prop_to_stream(ostream & o,
 									  const edge_prop_t & ep) {
 	write_atom_to_stream(o, ep.weight);
-	write_atom_to_stream(o, ep.rtype);
+	write_atom_to_stream(o, ep.etype);
 	return o;
   }
 
@@ -1042,7 +959,7 @@ namespace ukb {
 	write_atom_to_stream(o, magic_id_csr);
 
 	write_vector_to_stream(o, m_relsSource);
-	write_vector_to_stream(o, m_rtypes);
+	m_rtypes.write_to_stream(o);
 	write_map_to_stream(o, m_synsetMap);
 
 	write_atom_to_stream(o, magic_id_csr);

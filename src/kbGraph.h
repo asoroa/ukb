@@ -12,18 +12,10 @@
 #include <iosfwd>
 #include <memory>
 
+#include "kbGraph_common.h"
 #include "kbGraph_v16.h"
 
-// integer types
-
-#include <boost/cstdint.hpp>
-
 // graph
-
-#include <boost/version.hpp>
-#if BOOST_VERSION < 104100
-#error You need boost version >= 1.41 for compiling this version of ukb.
-#endif
 
 #define BOOST_GRAPH_USE_NEW_CSR_INTERFACE
 #include <boost/graph/compressed_sparse_row_graph.hpp>
@@ -46,24 +38,7 @@ using boost::edge_weight;
 
 // Properties for graphs
 
-
 namespace ukb {
-
-  struct vertex_prop_t {
-	std::string name;
-
-	vertex_prop_t() : name(std::string()) {}
-	vertex_prop_t(const std::string & str) : name(str) {}
-  };
-
-  struct edge_prop_t {
-	float weight;
-	boost::uint32_t rtype;
-
-	edge_prop_t() {}
-	edge_prop_t(float w) : weight(w), rtype(0) {}
-	edge_prop_t(float w, boost::uint32_t rt) : weight(w), rtype(rt) {}
-  };
 
   typedef compressed_sparse_row_graph<boost::bidirectionalS,
 									  vertex_prop_t,
@@ -260,7 +235,7 @@ private:
 
   // Registered relation types
 
-  std::vector<std::string> m_rtypes;
+  etype_t m_rtypes;
 
   std::vector<std::string> m_notes;        // Command line which created the graph
 
