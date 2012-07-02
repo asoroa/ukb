@@ -85,7 +85,8 @@ void truncate_ppv(vector<float> & ppv, float thres) {
 
   // Normalize result
 
-  normalize_pvector(ppv);
+  if(opt_normalize_ranks)
+	normalize_pvector(ppv);
 
 }
 
@@ -105,15 +106,14 @@ void top_k(vector<float> & ppv, size_t k) {
   for(size_t i = k; i < n; ++i) {
 	ppv[idx[i]] = 0.0;
   }
-  normalize_pvector(ppv);
+  if(opt_normalize_ranks)
+	normalize_pvector(ppv);
 }
 
 
 static void output_ppv_stream(vector<float> & outranks, ostream & os) {
 
   Kb & kb = Kb::instance();
-
-  if (opt_normalize_ranks) normalize_pvector(outranks);
 
   if (trunc_ppv > 0.0f) {
 	if (trunc_ppv < 1.0f)
@@ -307,6 +307,7 @@ int main(int argc, char *argv[]) {
     ("variants,r", "Write also concept variants in PPV.")
     ("control_line,l", "First line in PPV files is control.")
 	("prefix,p", value<string>(), "Prefix added to all output ppv files.")
+    ("ranks_nonorm", "Do not normalize ranks even with topK or threshold cuts.")
     ;
 
   options_description po_hidden("Hidden");
