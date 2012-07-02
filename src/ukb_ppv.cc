@@ -111,13 +111,18 @@ void top_k(vector<float> & ppv, size_t k) {
 }
 
 
-static void output_ppv_stream(vector<float> & outranks, ostream & os) {
+static void output_ppv_stream(const vector<float> & outranks, ostream & os) {
 
   Kb & kb = Kb::instance();
 
+  vector<float> ranks_trunc;
+  const vector<float> * theranks = &outranks;
+
   if (trunc_ppv > 0.0f) {
+	vector<float>(outranks).swap(ranks_trunc);
+	theranks = &ranks_trunc;
 	if (trunc_ppv < 1.0f)
-	  truncate_ppv(outranks, trunc_ppv);
+	  truncate_ppv(ranks_trunc, trunc_ppv);
 	else {
 	  // For top k calculation
 	  //
@@ -127,17 +132,17 @@ static void output_ppv_stream(vector<float> & outranks, ostream & os) {
 	  // * could be a problem if top k had zeros in it, as they
 	  //   will not be properly printed.
 
-	  top_k(outranks, lexical_cast<size_t>(trunc_ppv));
+	  top_k(ranks_trunc, lexical_cast<size_t>(trunc_ppv));
 	  nozero = true;
 	}
   }
 
   if (output_control_line)
 	os << cmdline << "\n";
-  for(size_t i = 0; i < outranks.size(); ++i) {
+  for(size_t i = 0; i < theranks->size(); ++i) {
 	string sname = kb.get_vertex_name(i);
-	if (nozero && outranks [i] == 0.0) continue;
-	os << sname << "\t" << outranks[i];
+	if (nozero && (*theranks) [i] == 0.0) continue;
+	os << sname << "\t" << (*theranks)[i];
 	if (output_variants_ppv) {
 	  os << "\t" << WDict::instance().variant(sname);
 	}
@@ -222,17 +227,11 @@ void compute_sentence_vectors_w2w(string & out_dir) {
 
 void compute_static_ppv() {
 
-  vector<CSentence> vcs;
-  CSentence cs;
 
   // Calculate static (static) pageRank over KB
   const vector<float> & ranks = Kb::instance().static_prank();
 
-  vector<float> outranks;
-  vector<string> vnames;
-
-  Kb::instance().filter_ranks_vnames(ranks, outranks, vnames, 2);
-  output_ppv_stream(outranks, cout);
+  output_ppv_stream(ranks, cout);
 }
 
 int main(int argc, char *argv[]) {
