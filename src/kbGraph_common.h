@@ -18,6 +18,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/tuple/tuple.hpp>   // for "tie"
 
+#include "common.h"
+
 namespace ukb {
 
   class Kb; // forward decl.
@@ -30,17 +32,11 @@ namespace ukb {
 	typedef boost::uint32_t value_type;
 	etype_t() : m_strtypes() {}
 	etype_t(const etype_t & o) : m_strtypes(o.m_strtypes) {}
-	etype_t &operator=(const etype_t & o) {
-	  if (&o != this) {
-		m_strtypes = o.m_strtypes;
-	  }
-	  return *this;
-	}
-	void swap(etype_t & o) {
-	  m_strtypes.swap(o.m_strtypes);
-	}
+	etype_t &operator=(const etype_t & o);
 
-	size_t size() const { return m_strtypes.size(); }
+	void swap(etype_t & o);
+
+	size_t size() const;
 
 	void add_type(const std::string & tstr, value_type & val);
 	bool has_type(const std::string & tstr, value_type val) const;
@@ -55,8 +51,10 @@ namespace ukb {
 
 	int strpos(const std::string & tstr) const;
 	size_t stradd(const std::string & tstr);
-	std::vector<std::string> m_strtypes;
 
+	// member variables
+
+	std::vector<std::string> m_strtypes;
   };
 
   // Vertex and edge properties
@@ -142,52 +140,17 @@ namespace ukb {
 	// }
 
 
-	size_t insert_vertex(const std::string & ustr) {
-
-	  bool insertedP;
-	  vertex_map_t::iterator vit;
-
-	  boost::tie(vit, insertedP) = m_vMap.insert(std::make_pair(ustr, m_vsize));
-	  if(insertedP) {
-		vProp.push_back(vertex_prop_t(ustr));
-		++m_vsize;
-	  }
-	  return vit->second;
-	}
+	size_t insert_vertex(const std::string & ustr);
 
 	size_t insert_edge(const std::string & ustr,
 					   const std::string & vstr,
 					   float w,
-					   etype_t::value_type etype) {
-
-	  size_t u = insert_vertex(ustr);
-	  size_t v = insert_vertex(vstr);
-
-	  edge_map_t::iterator eit;
-	  edge_map_t::key_type k = std::make_pair(u, v);
-	  bool insertedP;
-
-	  boost::tie(eit, insertedP) = m_eMap.insert(std::make_pair(k, m_esize));
-	  if(insertedP) {
-		E.push_back(k);
-		eProp.push_back(edge_prop_t(w));
-		++m_esize;
-	  }
-	  eProp[eit->second].etype |= etype;
-
-	  return eit->second;
-	}
+					   etype_t::value_type etype);
 
 	size_t insert_edge(const std::string & ustr,
 					   const std::string & vstr,
 					   float w,
-					   const std::string & rtype) {
-	  size_t eidx = insert_edge(ustr, vstr, w, etype_t::value_type(0));
-	  // add edge type
-	  if (rtype.size())
-		m_rtypes.add_type(rtype,eProp[eidx].etype);
-	  return eidx;
-	}
+					   const std::string & rtype);
   };
 }
 

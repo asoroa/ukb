@@ -3,8 +3,6 @@
 #ifndef KBGRAPHV16_H
 #define KBGRAPHV16_H
 
-#include "kbGraph_common.h"
-
 #include <string>
 #include <iterator>
 #include <fstream>

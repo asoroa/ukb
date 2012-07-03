@@ -687,6 +687,10 @@ The 'ukb_ppv application has several options:
 
   Prefix added to all output ppv files.
 
+  --ranks_nonorm
+
+  Do not normalize ranks when --trunc_ppv or --trunk_topK switches are set.
+
 * 6. compile_kb
 
 Use 'compile_kb' for creating biary serializations of graphs (See "1.2
@@ -763,7 +767,6 @@ graph:
 
   Word to synset map file. Useful only when used when querying (--quey or
   --iquery).
-
 
 * 7. References
 
