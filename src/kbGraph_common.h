@@ -75,7 +75,6 @@ namespace ukb {
 	edge_prop_t(float w, etype_t::value_type et) : weight(w), etype(et) {}
   };
 
-
   // temporary class used for creating CSR graphs. When reading (or converting)
   // a graph, we first fill this structure and then initialize the graph.
 
@@ -104,19 +103,11 @@ namespace ukb {
 	  }
 	};
 
-	struct precsr_edge_sort_p {
-	  precsr_edge_sort_p() {}
-	  int operator()(const vertex_pair_t & e1,
-					 const vertex_pair_t & e2) {
-		return e1.first - e2.first;
-	  }
-	};
-
   public:
 
 	std::vector<vertex_pair_t>             E;
-	std::vector<vertex_prop_t>                     vProp;
-	std::vector<edge_prop_t>                     eProp;
+	std::vector<vertex_prop_t>             vProp;
+	std::vector<edge_prop_t>               eProp;
 
 	etype_t                                m_rtypes;
 
@@ -134,11 +125,6 @@ namespace ukb {
 
 	edge_map_t m_eMap;
 	vertex_map_t m_vMap;
-
-	// void sort_edges() {
-	//   sort(E.begin(), E.end(), precsr_edge_sort_p);
-	// }
-
 
 	size_t insert_vertex(const std::string & ustr);
 

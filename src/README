@@ -420,10 +420,11 @@ The policy for knowing when to stop the pageRank algorithm is the following:
   "iterate until L1 is below threshold or max. number of iterations is
   reached."
 
-if any of the parameters is set to zero it is discarded. For example,
-setting the iterations number to zero (--prank_iter 0) causes the algorithm
-to stop exclusively when threshold is reached. Setting --prank_iter 0.0
-causes the algorithm to stop after the last iteration.
+if only one switch is set (--prank_iter or --prank_threshold), the other
+switch is set to zero (so it has no effect). You can however set both
+switches, and the algorithm will stop whenever the first convergence
+criterium is met. Note that this is the default scenarion, where
+--prank_iter is set to 30 AND --prank_threshold is set to 0.0001.
 
   --prank_damping
 

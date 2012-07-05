@@ -47,7 +47,7 @@ namespace ukb {
 
 	namespace prank {
 	  extern bool use_weight;   // Use weights in pagerank calculations
-	  extern size_t num_iterations;
+	  extern int num_iterations;
 	  extern float threshold;
 	  extern float damping;
 	}

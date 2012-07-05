@@ -254,6 +254,7 @@ int main(int argc, char *argv[]) {
 
   size_t iterations = 0;
   float thresh = 0.0;
+  bool check_convergence = false;
 
   const char desc_header[] = "ukb_ppv: get personalized PageRank vector if a KB\n"
 	"Usage examples:\n"
@@ -418,18 +419,12 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("prank_iter")) {
 	  iterations = vm["prank_iter"].as<size_t>();
-	  if (iterations == 0) {
-		cerr << "Error: prank_iter can not be zero!\n";
-		goto END;
-	  }
+	  check_convergence = true;
     }
 
     if (vm.count("prank_threshold")) {
 	  thresh = vm["prank_threshold"].as<float>();
-	  if (thresh <= 0.0 || thresh > 1.0) {
-		cerr << "Error: invalid prank_threshold value " << thresh << "\n";
-		goto END;
-	  }
+	  check_convergence = true;
     }
 
     if (vm.count("prank_damping")) {
@@ -468,21 +463,7 @@ int main(int argc, char *argv[]) {
 	exit(-1);
   }
 
-  // Manage iterations/threshold
-  if (iterations && thresh != 0.0) {
-	// user specified both
-	glVars::prank::num_iterations = iterations;
-	glVars::prank::threshold = thresh;
-  } else {
-	if (iterations) {
-	  glVars::prank::num_iterations = iterations;
-	  glVars::prank::threshold = 0.0;
-	}
-	if (thresh != 0.0) {
-	  glVars::prank::num_iterations = 0;
-	  glVars::prank::threshold = thresh;
-	}
-  }
+  if (check_convergence) set_pr_convergence(iterations, thresh);
 
   if (opt_static) {
 	if (glVars::verbose)

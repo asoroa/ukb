@@ -419,6 +419,9 @@ namespace ukb {
   // trim trailing and leading spaces
   void trim_spaces(std::string &l);
 
+  // Common misc. functions
+  void set_pr_convergence(size_t iterations, float threshold);
+
 }
 
 #endif

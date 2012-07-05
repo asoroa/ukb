@@ -1,4 +1,7 @@
 #include "common.h"
+#include "globalVars.h"
+
+#include <boost/numeric/conversion/cast.hpp>
 
 namespace ukb {
 
@@ -87,5 +90,31 @@ namespace ukb {
 	  l_n++;
 	} while(is && !line.size());
 	return is;
+  }
+
+  // Manage iterations/threshold
+
+  void set_pr_convergence(size_t iterations, float thresh) {
+
+	if (thresh < 0.0 || thresh > 1.0) {
+	  std::cerr << "Warning: invalid prank_thresh value " << thresh << " set to zero.\n";
+	  thresh = 0.0f;
+	}
+	if (iterations == 0 && thresh == 0.0f)
+	  throw std::runtime_error(std::string("Error: both iterations and threshold are set to zero."));
+	if (iterations && thresh != 0.0) {
+	  // user specified both
+	  glVars::prank::num_iterations = boost::numeric_cast<int>(iterations);
+	  glVars::prank::threshold = thresh;
+	} else {
+	  if (iterations) {
+		glVars::prank::num_iterations = boost::numeric_cast<int>(iterations);
+		glVars::prank::threshold = 0.0;
+	  }
+	  if (thresh != 0.0) {
+		glVars::prank::num_iterations = 0;
+		glVars::prank::threshold = thresh;
+	  }
+	}
   }
 }
