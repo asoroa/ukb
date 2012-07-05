@@ -1,0 +1,30 @@
+
+This directory contains scripts for converting WordNet from the original
+format to UKB format. There are two scripts:
+
+* wnindex2ukbdict.pl for creating the dictionary. It asks for the
+  index.sense file in the WordNet distribution. Usage:
+
+  ./wnindex2ukbdict.pl [-v] index.sense
+       -v               Be verbose
+
+* wndb2ukbrel.pl for creating the graph. It needs all the files under the
+  dict/ directory of WordNet distribution. Usage:
+
+ ./wndb2ukbrel.pl [-s src_name] [-d] [-v] wn_data_file1 ...
+	-s source_name	Name of the source
+	-d		Create a directed graph
+	-v		Be verbose
+
+* Example
+
+Say we want convert WordNet 2.0 to ukb. You have to follow these steps:
+
+1. download wordnet 2.0 from http://wordnetcode.princeton.edu/2.0/WordNet-2.0.tar.gz
+2. uncompress to path_to_wn2.0
+3. download latest ukb from http://ixa2.si.ehu.es/ukb
+4. go to 'scripts' directory
+5. create graph file with:
+   % ./wndb2ukbrel.pl path_to_wn2.0/dict/* > wn20_rel.txt
+6. create dictionary
+   % ./wnindex2ukbdict.pl path_to_wn2.0/dict/index.sense > wn20.lex

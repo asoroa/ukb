@@ -17,7 +17,7 @@ getopt('', \%opts);
 
 my $opt_v = $opts{'v'};
 
-die "Usage: $0 [-v]index.sense\n\t-v\t\tBe verbose\n
+die "Usage: $0 [-v] index.sense\n\t-v\t\tBe verbose\n
      example: perl $0 path_to_wordnet/dict/index.sense > dict.txt\n" unless scalar @ARGV;
 
 my $idx_sense_file = shift @ARGV;

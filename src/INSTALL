@@ -1,29 +1,22 @@
 
-You need the following Boost libraries to compile ukb:
+ukb needs boost version 1.41 or higher to compile. Specifically, You need the
+following Boost libraries:
 
       * boost graph library
       * boost program options 
       * boost filesystem
       * boost tokenizer
       * boost lexical cast
+      * boost numeric conversions
+      * boost timer
 
-if you need to compile the boost libraries yourself, make sure you use
-the "--layout=system" and "--build-type=complete" options. Usually,
-after running boost's ./configure script, just edit the produced
-Makefile and change the BJAM_CONFIG variable so it looks like:
-
-BJAM_CONFIG=--layout=system --build-type=complete
-
-and then the usual 'make; make install'
-
-The above procedure changed in boost version 1.39. For installing higher
-versions of boost you should to call the 'bootstrap.sh' script and then use
-bjam with the --layout=system option, i.e.:
+if you need to compile the boost libraries yourself, you should to call the
+'bootstrap.sh' script and then use bjam with the --layout=system option, i.e.:
 
 % ./bootstrap
 % ./bjam --layout=system
 
-then again 'make; make install'
+and then the usual 'make; make install'
 
 If you have boost properly installed, just run by the standard compilation
 procedure:
