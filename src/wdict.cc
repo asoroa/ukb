@@ -108,7 +108,17 @@ namespace ukb {
 
   typedef std::map<Kb_vertex_t, pw_pair_t> ccache_map_t;   // conceptId -> weight
 
-  bool parse_concept(const string & hw, const string & cstr,
+  // I don't want to use (slow) exception mechanism for dictionary
+  // error-checking, so parse_concept returns an error code (0 on success)
+  //
+  // error codes
+  //
+  // 0   success
+  // 1   fail
+  // -1  Error: concept not in KB
+  // -2  Error: parsing error (zero weight)
+
+  int parse_concept(const string & hw, const string & cstr,
 					 ccache_map_t & ccache) {
 	float weight;
 	string concept_str;
@@ -119,7 +129,7 @@ namespace ukb {
 
 	tie(concept_id, aux) = Kb::instance().get_vertex_by_name(concept_str);
 	if (!aux)
-	  return false;
+	  return -1; // not in KB
 
 	// POS stuff
 	if(glVars::input::filter_pos) {
@@ -129,7 +139,7 @@ namespace ukb {
 	if (glVars::dict::use_weight) {
 	  weight += glVars::dict::weight_smoothfactor;
 	  if (weight == 0.0)
-		throw std::runtime_error ("Error in entry " + hw + ": " + cstr + " word has zero weight.");
+		return -2; // zero weight
 	}
 
 	// See if concept was already there
@@ -138,19 +148,19 @@ namespace ukb {
 	  // If not a new concept, see if previous concept had the same weight
 	  if (glVars::debug::warning && weight != cache_it->second.w)
 		cerr << "Warning in entry " + hw + ": " + concept_str + " appears twice with different weights. Skipping.\n";
-	  return false;
+	  return 1; // repeated concept
 	}
 	// update cache with new concept
 	ccache.insert(make_pair(concept_id, pw_pair_t(pos_c, weight)));
-	return true;
+	return 0; // OK
   }
 
   void WDict::read_wdict_file(const string & fname) {
 
 	std::ifstream fh(fname.c_str(), ofstream::in);
 	if(!fh) {
-	  cerr << "Can't open " << fname << endl;
-	  return;
+	  cerr << "Error: can't open " << fname << endl;
+	  exit(-1);
 	}
 
 	// Parse lines of form:
@@ -159,6 +169,8 @@ namespace ukb {
 	// abandon 04135348-n:4 06081672-n:0 01663408-v:10 00451308-v:7
 
 	string line;
+	static char *concept_err_msg[] = { "(concept not in KB)",
+									   "(concept with zero weight)" };
 	size_t line_number = 0;
 	bool insertedP;
 
@@ -187,29 +199,30 @@ namespace ukb {
 		ccache_map_t & ccache = cache_map_it->second;
 		size_t inserted_concepts_N = ccache.size();
 		for(; fields_it != fields_end; ++fields_it) {
-		  try {
-			if (parse_concept(fields[0], *fields_it, ccache)) {
-			  inserted_concepts_N++;
-			}
-		  } catch (std::runtime_error & e) {
-			if (!glVars::dict::swallow) throw e;
-			if (glVars::debug::warning) {
-			  cerr << "Wdict: line " << lexical_cast<string>(line_number) << ": " << e.what() << "(ignoring).\n";
-			}
+		  int pc_err_status;
+		  pc_err_status = parse_concept(fields[0], *fields_it, ccache);
+		  if (pc_err_status < 0) {
+			// deal with error
+			string err_msg(string("line ") + lexical_cast<string>(line_number) + " " + *fields_it + " " + concept_err_msg[-pc_err_status - 1]);
+			if (!glVars::dict::swallow) throw std::runtime_error(err_msg + "\n");
+			if (glVars::debug::warning) cerr << "[W] read_wdict_file: " + err_msg + " ... ignoring\n";
+			continue;
 		  }
+		  if (!pc_err_status)
+			inserted_concepts_N++;
 		}
 		if (!inserted_concepts_N) {
 		  // we have a headword but all the associated concepts were erroneous
 		  // Erase the headword from the map
 		  if (glVars::debug::warning) {
-			cerr << "Wdict: line " << lexical_cast<string>(line_number) << ". Ignoring headword " << fields[0] << endl;
+			cerr << "[W]: line " << lexical_cast<string>(line_number) << ". Ignoring headword " << fields[0] << endl;
 		  }
 		  m_words.pop_back();
 		  concept_cache.erase(cache_map_it);
 		}
 	  }
 	} catch (std::exception & e) {
-	  throw std::runtime_error("Error in read_wdict_file, line " + lexical_cast<string>(line_number) + "\n" + string(e.what()));
+	  throw std::runtime_error("[Error] read_wdict_file: " + string(e.what()));
 	}
 
 	// Now fill actual dictionary
