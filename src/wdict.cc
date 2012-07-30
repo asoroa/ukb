@@ -42,8 +42,7 @@ namespace ukb {
 	size_t N = 0;
 	std::ifstream fh(fname.c_str(), ofstream::in);
 	if(!fh) {
-	  cerr << "Can't open " << fname << endl;
-	  throw;
+	  throw std::runtime_error(string("Can't open ") + fname);
 	}
 	// First pass to count total number of words
 	string line;
@@ -90,9 +89,9 @@ namespace ukb {
 	std::string::size_type m = str.length();
 	std::string::size_type idx = str.find_last_of("-");
 	if (idx == string::npos || idx == m - 1)
-	  throw std::runtime_error("Dictionary concept " + str + " has no POS");
+	  throw ukb::wdict_error("Dictionary concept " + str + " has no POS");
 	if (m - idx > 2)
-	  throw std::runtime_error("Dictionary concept " + str + " has invalid POS (more than 1 char).");
+	  throw ukb::wdict_error("Dictionary concept " + str + " has invalid POS (more than 1 char).");
 	return str.at(idx + 1);
   }
 
@@ -185,7 +184,7 @@ namespace ukb {
 		copy(tok.begin(), tok.end(), back_inserter(fields));
 		if (fields.size() == 0) continue; // blank line
 		if (fields.size() < 2) {
-		  if (!glVars::dict::swallow) throw std::runtime_error("Bad line.\n");
+		  if (!glVars::dict::swallow) throw ukb::wdict_error("Bad line.\n");
 		  cerr << "Wdict: line " << line_number <<  ": Bad line (ignoring).\n" ;
 		  continue;
 		}
@@ -204,7 +203,7 @@ namespace ukb {
 		  if (pc_err_status < 0) {
 			// deal with error
 			string err_msg(string("line ") + lexical_cast<string>(line_number) + " " + *fields_it + " " + concept_err_msg[-pc_err_status - 1]);
-			if (!glVars::dict::swallow) throw std::runtime_error(err_msg + "\n");
+			if (!glVars::dict::swallow) throw ukb::wdict_error(err_msg + "\n");
 			if (glVars::debug::warning) cerr << "[W] read_wdict_file: " + err_msg + " ... ignoring\n";
 			continue;
 		  }
@@ -221,13 +220,15 @@ namespace ukb {
 		  concept_cache.erase(cache_map_it);
 		}
 	  }
+	} catch (std::logic_error & e) {
+	  throw ukb::wdict_error("[Error] read_wdict_file: " + string(e.what()));
 	} catch (std::exception & e) {
-	  throw std::runtime_error("[Error] read_wdict_file: " + string(e.what()));
+	  throw e; // any other exception is just thrown away
 	}
 
 	// Now fill actual dictionary
 	if(m_words.size() == 0)
-	  throw std::runtime_error("Error reading dict. No headwords linked to KB");
+	  throw ukb::wdict_error("Error reading dict. No headwords linked to KB");
 	for(vector<string>::iterator wit = m_words.begin(), wit_end = m_words.end();
 		wit != wit_end; ++wit) {
 	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(&(*wit), WDict_item_t())).first;

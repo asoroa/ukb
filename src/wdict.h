@@ -9,12 +9,18 @@
 #include <set>
 #include <vector>
 #include <iosfwd>
+#include <stdexcept>
 
 ////////////////////////////////////////
 
 #include "kbGraph.h"
 
 namespace ukb {
+
+  class wdict_error : public std::logic_error {
+  public:
+	wdict_error(const std::string& msg = "") : std::logic_error(msg) {}
+  };
 
   // type of dict items
 

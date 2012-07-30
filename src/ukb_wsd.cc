@@ -650,7 +650,7 @@ int main(int argc, char *argv[]) {
 	};
   }
   catch (std::exception & e) {
-    cerr << "Error reading " << fullname_in << " : " << e.what() << "\n";
+    cerr << "Error reading " << fullname_in << "\n" << e.what() << "\n";
     exit(-1);
   }
  END:

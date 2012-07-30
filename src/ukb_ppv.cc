@@ -505,7 +505,7 @@ int main(int argc, char *argv[]) {
   try {
 	compute_sentence_vectors(out_dir);
   } catch(std::exception& e) {
-    cerr << "Errore reading " << fullname_in << " : " << e.what() << "\n";
+    cerr << "Errore reading " << fullname_in << "\n" << e.what() << "\n";
 	exit(-1);
   }
 

@@ -105,7 +105,7 @@ namespace ukb {
 	  bool P;
 	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(w);
 	  if (!P) {
-		throw std::runtime_error("CWord concept " + w + " not in KB");
+		throw std::logic_error("CWord concept " + w + " not in KB");
 	  }
 	  m_syns.push_back(w);
 	  m_V.push_back(make_pair(u, 1.0f));
@@ -127,11 +127,11 @@ namespace ukb {
 
   void CWord::attach_lemma(const string & lemma, char pos) {
 	if (!w.size())
-	  throw std::runtime_error("CWord::attach_lemma error: can't attach lemma to an empty CWord.");
+	  throw std::logic_error("CWord::attach_lemma error: can't attach lemma to an empty CWord.");
 	if (m_type == cw_concept)
-	  throw std::runtime_error("CWord::attach_lemma error: can't attach lemma to a CWord of type cw_concept.");
+	  throw std::logic_error("CWord::attach_lemma error: can't attach lemma to a CWord of type cw_concept.");
 	if (glVars::input::filter_pos && !pos)
-	  throw std::runtime_error("CWord::attach_lemma error: no POS.");
+	  throw std::logic_error("CWord::attach_lemma error: no POS.");
 	link_dict_concepts(lemma, pos);
   }
 
@@ -351,7 +351,7 @@ namespace ukb {
 	copy(it, end, back_inserter(fields));
 	size_t m = fields.size();
 	if (m != 4 && m != 5) {
-	  throw std::runtime_error(word + " : too few fields.");
+	  throw std::logic_error(word + " : too few fields.");
 	}
 	res.lemma = fields[0];
 	res.pos = fields[1];
@@ -361,11 +361,11 @@ namespace ukb {
 	  if (m == 5)
 		res.w = lexical_cast<float>(fields[4]);
 	} catch (boost::bad_lexical_cast &) {
-	  throw std::runtime_error(word + " : Parsing error.");
+	  throw std::logic_error(word + " : Parsing error.");
 	}
 
 	if (res.w < 0.0) {
-	  throw std::runtime_error(word + " : Negative weight.");
+	  throw std::logic_error(word + " : Negative weight.");
 	}
 	return res;
   }
@@ -403,11 +403,11 @@ namespace ukb {
 			char pos(0);
 			CWord::cwtype cw_type = cast_int_cwtype(ctwp.dist);
 			if (cw_type == CWord::cw_error) {
-			  throw std::runtime_error(*it + " fourth field is invalid.");
+			  throw std::logic_error(*it + " fourth field is invalid.");
 			}
 			if (cw_type != CWord::cw_concept && glVars::input::filter_pos) {
-			  if (!ctwp.pos.size()) throw std::runtime_error(*it + " has no POS.");
-			  if (ctwp.pos.size() != 1) throw std::runtime_error(*it + " has invalid POS (more than 1 char).");
+			  if (!ctwp.pos.size()) throw std::logic_error(*it + " has no POS.");
+			  if (ctwp.pos.size() != 1) throw std::logic_error(*it + " has invalid POS (more than 1 char).");
 			  pos = ctwp.pos[0];
 			}
 			if(!glVars::input::weight)
@@ -421,7 +421,9 @@ namespace ukb {
 			  if (glVars::debug::warning)
 				cerr << "W:" << *it << " can't be mapped to KB.";
 			}
-		  } catch (std::exception & e) {
+		  } catch (ukb::wdict_error & e) {
+			throw e;
+		  } catch (std::logic_error & e) {
 			string msg(e.what());
 			if (!glVars::input::swallow) throw std::runtime_error(msg);
 			if (glVars::debug::warning) {
@@ -429,6 +431,8 @@ namespace ukb {
 			}
 		  }
 		}
+	  } catch (ukb::wdict_error & e) {
+		throw e;
 	  } catch (std::exception & e) {
 		throw std::runtime_error("Context error in line " + lexical_cast<string>(l_n) + "\n" + e.what());
 	  }
