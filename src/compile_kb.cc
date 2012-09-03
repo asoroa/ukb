@@ -2,7 +2,6 @@
 #include "wdict.h"
 #include "globalVars.h"
 #include "configFile.h"
-#include "fileElem.h"
 #include "kbGraph.h"
 #include <string>
 #include <iostream>

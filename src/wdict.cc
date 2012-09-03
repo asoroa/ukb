@@ -168,8 +168,8 @@ namespace ukb {
 	// abandon 04135348-n:4 06081672-n:0 01663408-v:10 00451308-v:7
 
 	string line;
-	static char *concept_err_msg[] = { "(concept not in KB)",
-									   "(concept with zero weight)" };
+	static const char *concept_err_msg[] = { "(concept not in KB)",
+											 "(concept with zero weight)" };
 	size_t line_number = 0;
 	bool insertedP;
 

@@ -1,6 +1,5 @@
 #include "wdict.h"
 #include "common.h"
-#include "fileElem.h"
 #include "globalVars.h"
 #include "kbGraph.h"
 #include "disambGraph.h"

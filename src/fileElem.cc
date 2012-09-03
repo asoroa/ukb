@@ -4,9 +4,11 @@
 
 // Boost filesystem
 #include <boost/version.hpp>
-
-#if (BOOST_VERSION / 100 % 1000 > 43)
-#define BOOST_FILESYSTEM_VERSION 2
+#if (BOOST_VERSION >= 105000)
+  #define BOOST_FILESYSTEM_VERSION 3
+#else
+  // Needed for boost >=1.44
+  #define BOOST_FILESYSTEM_VERSION 2
 #endif
 
 #include <boost/filesystem/operations.hpp>
@@ -19,20 +21,24 @@ namespace ukb {
 
   static inline string path_string(const boost::filesystem::path & p) {
 
-#if (BOOST_VERSION / 100 % 1000 < 34) 
+#if (BOOST_VERSION < 103400)
 	return p.native_file_string();
-#else
+#elif (BOOST_VERSION < 105000)
 	return p.file_string();
+#else
+	return p.generic_string();
 #endif
   }
 
   template<class Dir> string dir_string(const Dir & p) {
-#if (BOOST_VERSION / 100 % 1000 < 34) 
+#if (BOOST_VERSION < 103400)
 	// Dir is a path object
 	return p.native_file_string();
-#else
+#elif (BOOST_VERSION < 105000)
 	// Dir is a basic_directory object
 	return p.path().file_string();
+#else
+	return p.path().generic_string();
 #endif
   }
 
@@ -42,7 +48,7 @@ namespace ukb {
 	vector<string> input_files;
 
 	fs::path abs_path( fs::initial_path() );
-  
+
 	// Creates an absolute path
 	abs_path = fs::system_complete( fs::path( fullname ) );
 
@@ -58,7 +64,11 @@ namespace ukb {
 			++dir_itr ) {
 		if (fs::is_directory(*dir_itr)) continue;
 		if (extension.size()) {
-		  string dfile = dir_itr->leaf();
+		  #if (BOOST_VERSION < 105000)
+			string dfile = dir_itr->leaf();
+		  #else
+			string dfile = dir_itr->path().generic_string();
+		  #endif
 		  size_t ext_i = dfile.find_last_of('.');
 		  if (ext_i == string::npos) continue;
 		  string dext(dfile.begin() + ext_i + 1, dfile.end());
@@ -79,8 +89,12 @@ namespace ukb {
 	namespace fs = boost::filesystem;
 
 	fs::path full_path( fs::initial_path() );
-  
-	full_path = fs::system_complete( fs::path( fname, fs::native ) );
+
+	#if (BOOST_VERSION < 105000)
+	  full_path = fs::system_complete( fs::path( fname, fs::native ) );
+	#else
+	  full_path = fs::system_complete( fs::path( fname, (void*)fs::native ) );
+	#endif
 	return exists(full_path);
   }
 
@@ -88,14 +102,18 @@ namespace ukb {
   /////////////////////////////////////////////////////////////
 
   string basename(const string & fname) {
-  
+
 	namespace fs = boost::filesystem;
 
 	fs::path full_path( fs::initial_path() );
-  
-	full_path = fs::system_complete( fs::path( fname, fs::native ) );
 
-	return full_path.leaf();
+	#if (BOOST_VERSION < 105000)
+	  full_path = fs::system_complete( fs::path( fname, fs::native ) );
+	  return full_path.leaf();
+	#else
+	  full_path = fs::system_complete( fs::path( fname, (void*)fs::native ) );
+	  return full_path.generic_string();
+	#endif
   }
 
 
@@ -104,10 +122,10 @@ namespace ukb {
   // Filesystem stuff (paths, extensions, etc)
 
   string::const_iterator find_last(string::const_iterator sit,
-								   string::const_iterator sit_end, 
+								   string::const_iterator sit_end,
 								   char delim) {
 	string::const_iterator sit_found = sit_end;
-	for(;sit != sit_end;++sit) 
+	for(;sit != sit_end;++sit)
 	  if (*sit == delim) sit_found = sit;
 	return sit_found;
   }
@@ -125,7 +143,7 @@ namespace ukb {
 	fill(fullname_in);
 
 	set_path(out_dir);
-    
+
 	if (new_ext.size())
 	  ext = new_ext;
   }
@@ -138,7 +156,11 @@ namespace ukb {
 	path = p.branch_path().string();
 	if (path == "") path = ".";
 
-	string file_fname = p.leaf(); // name + extension
+	#if (BOOST_VERSION < 105000)
+	   string file_fname = p.leaf(); // name + extension
+	#else
+	   string file_fname = p.generic_string(); // name + extension
+	#endif
 
 	string::const_iterator beg = file_fname.begin();
 	string::const_iterator end = file_fname.end();
