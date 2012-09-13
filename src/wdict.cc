@@ -99,13 +99,20 @@ namespace ukb {
   struct pw_pair_t {
 	char p;
 	float w;
+	size_t idx;
 
-	pw_pair_t() : p(0), w(0.0f) {}
-	pw_pair_t(char pp, float ww) : p(pp), w(ww) {}
+	pw_pair_t() : p(0), w(0.0f), idx(0) {}
+	pw_pair_t(char pp, float ww, size_t i) : p(pp), w(ww), idx(i) {}
 
   };
 
   typedef std::map<Kb_vertex_t, pw_pair_t> ccache_map_t;   // conceptId -> weight
+
+  // given 'cstr' (concept string + weight), set three fields:
+  //
+  //  concept_str -> the concept without the weight
+  //  concept_id  -> vertex id correspondding to concept_str
+  //  pwpair -> a struct with the weight and POS
 
   // I don't want to use (slow) exception mechanism for dictionary
   // error-checking, so parse_concept returns an error code (0 on success)
@@ -113,22 +120,21 @@ namespace ukb {
   // error codes
   //
   // 0   success
-  // 1   fail
-  // -1  Error: concept not in KB
-  // -2  Error: parsing error (zero weight)
+  // 1   Error: concept not in KB
+  // 2   Error: parsing error (zero weight)
 
-  int parse_concept(const string & hw, const string & cstr,
-					 ccache_map_t & ccache) {
+  int parse_concept(const string & cstr,
+					string & concept_str,
+					Kb_vertex_t & concept_id,
+					pw_pair_t & pwpair) {
 	float weight;
-	string concept_str;
-	Kb_vertex_t concept_id;
 	char pos_c = 0;
 	bool aux;
 	tie(concept_str, weight) = wdict_parse_weight(cstr);
 
 	tie(concept_id, aux) = Kb::instance().get_vertex_by_name(concept_str);
 	if (!aux)
-	  return -1; // not in KB
+	  return 1; // not in KB
 
 	// POS stuff
 	if(glVars::input::filter_pos) {
@@ -138,19 +144,10 @@ namespace ukb {
 	if (glVars::dict::use_weight) {
 	  weight += glVars::dict::weight_smoothfactor;
 	  if (weight == 0.0)
-		return -2; // zero weight
+		return 2; // zero weight
 	}
-
-	// See if concept was already there
-	ccache_map_t::iterator cache_it = ccache.find(concept_id);
-	if (cache_it != ccache.end()) {
-	  // If not a new concept, see if previous concept had the same weight
-	  if (glVars::debug::warning && weight != cache_it->second.w)
-		cerr << "Warning in entry " + hw + ": " + concept_str + " appears twice with different weights. Skipping.\n";
-	  return 1; // repeated concept
-	}
-	// update cache with new concept
-	ccache.insert(make_pair(concept_id, pw_pair_t(pos_c, weight)));
+	pwpair.p = pos_c;
+	pwpair.w = weight;
 	return 0; // OK
   }
 
@@ -184,8 +181,8 @@ namespace ukb {
 		copy(tok.begin(), tok.end(), back_inserter(fields));
 		if (fields.size() == 0) continue; // blank line
 		if (fields.size() < 2) {
-		  if (!glVars::dict::swallow) throw ukb::wdict_error("Bad line.\n");
-		  cerr << "Wdict: line " << line_number <<  ": Bad line (ignoring).\n" ;
+		  if (!glVars::dict::swallow) throw ukb::wdict_error("Bad line " + lexical_cast<string>(line_number) + ".\n");
+		  cerr << "[W] read_wdict_file: line" << line_number <<  " is malformed (ignoring).\n" ;
 		  continue;
 		}
 		vector<string>::const_iterator fields_it = fields.begin();
@@ -193,22 +190,42 @@ namespace ukb {
 		++fields_it;
 
 		map<string, ccache_map_t>::iterator cache_map_it;
-		tie(cache_map_it, insertedP) = concept_cache.insert(make_pair(fields[0], ccache_map_t()));
-		if (insertedP) m_words.push_back(fields[0]);
+		const string & hw = fields[0];
+		tie(cache_map_it, insertedP) = concept_cache.insert(make_pair(hw, ccache_map_t()));
+		if (insertedP) m_words.push_back(hw);
 		ccache_map_t & ccache = cache_map_it->second;
 		size_t inserted_concepts_N = ccache.size();
 		for(; fields_it != fields_end; ++fields_it) {
+		  string concept_str;
+		  Kb_vertex_t concept_id;
+		  pw_pair_t pw_pair;
 		  int pc_err_status;
-		  pc_err_status = parse_concept(fields[0], *fields_it, ccache);
-		  if (pc_err_status < 0) {
+
+		  pc_err_status = parse_concept(*fields_it,
+										concept_str,
+										concept_id,
+										pw_pair);
+		  if (pc_err_status != 0) {
 			// deal with error
-			string err_msg(string("line ") + lexical_cast<string>(line_number) + " " + *fields_it + " " + concept_err_msg[-pc_err_status - 1]);
+			string err_msg(string("line ") + lexical_cast<string>(line_number) + " " + concept_str
+						   + " " + concept_err_msg[pc_err_status - 1]);
 			if (!glVars::dict::swallow) throw ukb::wdict_error(err_msg + "\n");
 			if (glVars::debug::warning) cerr << "[W] read_wdict_file: " + err_msg + " ... ignoring\n";
 			continue;
 		  }
-		  if (!pc_err_status)
-			inserted_concepts_N++;
+
+		  // See if concept was already there
+		  ccache_map_t::iterator cache_it = ccache.find(concept_id);
+		  if (cache_it != ccache.end()) {
+			// If not a new concept, see if previous concept had the same weight
+			if (glVars::debug::warning && pw_pair.w != cache_it->second.w)
+			  cerr << "Warning in entry " + hw + ": " + concept_str + " appears twice with different weights. Skipping.\n";
+			continue;
+		  }
+		  // update cache with new concept
+		  pw_pair.idx = inserted_concepts_N;
+		  ccache.insert(make_pair(concept_id, pw_pair));
+		  inserted_concepts_N++;
 		}
 		if (!inserted_concepts_N) {
 		  // we have a headword but all the associated concepts were erroneous
@@ -233,12 +250,19 @@ namespace ukb {
 		wit != wit_end; ++wit) {
 	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(&(*wit), WDict_item_t())).first;
 	  WDict_item_t & item = map_value_it->second;
+
 	  map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(*wit);
+	  size_t m = cache_map_it->second.size();
+	  vector<Kb_vertex_t>(m).swap(item.m_wsyns);
+	  vector<float>(m).swap(item.m_counts);
+	  vector<char>(m).swap(item.m_thepos);
+
 	  for(ccache_map_t::iterator dc_it = cache_map_it->second.begin(), dc_end = cache_map_it->second.end();
 	  	  dc_it != dc_end; ++dc_it) {
-	  	item.m_wsyns.push_back(dc_it->first);
-	  	item.m_counts.push_back(dc_it->second.w);
-	  	item.m_thepos.push_back(dc_it->second.p);
+		size_t idx = dc_it->second.idx;
+	  	item.m_wsyns[idx] = dc_it->first;
+	  	item.m_counts[idx] = dc_it->second.w;
+	  	item.m_thepos[idx] = dc_it->second.p;
 	  }
 	}
   }
