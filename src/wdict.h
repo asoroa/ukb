@@ -28,7 +28,7 @@ namespace ukb {
   struct WDict_item_t {
 	std::vector<Kb_vertex_t> m_wsyns;
 	std::vector<float> m_counts;
-	std::vector<char> m_thepos;
+	std::vector<std::string> m_thepos;
 
 	WDict_item_t() {}
   };
@@ -47,7 +47,7 @@ namespace ukb {
 	Kb_vertex_t get_entry(size_t i) const { return _item.m_wsyns[i]; }
 	const std::string & get_entry_str(size_t i) const;
 	float get_freq(size_t i) const;
-	char get_pos(size_t i) const;
+	const std::string & get_pos(size_t i) const;
 	size_t dist_pos() const;
   };
 

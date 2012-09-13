@@ -40,7 +40,7 @@ namespace ukb {
 	typedef std::vector<std::string>::size_type size_type;
 
 	explicit CWord() : m_pos(0), m_weight(1.0), m_type(cw_error), m_disamb(false) {};
-	CWord(const std::string & w_, const std::string & id, char pos, cwtype type, float wght_ = 1.0);
+	CWord(const std::string & w_, const std::string & id, const std::string & pos, cwtype type, float wght_ = 1.0);
 	CWord & operator=(const CWord & cw_);
 	~CWord() {};
 
@@ -48,7 +48,7 @@ namespace ukb {
 	//
 	// Note, the CWord does not track the lemma
 
-	void attach_lemma(const std::string & lemma, char pos = 0);
+	void attach_lemma(const std::string & lemma, const std::string & pos = std::string());
 
 	iterator begin() {return m_syns.begin();}
 	iterator end() {return m_syns.end();}
@@ -64,7 +64,7 @@ namespace ukb {
 	std::string wpos() const;
 
 	std::string id() const {return m_id;}
-	char get_pos() const {return m_pos;}
+	std::string get_pos() const {return m_pos;}
 
 	float get_weight() const { return m_weight;}
 	float get_linkw_factor() const { return m_linkw_factor; }
@@ -121,14 +121,14 @@ namespace ukb {
 
   private:
 
-	size_t link_dict_concepts(const std::string & lemma, char pos);
+	size_t link_dict_concepts(const std::string & lemma, const std::string & pos);
 	void read_from_stream (std::ifstream & is);
 	std::ofstream & write_to_stream(std::ofstream & o) const;
 	void shuffle_synsets();
 
 	std::string w;
 	std::string m_id;
-	char m_pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
+	std::string m_pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
 	float m_weight;     // Initial weight for PPV
 	std::vector<std::string> m_syns;
 	std::vector<std::pair<Kb_vertex_t, float> > m_V;

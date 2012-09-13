@@ -37,7 +37,7 @@ namespace ukb {
 	return res;
   }
 
-  size_t CWord::link_dict_concepts(const string & lemma, char pos) {
+  size_t CWord::link_dict_concepts(const string & lemma, const string & pos) {
 
 	size_t new_c = 0;
 
@@ -61,9 +61,9 @@ namespace ukb {
 
 	for(size_t i= 0, m = sidxV.size(); i < m; ++i) {
 	  size_t idx = sidxV[i];
-	  if(pos) {
+	  if(pos.size()) {
 		// filter synsets by pos
-		char synpos = entries.get_pos(idx);
+		string synpos = entries.get_pos(idx);
 		if (pos != synpos) continue;
 	  }
 	  Kb_vertex_t syn_v = entries.get_entry(idx);
@@ -89,7 +89,7 @@ namespace ukb {
 	return new_c;
   }
 
-  CWord::CWord(const string & w_, const string & id_, char pos_, cwtype type_, float wght_)
+  CWord::CWord(const string & w_, const string & id_, const string & pos_, cwtype type_, float wght_)
 	: w(w_), m_id(id_), m_pos(pos_), m_weight(wght_), m_type(type_) {
 
 	// cw_tgtword_nopv are internally cw_tgtword with zero weight
@@ -125,12 +125,12 @@ namespace ukb {
 	}
   }
 
-  void CWord::attach_lemma(const string & lemma, char pos) {
+  void CWord::attach_lemma(const string & lemma, const string & pos) {
 	if (!w.size())
 	  throw std::logic_error("CWord::attach_lemma error: can't attach lemma to an empty CWord.");
 	if (m_type == cw_concept)
 	  throw std::logic_error("CWord::attach_lemma error: can't attach lemma to a CWord of type cw_concept.");
-	if (glVars::input::filter_pos && !pos)
+	if (glVars::input::filter_pos && !pos.size())
 	  throw std::logic_error("CWord::attach_lemma error: no POS.");
 	link_dict_concepts(lemma, pos);
   }
@@ -153,10 +153,10 @@ namespace ukb {
 
 	if (is_synset()) return word();
 	string wpos(word());
-	char pos = get_pos();
-	if(pos == 0) return wpos;
+	string pos = get_pos();
+	if(pos.size() == 0) return wpos;
 	wpos.append("#");
-	wpos.append(1,pos);
+	wpos.append(pos);
 	return wpos;
   };
 
@@ -230,7 +230,7 @@ namespace ukb {
 	//KbGraph & g = ukb::Kb::instance().graph();
 
 	o << cw_.w << "#";
-	if (cw_.m_pos)
+	if (cw_.m_pos.size())
 	  o << cw_.m_pos;
 	o << "#" << cw_.m_id << "#" << cw_.m_type;
 	return o;
@@ -400,15 +400,14 @@ namespace ukb {
 		  try {
 			ctw_parse_t ctwp = parse_ctw(*it);
 			if (ctwp.lemma.size() == 0) continue;
-			char pos(0);
+			string pos("");
 			CWord::cwtype cw_type = cast_int_cwtype(ctwp.dist);
 			if (cw_type == CWord::cw_error) {
 			  throw std::logic_error(*it + " fourth field is invalid.");
 			}
 			if (cw_type != CWord::cw_concept && glVars::input::filter_pos) {
 			  if (!ctwp.pos.size()) throw std::logic_error(*it + " has no POS.");
-			  if (ctwp.pos.size() != 1) throw std::logic_error(*it + " has invalid POS (more than 1 char).");
-			  pos = ctwp.pos[0];
+			  pos = ctwp.pos;
 			}
 			if(!glVars::input::weight)
 			  ctwp.w = 1.0;

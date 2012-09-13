@@ -85,24 +85,22 @@ namespace ukb {
 	return make_pair(concept_id, weight);
   }
 
-  char xtract_pos_cid(const string & str) {
+  string xtract_pos_cid(const string & str) {
 	std::string::size_type m = str.length();
 	std::string::size_type idx = str.find_last_of("-");
 	if (idx == string::npos || idx == m - 1)
 	  throw ukb::wdict_error("Dictionary concept " + str + " has no POS");
-	if (m - idx > 2)
-	  throw ukb::wdict_error("Dictionary concept " + str + " has invalid POS (more than 1 char).");
-	return str.at(idx + 1);
+	return str.substr(idx + 1);
   }
 
 
   struct pw_pair_t {
-	char p;
+	string p;
 	float w;
 	size_t idx;
 
-	pw_pair_t() : p(0), w(0.0f), idx(0) {}
-	pw_pair_t(char pp, float ww, size_t i) : p(pp), w(ww), idx(i) {}
+	pw_pair_t() : p(string("")), w(0.0f), idx(0) {}
+	pw_pair_t(string & pp, float ww, size_t i) : p(pp), w(ww), idx(i) {}
 
   };
 
@@ -128,7 +126,7 @@ namespace ukb {
 					Kb_vertex_t & concept_id,
 					pw_pair_t & pwpair) {
 	float weight;
-	char pos_c = 0;
+	string pos_str("");
 	bool aux;
 	tie(concept_str, weight) = wdict_parse_weight(cstr);
 
@@ -138,7 +136,7 @@ namespace ukb {
 
 	// POS stuff
 	if(glVars::input::filter_pos) {
-	  pos_c = xtract_pos_cid(concept_str);
+	  pos_str = xtract_pos_cid(concept_str);
 	}
 	// Weight stuff
 	if (glVars::dict::use_weight) {
@@ -146,7 +144,7 @@ namespace ukb {
 	  if (weight == 0.0)
 		return 2; // zero weight
 	}
-	pwpair.p = pos_c;
+	pwpair.p = pos_str;
 	pwpair.w = weight;
 	return 0; // OK
   }
@@ -255,7 +253,7 @@ namespace ukb {
 	  size_t m = cache_map_it->second.size();
 	  vector<Kb_vertex_t>(m).swap(item.m_wsyns);
 	  vector<float>(m).swap(item.m_counts);
-	  vector<char>(m).swap(item.m_thepos);
+	  vector<string>(m).swap(item.m_thepos);
 
 	  for(ccache_map_t::iterator dc_it = cache_map_it->second.begin(), dc_end = cache_map_it->second.end();
 	  	  dc_it != dc_end; ++dc_it) {
@@ -327,8 +325,9 @@ namespace ukb {
 	return Kb::instance().get_vertex_name(_item.m_wsyns[i]);
   }
 
-  char WDict_entries::get_pos(size_t i) const {
-	if (!glVars::input::filter_pos) return 0;
+  const std::string & WDict_entries::get_pos(size_t i) const {
+	static const string nullpos("");
+	if (!glVars::input::filter_pos) return nullpos;
 	return _item.m_thepos[i];
   }
 
