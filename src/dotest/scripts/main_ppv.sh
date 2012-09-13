@@ -17,7 +17,9 @@ graphSrc=../input/test_graph.txt
 ../../compile_kb -o $gbin ${graphSrc}
 ../../ukb_ppv --variants --prefix nopos_C_ --nopos -C -O $dir -D ${dict} -K $gbin ${ctx}
 ../../ukb_ppv --variants --prefix nopos_G_ --nopos -G -O $dir -D ${dict} -K $gbin ${ctx}
-../../ukb_ppv --variants --prefix pos -O $dir -D ${dict} -K $gbin ${ctx}
+../../ukb_ppv --variants --prefix pos_ -O $dir -D ${dict} -K $gbin ${ctx}
+../../ukb_ppv --variants --prefix pos_C_ -C -O $dir -D ${dict} -K $gbin ${ctx}
+../../ukb_ppv --variants --prefix pos_G_ -G -O $dir -D ${dict} -K $gbin ${ctx}
 
 rm -f ${dir}/*_sorted.ppv >& /dev/null
 for ppv_fi in ${dir}/*.ppv; do
