@@ -85,43 +85,108 @@ void print_iquery_v(KbGraph & g, Kb_vertex_t u, float w = 0, int sp = 0) {
   cout << "\n";
 }
 
-void iquery() {
+void show_bfs_path(string & str) {
+
+  Kb & kb = Kb::instance();
+  KbGraph & g = kb.graph();
+  bool aux;
+  Kb_vertex_t u, v;
+  vector<Kb_vertex_t> p;
+  vector<string> path_str;
+
+  path_str = split(str, " ");
+  if(path_str.size() < 2) {
+	cout << "\n"<< " p needs two concepts!";
+	return;
+  }
+  tie(u, aux) = kb.get_vertex_by_name(path_str[0]);
+  if(!aux) {
+	cout << path_str[0] << " not present!";
+	return;
+  }
+
+  tie(v, aux) = kb.get_vertex_by_name(path_str[1]);
+  if(!aux) {
+	cout << path_str[1] << " not present!";
+	return;
+  }
+  kb.bfs(u, p);
+  Kb_vertex_t w = v;
+  while(w != u) {
+	print_iquery_v(g, w, 0, 1);
+	w = p[w];
+  }
+  print_iquery_v(g, u, 0, 1);
+}
+
+void show_neighbours(string & str) {
 
   Kb & kb = Kb::instance();
   KbGraph & g = kb.graph();
 
+  bool inv;
   bool aux;
   Kb_vertex_t u;
 
-  while	(cin) {
-	string str;
-	bool inv = false;
-	cout << "\nQ:";
-	cin >> str;
-	if (str == "q") break;
-	if (str.substr(0, 2) == "i:") {
-	  inv=true;
-	  str = str.substr(2);
-	}
-	tie(u, aux) = kb.get_vertex_by_name(str);
-	if (aux) {
-	  print_iquery_v(g, u);
-	  if (!inv) {
-	    graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
-	    tie(it, end) = out_edges(u, g);
-	    for(;it != end; ++it) {
-	      print_iquery_v(g, target(*it, g), g[*it].weight, 2);
-	    }
-	  } else {
-	    graph_traits<Kb::boost_graph_t>::in_edge_iterator iit , iend;
-	    tie(iit, iend) = in_edges(u, g);
-	    for(;iit != iend; ++iit) {
-	      print_iquery_v(g, source(*iit, g), g[*iit].weight, 2);
-	    }
+  if (str.substr(0, 2) == "i:") {
+	inv=true;
+	str = str.substr(2);
+  }
+  tie(u, aux) = kb.get_vertex_by_name(str);
+  if (aux) {
+	print_iquery_v(g, u);
+	if (!inv) {
+	  graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
+	  tie(it, end) = out_edges(u, g);
+	  for(;it != end; ++it) {
+		print_iquery_v(g, target(*it, g), g[*it].weight, 2);
 	  }
 	} else {
-	  cout << "\n"<< str << " not present!";
+	  graph_traits<Kb::boost_graph_t>::in_edge_iterator iit , iend;
+	  tie(iit, iend) = in_edges(u, g);
+	  for(;iit != iend; ++iit) {
+		print_iquery_v(g, source(*iit, g), g[*iit].weight, 2);
+	  }
 	}
+  } else {
+	cout << "\n"<< str << " not present!\n";
+  }
+}
+
+void show_dict_entries(const string & str) {
+
+  WDict_entries entries = WDict::instance().get_entries(str);
+
+  if (!entries.size()) {
+	cout << str << " not in dictionary.\n";
+	return;
+  }
+  cout << str << " ->";
+  for(size_t i = 0; i < entries.size(); i++) {
+	cout << " " << entries.get_entry_str(i) << ":" << entries.get_freq(i);
+  }
+  cout << "\n";
+}
+
+void iquery() {
+
+  while	(cin) {
+	string str;
+	size_t l;
+	cout << "\nQ:";
+	read_line_noblank(cin, str, l);;
+	if (str == "q") break;
+	if (str.substr(0, 2) == "p:") {
+	  str = str.substr(2);
+	  show_bfs_path(str);
+	  continue;
+	}
+	if (str.substr(0, 2) == "d:") {
+	  str = str.substr(2);
+	  show_dict_entries(str);
+	  continue;
+	}
+	show_neighbours(str);
   }
 }
 
