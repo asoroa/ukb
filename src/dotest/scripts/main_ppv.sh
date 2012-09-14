@@ -15,6 +15,7 @@ dict=../input/dict.txt
 ctx=../input/ctx.txt
 graphSrc=../input/test_graph.txt
 ../../compile_kb -o $gbin ${graphSrc}
+../../ukb_ppv --variants --static -D ${dict} -K $gbin > ${dir}/static.ppv
 ../../ukb_ppv --variants --prefix nopos_C_ --nopos -C -O $dir -D ${dict} -K $gbin ${ctx}
 ../../ukb_ppv --variants --prefix nopos_G_ --nopos -G -O $dir -D ${dict} -K $gbin ${ctx}
 ../../ukb_ppv --variants --prefix pos_ -O $dir -D ${dict} -K $gbin ${ctx}
