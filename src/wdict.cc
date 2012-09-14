@@ -53,6 +53,12 @@ namespace ukb {
 	return N;
   }
 
+  //////////////////////////////////////////////////////////////////////
+  // parsing
+
+  static size_t line_number; // global variable, used by many parsing functions
+
+
   static pair<string, float> wdict_parse_weight(const string & str) {
 
 	float weight = 0.0f; // default weight is zero (unless glVars::dict:use_weight is false (see below))
@@ -85,7 +91,7 @@ namespace ukb {
 	return make_pair(concept_id, weight);
   }
 
-  string xtract_pos_cid(const string & str) {
+  static string xtract_pos_cid(const string & str) {
 	std::string::size_type m = str.length();
 	std::string::size_type idx = str.find_last_of("-");
 	if (idx == string::npos || idx == m - 1)
@@ -93,18 +99,19 @@ namespace ukb {
 	return str.substr(idx + 1);
   }
 
-
-  struct pw_pair_t {
+  struct concept_parse_t {
+	string str;
+	Kb_vertex_t u;
 	string p;
 	float w;
-	size_t idx;
 
-	pw_pair_t() : p(string("")), w(0.0f), idx(0) {}
-	pw_pair_t(string & pp, float ww, size_t i) : p(pp), w(ww), idx(i) {}
-
+	concept_parse_t() : str(string()), u(-1), p(string()), w(0.0f) {}
   };
 
-  typedef std::map<Kb_vertex_t, pw_pair_t> ccache_map_t;   // conceptId -> weight
+  struct ccache_map_t {
+	set<Kb_vertex_t> S; // concepts already seen
+	vector<concept_parse_t> V;
+  };
 
   // given 'cstr' (concept string + weight), set three fields:
   //
@@ -112,41 +119,138 @@ namespace ukb {
   //  concept_id  -> vertex id correspondding to concept_str
   //  pwpair -> a struct with the weight and POS
 
-  // I don't want to use (slow) exception mechanism for dictionary
-  // error-checking, so parse_concept returns an error code (0 on success)
-  //
-  // error codes
-  //
+  // return code
   // 0   success
   // 1   Error: concept not in KB
   // 2   Error: parsing error (zero weight)
 
-  int parse_concept(const string & cstr,
-					string & concept_str,
-					Kb_vertex_t & concept_id,
-					pw_pair_t & pwpair) {
-	float weight;
+
+  static size_t parse_concept(const string & cstr,
+							  concept_parse_t & cp) {
 	string pos_str("");
 	bool aux;
-	tie(concept_str, weight) = wdict_parse_weight(cstr);
+	tie(cp.str, cp.w) = wdict_parse_weight(cstr);
 
-	tie(concept_id, aux) = Kb::instance().get_vertex_by_name(concept_str);
-	if (!aux)
-	  return 1; // not in KB
-
+	//  See if concept is in KB
+	tie(cp.u, aux) = Kb::instance().get_vertex_by_name(cp.str);
+	if (!aux) return 1; // not in KB
 	// POS stuff
 	if(glVars::input::filter_pos) {
-	  pos_str = xtract_pos_cid(concept_str);
+	  cp.p = xtract_pos_cid(cp.str);
 	}
 	// Weight stuff
 	if (glVars::dict::use_weight) {
-	  weight += glVars::dict::weight_smoothfactor;
-	  if (weight == 0.0)
-		return 2; // zero weight
+	  cp.w += glVars::dict::weight_smoothfactor;
+	  if (cp.w == 0.0f) return 2; // zero weight
 	}
-	pwpair.p = pos_str;
-	pwpair.w = weight;
-	return 0; // OK
+	return 0;
+  }
+
+  // Read a line and parse headword and concept vector
+  //
+  // Return codes:
+  //
+  // 0 -> EOF
+  // 1 -> OK
+  // -1 -> blank line
+  // -2 -> ERROR: malformed line
+
+  static int read_wdict_line(istream & fh,
+							 vector<string> & fields) {
+
+	string line;
+	bool res = read_line_noblank(fh, line, line_number);
+	if (!res) return 0; // EOF
+	char_separator<char> sep(" \t");
+	tokenizer<char_separator<char> > tok(line, sep);
+	copy(tok.begin(), tok.end(), back_inserter(fields));
+	if (fields.size() == 0) return -1; // blank line
+	if (fields.size() < 2) {
+	  return -2; // malformed line
+	}
+	return 1;
+  }
+
+  static size_t fill_concepts(const string & hw,
+							  vector<string>::const_iterator fields_it,
+							  vector<string>::const_iterator fields_end,
+							  ccache_map_t & ccache) {
+
+	static const char *concept_err_msg[] = { "(concept not in KB)",
+											 "(concept with zero weight)" };
+	size_t inserted_concepts_N = 0;
+	bool aux;
+
+	for(; fields_it != fields_end; ++fields_it) {
+	  concept_parse_t cp;
+	  int pc_err_status = parse_concept(*fields_it, cp);
+	  if (pc_err_status != 0) {
+		// deal with error
+		string err_msg(string("line ") + lexical_cast<string>(line_number) + " " + cp.str
+					   + " " + concept_err_msg[pc_err_status - 1]);
+		if (!glVars::dict::swallow) throw ukb::wdict_error(err_msg + "\n");
+		if (glVars::debug::warning) cerr << "[W] read_wdict_file: " + err_msg + " ... ignoring\n";
+		continue;
+	  }
+	  // See if concept was already there
+	  set<Kb_vertex_t>::iterator cache_it;
+	  tie(cache_it, aux) = ccache.S.insert(cp.u);
+	  if (aux) {
+		ccache.V.push_back(cp);
+		inserted_concepts_N++;
+	  }
+	}
+	return inserted_concepts_N;
+  }
+
+  struct ccache_order {
+	bool operator() (const concept_parse_t & a, const concept_parse_t & b) {
+	  return a.p < b.p;
+	}
+  };
+
+  static void create_wdict(map<string, ccache_map_t> & concept_cache,
+						   vector<std::string> & m_words,
+						   WDict::wdicts_t & m_wdicts) {
+
+	for(vector<string>::iterator wit = m_words.begin(), wit_end = m_words.end();
+		wit != wit_end; ++wit) {
+	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(&(*wit), WDict_item_t())).first;
+	  WDict_item_t & item = map_value_it->second;
+
+	  map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(*wit);
+	  vector<concept_parse_t> & V = cache_map_it->second.V;
+	  sort(V.begin(), V.end(), ccache_order());
+	  size_t idx = 0;
+	  size_t left = 0;
+	  string old_pos("");
+	  Kb_vertex_t old_concept(-1); // intialization to null vertex taken from boost .hpp
+	  float old_w = 0.0;
+	  for(size_t i = 0, m = V.size(); i < m; ++i) {
+		if (V[i].p != old_pos) {
+		  if (left != idx) {
+			item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
+			left = idx;
+		  }
+		  old_pos = V[i].p;
+		}
+		if (V[i].u == old_concept) {
+		  if (glVars::debug::warning && V[i].w != old_w)
+			cerr << "Warning in entry " + *wit + ": " + V[i].str + " appears twice with different weights. Skipping.\n";
+		  continue;
+		};
+		// concept is different
+		old_concept = V[i].u;
+		old_w = V[i].w;
+		item.m_wsyns.push_back(V[i].u);
+		item.m_counts.push_back(V[i].w);
+		idx++;
+	  }
+	  // insert last range
+	  if (left != idx) {
+		item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
+	  }
+	}
   }
 
   void WDict::read_wdict_file(const string & fname) {
@@ -163,68 +267,32 @@ namespace ukb {
 	// abandon 04135348-n:4 06081672-n:0 01663408-v:10 00451308-v:7
 
 	string line;
-	static const char *concept_err_msg[] = { "(concept not in KB)",
-											 "(concept with zero weight)" };
-	size_t line_number = 0;
+	line_number = 0;
 	bool insertedP;
 
 	map<string, ccache_map_t> concept_cache;
 
 	try {
-	  while(read_line_noblank(fh, line, line_number)) {
-
+	  while(true) {
 		vector<string> fields;
-		char_separator<char> sep(" \t");
-		tokenizer<char_separator<char> > tok(line, sep);
-		copy(tok.begin(), tok.end(), back_inserter(fields));
-		if (fields.size() == 0) continue; // blank line
-		if (fields.size() < 2) {
+		int rwl_res = read_wdict_line(fh, fields);
+		if (rwl_res == 0) break; // EOF
+		if (rwl_res == -1) continue; // blank line
+		if (rwl_res == -2) {
+		  // parsing error
 		  if (!glVars::dict::swallow) throw ukb::wdict_error("Bad line " + lexical_cast<string>(line_number) + ".\n");
 		  cerr << "[W] read_wdict_file: line" << line_number <<  " is malformed (ignoring).\n" ;
 		  continue;
 		}
 		vector<string>::const_iterator fields_it = fields.begin();
-		vector<string>::const_iterator fields_end = fields.end();
+		const string & hw = *fields_it;
 		++fields_it;
-
 		map<string, ccache_map_t>::iterator cache_map_it;
-		const string & hw = fields[0];
 		tie(cache_map_it, insertedP) = concept_cache.insert(make_pair(hw, ccache_map_t()));
 		if (insertedP) m_words.push_back(hw);
 		ccache_map_t & ccache = cache_map_it->second;
-		size_t inserted_concepts_N = ccache.size();
-		for(; fields_it != fields_end; ++fields_it) {
-		  string concept_str;
-		  Kb_vertex_t concept_id;
-		  pw_pair_t pw_pair;
-		  int pc_err_status;
-
-		  pc_err_status = parse_concept(*fields_it,
-										concept_str,
-										concept_id,
-										pw_pair);
-		  if (pc_err_status != 0) {
-			// deal with error
-			string err_msg(string("line ") + lexical_cast<string>(line_number) + " " + concept_str
-						   + " " + concept_err_msg[pc_err_status - 1]);
-			if (!glVars::dict::swallow) throw ukb::wdict_error(err_msg + "\n");
-			if (glVars::debug::warning) cerr << "[W] read_wdict_file: " + err_msg + " ... ignoring\n";
-			continue;
-		  }
-
-		  // See if concept was already there
-		  ccache_map_t::iterator cache_it = ccache.find(concept_id);
-		  if (cache_it != ccache.end()) {
-			// If not a new concept, see if previous concept had the same weight
-			if (glVars::debug::warning && pw_pair.w != cache_it->second.w)
-			  cerr << "Warning in entry " + hw + ": " + concept_str + " appears twice with different weights. Skipping.\n";
-			continue;
-		  }
-		  // update cache with new concept
-		  pw_pair.idx = inserted_concepts_N;
-		  ccache.insert(make_pair(concept_id, pw_pair));
-		  inserted_concepts_N++;
-		}
+		size_t inserted_concepts_N = fill_concepts(hw, fields_it, fields.end(),
+												   ccache);
 		if (!inserted_concepts_N) {
 		  // we have a headword but all the associated concepts were erroneous
 		  // Erase the headword from the map
@@ -241,28 +309,11 @@ namespace ukb {
 	  throw e; // any other exception is just thrown away
 	}
 
-	// Now fill actual dictionary
 	if(m_words.size() == 0)
 	  throw ukb::wdict_error("Error reading dict. No headwords linked to KB");
-	for(vector<string>::iterator wit = m_words.begin(), wit_end = m_words.end();
-		wit != wit_end; ++wit) {
-	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(&(*wit), WDict_item_t())).first;
-	  WDict_item_t & item = map_value_it->second;
 
-	  map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(*wit);
-	  size_t m = cache_map_it->second.size();
-	  vector<Kb_vertex_t>(m).swap(item.m_wsyns);
-	  vector<float>(m).swap(item.m_counts);
-	  vector<string>(m).swap(item.m_thepos);
-
-	  for(ccache_map_t::iterator dc_it = cache_map_it->second.begin(), dc_end = cache_map_it->second.end();
-	  	  dc_it != dc_end; ++dc_it) {
-		size_t idx = dc_it->second.idx;
-	  	item.m_wsyns[idx] = dc_it->first;
-	  	item.m_counts[idx] = dc_it->second.w;
-	  	item.m_thepos[idx] = dc_it->second.p;
-	  }
-	}
+	// Now, create the actual dictionary
+	create_wdict(concept_cache, m_words, m_wdicts);
   }
 
   WDict::WDict() {
@@ -276,23 +327,48 @@ namespace ukb {
 	return inst;
   }
 
+  static void add_variant_pos(const string & hw,
+							  const std::vector<Kb_vertex_t> & wsyns,
+							  const string & pos,
+							  size_t left,
+							  size_t right,
+							  std::map<std::string, std::string> & variants) {
+	Kb & kb = Kb::instance();
+
+	string hw_prefix = hw + "#";
+	if (pos.size()) hw_prefix += pos + "#";
+	size_t v_idx = 1;
+	for(size_t i = left; i < right; ++i, ++v_idx) {
+
+	  string hw_sense = hw_prefix + lexical_cast<string>(v_idx);
+	  string synset_str = kb.get_vertex_name(wsyns[i]);
+	  map<string, string>::iterator celem_it = variants.insert(make_pair(synset_str, string())).first;
+	  string & variant_str = celem_it->second;
+	  if(variant_str.size()) variant_str.append(", ");
+	  variant_str.append(hw_sense);
+	}
+  }
+
   void WDict::create_variant_map() {
 
 	for(wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
 		it != end; ++it) {
 	  const string & hw = *(it->first);
 	  const WDict_item_t & elem(it->second);
-	  for(size_t i = 0, m = elem.m_wsyns.size(); i < m; ++i) {
-
-		string hw_sense = hw + "#" + lexical_cast<string>(i + 1);
-
-		string synset_str = WDict_entries(elem).get_entry_str(i);
-		map<string, string>::iterator celem_it = m_variants.insert(make_pair(synset_str, string())).first;
-		string & variant_str = celem_it->second;
-		string comma = variant_str.size() ? string(", ") : string();
-		variant_str.append(comma);
-		variant_str.append(hw_sense);
-	  }
+	  std::map<std::string, wdict_range>::const_iterator rit = elem.m_pos_ranges.begin(), rend = elem.m_pos_ranges.end();
+	  if(rit == rend) {
+		// no pos
+		add_variant_pos(hw, elem.m_wsyns,
+						string(""),
+						0, elem.m_wsyns.size(),
+						m_variants);
+	  } else
+		for(;rit != rend; ++rit) {
+		  add_variant_pos(hw, elem.m_wsyns,
+						  rit->first,
+						  rit->second.left, rit->second.right,
+						  m_variants);
+		}
 	}
   }
 
@@ -310,32 +386,54 @@ namespace ukb {
 	return it->second;
   }
 
-  WDict_entries WDict::get_entries(const std::string & word) const {
+  WDict_entries WDict::get_entries(const std::string & word, const string & pos) const {
 	static WDict_item_t null_entry;
 	wdicts_t::const_iterator map_value_it = m_wdicts.find(&word);
 	if (map_value_it == m_wdicts.end()) return WDict_entries(null_entry);
-	return WDict_entries(map_value_it->second);
+	return WDict_entries(map_value_it->second, pos);
 	//return WDict_entries(m_wdicts[&word]);
   }
 
   //////////////////////////////////////////////////////////////
   // WDict_entries
 
+  WDict_entries::WDict_entries(const WDict_item_t & item)
+	: m_item(item), m_pos(std::string()), m_left(0), m_right(item.m_wsyns.size()) {}
+
+  WDict_entries::WDict_entries(const WDict_item_t & item, const std::string & pos)
+  : m_item(item), m_pos(pos), m_left(0), m_right(0) {
+	if (!glVars::input::filter_pos || !pos.size()) {
+	  string().swap(m_pos);
+	  m_right = item.m_wsyns.size();
+	} else {
+	  std::map<std::string, wdict_range>::const_iterator it = item.m_pos_ranges.find(pos);
+	  if (it != item.m_pos_ranges.end()) {
+		m_left = it->second.left;
+		m_right = it->second.right;
+	  }
+	}
+  }
+
+  size_t WDict_entries::size() const {
+	return m_right - m_left;
+  }
+
+  Kb_vertex_t WDict_entries::get_entry(size_t i) const {
+	return m_item.m_wsyns[i + m_left];
+  }
+
   const std::string & WDict_entries::get_entry_str(size_t i) const {
-	return Kb::instance().get_vertex_name(_item.m_wsyns[i]);
+	return Kb::instance().get_vertex_name(m_item.m_wsyns[i + m_left]);
   }
 
   const std::string & WDict_entries::get_pos(size_t i) const {
-	static const string nullpos("");
-	if (!glVars::input::filter_pos) return nullpos;
-	return _item.m_thepos[i];
+	return m_pos;
   }
 
   float WDict_entries::get_freq(size_t i) const {
 	if (!glVars::dict::use_weight) return 1.0;
-	return _item.m_counts[i];
+	return m_item.m_counts[i + m_left];
   }
-
 
   std::ostream & operator<<(std::ostream & o, const WDict & dict) {
 
@@ -350,6 +448,4 @@ namespace ukb {
 	}
 	return o;
   };
-
-
 }

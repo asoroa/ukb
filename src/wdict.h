@@ -22,13 +22,19 @@ namespace ukb {
 	wdict_error(const std::string& msg = "") : std::logic_error(msg) {}
   };
 
+
+  // specicies a range [left, right)
+  struct wdict_range {
+	size_t left;
+	size_t right;
+	wdict_range(size_t a, size_t b) : left(a), right(b) {}
+  };
+
   // type of dict items
-
-
   struct WDict_item_t {
 	std::vector<Kb_vertex_t> m_wsyns;
 	std::vector<float> m_counts;
-	std::vector<std::string> m_thepos;
+	std::map<std::string, wdict_range> m_pos_ranges;
 
 	WDict_item_t() {}
   };
@@ -37,18 +43,25 @@ namespace ukb {
 
   class WDict_entries {
 
-	const WDict_item_t & _item;
 
   public:
-	WDict_entries(const WDict_item_t & item) : _item(item) {}
+	WDict_entries(const WDict_item_t & item);
+	WDict_entries(const WDict_item_t & item, const std::string & pos);
 	~WDict_entries() {}
 
-	size_t size() const { return _item.m_wsyns.size(); }
-	Kb_vertex_t get_entry(size_t i) const { return _item.m_wsyns[i]; }
+	size_t size() const;
+	Kb_vertex_t get_entry(size_t i) const;
 	const std::string & get_entry_str(size_t i) const;
 	float get_freq(size_t i) const;
 	const std::string & get_pos(size_t i) const;
 	size_t dist_pos() const;
+
+  private:
+	const WDict_item_t & m_item;
+	std::string m_pos;
+	size_t m_left;
+	size_t m_right;
+
   };
 
 
@@ -59,7 +72,7 @@ namespace ukb {
 	// Singleton
 	static WDict & instance();
 
-	WDict_entries get_entries(const std::string & word) const;
+	WDict_entries get_entries(const std::string & word, const std::string & pos = std::string()) const;
 
 	const std::vector<std::string> & headwords() const { return m_words; }
 

@@ -46,7 +46,7 @@ namespace ukb {
 	  syns_S.insert(m_V[i].first);
 	}
 
-	WDict_entries entries = WDict::instance().get_entries(lemma);
+	WDict_entries entries = WDict::instance().get_entries(lemma, pos);
 	if (!entries.size()) return 0;
 
 	vector<size_t> sidxV; // synset index vector
@@ -61,11 +61,6 @@ namespace ukb {
 
 	for(size_t i= 0, m = sidxV.size(); i < m; ++i) {
 	  size_t idx = sidxV[i];
-	  if(pos.size()) {
-		// filter synsets by pos
-		string synpos = entries.get_pos(idx);
-		if (pos != synpos) continue;
-	  }
 	  Kb_vertex_t syn_v = entries.get_entry(idx);
 	  if (!syns_S.insert(syn_v).second) continue; // Synset previously there
 	  const string & syn_str = entries.get_entry_str(idx);
@@ -116,7 +111,7 @@ namespace ukb {
 	case cw_tgtword:
 	  if (!link_dict_concepts(w, m_pos)) {
 		// empty CWord
-		std::vector<std::string>().swap(m_syns);
+		empty_synsets();
 	  }
 	  m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
 	  break;
