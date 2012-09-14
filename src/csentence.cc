@@ -489,6 +489,16 @@ namespace ukb {
 	return o;
   }
 
+  std::ostream & CSentence::debug(std::ostream & o) const {
+	o << cs_id << endl;
+	for(vector<CWord>::const_iterator it = v.begin(), end=v.end();
+		it != end; ++it) {
+	  o << "**CWord" << endl;
+	  it->debug(o);
+	}
+	return o;
+  }
+
   std::ostream & CSentence::print_csent_aw(std::ostream & o) const {
 
 	vector<CWord>::const_iterator cw_it = v.begin();

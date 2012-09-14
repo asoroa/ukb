@@ -188,7 +188,7 @@ namespace ukb {
 	std::ostream & print_csent_semcor_aw(std::ostream & o) const;
 
 	std::ostream & print_csent_simple(std::ostream & o) const;
-
+	std::ostream & debug(std::ostream & o) const;
   private:
 	void read_from_stream (std::ifstream & is);
 	std::ofstream & write_to_stream(std::ofstream & o) const;
