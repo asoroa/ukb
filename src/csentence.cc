@@ -109,6 +109,9 @@ namespace ukb {
 	  break;
 	case cw_ctxword:
 	case cw_tgtword:
+	  // empty POS string when no pos filtering
+	  if(!glVars::input::filter_pos)
+		string("").swap(m_pos);
 	  if (!link_dict_concepts(w, m_pos)) {
 		// empty CWord
 		empty_synsets();
@@ -480,7 +483,8 @@ namespace ukb {
 
   std::ostream& operator<<(std::ostream & o, const CSentence & cs_) {
 	o << cs_.cs_id << endl;
-	copy(cs_.begin(), cs_.end(), ostream_iterator<CWord>(o, "\n"));
+	copy(cs_.begin(), cs_.end(), ostream_iterator<CWord>(o, " "));
+	o << "\n";
 	return o;
   }
 
@@ -623,8 +627,7 @@ namespace ukb {
 	  const CWord & cw = **it;
 	  float cw_w = cw.get_weight() * CW_w_factor;
 	  if (cw.type() == CWord::cw_concept) {
-		tie(u, aux) = kb.get_vertex_by_name(cw.word());
-		assert(aux);
+		u = cw.V_vector().at(0).first;
 		pv[u] += cw_w;
 		inserted_i++;
 	  } else {
