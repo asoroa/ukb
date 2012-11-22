@@ -58,7 +58,7 @@ namespace ukb {
 
   static size_t line_number; // global variable, used by many parsing functions
 
-
+  // given a string with "concept_id:weight", extract "concept_id" and "weight"
   static pair<string, float> wdict_parse_weight(const string & str) {
 
 	float weight = 0.0f; // default weight is zero (unless glVars::dict:use_weight is false (see below))
@@ -91,6 +91,7 @@ namespace ukb {
 	return make_pair(concept_id, weight);
   }
 
+  // given a concept id "concept-pos", extract pos
   static string xtract_pos_cid(const string & str) {
 	std::string::size_type m = str.length();
 	std::string::size_type idx = str.find_last_of("-");
@@ -113,11 +114,12 @@ namespace ukb {
 	vector<concept_parse_t> V;
   };
 
-  // given 'cstr' (concept string + weight), set three fields:
+  // given 'cstr' (concept string + weight), set a struct concept_parse_t cp:
   //
-  //  concept_str -> the concept without the weight
-  //  concept_id  -> vertex id correspondding to concept_str
-  //  pwpair -> a struct with the weight and POS
+  //  cp.str -> the concept without the weight
+  //  cp.u   -> vertex id correspondding to concept_str
+  //  cp.p   -> the POS (empty if no pos filtering)
+  //  cp.w   -> the weight (1 if no weight)
 
   // return code
   // 0   success
@@ -171,6 +173,8 @@ namespace ukb {
 	return 1;
   }
 
+  // Fill the concept vector associated with headword hw
+
   static size_t fill_concepts(const string & hw,
 							  vector<string>::const_iterator fields_it,
 							  vector<string>::const_iterator fields_end,
@@ -208,6 +212,9 @@ namespace ukb {
 	  return a.p < b.p;
 	}
   };
+
+  // Given a concept_cache (which is temporary, and is used to remove possible
+  // duplicated entries), fill the real dictionary.
 
   static void create_wdict(map<string, ccache_map_t> & concept_cache,
 						   vector<std::string> & m_words,
