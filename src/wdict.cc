@@ -103,10 +103,10 @@ namespace ukb {
   struct concept_parse_t {
 	string str;
 	Kb_vertex_t u;
-	string p;
+	string pos;
 	float w;
 
-	concept_parse_t() : str(string()), u(-1), p(string()), w(0.0f) {}
+	concept_parse_t() : str(string()), u(-1), pos(string()), w(0.0f) {}
   };
 
   struct ccache_map_t {
@@ -118,7 +118,7 @@ namespace ukb {
   //
   //  cp.str -> the concept without the weight
   //  cp.u   -> vertex id correspondding to concept_str
-  //  cp.p   -> the POS (empty if no pos filtering)
+  //  cp.pos -> the POS (empty if no pos filtering)
   //  cp.w   -> the weight (1 if no weight)
 
   // return code
@@ -138,7 +138,7 @@ namespace ukb {
 	if (!aux) return 1; // not in KB
 	// POS stuff
 	if(glVars::input::filter_pos) {
-	  cp.p = xtract_pos_cid(cp.str);
+	  cp.pos = xtract_pos_cid(cp.str);
 	}
 	// Weight stuff
 	if (glVars::dict::use_weight) {
@@ -182,7 +182,6 @@ namespace ukb {
 
 	static const char *concept_err_msg[] = { "(concept not in KB)",
 											 "(concept with zero weight)" };
-	size_t inserted_concepts_N = 0;
 	bool aux;
 
 	for(; fields_it != fields_end; ++fields_it) {
@@ -201,15 +200,14 @@ namespace ukb {
 	  tie(cache_it, aux) = ccache.S.insert(cp.u);
 	  if (aux) {
 		ccache.V.push_back(cp);
-		inserted_concepts_N++;
 	  }
 	}
-	return inserted_concepts_N;
+	return ccache.V.size();
   }
 
-  struct ccache_order {
+  struct pos_order {
 	bool operator() (const concept_parse_t & a, const concept_parse_t & b) {
-	  return a.p < b.p;
+	  return a.pos < b.pos;
 	}
   };
 
@@ -217,29 +215,29 @@ namespace ukb {
   // duplicated entries), fill the real dictionary.
 
   static void create_wdict(map<string, ccache_map_t> & concept_cache,
-						   vector<std::string> & m_words,
+						   vector<std::string> & wordsV,
 						   WDict::wdicts_t & m_wdicts) {
 
-	for(vector<string>::iterator wit = m_words.begin(), wit_end = m_words.end();
+	for(vector<string>::iterator wit = wordsV.begin(), wit_end = wordsV.end();
 		wit != wit_end; ++wit) {
 	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(&(*wit), WDict_item_t())).first;
 	  WDict_item_t & item = map_value_it->second;
 
 	  map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(*wit);
 	  vector<concept_parse_t> & V = cache_map_it->second.V;
-	  sort(V.begin(), V.end(), ccache_order());
+	  sort(V.begin(), V.end(), pos_order());
 	  size_t idx = 0;
 	  size_t left = 0;
 	  string old_pos("");
 	  Kb_vertex_t old_concept(-1); // intialization to null vertex taken from boost .hpp
 	  float old_w = 0.0;
 	  for(size_t i = 0, m = V.size(); i < m; ++i) {
-		if (V[i].p != old_pos) {
+		if (V[i].pos != old_pos) {
 		  if (left != idx) {
 			item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
 			left = idx;
 		  }
-		  old_pos = V[i].p;
+		  old_pos = V[i].pos;
 		}
 		if (V[i].u == old_concept) {
 		  if (glVars::debug::warning && V[i].w != old_w)
@@ -260,7 +258,9 @@ namespace ukb {
 	}
   }
 
-  void WDict::read_wdict_file(const string & fname) {
+  static void read_dictfile_1pass(const string & fname,
+								  map<string, ccache_map_t> & concept_cache,
+								  std::vector<std::string> & wordsV) {
 
 	std::ifstream fh(fname.c_str(), ofstream::in);
 	if(!fh) {
@@ -277,8 +277,6 @@ namespace ukb {
 	line_number = 0;
 	bool insertedP;
 
-	map<string, ccache_map_t> concept_cache;
-
 	try {
 	  while(true) {
 		vector<string> fields;
@@ -288,7 +286,7 @@ namespace ukb {
 		if (rwl_res == -2) {
 		  // parsing error
 		  if (!glVars::dict::swallow) throw ukb::wdict_error("Bad line " + lexical_cast<string>(line_number) + ".\n");
-		  cerr << "[W] read_wdict_file: line" << line_number <<  " is malformed (ignoring).\n" ;
+		  cerr << "[W] read_dictfile_1pass: line" << line_number <<  " is malformed (ignoring).\n" ;
 		  continue;
 		}
 		vector<string>::const_iterator fields_it = fields.begin();
@@ -296,25 +294,33 @@ namespace ukb {
 		++fields_it;
 		map<string, ccache_map_t>::iterator cache_map_it;
 		tie(cache_map_it, insertedP) = concept_cache.insert(make_pair(hw, ccache_map_t()));
-		if (insertedP) m_words.push_back(hw);
+		if (insertedP) wordsV.push_back(hw);
 		ccache_map_t & ccache = cache_map_it->second;
-		size_t inserted_concepts_N = fill_concepts(hw, fields_it, fields.end(),
-												   ccache);
-		if (!inserted_concepts_N) {
-		  // we have a headword but all the associated concepts were erroneous
+		size_t concepts_N = fill_concepts(hw, fields_it, fields.end(),
+										  ccache);
+		if (!concepts_N) {
+		  // we have a headword but all the associated concepts are erroneous
 		  // Erase the headword from the map
 		  if (glVars::debug::warning) {
 			cerr << "[W]: line " << lexical_cast<string>(line_number) << ". Ignoring headword " << fields[0] << endl;
 		  }
-		  m_words.pop_back();
+		  wordsV.pop_back();
 		  concept_cache.erase(cache_map_it);
 		}
 	  }
 	} catch (std::logic_error & e) {
-	  throw ukb::wdict_error("[Error] read_wdict_file: " + string(e.what()));
+	  throw ukb::wdict_error("[Error] read_dictfile_1pass: " + string(e.what()));
 	} catch (std::exception & e) {
 	  throw e; // any other exception is just thrown away
 	}
+  }
+
+
+  void WDict::read_wdict_file(const string & fname) {
+
+	map<string, ccache_map_t> concept_cache;
+
+	read_dictfile_1pass(fname, concept_cache, m_words);
 
 	if(m_words.size() == 0)
 	  throw ukb::wdict_error("Error reading dict. No headwords linked to KB");
@@ -322,6 +328,10 @@ namespace ukb {
 	// Now, create the actual dictionary
 	create_wdict(concept_cache, m_words, m_wdicts);
   }
+
+  // void WDict::read_wdict_alt_file(const string & fname) {
+
+  // }
 
   WDict::WDict() {
 	if(glVars::dict_filename.size() == 0)
