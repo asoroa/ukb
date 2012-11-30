@@ -22,8 +22,9 @@ namespace ukb {
   //const std::string dict_filename = "kb_source/enWN16";
 
   std::ostream & operator<<(std::ostream & o, const WDict_item_t & item) {
+	Kb & kb = Kb::instance();
 	for(size_t i = 0, n = item.m_wsyns.size(); i != n; ++i) {
-	  o << " " << item.m_wsyns[i];
+	  o << " " << kb.get_vertex_name(item.m_wsyns[i]);
 	  if (glVars::dict::use_weight)  o << ":" << item.m_counts[i];
 	}
 	return o;
@@ -211,6 +212,45 @@ namespace ukb {
 	}
   };
 
+
+  static void fill_wdict_item(WDict_item_t & item,
+							  string & hw,
+							  map<string, ccache_map_t> & concept_cache) {
+
+	map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(hw);
+	vector<concept_parse_t> & V = cache_map_it->second.V;
+	sort(V.begin(), V.end(), pos_order());
+	size_t idx = 0;
+	size_t left = 0;
+	string old_pos("");
+	Kb_vertex_t old_concept(-1); // intialization to null vertex taken from boost .hpp
+	float old_w = 0.0;
+	for(size_t i = 0, m = V.size(); i < m; ++i) {
+	  if (V[i].pos != old_pos) {
+		if (left != idx) {
+		  item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
+		  left = idx;
+		}
+		old_pos = V[i].pos;
+	  }
+	  if (V[i].u == old_concept) {
+		if (glVars::debug::warning && V[i].w != old_w)
+		  cerr << "Warning in headword " + hw + ": " + V[i].str + " appears twice with different weights. Skipping.\n";
+		continue;
+	  };
+	  // concept is different
+	  old_concept = V[i].u;
+	  old_w = V[i].w;
+	  item.m_wsyns.push_back(V[i].u);
+	  item.m_counts.push_back(V[i].w);
+	  idx++;
+	}
+	// insert last range
+	if (left != idx) {
+	  item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
+	}
+  }
+
   // Given a concept_cache (which is temporary, and is used to remove possible
   // duplicated entries), fill the real dictionary.
 
@@ -221,40 +261,7 @@ namespace ukb {
 	for(vector<string>::iterator wit = wordsV.begin(), wit_end = wordsV.end();
 		wit != wit_end; ++wit) {
 	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(*wit, WDict_item_t())).first;
-	  WDict_item_t & item = map_value_it->second;
-
-	  map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(*wit);
-	  vector<concept_parse_t> & V = cache_map_it->second.V;
-	  sort(V.begin(), V.end(), pos_order());
-	  size_t idx = 0;
-	  size_t left = 0;
-	  string old_pos("");
-	  Kb_vertex_t old_concept(-1); // intialization to null vertex taken from boost .hpp
-	  float old_w = 0.0;
-	  for(size_t i = 0, m = V.size(); i < m; ++i) {
-		if (V[i].pos != old_pos) {
-		  if (left != idx) {
-			item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
-			left = idx;
-		  }
-		  old_pos = V[i].pos;
-		}
-		if (V[i].u == old_concept) {
-		  if (glVars::debug::warning && V[i].w != old_w)
-			cerr << "Warning in entry " + *wit + ": " + V[i].str + " appears twice with different weights. Skipping.\n";
-		  continue;
-		};
-		// concept is different
-		old_concept = V[i].u;
-		old_w = V[i].w;
-		item.m_wsyns.push_back(V[i].u);
-		item.m_counts.push_back(V[i].w);
-		idx++;
-	  }
-	  // insert last range
-	  if (left != idx) {
-		item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
-	  }
+	  fill_wdict_item(map_value_it->second, *wit, concept_cache);
 	}
   }
 
@@ -333,13 +340,23 @@ namespace ukb {
 
 	map<string, ccache_map_t> concept_cache;
 	vector<string> newW;
+	bool insertedP;
 
 	read_dictfile_1pass(fname, concept_cache, newW);
 
 	for(vector<string>::iterator it = newW.begin(), end = newW.end();
 		it != end; ++it) {
+	  wdicts_t::iterator mit;
+	  WDict_item_t new_item;
+	  tie (mit, insertedP) = m_wdicts.insert(make_pair(*it, new_item));
+	  if (!insertedP) {
+		// already in map, so empty existing concepts (will be replaced by alternate dict)
+		mit->second.swap(new_item);
+	  } else {
+		m_words.push_back(*it);
+	  }
+	  fill_wdict_item(mit->second, *it, concept_cache);
 	}
-
   }
 
   WDict::WDict() {
@@ -466,11 +483,8 @@ namespace ukb {
 	for(vector<string>::const_iterator it = dict.m_words.begin(), end = dict.m_words.end();
 		it != end; ++it) {
 	  WDict::wdicts_t::const_iterator s_it = dict.m_wdicts.find(*it);
-	  if (s_it == dict.m_wdicts.end()) {
-		s_it = dict.m_wdicts.end();
-	  }
-	  assert(s_it != dict.m_wdicts.end());
-	  o << *it << s_it->second << "\n";
+	  const WDict_item_t & item = s_it->second;
+	  o << *it << item << "\n";
 	}
 	return o;
   };

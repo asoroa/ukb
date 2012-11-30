@@ -303,6 +303,8 @@ int main(int argc, char *argv[]) {
   string fullname_in;
   ifstream input_ifs;
 
+  string alternative_dict_fname;
+
   size_t iterations = 0;
   float thresh = 0.0;
   bool check_convergence = false;
@@ -357,6 +359,7 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_dict("Dictionary options");
   po_desc_dict.add_options()
+	("altdict", value<string>(), "Provide an alternative dictionary overriding the values of default dictionary.")
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights).")
     ("smooth_dict_weight", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
     ("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
@@ -580,6 +583,10 @@ int main(int argc, char *argv[]) {
       glVars::output::norm_ranks = false;
     }
 
+    if (vm.count("altdict")) {
+      alternative_dict_fname = vm["altdict"].as<string>();
+    }
+
   }
   catch(std::exception& e) {
     cerr << e.what() << "\n";
@@ -608,12 +615,16 @@ int main(int argc, char *argv[]) {
 	std::cin.rdbuf(input_ifs.rdbuf());
   }
 
+  Kb::create_from_binfile(kb_binfile);
+
+  if (alternative_dict_fname.size()) {
+	WDict::instance().read_alternate_file(alternative_dict_fname);
+  }
+
   if (opt_do_test) {
     test(std::cin, false);
 	goto END;
   }
-
-  Kb::create_from_binfile(kb_binfile);
 
   cout << cmdline << "\n";
 

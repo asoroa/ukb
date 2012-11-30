@@ -37,6 +37,13 @@ namespace ukb {
 	std::map<std::string, wdict_range> m_pos_ranges;
 
 	WDict_item_t() {}
+
+	void swap(WDict_item_t & o) {
+	  m_wsyns.swap(o.m_wsyns);
+	  m_counts.swap(o.m_counts);
+	  m_pos_ranges.swap(o.m_pos_ranges);
+	}
+
   };
 
   // Accessor class for WDict entries associated to a word
@@ -64,7 +71,6 @@ namespace ukb {
 
   };
 
-
   std::ostream & operator<<(std::ostream & o, const WDict_item_t & item);
 
   class WDict {
@@ -79,6 +85,7 @@ namespace ukb {
 	std::string variant(std::string &concept_id) const;
 	std::string variant(Kb_vertex_t v) const;
 
+	void read_alternate_file(const std::string & fname);
 	friend std::ostream& operator<<(std::ostream & o, const WDict & dict);
 
   private:
@@ -88,19 +95,10 @@ namespace ukb {
 	WDict & operator=(const WDict &);
 
 	void read_wdict_file(const std::string & fname);
-	void read_alternate_file(const std::string & fname);
 
 	void create_variant_map();
 
   public:
-	// functor for comparing keys
-
-	struct Mycomp {
-	  bool operator() (const std::string * a, const std::string * b) const {
-		return *a < *b;
-	  }
-	};
-
 	typedef std::map<const std::string, WDict_item_t > wdicts_t;
 
   private:

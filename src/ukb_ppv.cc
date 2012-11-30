@@ -240,7 +240,8 @@ int main(int argc, char *argv[]) {
 
   bool opt_static = false;
 
-  string kb_binfile(kb_default_binfile);
+  string kb_binfile;
+  string alternative_dict_fname;
 
   cmdline += glVars::ukb_version;
   for (int i=0; i < argc; ++i) {
@@ -293,6 +294,7 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_dict("Dictionary options");
   po_desc_dict.add_options()
+	("altdict", value<string>(), "Provide an alternative dictionary overriding the values of default dictionary.")
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights).")
     ("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
     ("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
@@ -457,6 +459,10 @@ int main(int argc, char *argv[]) {
       fullname_in = vm["input-file"].as<string>();
     }
 
+    if (vm.count("altdict")) {
+      alternative_dict_fname = vm["altdict"].as<string>();
+    }
+
   }
   catch(std::exception& e) {
     cerr << e.what() << "\n";
@@ -495,12 +501,11 @@ int main(int argc, char *argv[]) {
 	std::cin.rdbuf(input_ifs.rdbuf());
   }
 
-
-  if (glVars::verbose)
-    cerr << "Reading binary kb file " << kb_binfile;
   Kb::create_from_binfile(kb_binfile);
-  if (glVars::verbose)
-    Kb::instance().display_info(cerr);
+
+  if (alternative_dict_fname.size()) {
+	WDict::instance().read_alternate_file(alternative_dict_fname);
+  }
 
   try {
 	compute_sentence_vectors(out_dir);
