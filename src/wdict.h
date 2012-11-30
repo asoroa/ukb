@@ -88,6 +88,7 @@ namespace ukb {
 	WDict & operator=(const WDict &);
 
 	void read_wdict_file(const std::string & fname);
+	void read_alternate_file(const std::string & fname);
 
 	void create_variant_map();
 
@@ -100,7 +101,7 @@ namespace ukb {
 	  }
 	};
 
-	typedef std::map<const std::string *, WDict_item_t, Mycomp > wdicts_t;
+	typedef std::map<const std::string, WDict_item_t > wdicts_t;
 
   private:
 	wdicts_t m_wdicts;

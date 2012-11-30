@@ -220,7 +220,7 @@ namespace ukb {
 
 	for(vector<string>::iterator wit = wordsV.begin(), wit_end = wordsV.end();
 		wit != wit_end; ++wit) {
-	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(&(*wit), WDict_item_t())).first;
+	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(*wit, WDict_item_t())).first;
 	  WDict_item_t & item = map_value_it->second;
 
 	  map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(*wit);
@@ -329,9 +329,18 @@ namespace ukb {
 	create_wdict(concept_cache, m_words, m_wdicts);
   }
 
-  // void WDict::read_wdict_alt_file(const string & fname) {
+  void WDict::read_alternate_file(const string & fname) {
 
-  // }
+	map<string, ccache_map_t> concept_cache;
+	vector<string> newW;
+
+	read_dictfile_1pass(fname, concept_cache, newW);
+
+	for(vector<string>::iterator it = newW.begin(), end = newW.end();
+		it != end; ++it) {
+	}
+
+  }
 
   WDict::WDict() {
 	if(glVars::dict_filename.size() == 0)
@@ -370,7 +379,7 @@ namespace ukb {
 
 	for(wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
 		it != end; ++it) {
-	  const string & hw = *(it->first);
+	  const string & hw = it->first;
 	  const WDict_item_t & elem(it->second);
 	  std::map<std::string, wdict_range>::const_iterator rit = elem.m_pos_ranges.begin(), rend = elem.m_pos_ranges.end();
 	  if(rit == rend) {
@@ -405,7 +414,7 @@ namespace ukb {
 
   WDict_entries WDict::get_entries(const std::string & word, const string & pos) const {
 	static WDict_item_t null_entry;
-	wdicts_t::const_iterator map_value_it = m_wdicts.find(&word);
+	wdicts_t::const_iterator map_value_it = m_wdicts.find(word);
 	if (map_value_it == m_wdicts.end()) return WDict_entries(null_entry);
 	return WDict_entries(map_value_it->second, pos);
 	//return WDict_entries(m_wdicts[&word]);
@@ -456,7 +465,7 @@ namespace ukb {
 
 	for(vector<string>::const_iterator it = dict.m_words.begin(), end = dict.m_words.end();
 		it != end; ++it) {
-	  WDict::wdicts_t::const_iterator s_it = dict.m_wdicts.find(&(*it));
+	  WDict::wdicts_t::const_iterator s_it = dict.m_wdicts.find(*it);
 	  if (s_it == dict.m_wdicts.end()) {
 		s_it = dict.m_wdicts.end();
 	  }
