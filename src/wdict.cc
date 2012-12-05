@@ -30,6 +30,10 @@ namespace ukb {
 	return o;
   };
 
+  std::ostream & operator<<(std::ostream & o, const WDict_entries & item) {
+	o << item.m_item;
+	return o;
+  }
 
   ////////////////////////////////////////////////
   // Word2Synset stuff

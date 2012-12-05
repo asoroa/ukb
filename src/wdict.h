@@ -63,6 +63,8 @@ namespace ukb {
 	const std::string & get_pos(size_t i) const;
 	size_t dist_pos() const;
 
+	friend std::ostream & operator<<(std::ostream & o, const WDict_entries & item);
+
   private:
 	const WDict_item_t & m_item;
 	std::string m_pos;
