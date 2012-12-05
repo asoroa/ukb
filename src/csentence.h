@@ -39,7 +39,7 @@ namespace ukb {
 	typedef std::vector<std::string>::value_type value_type;
 	typedef std::vector<std::string>::size_type size_type;
 
-	explicit CWord() : m_pos(0), m_weight(1.0), m_type(cw_error), m_disamb(false) {};
+	explicit CWord() : m_pos(0), m_weight(1.0), m_linkw_factor(1.0), m_type(cw_error), m_disamb(false) {};
 	CWord(const std::string & w_, const std::string & id, const std::string & pos, cwtype type, float wght_ = 1.0);
 	CWord & operator=(const CWord & cw_);
 	~CWord() {};
@@ -49,6 +49,9 @@ namespace ukb {
 	// Note, the CWord does not track the lemma
 
 	void attach_lemma(const std::string & lemma, const std::string & pos = std::string());
+
+	// reset concepts attached to the cword
+	void reset_concepts(std::map<std::string, float> & C);
 
 	iterator begin() {return m_syns.begin();}
 	iterator end() {return m_syns.end();}
@@ -70,19 +73,17 @@ namespace ukb {
 	float get_linkw_factor() const { return m_linkw_factor; }
 	void set_weight(float w) { m_weight = w;}
 
-	bool is_tgtword() const { return (m_type == cw_tgtword); }
+	bool is_tgtword() const { return (m_type == cw_tgtword || m_type == cw_tgtword_nopv); }
 	bool is_disambiguated() const { return m_disamb; }
 	bool is_monosemous() const { return (1 == m_syns.size()); }
 	bool is_synset() const { return m_type == cw_concept; }
+	bool discard_pv() const { return m_type == cw_tgtword_nopv; }
+
+	bool has_concept(const std::string & str);
 
 	cwtype type() const { return m_type; }
 
-	void empty_synsets() {
-	  std::vector<std::string>().swap(m_syns);
-	  std::vector<std::pair<Kb_vertex_t, float> >().swap(m_V);
-	  std::vector<float>().swap(m_ranks);
-	  m_disamb = false;
-	}
+	void empty_synsets();
 	std::vector<std::string> & get_syns_vector() { return m_syns; }
 	const std::vector<std::pair<Kb_vertex_t, float> > & V_vector() const { return m_V; }
 
