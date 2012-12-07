@@ -470,6 +470,7 @@ namespace ukb {
 			if (new_cw.size()) {
 			  if (cw_type == CWord::cw_tgtword_nopv)
 				last_nopv_idx = v.size();
+			  else last_nopv_idx = -1; // any new CW resets last_nopv
 			  v.push_back(new_cw);
 			} else {
 			  // No synset for that word.
