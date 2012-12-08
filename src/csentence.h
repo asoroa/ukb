@@ -77,7 +77,6 @@ namespace ukb {
 	bool is_disambiguated() const { return m_disamb; }
 	bool is_monosemous() const { return (1 == m_syns.size()); }
 	bool is_synset() const { return m_type == cw_concept; }
-	bool discard_pv() const { return m_type == cw_tgtword_nopv; }
 
 	bool has_concept(const std::string & str);
 

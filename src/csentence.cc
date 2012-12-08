@@ -672,7 +672,6 @@ namespace ukb {
 	for(CSentence::const_iterator it = cs.begin(), end = cs.end();
 		it != end; ++it) {
 	  if (it == exclude_word_it) continue;
-	  if (it->discard_pv()) continue;
 	  float w = it->get_weight();
 	  if (w == 0.0) continue;
 	  set<string>::iterator aux_set;
