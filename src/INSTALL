@@ -1,5 +1,5 @@
 
-ukb needs boost version 1.41 or higher to compile. Specifically, You need the
+ukb needs boost version 1.44 or higher to compile. Specifically, You need the
 following Boost libraries:
 
       * boost graph library
@@ -13,10 +13,8 @@ following Boost libraries:
 if you need to compile the boost libraries yourself, you should to call the
 'bootstrap.sh' script and then use bjam with the --layout=system option, i.e.:
 
-% ./bootstrap
-% ./bjam --layout=system
-
-and then the usual 'make; make install'
+% ./bootstrap.sh
+% ./bjam install --layout=system
 
 If you have boost properly installed, just run by the standard compilation
 procedure:

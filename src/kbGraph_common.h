@@ -6,8 +6,8 @@
 // integer types
 
 #include <boost/version.hpp>
-#if BOOST_VERSION < 104100
-#error You need boost version >= 1.41 for compiling this version of ukb.
+#if BOOST_VERSION < 104400
+#error You need boost version >= 1.44 for compiling this version of ukb.
 #endif
 
 #include <utility>
