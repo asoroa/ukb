@@ -4,11 +4,9 @@
 
 // Boost filesystem
 #include <boost/version.hpp>
-#if (BOOST_VERSION >= 105000)
-  #define BOOST_FILESYSTEM_VERSION 3
-#else
-  // Needed for boost >=1.44
-  #define BOOST_FILESYSTEM_VERSION 2
+
+#if (BOOST_VERSION / 100 % 1000 < 48)
+#define BOOST_FILESYSTEM_VERSION 2
 #endif
 
 #include <boost/filesystem/operations.hpp>
@@ -21,24 +19,33 @@ namespace ukb {
 
   static inline string path_string(const boost::filesystem::path & p) {
 
-#if (BOOST_VERSION < 103400)
+#if (BOOST_VERSION / 100 % 1000 < 34)
 	return p.native_file_string();
-#elif (BOOST_VERSION < 105000)
+#elif (BOOST_VERSION / 100 % 1000 < 48)
 	return p.file_string();
 #else
-	return p.generic_string();
+	return p.string();
 #endif
   }
 
   template<class Dir> string dir_string(const Dir & p) {
-#if (BOOST_VERSION < 103400)
+#if (BOOST_VERSION / 100 % 1000 < 34)
 	// Dir is a path object
 	return p.native_file_string();
-#elif (BOOST_VERSION < 105000)
+#elif (BOOST_VERSION / 100 % 1000 < 48)
 	// Dir is a basic_directory object
 	return p.path().file_string();
 #else
-	return p.path().generic_string();
+	return p.path().string();
+#endif
+
+  }
+
+  template<class Dir> string dir_leaf(const Dir & d) {
+#if (BOOST_VERSION / 100 % 1000 < 48)
+	return d.leaf();
+#else
+	return d.path().filename().string();
 #endif
   }
 
@@ -64,11 +71,7 @@ namespace ukb {
 			++dir_itr ) {
 		if (fs::is_directory(*dir_itr)) continue;
 		if (extension.size()) {
-		  #if (BOOST_VERSION < 105000)
-			string dfile = dir_itr->leaf();
-		  #else
-			string dfile = dir_itr->path().generic_string();
-		  #endif
+		  string dfile = dir_leaf(*dir_itr);
 		  size_t ext_i = dfile.find_last_of('.');
 		  if (ext_i == string::npos) continue;
 		  string dext(dfile.begin() + ext_i + 1, dfile.end());
@@ -84,46 +87,38 @@ namespace ukb {
 
   /////////////////////////////////////////////////////////////
 
-  bool exists_file(const string & fname) {
+  // bool exists_file(const string & fname) {
 
-	namespace fs = boost::filesystem;
+  // 	namespace fs = boost::filesystem;
 
-	fs::path full_path( fs::initial_path() );
+  // 	fs::path full_path( fs::initial_path() );
 
-	#if (BOOST_VERSION < 105000)
-	  full_path = fs::system_complete( fs::path( fname, fs::native ) );
-	#else
-	  full_path = fs::system_complete( fs::path( fname, (void*)fs::native ) );
-	#endif
-	return exists(full_path);
-  }
+  // 	full_path = fs::system_complete( fs::path( fname, fs::native ) );
+  // 	return exists(full_path);
+  // }
 
 
   /////////////////////////////////////////////////////////////
 
-  string basename(const string & fname) {
+  // string basename(const string & fname) {
 
-	namespace fs = boost::filesystem;
+  // 	namespace fs = boost::filesystem;
 
-	fs::path full_path( fs::initial_path() );
+  // 	fs::path full_path( fs::initial_path() );
 
-	#if (BOOST_VERSION < 105000)
-	  full_path = fs::system_complete( fs::path( fname, fs::native ) );
-	  return full_path.leaf();
-	#else
-	  full_path = fs::system_complete( fs::path( fname, (void*)fs::native ) );
-	  return full_path.generic_string();
-	#endif
-  }
+  // 	full_path = fs::system_complete( fs::path( fname, fs::native ) );
+
+  // 	return full_path.leaf();
+  // }
 
 
 
   /////////////////////////////////////////////////////////////
   // Filesystem stuff (paths, extensions, etc)
 
-  string::const_iterator find_last(string::const_iterator sit,
-								   string::const_iterator sit_end,
-								   char delim) {
+  static string::const_iterator find_last(string::const_iterator sit,
+										  string::const_iterator sit_end,
+										  char delim) {
 	string::const_iterator sit_found = sit_end;
 	for(;sit != sit_end;++sit)
 	  if (*sit == delim) sit_found = sit;
@@ -156,11 +151,11 @@ namespace ukb {
 	path = p.branch_path().string();
 	if (path == "") path = ".";
 
-	#if (BOOST_VERSION < 105000)
-	   string file_fname = p.leaf(); // name + extension
-	#else
-	   string file_fname = p.generic_string(); // name + extension
-	#endif
+#if (BOOST_VERSION / 100 % 1000 < 48)
+	string file_fname = p.leaf(); // name + extension
+#else
+	string file_fname = p.filename().string(); // name + extension
+#endif
 
 	string::const_iterator beg = file_fname.begin();
 	string::const_iterator end = file_fname.end();

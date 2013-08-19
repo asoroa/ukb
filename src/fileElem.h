@@ -28,11 +28,11 @@ namespace ukb {
 
 	void set_path(const string & out_dir);
 
-	string get_fname() const;
+	string get_fname() const; // gett full filename (name + extension)
 
-	string path;
-	string fname;
-	string ext;
+	string path;  // path to file
+	string fname; // filename without extension
+	string ext;   // extension
   };
 }
 #endif
