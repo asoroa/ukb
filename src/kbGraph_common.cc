@@ -110,10 +110,11 @@ namespace ukb {
 	boost::tie(eit, insertedP) = m_eMap.insert(std::make_pair(k, m_esize));
 	if(insertedP) {
 	  E.push_back(k);
-	  eProp.push_back(edge_prop_t(w));
+	  eProp.push_back(edge_prop_t());
 	  ++m_esize;
 	}
 	eProp[eit->second].etype |= etype;
+	eProp[eit->second].weight += w;
 
 	return eit->second;
   }

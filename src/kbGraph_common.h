@@ -70,7 +70,7 @@ namespace ukb {
 	float weight;
 	etype_t::value_type etype;
 
-	edge_prop_t() {}
+	edge_prop_t() : weight(0.0f), etype(0) {}
 	edge_prop_t(float w) : weight(w), etype(0) {}
 	edge_prop_t(float w, etype_t::value_type et) : weight(w), etype(et) {}
   };
