@@ -1,0 +1,9 @@
+Makefile
+ukb_wsd
+ukb_ppv
+compile_kb
+convert2.0
+*.o
+*.lo
+*.log
+*~
