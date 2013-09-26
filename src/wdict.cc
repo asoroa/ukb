@@ -66,7 +66,7 @@ namespace ukb {
   // given a string with "concept_id:weight", extract "concept_id" and "weight"
   static pair<string, float> wdict_parse_weight(const string & str) {
 
-	float weight = 0.0f; // default weight is zero (unless glVars::dict:use_weight is false (see below))
+	float weight = 0.0f; // default weight is zero
 	string concept_id(str);
 
 	char_separator<char> sf_sep("", ":"); // keep delimiters
@@ -91,8 +91,6 @@ namespace ukb {
 		// last field wasn't a float. Do nothing.
 	  }
 	}
-	// if glVars::dict:use_weight is false, set weight to 1 regardless
-	if (!glVars::dict::use_weight) weight = 1.0f;
 	return make_pair(concept_id, weight);
   }
 
@@ -149,6 +147,9 @@ namespace ukb {
 	if (glVars::dict::use_weight) {
 	  cp.w += glVars::dict::weight_smoothfactor;
 	  if (cp.w == 0.0f) return 2; // zero weight
+	} else {
+	  // if glVars::dict:use_weight is false, set weight to 1 regardless
+	  cp.w = 1.0f;
 	}
 	return 0;
   }
