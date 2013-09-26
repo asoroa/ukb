@@ -244,6 +244,7 @@ int main(int argc, char *argv[]) {
     ("undirected,U", "Force undirected graph.")
     ("rtypes,r", "Keep relation types on edges.")
 	("minput", "Do not die when dealing with malformed input.")
+	("nopos", "Don't filter words by Part of Speech when reading dict.")
 	("note", value<string>(), "Add a comment to the graph.")
 	;
 
@@ -293,6 +294,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("verbose")) {
       glVars::verbose = 1;
+    }
+
+    if (vm.count("nopos")) {
+	  glVars::input::filter_pos = false;
     }
 
     if (vm.count("serialize_dict")) {
