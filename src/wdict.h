@@ -27,6 +27,7 @@ namespace ukb {
   struct wdict_range {
 	size_t left;
 	size_t right;
+	wdict_range() : left(0), right(0) {}
 	wdict_range(size_t a, size_t b) : left(a), right(b) {}
   };
 
@@ -80,15 +81,19 @@ namespace ukb {
 	// Singleton
 	static WDict & instance();
 
+	size_t size();
 	WDict_entries get_entries(const std::string & word, const std::string & pos = std::string()) const;
 
-	const std::vector<std::string> & headwords() const { return m_words; }
+	//const std::vector<std::string> & headwords() const { return m_words; }
 
 	std::string variant(std::string &concept_id) const;
 	std::string variant(Kb_vertex_t v) const;
 
 	void read_alternate_file(const std::string & fname);
 	friend std::ostream& operator<<(std::ostream & o, const WDict & dict);
+
+	// Debug
+	void  size_bytes();
 
   private:
 
@@ -101,11 +106,11 @@ namespace ukb {
 	void create_variant_map();
 
   public:
-	typedef std::map<const std::string, WDict_item_t > wdicts_t;
+	typedef std::map<std::string, WDict_item_t > wdicts_t;
 
   private:
 	wdicts_t m_wdicts;
-	std::vector<std::string> m_words;
+	size_t m_N; // number of headwords
 	std::map<std::string, std::string> m_variants;
   };
 }

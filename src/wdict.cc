@@ -19,7 +19,7 @@ namespace ukb {
 
   ////////////////////////////////////////////////
   // Global variables
-  //const std::string dict_filename = "kb_source/enWN16";
+  //const std::string text_fname = "kb_source/enWN16";
 
   std::ostream & operator<<(std::ostream & o, const WDict_item_t & item) {
 	Kb & kb = Kb::instance();
@@ -219,11 +219,8 @@ namespace ukb {
 
 
   static void fill_wdict_item(WDict_item_t & item,
-							  string & hw,
-							  map<string, ccache_map_t> & concept_cache) {
-
-	map<string, ccache_map_t>::iterator cache_map_it = concept_cache.find(hw);
-	vector<concept_parse_t> & V = cache_map_it->second.V;
+							  const string & hw,
+							  vector<concept_parse_t> & V) {
 	sort(V.begin(), V.end(), pos_order());
 	size_t idx = 0;
 	size_t left = 0;
@@ -256,29 +253,15 @@ namespace ukb {
 	}
   }
 
-  // Given a concept_cache (which is temporary, and is used to remove possible
-  // duplicated entries), fill the real dictionary.
-
-  static void create_wdict(map<string, ccache_map_t> & concept_cache,
-						   vector<std::string> & wordsV,
-						   WDict::wdicts_t & m_wdicts) {
-
-	for(vector<string>::iterator wit = wordsV.begin(), wit_end = wordsV.end();
-		wit != wit_end; ++wit) {
-	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(*wit, WDict_item_t())).first;
-	  fill_wdict_item(map_value_it->second, *wit, concept_cache);
-	}
-  }
-
-  static void read_dictfile_1pass(const string & fname,
-								  map<string, ccache_map_t> & concept_cache,
-								  std::vector<std::string> & wordsV) {
+  static size_t read_dictfile_1pass(const string & fname,
+									map<string, ccache_map_t> & concept_cache) {
 
 	std::ifstream fh(fname.c_str(), ofstream::in);
 	if(!fh) {
 	  cerr << "Error: can't open " << fname << endl;
 	  exit(-1);
 	}
+	size_t N = 0;
 
 	// Parse lines of form:
 	// word offset-pos:freq offset-pos:freq ...
@@ -306,7 +289,7 @@ namespace ukb {
 		++fields_it;
 		map<string, ccache_map_t>::iterator cache_map_it;
 		tie(cache_map_it, insertedP) = concept_cache.insert(make_pair(hw, ccache_map_t()));
-		if (insertedP) wordsV.push_back(hw);
+		if (insertedP) N++;
 		ccache_map_t & ccache = cache_map_it->second;
 		size_t concepts_N = fill_concepts(hw, fields_it, fields.end(),
 										  ccache);
@@ -316,7 +299,7 @@ namespace ukb {
 		  if (glVars::debug::warning) {
 			cerr << "[W]: line " << lexical_cast<string>(line_number) << ". Ignoring headword " << fields[0] << endl;
 		  }
-		  wordsV.pop_back();
+		  N--;
 		  concept_cache.erase(cache_map_it);
 		}
 	  }
@@ -325,6 +308,7 @@ namespace ukb {
 	} catch (std::exception & e) {
 	  throw e; // any other exception is just thrown away
 	}
+	return N;
   }
 
 
@@ -332,35 +316,39 @@ namespace ukb {
 
 	map<string, ccache_map_t> concept_cache;
 
-	read_dictfile_1pass(fname, concept_cache, m_words);
-
-	if(m_words.size() == 0)
+	m_N = read_dictfile_1pass(fname, concept_cache);
+	if(m_N == 0)
 	  throw ukb::wdict_error("Error reading dict. No headwords linked to KB");
 
-	// Now, create the actual dictionary
-	create_wdict(concept_cache, m_words, m_wdicts);
+	// Now, create the actual dictionary given a concept_cache (which is
+	// temporary, and is used to remove possible duplicated entries)
+
+	for (map<string, ccache_map_t>::iterator it = concept_cache.begin(), end = concept_cache.end();
+		 it != end; ++it) {
+	  WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(it->first, WDict_item_t())).first;
+	  fill_wdict_item(map_value_it->second, it->first, it->second.V);
+	}
   }
 
   void WDict::read_alternate_file(const string & fname) {
 
 	map<string, ccache_map_t> concept_cache;
-	vector<string> newW;
 	bool insertedP;
 
-	read_dictfile_1pass(fname, concept_cache, newW);
+	read_dictfile_1pass(fname, concept_cache);
 
-	for(vector<string>::iterator it = newW.begin(), end = newW.end();
+	for (map<string, ccache_map_t>::iterator it = concept_cache.begin(), end = concept_cache.end();
 		it != end; ++it) {
 	  wdicts_t::iterator mit;
 	  WDict_item_t new_item;
-	  tie (mit, insertedP) = m_wdicts.insert(make_pair(*it, new_item));
+	  tie (mit, insertedP) = m_wdicts.insert(make_pair(it->first, new_item));
 	  if (!insertedP) {
 		// already in map, so empty existing concepts (will be replaced by alternate dict)
 		mit->second.swap(new_item);
 	  } else {
-		m_words.push_back(*it);
+		m_N++; // New headword
 	  }
-	  fill_wdict_item(mit->second, *it, concept_cache);
+	  fill_wdict_item(mit->second, it->first, it->second.V);
 	}
   }
 
@@ -374,6 +362,35 @@ namespace ukb {
 	static WDict inst;
 	return inst;
   }
+
+  size_t WDict::size() {
+	return m_N;
+  }
+
+  void WDict::size_bytes() {
+	long long D = 0;
+	long long V = 0;
+	for (WDict::wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
+		 it != end; ++it) {
+	  D += it->first.size();
+	  const WDict_item_t & item = it->second;
+	  D += item.m_wsyns.size() * sizeof(Kb_vertex_t);
+	  D += item.m_counts.size() * sizeof(float);
+	  for(map<std::string, wdict_range>::const_iterator pit = item.m_pos_ranges.begin();
+		  pit != item.m_pos_ranges.end(); ++pit) {
+		D += pit->first.size();
+		D += sizeof(pit->second.left);
+		D += sizeof(pit->second.right);
+	  }
+	}
+	for(map<std::string, std::string>::const_iterator it = m_variants.begin(), end = m_variants.end();
+		 it != end; ++it) {
+	  V += it->first.size();
+	  V += it->second.size();
+	}
+	cout << "Dict: " << D << " " << "Variant: " << V << "\nTotal: " << D + V << endl;
+  }
+
 
   static void add_variant_pos(const string & hw,
 							  const std::vector<Kb_vertex_t> & wsyns,
@@ -485,11 +502,9 @@ namespace ukb {
 
   std::ostream & operator<<(std::ostream & o, const WDict & dict) {
 
-	for(vector<string>::const_iterator it = dict.m_words.begin(), end = dict.m_words.end();
-		it != end; ++it) {
-	  WDict::wdicts_t::const_iterator s_it = dict.m_wdicts.find(*it);
-	  const WDict_item_t & item = s_it->second;
-	  o << *it << item << "\n";
+	for (WDict::wdicts_t::const_iterator it = dict.m_wdicts.begin(), end = dict.m_wdicts.end();
+		 it != end; ++it) {
+	  o << it->first << it->second << "\n";
 	}
 	return o;
   };
