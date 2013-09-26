@@ -10,6 +10,7 @@
 #include <vector>
 #include <iosfwd>
 #include <stdexcept>
+#include <tr1/unordered_map>
 
 ////////////////////////////////////////
 
@@ -113,7 +114,7 @@ namespace ukb {
 	std::ostream & write_dict_to_stream (std::ostream & os) const;
 
   public:
-	typedef std::map<std::string, WDict_item_t > wdicts_t;
+	typedef std::tr1::unordered_map<std::string, WDict_item_t > wdicts_t;
 
   private:
 	wdicts_t m_wdicts;
