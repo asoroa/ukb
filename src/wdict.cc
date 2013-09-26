@@ -352,10 +352,13 @@ namespace ukb {
 	}
   }
 
-  WDict::WDict() {
-	if(glVars::dict_filename.size() == 0)
-	  throw std::runtime_error("Error: no dict file\n");
-	read_wdict_file(glVars::dict_filename);
+  WDict::WDict() : m_N(0) {
+	if(glVars::dict::text_fname.size() == 0 and glVars::dict::bin_fname.size() == 0)
+	  throw std::runtime_error("[E] WDict: no dict file\n");
+	if (glVars::dict::text_fname.size()) read_wdict_file(glVars::dict::text_fname);
+	else {
+	  read_wdict_binfile(glVars::dict::bin_fname);
+	}
   }
 
   WDict & WDict::instance() {
@@ -508,4 +511,104 @@ namespace ukb {
 	}
 	return o;
   };
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // Streaming
+
+  static const size_t magic_id_dict_v0 = 0x130926;
+
+
+  void WDict::read_wdict_binfile(const string & fname) {
+
+	ifstream fi(fname.c_str(), ifstream::binary|ifstream::in);
+	if (!fi) {
+	  throw runtime_error("[E] reading serialized dictionary: Can not open " + fname);
+	}
+	read_dict_from_stream(fi);
+  }
+
+  void WDict::write_wdict_binfile(const string & fname) {
+
+	ofstream fo(fname.c_str(),  ofstream::binary|ofstream::out);
+	if (!fo) {
+	  throw runtime_error("[E] writing serialized dict: Can not create " + fname);
+	}
+	write_dict_to_stream(fo);
+  }
+
+  ostream & write_posRangeM_to_stream (std::ostream & os, const std::map<std::string, wdict_range> & pr) {
+	size_t m = pr.size();
+	os.write(reinterpret_cast<const char *>(&m), sizeof(m));
+	if(m) {
+	  for(std::map<std::string, wdict_range>::const_iterator it = pr.begin(), end = pr.end();
+		  it != end; ++it) {
+		write_atom_to_stream(os, it->first);
+		write_atom_to_stream(os, it->second.left);
+		write_atom_to_stream(os, it->second.right);
+	  }
+	}
+	return os;
+  }
+
+  void read_posRangeM_from_stream (std::istream & is, std::map<std::string, wdict_range> & pr) {
+	string hw;
+	size_t m;
+	read_atom_from_stream(is, m);
+	if (!is) return;
+	for (size_t i = 0; i < m; ++i) {
+	  read_atom_from_stream(is, hw);
+	  wdict_range r;
+	  read_atom_from_stream(is, r.left);
+	  read_atom_from_stream(is, r.right);
+	  pr.insert(make_pair(hw, r));
+	}
+  }
+
+  ostream & write_entry_to_stream (std::ostream & os, const WDict_item_t & e) {
+
+	write_vector_to_stream(os, e.m_wsyns);
+	write_vector_to_stream(os, e.m_counts);
+	write_posRangeM_to_stream(os, e.m_pos_ranges);
+
+	return os;
+  }
+
+  void read_entry_from_stream (std::istream & is, WDict_item_t & e) {
+	read_vector_from_stream(is, e.m_wsyns);
+	read_vector_from_stream(is, e.m_counts);
+	read_posRangeM_from_stream(is, e.m_pos_ranges);
+  }
+
+  ostream & WDict::write_dict_to_stream (std::ostream & os) const {
+
+	write_atom_to_stream(os, magic_id_dict_v0);
+	// Write map
+	os.write(reinterpret_cast<const char *>(&m_N), sizeof(m_N));
+	if(m_N) {
+	  for(wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
+		  it != end; ++it) {
+		write_atom_to_stream(os, it->first);
+		write_entry_to_stream(os, it->second);
+	  }
+	}
+	return os;
+  }
+
+  void WDict::read_dict_from_stream (std::istream & is) {
+
+	size_t id;
+	read_atom_from_stream(is, id);
+	if (id != magic_id_dict_v0) {
+	  throw runtime_error("[E] reading serialized dictionary: invalid id (same platform used to compile the KB?)");
+	}
+	string hw;
+	read_atom_from_stream(is, m_N);
+	if (!is) return;
+	for (size_t i = 0; i < m_N; ++i) {
+	  read_atom_from_stream(is, hw);
+	  WDict_item_t e;
+	  read_entry_from_stream(is, e);
+	  m_wdicts.insert(make_pair(hw, e));
+	}
+  }
 }

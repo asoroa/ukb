@@ -22,7 +22,7 @@ using namespace boost;
 /////////////////////////////////////////////////////////////
 // Global variables
 
-
+string stra;
 enum dgraph_rank_methods {
   dppr,
   dppr_w2w,
@@ -326,6 +326,7 @@ int main(int argc, char *argv[]) {
     ("version", "Show version.")
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb).")
     ("dict_file,D", value<string>(), "Dictionary text file.")
+    ("dict_binfile", value<string>(), "Dictionary binary file.")
     ;
 
   options_description po_desc_wsd("WSD methods");
@@ -509,11 +510,15 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("bcomp_dictfile")) {
-      glVars::dict_filename = vm["bcomp_dictfile"].as<string>();
+      glVars::dict::text_fname = vm["bcomp_dictfile"].as<string>();
     }
 
     if (vm.count("dict_file")) {
-      glVars::dict_filename = vm["dict_file"].as<string>();
+      glVars::dict::text_fname = vm["dict_file"].as<string>();
+    }
+
+    if (vm.count("dict_binfile")) {
+      glVars::dict::bin_fname = vm["dict_binfile"].as<string>();
     }
 
     if (vm.count("dict_strict")) {

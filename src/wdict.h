@@ -92,6 +92,8 @@ namespace ukb {
 	void read_alternate_file(const std::string & fname);
 	friend std::ostream& operator<<(std::ostream & o, const WDict & dict);
 
+	void write_wdict_binfile(const std::string & fname);
+
 	// Debug
 	void  size_bytes();
 
@@ -104,6 +106,11 @@ namespace ukb {
 	void read_wdict_file(const std::string & fname);
 
 	void create_variant_map();
+
+	// Streaming
+	void read_dict_from_stream (std::istream & is);
+	void read_wdict_binfile(const std::string & fname);
+	std::ostream & write_dict_to_stream (std::ostream & os) const;
 
   public:
 	typedef std::map<std::string, WDict_item_t > wdicts_t;

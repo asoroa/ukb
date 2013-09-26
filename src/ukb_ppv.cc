@@ -391,7 +391,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("dict_file")) {
-      glVars::dict_filename = vm["dict_file"].as<string>();
+      glVars::dict::text_fname = vm["dict_file"].as<string>();
     }
 
     if (vm.count("prank_weight")) {

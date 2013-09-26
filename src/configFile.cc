@@ -32,7 +32,7 @@ namespace ukb {
   void init_varMap () {
 	varMap["verbose"] = 0;
 	varMap["rel_sources"] = 1;
-	varMap["dict_filename"] = 2;
+	varMap["text_fname"] = 2;
   }
 
 
@@ -91,8 +91,8 @@ namespace ukb {
 		c_warn("zero-sized vector");
 	  }
 	  break;
-	case 2: // dict_filename
-	  glVars::dict_filename = value;
+	case 2: // text_fname
+	  glVars::dict::text_fname = value;
 	  break;
 	}
   }

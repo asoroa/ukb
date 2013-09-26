@@ -196,6 +196,7 @@ int main(int argc, char *argv[]) {
 
   timer load;
 
+  bool opt_dbfile = false;
   bool opt_info = false;
   bool opt_Info = false;
   bool opt_query = false;
@@ -221,6 +222,7 @@ int main(int argc, char *argv[]) {
   const char desc_header[] = "compile_kb: create a serialized image of the KB\n"
     "Usage:\n"
     "compile_kb -o output.bin [-f \"src1, src2\"] kb_file.txt kb_file.txt ... -> Create a KB image reading relations textfiles.\n"
+    "compile_kb -o dict.bin -D dict_textfile --serialize_dict kb_file.bin -> Create a dictionary image reading text dictionary.\n"
     "compile_kb -i kb_file.bin -> Get info of a previously compiled KB.\n"
     "compile_kb -q concept-id kb_file.bin -> Query a node on a previously compiled KB.\n"
     "Options:";
@@ -232,6 +234,7 @@ int main(int argc, char *argv[]) {
     ("help,h", "This help page.")
     ("version", "Show version.")
     ("verbose,v", "Be verbose.")
+    ("serialize_dict", "Serialize dictionary.")
     ;
 
   options_description po_desc_create("Options for creating binary graphs");
@@ -251,7 +254,7 @@ int main(int argc, char *argv[]) {
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
     ("query,q", value<string>(), "Given a vertex name, display its relations.")
     ("iquery,Q", "Interactively query graph.")
-    ("dict_file,D", value<string>(), "Word to synset map file. Useful only when used when querying (--quey or --iquery).")
+    ("dict_file,D", value<string>(), "Dictionary text file. Use only when querying (--quey or --iquery) or when creating serialized dict (--serialize_dict).")
 	;
 
   options_description po_hidden("Hidden");
@@ -292,6 +295,10 @@ int main(int argc, char *argv[]) {
       glVars::verbose = 1;
     }
 
+    if (vm.count("serialize_dict")) {
+      opt_dbfile = true;
+    }
+
     if (vm.count("info")) {
       opt_info = true;
     }
@@ -305,7 +312,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("dict_file")) {
-      glVars::dict_filename = vm["dict_file"].as<string>();
+      glVars::dict::text_fname = vm["dict_file"].as<string>();
 	  opt_variants = true;
     }
 
@@ -407,6 +414,20 @@ int main(int argc, char *argv[]) {
 
   if (glVars::verbose)
     cerr << "Reading relations"<< endl;
+
+  if (opt_dbfile) {
+	// Serialize dict
+	if (glVars::dict::text_fname.size() == 0) {
+	  cerr << "--serialize_dict error: -D option missing.\n";
+	}
+	if (kb_file.size() == 0) {
+	  cerr << "--serialize_dict error: graph missing.\n";
+	  exit(-1);
+	}
+	Kb::create_from_binfile(kb_file);
+	WDict::instance().write_wdict_binfile(fullname_out);
+	exit(0);
+  }
 
   try {
 	// If first input file is "-", open std::cin

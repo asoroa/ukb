@@ -25,7 +25,6 @@ namespace ukb {
 	}
 
 	extern std::vector<std::string> rel_source;
-	extern std::string dict_filename;
 
 	namespace csentence {
 	  extern bool concepts_in;
@@ -34,6 +33,8 @@ namespace ukb {
 	}
 
 	namespace dict {
+	  extern std::string text_fname; // The name of the dictionary file (text file)
+	  extern std::string bin_fname; // The name of the dictionary file (compiled version)
 	  extern bool use_weight; // Use weights when linking words to concepts
 	  extern float weight_smoothfactor;
 	  extern bool use_shuffle; // Use random shuffle at reading words from dictionary
@@ -51,7 +52,6 @@ namespace ukb {
 	  extern float threshold;
 	  extern float damping;
 	}
-
 
 	// Input
 	namespace input {

@@ -23,7 +23,6 @@ namespace ukb {
 	}
 
 	std::vector<std::string> rel_source;
-	std::string dict_filename;
 
 	boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
 
@@ -34,6 +33,8 @@ namespace ukb {
 	}
 
 	namespace dict {
+	  std::string text_fname;
+	  std::string bin_fname;
 	  bool use_weight = false; // Use weights when linking words to concepts
 	  float weight_smoothfactor = 1.0;
 	  bool use_shuffle = false; // Use random shuffle at reading words from dictionary
