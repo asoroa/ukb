@@ -25,18 +25,19 @@ namespace ukb {
 
 
   // specicies a range [left, right)
-  struct wdict_range {
+  struct wdict_range_t {
+	std::string pos;
 	size_t left;
 	size_t right;
-	wdict_range() : left(0), right(0) {}
-	wdict_range(size_t a, size_t b) : left(a), right(b) {}
+	wdict_range_t() : pos(), left(0), right(0) {}
+	wdict_range_t(std::string p, size_t a, size_t b) : pos(p), left(a), right(b) {}
   };
 
   // type of dict items
   struct WDict_item_t {
 	std::vector<Kb_vertex_t> m_wsyns;
 	std::vector<float> m_counts;
-	std::map<std::string, wdict_range> m_pos_ranges;
+	std::vector<wdict_range_t> m_pos_ranges;
 
 	WDict_item_t() {}
 

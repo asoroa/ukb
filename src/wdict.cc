@@ -109,7 +109,7 @@ namespace ukb {
 	string pos;
 	float w;
 
-	concept_parse_t() : str(string()), u(-1), pos(string()), w(0.0f) {}
+	concept_parse_t() : str(string()), u(-1), pos(""), w(0.0f) {}
   };
 
   struct ccache_map_t {
@@ -221,35 +221,37 @@ namespace ukb {
   static void fill_wdict_item(WDict_item_t & item,
 							  const string & hw,
 							  vector<concept_parse_t> & V) {
-	sort(V.begin(), V.end(), pos_order());
+	if(glVars::input::filter_pos)
+	  sort(V.begin(), V.end(), pos_order());
+	vector<Kb_vertex_t> syns;
+	vector<float> counts;
+	vector<wdict_range_t> pos_ranges;
+	set<Kb_vertex_t> U;
 	size_t idx = 0;
 	size_t left = 0;
 	string old_pos("");
-	Kb_vertex_t old_concept(-1); // intialization to null vertex taken from boost .hpp
-	float old_w = 0.0;
 	for(size_t i = 0, m = V.size(); i < m; ++i) {
+	  if (!U.insert(V[i].u).second) continue; // Concept previously there
 	  if (V[i].pos != old_pos) {
 		if (left != idx) {
-		  item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
+		  pos_ranges.push_back(wdict_range_t(old_pos, left, idx));
 		  left = idx;
 		}
 		old_pos = V[i].pos;
 	  }
-	  if (V[i].u == old_concept) {
-		if (glVars::debug::warning && V[i].w != old_w)
-		  cerr << "Warning in headword " + hw + ": " + V[i].str + " appears twice with different weights. Skipping.\n";
-		continue;
-	  };
-	  // concept is different
-	  old_concept = V[i].u;
-	  old_w = V[i].w;
-	  item.m_wsyns.push_back(V[i].u);
-	  item.m_counts.push_back(V[i].w);
+	  syns.push_back(V[i].u);
+	  counts.push_back(V[i].w);
 	  idx++;
 	}
 	// insert last range
 	if (left != idx) {
-	  item.m_pos_ranges.insert(make_pair(old_pos, wdict_range(left, idx)));
+	  pos_ranges.push_back(wdict_range_t(old_pos, left, idx));
+	}
+	// swap vectors from temporary, so they don't take more space than neccesary
+	vector<Kb_vertex_t> (syns).swap(item.m_wsyns);
+	vector<float> (counts).swap(item.m_counts);
+	if(glVars::input::filter_pos) {
+	  vector<wdict_range_t> (pos_ranges).swap(item.m_pos_ranges);
 	}
   }
 
@@ -379,11 +381,11 @@ namespace ukb {
 	  const WDict_item_t & item = it->second;
 	  D += item.m_wsyns.size() * sizeof(Kb_vertex_t);
 	  D += item.m_counts.size() * sizeof(float);
-	  for(map<std::string, wdict_range>::const_iterator pit = item.m_pos_ranges.begin();
+	  for(std::vector<wdict_range_t>::const_iterator pit = item.m_pos_ranges.begin();
 		  pit != item.m_pos_ranges.end(); ++pit) {
-		D += pit->first.size();
-		D += sizeof(pit->second.left);
-		D += sizeof(pit->second.right);
+		D += pit->pos.size();
+		D += sizeof(pit->left);
+		D += sizeof(pit->right);
 	  }
 	}
 	for(map<std::string, std::string>::const_iterator it = m_variants.begin(), end = m_variants.end();
@@ -423,7 +425,7 @@ namespace ukb {
 		it != end; ++it) {
 	  const string & hw = it->first;
 	  const WDict_item_t & elem(it->second);
-	  std::map<std::string, wdict_range>::const_iterator rit = elem.m_pos_ranges.begin(), rend = elem.m_pos_ranges.end();
+	  std::vector<wdict_range_t>::const_iterator rit = elem.m_pos_ranges.begin(), rend = elem.m_pos_ranges.end();
 	  if(rit == rend) {
 		// no pos
 		add_variant_pos(hw, elem.m_wsyns,
@@ -433,8 +435,8 @@ namespace ukb {
 	  } else
 		for(;rit != rend; ++rit) {
 		  add_variant_pos(hw, elem.m_wsyns,
-						  rit->first,
-						  rit->second.left, rit->second.right,
+						  rit->pos,
+						  rit->left, rit->right,
 						  m_variants);
 		}
 	}
@@ -468,16 +470,26 @@ namespace ukb {
   WDict_entries::WDict_entries(const WDict_item_t & item)
 	: m_item(item), m_pos(std::string()), m_left(0), m_right(item.m_wsyns.size()) {}
 
+
+  struct wdict_range_pos_P {
+	bool operator() (const wdict_range_t & a) {
+	  return a.pos == m_p;
+	}
+	wdict_range_pos_P(const string & p) : m_p(p) {}
+	const string & m_p;
+  };
+
   WDict_entries::WDict_entries(const WDict_item_t & item, const std::string & pos)
   : m_item(item), m_pos(pos), m_left(0), m_right(0) {
 	if (!glVars::input::filter_pos || !pos.size()) {
 	  string().swap(m_pos);
 	  m_right = item.m_wsyns.size();
 	} else {
-	  std::map<std::string, wdict_range>::const_iterator it = item.m_pos_ranges.find(pos);
-	  if (it != item.m_pos_ranges.end()) {
-		m_left = it->second.left;
-		m_right = it->second.right;
+	  std::vector<wdict_range_t>::const_iterator end = item.m_pos_ranges.end();
+	  std::vector<wdict_range_t>::const_iterator it = std::find_if(item.m_pos_ranges.begin(), end,	wdict_range_pos_P(pos));
+	  if (it != end) {
+		m_left = it->left;
+		m_right = it->right;
 	  }
 	}
   }
@@ -536,32 +548,36 @@ namespace ukb {
 	write_dict_to_stream(fo);
   }
 
-  ostream & write_posRangeM_to_stream (std::ostream & os, const std::map<std::string, wdict_range> & pr) {
+  ostream & write_posRangeM_to_stream (std::ostream & os, const std::vector<wdict_range_t> & pr) {
+
 	size_t m = pr.size();
 	os.write(reinterpret_cast<const char *>(&m), sizeof(m));
 	if(m) {
-	  for(std::map<std::string, wdict_range>::const_iterator it = pr.begin(), end = pr.end();
+	  for(std::vector<wdict_range_t>::const_iterator it = pr.begin(), end = pr.end();
 		  it != end; ++it) {
-		write_atom_to_stream(os, it->first);
-		write_atom_to_stream(os, it->second.left);
-		write_atom_to_stream(os, it->second.right);
+		write_atom_to_stream(os, it->pos);
+		write_atom_to_stream(os, it->left);
+		write_atom_to_stream(os, it->right);
 	  }
 	}
 	return os;
   }
 
-  void read_posRangeM_from_stream (std::istream & is, std::map<std::string, wdict_range> & pr) {
+  void read_posRangeM_from_stream (std::istream & is, std::vector<wdict_range_t> & pr) {
 	string hw;
 	size_t m;
+	vector<wdict_range_t> auxV;
+
 	read_atom_from_stream(is, m);
 	if (!is) return;
 	for (size_t i = 0; i < m; ++i) {
-	  read_atom_from_stream(is, hw);
-	  wdict_range r;
+	  wdict_range_t r;
+	  read_atom_from_stream(is, r.pos);
 	  read_atom_from_stream(is, r.left);
 	  read_atom_from_stream(is, r.right);
-	  pr.insert(make_pair(hw, r));
+	  auxV.push_back(r);
 	}
+	vector<wdict_range_t> (auxV).swap(pr);
   }
 
   ostream & write_entry_to_stream (std::ostream & os, const WDict_item_t & e) {
@@ -574,6 +590,9 @@ namespace ukb {
   }
 
   void read_entry_from_stream (std::istream & is, WDict_item_t & e) {
+
+	vector<Kb_vertex_t> syns;
+	vector<float> counts;
 	read_vector_from_stream(is, e.m_wsyns);
 	read_vector_from_stream(is, e.m_counts);
 	read_posRangeM_from_stream(is, e.m_pos_ranges);
