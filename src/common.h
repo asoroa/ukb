@@ -96,14 +96,17 @@ namespace ukb {
 
 	size_t vSize;
 	size_t i;
+	Vector auxV;
 	typename Vector::value_type value;
 
 	read_atom_from_stream(is, vSize);
 	if (!is) return;
 	for(i=0; i< vSize; ++i) {
 	  read_atom_from_stream(is, value);
-	  v.push_back(value);
+	  auxV.push_back(value);
 	}
+	// swap from temporary, so that it doesn't take more space than neccesary
+	Vector (auxV).swap(v);
   }
 
   template<class Set>
