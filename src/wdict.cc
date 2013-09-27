@@ -373,27 +373,50 @@ namespace ukb {
   }
 
   void WDict::size_bytes() {
-	long long D = 0;
-	long long V = 0;
+	long D = 0;
+	long C = 0;
+	long O = 0; // overhead
+	long O_item = 0; // overhead
+	long O_wsyns = 0; // overhead
+	long O_counts = 0; // overhead
+	long O_ranges = 0; // overhead
+	long V = 0;
+	O += sizeof(m_wdicts);
 	for (WDict::wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
 		 it != end; ++it) {
+	  O += sizeof(it->first);
 	  D += it->first.size();
+	  C += it->first.capacity();
 	  const WDict_item_t & item = it->second;
+	  O_item += sizeof(item);
 	  D += item.m_wsyns.size() * sizeof(Kb_vertex_t);
+	  C += item.m_wsyns.capacity() * sizeof(Kb_vertex_t);
+	  O_wsyns += sizeof(item.m_wsyns);
 	  D += item.m_counts.size() * sizeof(float);
+	  C += item.m_counts.capacity() * sizeof(float);
+	  O_counts += sizeof(item.m_counts);
+	  O_ranges += sizeof(item.m_pos_ranges);
 	  for(std::vector<wdict_range_t>::const_iterator pit = item.m_pos_ranges.begin();
 		  pit != item.m_pos_ranges.end(); ++pit) {
+		O_ranges += sizeof(*pit);
 		D += pit->pos.size();
+		C += pit->pos.capacity();
 		D += sizeof(pit->left);
 		D += sizeof(pit->right);
 	  }
+	  C += (item.m_pos_ranges.capacity() - item.m_pos_ranges.size()) * sizeof(wdict_range_t);
 	}
 	for(map<std::string, std::string>::const_iterator it = m_variants.begin(), end = m_variants.end();
 		 it != end; ++it) {
 	  V += it->first.size();
 	  V += it->second.size();
 	}
-	cout << "Dict: " << D << " " << "Variant: " << V << "\nTotal: " << D + V << endl;
+	cout << "Dict: " << D << " " << "Capacity: " << C << " Overhead: " << O << "\nTotal: " << D + V << endl;
+	cout << "O_item " << O_item << " ";
+	cout << "O_wsyns " << O_wsyns << " ";
+	cout << "O_counts " << O_counts << " ";
+	cout << "O_ranges " << O_ranges << "\n";
+
   }
 
 
