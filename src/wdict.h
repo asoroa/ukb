@@ -33,17 +33,28 @@ namespace ukb {
 	wdict_range_t(std::string p, size_t a, size_t b) : pos(p), left(a), right(b) {}
   };
 
+  struct wdict_item_t {
+	Kb_vertex_t m_syn;
+	float m_count;
+
+	wdict_item_t() {}
+	wdict_item_t(Kb_vertex_t syn, float count) : m_syn(syn), m_count(count) {}
+
+	void swap(wdict_item_t & o) {
+	  std::swap(m_syn, o.m_syn);
+	  std::swap(m_count, o.m_count);
+	}
+  };
+
   // type of dict items
-  struct WDict_item_t {
-	std::vector<Kb_vertex_t> m_wsyns;
-	std::vector<float> m_counts;
+  struct wdict_rhs_t {
+	std::vector<wdict_item_t> m_items;
 	std::vector<wdict_range_t> m_pos_ranges;
 
-	WDict_item_t() {}
+	wdict_rhs_t() {}
 
-	void swap(WDict_item_t & o) {
-	  m_wsyns.swap(o.m_wsyns);
-	  m_counts.swap(o.m_counts);
+	void swap(wdict_rhs_t & o) {
+	  m_items.swap(o.m_items);
 	  m_pos_ranges.swap(o.m_pos_ranges);
 	}
 
@@ -53,10 +64,9 @@ namespace ukb {
 
   class WDict_entries {
 
-
   public:
-	WDict_entries(const WDict_item_t & item);
-	WDict_entries(const WDict_item_t & item, const std::string & pos);
+	WDict_entries(const wdict_rhs_t & item);
+	WDict_entries(const wdict_rhs_t & item, const std::string & pos);
 	~WDict_entries() {}
 
 	size_t size() const;
@@ -69,14 +79,14 @@ namespace ukb {
 	friend std::ostream & operator<<(std::ostream & o, const WDict_entries & item);
 
   private:
-	const WDict_item_t & m_item;
+	const wdict_rhs_t & m_rhs;
 	std::string m_pos;
 	size_t m_left;
 	size_t m_right;
 
   };
 
-  std::ostream & operator<<(std::ostream & o, const WDict_item_t & item);
+  std::ostream & operator<<(std::ostream & o, const wdict_rhs_t & item);
 
   class WDict {
   public:
@@ -115,7 +125,7 @@ namespace ukb {
 	std::ostream & write_dict_to_stream (std::ostream & os) const;
 
   public:
-	typedef std::tr1::unordered_map<std::string, WDict_item_t > wdicts_t;
+	typedef std::tr1::unordered_map<std::string, wdict_rhs_t > wdicts_t;
 
   private:
 	wdicts_t m_wdicts;
