@@ -245,9 +245,11 @@ namespace ukb {
 	  pos_ranges.push_back(wdict_range_t(old_pos, left, idx));
 	}
 	// swap vectors from temporary, so they don't take more space than neccesary
-	vector<wdict_item_t> (items).swap(rhs.m_items);
+	//vector<wdict_item_t> (items).swap(rhs.m_items);
+	rhs.m_items.assign(items);
 	if(glVars::input::filter_pos) {
-	  vector<wdict_range_t> (pos_ranges).swap(rhs.m_pos_ranges);
+	  //vector<wdict_range_t> (pos_ranges).swap(rhs.m_pos_ranges);
+	  rhs.m_pos_ranges.assign(pos_ranges);
 	}
   }
 
@@ -390,7 +392,7 @@ namespace ukb {
 	  C += rhs.m_items.capacity() * sizeof(Kb_vertex_t);
 	  O_items += sizeof(rhs.m_items);
 	  O_ranges += sizeof(rhs.m_pos_ranges);
-	  for(std::vector<wdict_range_t>::const_iterator pit = rhs.m_pos_ranges.begin();
+	  for(const wdict_range_t * pit = rhs.m_pos_ranges.begin();
 		  pit != rhs.m_pos_ranges.end(); ++pit) {
 		O_ranges += sizeof(*pit);
 		D += pit->pos.size();
@@ -398,7 +400,6 @@ namespace ukb {
 		D += sizeof(pit->left);
 		D += sizeof(pit->right);
 	  }
-	  C += (rhs.m_pos_ranges.capacity() - rhs.m_pos_ranges.size()) * sizeof(wdict_range_t);
 	}
 	for(map<std::string, std::string>::const_iterator it = m_variants.begin(), end = m_variants.end();
 		 it != end; ++it) {
@@ -416,7 +417,7 @@ namespace ukb {
 
 
   static void add_variant_pos(const string & hw,
-							  const std::vector<wdict_item_t> & items,
+							  const wdict_vector<wdict_item_t> & items,
 							  const string & pos,
 							  size_t left,
 							  size_t right,
@@ -443,7 +444,8 @@ namespace ukb {
 		it != end; ++it) {
 	  const string & hw = it->first;
 	  const wdict_rhs_t & rhs(it->second);
-	  std::vector<wdict_range_t>::const_iterator rit = rhs.m_pos_ranges.begin(), rend = rhs.m_pos_ranges.end();
+	  const wdict_range_t * rit = rhs.m_pos_ranges.begin();
+	  const wdict_range_t * rend = rhs.m_pos_ranges.end();
 	  if(rit == rend) {
 		// no pos
 		add_variant_pos(hw, rhs.m_items,
@@ -503,8 +505,8 @@ namespace ukb {
 	  string().swap(m_pos);
 	  m_right = rhs.m_items.size();
 	} else {
-	  std::vector<wdict_range_t>::const_iterator end = rhs.m_pos_ranges.end();
-	  std::vector<wdict_range_t>::const_iterator it = std::find_if(rhs.m_pos_ranges.begin(), end, wdict_range_pos_P(pos));
+	  const wdict_range_t * end = rhs.m_pos_ranges.end();
+	  const wdict_range_t * it = std::find_if(rhs.m_pos_ranges.begin(), end, wdict_range_pos_P(pos));
 	  if (it != end) {
 		m_left = it->left;
 		m_right = it->right;
@@ -566,12 +568,12 @@ namespace ukb {
 	write_dict_to_stream(fo);
   }
 
-  ostream & write_posRangeM_to_stream (std::ostream & os, const std::vector<wdict_range_t> & pr) {
+  ostream & write_posRangeM_to_stream (std::ostream & os, const wdict_vector<wdict_range_t> & pr) {
 
 	size_t m = pr.size();
 	os.write(reinterpret_cast<const char *>(&m), sizeof(m));
 	if(m) {
-	  for(std::vector<wdict_range_t>::const_iterator it = pr.begin(), end = pr.end();
+	  for(const wdict_range_t * it = pr.begin(), * end = pr.end();
 		  it != end; ++it) {
 		write_atom_to_stream(os, it->pos);
 		write_atom_to_stream(os, it->left);
@@ -581,7 +583,7 @@ namespace ukb {
 	return os;
   }
 
-  void read_posRangeM_from_stream (std::istream & is, std::vector<wdict_range_t> & pr) {
+  void read_posRangeM_from_stream (std::istream & is, wdict_vector<wdict_range_t> & pr) {
 	string hw;
 	size_t m;
 	vector<wdict_range_t> auxV;
@@ -595,14 +597,14 @@ namespace ukb {
 	  read_atom_from_stream(is, r.right);
 	  auxV.push_back(r);
 	}
-	vector<wdict_range_t> (auxV).swap(pr);
+	pr.assign(auxV);
   }
 
-  ostream & write_itemV_to_stream (std::ostream & os, const vector<wdict_item_t> & vi) {
+  ostream & write_itemV_to_stream (std::ostream & os, const wdict_vector<wdict_item_t> & vi) {
 	size_t m = vi.size();
 	os.write(reinterpret_cast<const char *>(&m), sizeof(m));
 	if(m) {
-	  for(std::vector<wdict_item_t>::const_iterator it = vi.begin(), end = vi.end();
+	  for(const wdict_item_t * it = vi.begin(), * end = vi.end();
 		  it != end; ++it) {
 		write_atom_to_stream(os, it->m_syn);
 		write_atom_to_stream(os, it->m_count);
@@ -611,7 +613,7 @@ namespace ukb {
 	return os;
   }
 
-  void read_itemV_from_stream (std::istream & is, vector<wdict_item_t> & vi) {
+  void read_itemV_from_stream (std::istream & is, wdict_vector<wdict_item_t> & vi) {
 
 	size_t m;
 	vector<wdict_item_t> auxV;
@@ -624,7 +626,7 @@ namespace ukb {
 	  read_atom_from_stream(is, i.m_count);
 	  auxV.push_back(i);
 	}
-	vector<wdict_item_t> (auxV).swap(vi);
+	vi.assign(auxV);
   }
 
   ostream & write_rhs_to_stream (std::ostream & os, const wdict_rhs_t & rhs) {

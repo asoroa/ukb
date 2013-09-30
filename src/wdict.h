@@ -3,6 +3,8 @@
 #ifndef WDICT_H
 #define WDICT_H
 
+#include "wdict_vector.h"
+
 #include <string>
 #include <iterator>
 #include <map>
@@ -48,8 +50,8 @@ namespace ukb {
 
   // type of dict items
   struct wdict_rhs_t {
-	std::vector<wdict_item_t> m_items;
-	std::vector<wdict_range_t> m_pos_ranges;
+	wdict_vector<wdict_item_t> m_items;
+	wdict_vector<wdict_range_t> m_pos_ranges;
 
 	wdict_rhs_t() {}
 
