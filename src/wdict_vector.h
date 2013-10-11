@@ -4,6 +4,7 @@
 #define WDICT_VECTOR_H
 
 #include <algorithm>
+#include <boost/cstdint.hpp> // for uint32_t
 
 template<class T>
 class wdict_vector {
@@ -92,7 +93,7 @@ public:
 private:
 
   T *m_ptr;
-  uint32_t m_size;
+  boost::uint32_t m_size;
 
 };
 

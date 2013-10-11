@@ -621,10 +621,10 @@ namespace ukb {
 	read_atom_from_stream(is, m);
 	if (!is) return;
 	for (size_t i = 0; i < m; ++i) {
-	  wdict_item_t i;
-	  read_atom_from_stream(is, i.m_syn);
-	  read_atom_from_stream(is, i.m_count);
-	  auxV.push_back(i);
+	  wdict_item_t it;
+	  read_atom_from_stream(is, it.m_syn);
+	  read_atom_from_stream(is, it.m_count);
+	  auxV.push_back(it);
 	}
 	vi.assign(auxV);
   }
