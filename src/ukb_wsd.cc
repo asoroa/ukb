@@ -97,8 +97,7 @@ void fill_dgraph(CSentence & cs, DisambGraph & dgraph) {
 
 }
 
-void disamb_dgraph_from_corpus_w2w(istream & fh_in,
-								   bool out_semcor) {
+void disamb_dgraph_from_corpus_w2w(istream & fh_in) {
 
   CSentence cs;
   size_t l_n = 0;
@@ -126,17 +125,15 @@ void disamb_dgraph_from_corpus_w2w(istream & fh_in,
 		disamb_cword_dgraph(cw_it, dgraph, ranks);
 	  }
 	}
-	if (out_semcor) cs.print_csent_semcor_aw(cout);
-	else cs.print_csent_simple(cout);
+	cs.print_csent(cout);
 	cs = CSentence();
   }
 }
 
-void disamb_dgraph_from_corpus(istream & fh_in,
-							   bool out_semcor) {
+void disamb_dgraph_from_corpus(istream & fh_in) {
 
   if (dgraph_rank_method == dppr_w2w) {
-	disamb_dgraph_from_corpus_w2w(fh_in, out_semcor);
+	disamb_dgraph_from_corpus_w2w(fh_in);
 	return;
   }
 
@@ -162,8 +159,7 @@ void disamb_dgraph_from_corpus(istream & fh_in,
 	  }
 	  disamb_csentence_dgraph(cs, dgraph, ranks);
 	}
-	if (out_semcor) cs.print_csent_semcor_aw(cout);
-	else cs.print_csent_simple(cout);
+	cs.print_csent(cout);
 	cs = CSentence();
   }
 }
@@ -181,8 +177,7 @@ void ppr_csent(CSentence & cs) {
 }
 
 
-void dis_csent_ppr(istream & fh_in,
-				   bool out_semcor) {
+void dis_csent_ppr(istream & fh_in) {
 
   CSentence cs;
 
@@ -198,15 +193,13 @@ void dis_csent_ppr(istream & fh_in,
 	} else {
 	  ppr_csent(cs);
 	}
-	if (out_semcor) cs.print_csent_semcor_aw(cout);
-	else cs.print_csent_simple(cout);
+	cs.print_csent(cout);
 	cs = CSentence();
   }
 }
 
 
-void dis_csent_ppr_by_word(istream & fh_in,
-						   bool out_semcor) {
+void dis_csent_ppr_by_word(istream & fh_in) {
 
   CSentence cs;
 
@@ -223,16 +216,14 @@ void dis_csent_ppr_by_word(istream & fh_in,
 	} else {
 	  calculate_kb_ppr_by_word_and_disamb(cs);
 	}
-	if (out_semcor) cs.print_csent_semcor_aw(cout);
-	else cs.print_csent_simple(cout);
+	cs.print_csent(cout);
 
 	//cout << cs << '\n';
 	cs = CSentence();
   }
 }
 
-void dis_csent_classic_prank(istream & fh_in,
-							 bool out_semcor) {
+void dis_csent_classic_prank(istream & fh_in) {
 
 
   CSentence cs;
@@ -240,18 +231,16 @@ void dis_csent_classic_prank(istream & fh_in,
   const vector<float> ranks = Kb::instance().static_prank();
   while (cs.read_aw(fh_in, l_n)) {
 	disamb_csentence_kb(cs, ranks);
-	if (out_semcor) cs.print_csent_semcor_aw(cout);
-	else cs.print_csent_simple(cout);
+	cs.print_csent(cout);
 	cs = CSentence();
   }
 }
 
 
-void test(istream & fh_in,
-		  bool out_semcor) {
+void test(istream & fh_in) {
 
 
-  disamb_dgraph_from_corpus(fh_in, false);
+  disamb_dgraph_from_corpus(fh_in);
 
   return;
 
@@ -262,8 +251,7 @@ void test(istream & fh_in,
   size_t l_n = 0;
   while (cs.read_aw(fh_in, l_n)) {
 	disamb_csentence_kb(cs, ranks);
-	if (out_semcor) cs.print_csent_semcor_aw(cout);
-	else cs.print_csent_simple(cout);
+	cs.print_csent(cout);
 	cs = CSentence();
   }
 }
@@ -290,7 +278,6 @@ int main(int argc, char *argv[]) {
   dis_method dmethod = ppr;
 
   bool opt_do_test = false;
-  bool opt_out_semcor = false;
 
   string cmdline("!! -v ");
   cmdline += glVars::ukb_version;
@@ -384,7 +371,6 @@ int main(int argc, char *argv[]) {
     ("bcomp_dictfile,W", value<string>(), "Backward compatibility with -D.")
     ("only_ctx_words,C", "Backward compatibility with -C.")
     ("concept_graph,G", "Backward compatibility with -G.")
-    ("semcor", "Output Semcor key file.")
     ("dgraph", "Backward compatibility with --dgraph.")
     ("test,t", "(Internal) Do a test.")
     ("input-file",value<string>(), "Input file.")
@@ -568,10 +554,6 @@ int main(int argc, char *argv[]) {
       glVars::output::allranks = true;
     }
 
-    if (vm.count("semcor")) {
-      opt_out_semcor = 1;
-    }
-
     if (vm.count("test")) {
       opt_do_test = true;
     }
@@ -627,7 +609,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_do_test) {
-    test(std::cin, false);
+    test(std::cin);
 	goto END;
   }
 
@@ -635,31 +617,31 @@ int main(int argc, char *argv[]) {
 
   try {
 	if (opt_do_test) {
-	  test(std::cin, false);
+	  test(std::cin);
 	  goto END;
 	}
 
 	switch(dmethod) {
 	case dgraph_bfs:
 	  use_dfs_dgraph = false; // use bfs
-	  disamb_dgraph_from_corpus(std::cin, opt_out_semcor);
+	  disamb_dgraph_from_corpus(std::cin);
 	  goto END;
 	  break;
 	case dgraph_dfs:
 	  use_dfs_dgraph = true;
-	  disamb_dgraph_from_corpus(std::cin, opt_out_semcor);
+	  disamb_dgraph_from_corpus(std::cin);
 	  goto END;
 	  break;
  	case ppr:
-	  dis_csent_ppr(std::cin, opt_out_semcor);
+	  dis_csent_ppr(std::cin);
 	  goto END;
 	  break;
 	case ppr_w2w:
-	  dis_csent_ppr_by_word(std::cin, opt_out_semcor);
+	  dis_csent_ppr_by_word(std::cin);
 	  goto END;
 	  break;
 	case ppr_static:
-	  dis_csent_classic_prank(std::cin, opt_out_semcor);
+	  dis_csent_classic_prank(std::cin);
 	  goto END;
 	  break;
 	};

@@ -110,9 +110,7 @@ namespace ukb {
 	void disamb_cword();
 
 	friend std::ostream& operator<<(std::ostream & o, const CWord & cw_);
-	std::ostream & print_cword_simple(std::ostream & o) const;
-	std::ostream & print_cword_aw(std::ostream & o) const;
-	std::ostream & print_cword_semcor_aw(std::ostream & o) const;
+	std::ostream & print_cword(std::ostream & o) const;
 	friend class CSentence;
 
 	// Debug
@@ -184,10 +182,7 @@ namespace ukb {
 	void write_to_binfile (const std::string & fName) const;
 	void read_from_binfile (const std::string & fName);
 	friend std::ostream& operator<<(std::ostream & o, const CSentence & cs_);
-	std::ostream & print_csent_aw(std::ostream & o) const;
-	std::ostream & print_csent_semcor_aw(std::ostream & o) const;
-
-	std::ostream & print_csent_simple(std::ostream & o) const;
+	std::ostream & print_csent(std::ostream & o) const;
 	std::ostream & debug(std::ostream & o) const;
   private:
 	void read_from_stream (std::ifstream & is);

@@ -293,31 +293,7 @@ namespace ukb {
 	return o;
   }
 
-  ostream & CWord::print_cword_aw(ostream & o) const {
-
-	vector<string> id_fields(split(m_id, "."));
-	assert(id_fields.size() > 0);
-	o << id_fields[0] << " " << m_id;
-	if(!glVars::output::allranks) cw_aw_print_best(o, m_syns, m_ranks);
-	else cw_aw_print_all(o, m_syns, m_ranks);
-	o << " !! " << w << "\n";
-	return o;
-  }
-
-  ostream & CWord::print_cword_semcor_aw(ostream & o) const {
-
-	if ((1 == m_syns.size()) && !glVars::output::monosemous) return o; // Don't output monosemous words
-
-	vector<string> id_fields(split(m_id, "."));
-	assert(id_fields.size() > 0);
-	o << id_fields[0] << "." << id_fields[1] << " " << m_id;
-	if(!glVars::output::allranks) cw_aw_print_best(o, m_syns, m_ranks);
-	else cw_aw_print_all(o, m_syns, m_ranks);
-	o << " !! " << w << "\n";
-	return o;
-  }
-
-  ostream & CWord::print_cword_simple(ostream & o) const {
+  ostream & CWord::print_cword(ostream & o) const {
 
 	o << m_id << " ";
 	if(!glVars::output::allranks) cw_aw_print_best(o, m_syns, m_ranks);
@@ -559,7 +535,7 @@ namespace ukb {
 	return o;
   }
 
-  std::ostream & CSentence::print_csent_aw(std::ostream & o) const {
+  std::ostream & CSentence::print_csent(std::ostream & o) const {
 
 	vector<CWord>::const_iterator cw_it = v.begin();
 	vector<CWord>::const_iterator cw_end = v.end();
@@ -568,41 +544,9 @@ namespace ukb {
 	  if (cw_it->size() == 0) continue;
 	  if (!cw_it->is_tgtword()) continue;
 	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
-	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
-
-	  cw_it->print_cword_aw(o);
-	}
-	return o;
-  }
-
-  std::ostream & CSentence::print_csent_semcor_aw(std::ostream & o) const {
-
-	vector<CWord>::const_iterator cw_it = v.begin();
-	vector<CWord>::const_iterator cw_end = v.end();
-
-	for(; cw_it != cw_end; ++cw_it) {
-	  if (cw_it->size() == 0) continue;
-	  if (!cw_it->is_tgtword()) continue;
-	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
-	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
-
-	  cw_it->print_cword_semcor_aw(o);
-	}
-	return o;
-  }
-
-  std::ostream & CSentence::print_csent_simple(std::ostream & o) const {
-
-	vector<CWord>::const_iterator cw_it = v.begin();
-	vector<CWord>::const_iterator cw_end = v.end();
-
-	for(; cw_it != cw_end; ++cw_it) {
-	  if (cw_it->size() == 0) continue;
-	  if (!cw_it->is_tgtword()) continue;
-	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
-	  if (cw_it->is_monosemous() && !glVars::output::monosemous) return o; // Don't output monosemous words
+	  if (cw_it->is_monosemous() && !glVars::output::monosemous) continue; // Don't output monosemous words
 	  o << cs_id << " ";
-	  cw_it->print_cword_simple(o);
+	  cw_it->print_cword(o);
 	}
 	return o;
   }
