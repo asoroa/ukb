@@ -239,14 +239,11 @@ namespace ukb {
 	  idx[i] = i;
 	sort(idx.begin(), idx.end(), CWSort(m_ranks));
 
-	bool ranks_equal = true;
 	for(size_t i=0; i < n; ++i) {
 	  syns[i]  = m_syns[idx[i]];
 	  ranks[i] = m_ranks[idx[i]];
-	  if (ranks[i] != ranks[0])
-		ranks_equal = false;
 	}
-	if (ranks_equal) return; // If all ranks have same value the word is not disambiguated
+	if(ranks[0] == ranks[n-1]) return; // If all ranks have same value the word is not disambiguated
 	syns.swap(m_syns);
 	ranks.swap(m_ranks);
 	m_disamb = true;
@@ -301,32 +298,6 @@ namespace ukb {
 	o << " !! " << w << "\n";
 	return o;
   }
-
-  ////////////////////////////////////////////////////////
-  // Streaming
-
-  std::ofstream & CWord::write_to_stream(std::ofstream & o) const {
-
-	write_atom_to_stream(o,w);
-	write_atom_to_stream(o,m_id);
-	write_atom_to_stream(o,m_pos);
-	write_vector_to_stream(o,m_syns);
-	write_atom_to_stream(o,m_type);
-	return o;
-
-  };
-
-  void CWord::read_from_stream(std::ifstream & i) {
-
-	read_atom_from_stream(i,w);
-	read_atom_from_stream(i,m_id);
-	read_atom_from_stream(i,m_pos);
-	read_vector_from_stream(i,m_syns);
-	vector<float>(m_syns.size()).swap(m_ranks); // Init ranks vector
-	read_atom_from_stream(i,m_type);
-
-	m_disamb = (1 == m_syns.size());
-  };
 
   ////////////////////////////////////////////////////////////////
   // CSentence
@@ -514,7 +485,9 @@ namespace ukb {
 	cw_end = v.end();
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (!cw_it->is_tgtword()) continue;
-	  copy(cw_it->begin(), cw_it->end(), back_inserter(res));
+	  for(size_t i = 0, m = cw_it->size();
+		  i < m; ++i)
+		res.push_back(cw_it->syn(i));
 	}
   }
 
@@ -798,61 +771,5 @@ namespace ukb {
 	  }
 	  cw_it->disamb_cword();
 	}
-  }
-
-
-  ////////////////////////////////////////////////////////
-  // Streaming
-
-  const size_t magic_id = 0x070704;
-
-  ofstream & CSentence::write_to_stream (std::ofstream & o) const {
-	size_t vSize = v.size();
-
-	write_atom_to_stream(o, magic_id);
-	write_atom_to_stream(o,vSize);
-	for(size_t i=0; i< vSize; ++i) {
-	  v[i].write_to_stream(o);
-	}
-	write_atom_to_stream(o,cs_id);
-	return o;
-  }
-
-  void CSentence::read_from_stream (std::ifstream & is) {
-
-	size_t vSize;
-	size_t id;
-
-	// Read a vector of CWords
-	read_atom_from_stream(is, id);
-	if (id != magic_id) {
-	  cerr << "Invalid file. Not a csentence." << endl;
-	  exit(-1);
-	}
-	read_atom_from_stream(is, vSize);
-	v.resize(vSize);
-	for(size_t i=0; i<vSize; ++i) {
-	  v[i].read_from_stream(is);
-	}
-	read_atom_from_stream(is,cs_id);
-  }
-
-  void CSentence::write_to_binfile (const std::string & fName) const {
-	ofstream fo(fName.c_str(),  ofstream::binary|ofstream::out);
-	if (!fo) {
-	  cerr << "Error: can't create" << fName << endl;
-	  exit(-1);
-	}
-	write_to_stream(fo);
-  }
-
-
-  void CSentence::read_from_binfile (const std::string & fName) {
-	ifstream fi(fName.c_str(), ifstream::binary|ifstream::in);
-	if (!fi) {
-	  cerr << "Error: can't open " << fName << endl;
-	  exit(-1);
-	}
-	read_from_stream(fi);
   }
 }

@@ -46,17 +46,13 @@ namespace ukb {
 
 	// Attach synsets of a new lemma to the CWord.
 	//
-	// Note, the CWord does not track the lemma
+	// Note, the lemma of the CWord remains untouched
 
 	void attach_lemma(const std::string & lemma, const std::string & pos = std::string());
 
 	// reset concepts attached to the cword
 	void reset_concepts(std::map<std::string, float> & C);
 
-	iterator begin() {return m_syns.begin();}
-	iterator end() {return m_syns.end();}
-	const_iterator begin() const {return m_syns.begin();}
-	const_iterator end() const {return m_syns.end();}
 	size_type size() const {return m_syns.size(); }
 
 	const std::string & syn(size_t i) const { return m_syns[i];}
@@ -83,7 +79,6 @@ namespace ukb {
 	cwtype type() const { return m_type; }
 
 	void empty_synsets();
-	std::vector<std::string> & get_syns_vector() { return m_syns; }
 	const std::vector<std::pair<Kb_vertex_t, float> > & V_vector() const { return m_V; }
 
 	template <typename Map>
@@ -120,8 +115,6 @@ namespace ukb {
   private:
 
 	size_t link_dict_concepts(const std::string & lemma, const std::string & pos);
-	void read_from_stream (std::ifstream & is);
-	std::ofstream & write_to_stream(std::ofstream & o) const;
 	void shuffle_synsets();
 
 	std::string w;
@@ -185,8 +178,6 @@ namespace ukb {
 	std::ostream & print_csent(std::ostream & o) const;
 	std::ostream & debug(std::ostream & o) const;
   private:
-	void read_from_stream (std::ifstream & is);
-	std::ofstream & write_to_stream(std::ofstream & o) const;
 	std::vector<CWord> v;
 	std::string cs_id;
   };
