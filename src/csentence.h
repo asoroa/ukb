@@ -52,6 +52,10 @@ namespace ukb {
 
 	// reset concepts attached to the cword
 	void reset_concepts(std::map<std::string, float> & C);
+	iterator begin() {return m_syns.begin();}
+	iterator end() {return m_syns.end();}
+	const_iterator begin() const {return m_syns.begin();}
+	const_iterator end() const {return m_syns.end();}
 
 	size_type size() const {return m_syns.size(); }
 
@@ -63,7 +67,6 @@ namespace ukb {
 	std::string wpos() const;
 
 	std::string id() const {return m_id;}
-	std::string get_pos() const {return m_pos;}
 
 	float get_weight() const { return m_weight;}
 	float get_linkw_factor() const { return m_linkw_factor; }
@@ -127,7 +130,7 @@ namespace ukb {
 	float m_linkw_factor; // 1 / (sum of all link weights)
 	cwtype m_type;
 	bool m_disamb;      // If word is disambiguated, that is, if the synset
-	// are ordered according to their ranks
+	                    // are ordered according to their ranks
   };
 
   class CSentence {
