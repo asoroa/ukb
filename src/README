@@ -268,11 +268,16 @@ man   man1-n man2-n man3-n
       with some predefined weights:
 
 ctx_01
-man1-n##c1#2#0.6 man2-n##c2#2#0.3 man3-n##c3#2#0.1 man#n#w1#3
+man#n#w1#3 man1-n##c1#2#0.6 man2-n##c2#2#0.3 man3-n##c3#2#0.1
 
        in this case the last token's field is 3, meaning that we want do
-       disambiguate 'man' but we don't want to activate in PageRank, because
-       all its concepts are already in the context with the desired weights.
+       disambiguate 'man' but we don't want to activate in PageRank, because all
+       its concepts are already in the context with the desired weights. Note
+       that when an element with control number '3' appears in the context, the
+       order of elements is very important. Because the dictionary is not used
+       to attach concepts to that word, only the concepts (elements with control
+       number '2') immediately following word will be attached to it, until a
+       non-concept element appears.
 
 - w: a weight (optional)
 

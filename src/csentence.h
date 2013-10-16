@@ -50,8 +50,9 @@ namespace ukb {
 
 	void attach_lemma(const std::string & lemma, const std::string & pos = std::string());
 
-	// reset concepts attached to the cword
-	void reset_concepts(std::map<std::string, float> & C);
+	// reset concepts attached to the cword (used in tgt_noppv type cwords)
+	size_t reset_concepts(std::map<std::string, float> & C);
+
 	iterator begin() {return m_syns.begin();}
 	iterator end() {return m_syns.end();}
 	const_iterator begin() const {return m_syns.begin();}
@@ -62,7 +63,7 @@ namespace ukb {
 	const std::string & syn(size_t i) const { return m_syns[i];}
 	float rank(size_t i) const { return m_ranks[i];}
 
-	std::string word() const { return w; }
+	std::string word() const { return m_w; }
 
 	std::string wpos() const;
 
@@ -120,7 +121,7 @@ namespace ukb {
 	size_t link_dict_concepts(const std::string & lemma, const std::string & pos);
 	void shuffle_synsets();
 
-	std::string w;
+	std::string m_w;
 	std::string m_id;
 	std::string m_pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
 	float m_weight;     // Initial weight for PPV

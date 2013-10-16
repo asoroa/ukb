@@ -93,41 +93,41 @@ namespace ukb {
   }
 
   CWord::CWord(const string & w_, const string & id_, const string & pos_, cwtype type_, float wght_)
-	: w(w_), m_id(id_), m_pos(pos_), m_weight(wght_), m_type(type_) {
+	: m_w(w_), m_id(id_), m_pos(pos_), m_weight(wght_), m_type(type_) {
 
-	switch(m_type) {
-	case cw_concept:
+	string empty_str;
 
+	if (m_type == cw_concept) {
 	  Kb_vertex_t u;
 	  bool P;
-	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(w);
+	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(m_w);
 	  if (!P) {
-		throw std::logic_error("CWord concept " + w + " not in KB");
+		throw std::logic_error("CWord concept " + m_w + " not in KB");
 	  }
-	  m_syns.push_back(w);
+	  m_syns.push_back(m_w);
 	  m_V.push_back(make_pair(u, 1.0f));
 	  m_ranks.push_back(0.0f);
 	  m_linkw_factor = 1.0;
-	  break;
-	case cw_tgtword_nopv:
-	case cw_ctxword:
-	case cw_tgtword:
-	  // empty POS string when no pos filtering
-	  if(!glVars::input::filter_pos)
-		string("").swap(m_pos);
-	  if (!link_dict_concepts(w, m_pos)) {
-		// empty CWord
-		empty_synsets();
-	  }
-	  m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
-	  break;
-	default:
-	  break;
+	  m_pos.swap(empty_str); // concepts have no POS
+	  return;
 	}
+	// empty POS string when no pos filtering
+	if(!glVars::input::filter_pos)
+	  m_pos.swap(empty_str);
+	m_linkw_factor = 0;
+
+	if (m_type == cw_tgtword_nopv) return; // if noppv we are done
+
+	// m_type == cw_ctxword or cw_tgtword:
+	if (!link_dict_concepts(m_w, m_pos)) {
+	  // empty CWord
+	  empty_synsets();
+	}
+	m_disamb = (1 == m_syns.size()); // monosemous words are disambiguated
   }
 
   void CWord::attach_lemma(const string & lemma, const string & pos) {
-	if (!w.size())
+	if (!m_w.size())
 	  throw std::logic_error("CWord::attach_lemma error: can't attach lemma to an empty CWord.");
 	if (m_type == cw_concept)
 	  throw std::logic_error("CWord::attach_lemma error: can't attach lemma to a CWord of type cw_concept.");
@@ -136,15 +136,21 @@ namespace ukb {
 	link_dict_concepts(lemma, pos);
   }
 
-  void CWord::reset_concepts(map<string, float> & C) {
+  // Reset cword and link it to new concepts.
+  // (used in tgt_noppv type cwords)
+  // return: number of new concepts
+
+  size_t CWord::reset_concepts(map<string, float> & C) {
 
 	this->empty_synsets();
 
 	Kb_vertex_t u;
 	bool P;
-	float total_w = 0.0;
+	float total_w = 0.0f;
+	size_t N = 0;
 	for(map<string, float>::iterator it = C.begin(), end = C.end();
 		it != end; ++it) {
+	  N++;
 	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(it->first);
 	  if (!P) {
 		throw std::logic_error("reset_concepts: " + it->first + " not in KB");
@@ -153,18 +159,17 @@ namespace ukb {
 	  m_V.push_back(make_pair(u, it->second));
 	  total_w += it->second;
 	}
+	if (total_w == 0.0f) return 0;
 	m_linkw_factor = 1.0 / total_w;
 	// Update ranks
 	vector<float>(m_syns.size(), 0.0).swap(m_ranks);
-  }
-
-  bool CWord::has_concept(const string & str) {
-	return std::find(m_syns.begin(), m_syns.end(), str) != m_syns.end();
+	m_disamb = (N == 1); // monosemous words are disambiguated
+	return N;
   }
 
   CWord & CWord::operator=(const CWord & cw_) {
 	if (&cw_ != this) {
-	  w = cw_.w;
+	  m_w = cw_.m_w;
 	  m_id = cw_.m_id;
 	  m_weight = cw_.m_weight;
 	  m_pos = cw_.m_pos;
@@ -180,16 +185,15 @@ namespace ukb {
 
 	if (is_synset()) return word();
 	string wpos(word());
-	string pos = get_pos();
-	if(pos.size() == 0) return wpos;
+	if(m_pos.size() == 0) return wpos;
 	wpos.append("#");
-	wpos.append(pos);
+	wpos.append(m_pos);
 	return wpos;
   };
 
   ostream & CWord::debug(ostream & o) const  {
 
-	o << "w: " << w << " \n";
+	o << "w: " << m_w << " \n";
 	o <<  "m_id: " << m_id << string(" \n");
 	o << "m_pos: "  << m_pos << string(" \n");
 	o << "m_weight: "  << lexical_cast<string>(m_weight) << string(" \n");
@@ -254,7 +258,7 @@ namespace ukb {
 
 	//KbGraph & g = ukb::Kb::instance().graph();
 
-	o << cw_.w << "#";
+	o << cw_.m_w << "#";
 	if (cw_.m_pos.size())
 	  o << cw_.m_pos;
 	o << "#" << cw_.m_id << "#" << cw_.m_type;
@@ -295,7 +299,7 @@ namespace ukb {
 	o << m_id << " ";
 	if(!glVars::output::allranks) cw_aw_print_best(o, m_syns, m_ranks);
 	else cw_aw_print_all(o, m_syns, m_ranks);
-	o << " !! " << w << "\n";
+	o << " !! " << m_w << "\n";
 	return o;
   }
 
@@ -345,22 +349,71 @@ namespace ukb {
 	return res;
   }
 
-  // tie nopv tgtwords with concepts appearing in context
+  static void push_ctx(const vector<string> & ctx,
+					   vector<CWord> & cws) {
 
-  static void tie_nopv_concept(map<int, map<string, float> > & T,
-							   int nopv_idx, const string & c_str, float weight) {
+	CWord *last_nopv = 0;
+	map<string, float> nopv_concepts;
+	vector<string>::const_iterator end = ctx.end();
+	for(vector<string>::const_iterator it = ctx.begin();
+		it != end or last_nopv; ++it) {
+	  try {
+		if (it == end) {
+		  // last check to fill last nopv
+		  if (!last_nopv->reset_concepts(nopv_concepts)) // false means no concepts attached
+			cws.pop_back();
+		  break;
+		}
+		ctw_parse_t ctwp = parse_ctw(*it);
+		if (ctwp.lemma.size() == 0) {
+		  throw std::logic_error(*it + " has no lemma.");
+		}
+		string pos("");
+		CWord::cwtype cw_type = cast_int_cwtype(ctwp.dist);
+		if (cw_type == CWord::cw_error) {
+		  throw std::logic_error(*it + " fourth field is invalid.");
+		}
+		if (cw_type != CWord::cw_concept && cw_type != CWord::cw_tgtword_nopv && glVars::input::filter_pos) {
+		  if (!ctwp.pos.size()) throw std::logic_error(*it + " has no POS.");
+		  pos = ctwp.pos;
+		}
+		if(!glVars::input::weight)
+		  ctwp.w = 1.0;
 
-	map<int, map<string, float> >::iterator it;
-	if(weight == 0.0) return;
-	it = T.insert(make_pair(nopv_idx, map<string, float>())).first;
-	it->second.insert(make_pair(c_str, weight));
-  }
+		CWord new_cw(ctwp.lemma, ctwp.id, pos, cw_type, ctwp.w);
 
-  static void link_nopv_concepts(map<int, map<string, float> > & T,
-								 vector<CWord> & v) {
-	for(map<int, map<string, float> >::iterator it = T.begin(), end = T.end();
-		it != end; ++it) {
-	  v[it->first].reset_concepts(it->second);
+		// tie to nopv cword. Do it after CWord creation, so we are sure cw_concept is in KB
+		if (last_nopv && cw_type == CWord::cw_concept) {
+		  nopv_concepts.insert(make_pair(ctwp.lemma, ctwp.w));
+		  continue;
+		}
+
+		if (last_nopv && !last_nopv->reset_concepts(nopv_concepts)) // false means no concepts attached
+		  cws.pop_back();
+		last_nopv = 0; // any new CW resets last_nopv
+
+		if (cw_type == CWord::cw_tgtword_nopv) {
+		  map<string, float>().swap(nopv_concepts);
+		  cws.push_back(new_cw);
+		  last_nopv = &cws.back();
+		  continue;
+		}
+		if (!new_cw.size()) {
+		  if (glVars::debug::warning)
+			// No synset for that word.
+			cerr << "W:" << *it << " can't be mapped to KB.";
+		  continue;
+		}
+		cws.push_back(new_cw);
+	  } catch (ukb::wdict_error & e) {
+		throw e;
+	  } catch (std::logic_error & e) {
+		string msg(e.what());
+		if (!glVars::input::swallow) throw std::runtime_error(msg);
+		if (glVars::debug::warning) {
+		  cerr << msg << "\n";
+		}
+	  }
 	}
   }
 
@@ -370,7 +423,6 @@ namespace ukb {
 
 	string line;
 	map<int, map<string, float> > Ties;
-	int last_nopv_idx = -1;
 
 	if(read_line_noblank(is, line, l_n)) {
 
@@ -388,54 +440,8 @@ namespace ukb {
 	  tokenizer<char_separator<char> > tok_ctx(line, sep);
 	  copy(tok_ctx.begin(), tok_ctx.end(), back_inserter(ctx));
 	  if (ctx.size() == 0) return is; // blank line or EOF
-	  int i = 0;
 	  try {
-		for(vector<string>::const_iterator it = ctx.begin(); it != ctx.end(); ++i, ++it) {
-		  try {
-			ctw_parse_t ctwp = parse_ctw(*it);
-			if (ctwp.lemma.size() == 0) continue;
-			string pos("");
-			CWord::cwtype cw_type = cast_int_cwtype(ctwp.dist);
-			if (cw_type == CWord::cw_error) {
-			  throw std::logic_error(*it + " fourth field is invalid.");
-			}
-			if (cw_type != CWord::cw_concept && glVars::input::filter_pos) {
-			  if (!ctwp.pos.size()) throw std::logic_error(*it + " has no POS.");
-			  pos = ctwp.pos;
-			}
-			if(!glVars::input::weight)
-			  ctwp.w = 1.0;
-
-			CWord new_cw(ctwp.lemma, ctwp.id, pos, cw_type, ctwp.w);
-
-			// tie to nopv cword. Do it after CWord creation, so we are sure cw_concept is in KB
-			if (cw_type == CWord::cw_concept && last_nopv_idx != -1 && v[last_nopv_idx].has_concept(ctwp.lemma)) {
-			  tie_nopv_concept(Ties, last_nopv_idx, ctwp.lemma, ctwp.w);
-			  continue;
-			}
-
-			if (new_cw.size()) {
-			  if (cw_type == CWord::cw_tgtword_nopv)
-				last_nopv_idx = v.size();
-			  else last_nopv_idx = -1; // any new CW resets last_nopv
-			  v.push_back(new_cw);
-			} else {
-			  // No synset for that word.
-			  if (glVars::debug::warning)
-				cerr << "W:" << *it << " can't be mapped to KB.";
-			}
-		  } catch (ukb::wdict_error & e) {
-			throw e;
-		  } catch (std::logic_error & e) {
-			string msg(e.what());
-			if (!glVars::input::swallow) throw std::runtime_error(msg);
-			if (glVars::debug::warning) {
-			  cerr << msg << "\n";
-			}
-		  }
-		}
-		// link concepts to nopv cwords
-		link_nopv_concepts(Ties, v);
+		push_ctx(ctx, this->v);
 	  } catch (ukb::wdict_error & e) {
 		throw e;
 	  } catch (std::exception & e) {
