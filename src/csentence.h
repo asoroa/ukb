@@ -19,16 +19,29 @@ namespace ukb {
 
 	// Type of CWords:
 	//
-	// cw_ctxword: context word. Affects initial PV calculation but is not disambiguated.
-	// cw_tgtword: target word: Affects initial PV calculation and is disambiguated.
-	// cw_concept: concept. Affects initial PV calculation and is not diambiguated
-	// cw_tgtword_nopv: target 'nopv' word. Does not affect initial PV calculation and will be disambiguated.
+
+	// cw_ctxword: context word. Affects initial PV calculation but is not
+	//             disambiguated.
+	//
+	// cw_tgtword: target word: Affects initial PV calculation and is
+	//             disambiguated.
+	//
+	// cw_concept: concept. Affects initial PV calculation and is not
+	//             diambiguated
+	//
+	// cw_tgtword_nopv: target 'nopv' word. Does not affect initial PV
+	//                  calculation and will be disambiguated.
+	//
+	// cw_ctxword_nopv: context 'nopv' word. Does not affect initial PV
+	//                  calculation and will not be disambiguated. Useful for
+	//                  'grouping' concepts.
 
 	enum cwtype {
 	  cw_ctxword = 0,
 	  cw_tgtword = 1,
 	  cw_concept = 2,
 	  cw_tgtword_nopv = 3,
+	  cw_ctxword_nopv = 4,
 	  cw_error
 	};
 
@@ -50,8 +63,8 @@ namespace ukb {
 
 	void attach_lemma(const std::string & lemma, const std::string & pos = std::string());
 
-	// reset concepts attached to the cword (used in tgt_noppv type cwords)
-	size_t reset_concepts(std::map<std::string, float> & C);
+	// set concepts attached to the cword (used in tgt_noppv type cwords)
+	size_t set_concepts(std::map<std::string, float> & C);
 
 	iterator begin() {return m_syns.begin();}
 	iterator end() {return m_syns.end();}

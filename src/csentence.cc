@@ -30,6 +30,9 @@ namespace ukb {
 	case 3:
 	  res = CWord::cw_tgtword_nopv;
 	  break;
+	case 4:
+	  res = CWord::cw_ctxword_nopv;
+	  break;
 	default:
 	  res = CWord::cw_error;
 	  break;
@@ -116,7 +119,7 @@ namespace ukb {
 	  m_pos.swap(empty_str);
 	m_linkw_factor = 0;
 
-	if (m_type == cw_tgtword_nopv) return; // if noppv we are done
+	if (m_type == cw_tgtword_nopv or m_type == cw_ctxword_nopv) return; // if nopv we are done
 
 	// m_type == cw_ctxword or cw_tgtword:
 	if (!link_dict_concepts(m_w, m_pos)) {
@@ -136,11 +139,11 @@ namespace ukb {
 	link_dict_concepts(lemma, pos);
   }
 
-  // Reset cword and link it to new concepts.
+  // (Re)Set cword and link it to new concepts.
   // (used in tgt_noppv type cwords)
   // return: number of new concepts
 
-  size_t CWord::reset_concepts(map<string, float> & C) {
+  size_t CWord::set_concepts(map<string, float> & C) {
 
 	this->empty_synsets();
 
@@ -310,7 +313,7 @@ namespace ukb {
 	string lemma;
 	string pos;
 	string id;
-	int dist; // 0 -> no dist; 1 -> dist; 2 -> concept (no dist)
+	int dist; // See cwtype enum.
 	float w;
 
 	ctw_parse_t() : lemma(), pos(), id(), dist(0), w(1.0) {}
@@ -360,7 +363,7 @@ namespace ukb {
 	  try {
 		if (it == end) {
 		  // last check to fill last nopv
-		  if (!last_nopv->reset_concepts(nopv_concepts)) // false means no concepts attached
+		  if (!last_nopv->set_concepts(nopv_concepts)) // false means no concepts attached
 			cws.pop_back();
 		  break;
 		}
@@ -373,7 +376,7 @@ namespace ukb {
 		if (cw_type == CWord::cw_error) {
 		  throw std::logic_error(*it + " fourth field is invalid.");
 		}
-		if (cw_type != CWord::cw_concept && cw_type != CWord::cw_tgtword_nopv && glVars::input::filter_pos) {
+		if ((cw_type == CWord::cw_ctxword || cw_type == CWord::cw_tgtword) && glVars::input::filter_pos) {
 		  if (!ctwp.pos.size()) throw std::logic_error(*it + " has no POS.");
 		  pos = ctwp.pos;
 		}
@@ -382,17 +385,20 @@ namespace ukb {
 
 		CWord new_cw(ctwp.lemma, ctwp.id, pos, cw_type, ctwp.w);
 
-		// tie to nopv cword. Do it after CWord creation, so we are sure cw_concept is in KB
-		if (last_nopv && cw_type == CWord::cw_concept) {
-		  nopv_concepts.insert(make_pair(ctwp.lemma, ctwp.w));
-		  continue;
+		if (last_nopv) {
+		  // there is a nopv element 'active'
+		  if (cw_type == CWord::cw_concept) {
+			// attach concept to nopv
+			nopv_concepts.insert(make_pair(ctwp.lemma, ctwp.w));
+			continue;
+		  }
+		  // new elem is not concept, so set last nopv with new concepts
+		  if (!last_nopv->set_concepts(nopv_concepts)) // false means no concepts attached
+			cws.pop_back();
+		  last_nopv = 0; // and reset last_nopv
 		}
 
-		if (last_nopv && !last_nopv->reset_concepts(nopv_concepts)) // false means no concepts attached
-		  cws.pop_back();
-		last_nopv = 0; // any new CW resets last_nopv
-
-		if (cw_type == CWord::cw_tgtword_nopv) {
+		if (cw_type == CWord::cw_tgtword_nopv or cw_type == CWord::cw_ctxword_nopv) {
 		  map<string, float>().swap(nopv_concepts);
 		  cws.push_back(new_cw);
 		  last_nopv = &cws.back();
