@@ -175,18 +175,41 @@ serializations to the new format. Assuming you have an old "wn17.bin" graph:
 
 * 2. Dictionary
 
-The dictionary is just a text file which associates words (typically,
+The dictionary is just a text file which associates headwords (typically,
 lemmas) to concepts on the KB. Each line is a dictionary entry, and has the
 following syntax:
 
-wordform concept_id+
+wordform concept_id(:weight)+
 
 For instance, the following line:
 
 cartwheel 02531639-n 00308383-n 11072773-n 01525369-v
 
-associates the entry 'cartwheel' with the concepts 02531639-n,
-00308383-n, 11072773-n and 01525369-v.
+associates the headword 'cartwheel' with the concepts 02531639-n, 00308383-n,
+11072773-n and 01525369-v. Dictionary entries may have weights associated. For
+instance:
+
+band 02784732-n:3 02785191-n:1 02784998-n:1 01297401-v:0
+
+creates an entry fir 'attach' and attaches four concepts to it (three noun
+concepts and one verb concept). Besides, the links have weights, relecting the
+fact that some senses are more frequent than others for a particular word. Some
+notes about dictionary weight:
+
+- the command line option --dict_weight has to be set to actually use the
+  dictionary weights in the computations.
+
+- by default, all weights are incremented by 1. Change this value with the
+  "--smooth_dict_weight" option.
+
+- the values of the weights are normalized so that all link weights of
+  particular headword sum to one.
+
+- the script 'wnindex2ukbdict.pl' extracts a dictionary given a WordNet
+  'index.sense' file. The script also attaches weights to concepts, according to
+  the 'tag_cnt' attribute of the index.sense file. This tag "represents the
+  decimal number of times the sense is tagged in various semantic concordance
+  texts" according to the docs.
 
 * 3. Input context
 
@@ -214,8 +237,8 @@ field, separated by the '#' character. The five fields are:
 
 lemma#pos#id#d#w
 
-- lemma: the lemma of the word (or the concept if if the word is a concept. See
-	 below). Mandatory.
+- lemma: the lemma of the word (either a headword in the dictionary or a graph
+	 concept identifier. See below). Mandatory.
 
 - pos: part of speech.
 
@@ -230,9 +253,9 @@ lemma#pos#id#d#w
 
 - id: the word's id. Mandatory.
 
-- d: a control number. Mandatory. Can have three values:
+- d: a control number. Mandatory. Can have four values:
 
-   1: disambiguate the the term
+   1: disambiguate the the term.
 
    0: do not disambiguate the term but use it for calculating Personalized
       PageRank. Although all words in the context play a role in the
@@ -270,14 +293,28 @@ man   man1-n man2-n man3-n
 ctx_01
 man#n#w1#3 man1-n##c1#2#0.6 man2-n##c2#2#0.3 man3-n##c3#2#0.1
 
-       in this case the fourth field is 3, meaning that we want do disambiguate
-       'man' but we don't want to activate in PageRank, because all its concepts
-       are already in the context with the desired weights. Note that when an
-       element with control number '3' (or '4', see below) appears in the
-       context, the order of elements is very important. Because the dictionary
-       is not used to attach concepts to that word, only the concepts (elements
-       with control number '2') immediately following word will be attached to
-       it, until a non-concept element appears.
+       in this case, the fourth field of word 'man' is 3, meaning that we want
+       do disambiguate 'man' but we don't want to activate in PageRank, because
+       all its concepts are already in the context with the desired
+       weights. 
+
+	   Some notes regarding elements with control number '3' (or '4', see below)
+
+	   - when such an element appears in a context, the dictionary is not
+	   	 actually used. Instead of linking the word to the corrersponding
+	   	 concepts as specified by the dictionary, the word is attached to the
+	   	 concept elements (i.e., those with control number '2') inmediatelly
+	   	 following the word in the context. This process continues until a
+	   	 non-concept element appears.
+
+	   - the weight of the concepts are normalized w.r.t the words they are
+         attached to. In other words, the sum of all concepts linked to the same
+         word is always 1.
+
+	   the order of elements is very important. Because the dictionary is not
+       used to attach concepts to that word, only the concept elements (i.e.,
+       those with control number '2') immediately following the word in the
+       context will be attached to it, until a non-concept element appears.
 
    4: the term is not used in PageRank calculation and is not
       disambiguated. This is like '3' above, and is used for grouping 'concept'
