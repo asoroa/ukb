@@ -440,6 +440,8 @@ namespace ukb {
 	// get pv pointing to KbGraph vertex_t
 	// transform into Dis_vertex_t
 
+	if (!cs.has_tgtwords()) return false; // no target words
+
 	vector<float> pv;
 	size_t  pv_m = pv_from_cs_onlyC(cs, pv, exclude_word_it);
 	if (!pv_m) return false;
@@ -492,8 +494,10 @@ namespace ukb {
   }
 
 
-  void disamb_csentence_dgraph(CSentence & cs, DisambGraph & dgraph,
+  bool disamb_csentence_dgraph(CSentence & cs, DisambGraph & dgraph,
 							   const vector<float> & ranks) {
+
+	if (!cs.has_tgtwords()) return false; // no target words
 
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
@@ -501,6 +505,7 @@ namespace ukb {
 	  if(!cw_it->is_tgtword()) continue;
 	  disamb_cword_dgraph(cw_it, dgraph, ranks);
 	}
+	return true;
   }
 
   void disamb_cword_dgraph(CSentence::iterator it, DisambGraph & dgraph,

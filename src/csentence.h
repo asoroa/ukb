@@ -212,8 +212,8 @@ namespace ukb {
 
   bool calculate_kb_ppv_csentence(CSentence & cs, std::vector<float> & res);
 
-  void disamb_csentence_kb(CSentence & cs,
-							const std::vector<float> & ranks);
+  bool disamb_csentence_kb(CSentence & cs,
+						   const std::vector<float> & ranks);
 
 
   // Functions for calculating initial PV given a CSentence

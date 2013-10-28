@@ -540,10 +540,11 @@ namespace ukb {
 
   std::ostream & CSentence::print_csent(std::ostream & o) const {
 
+	if (!m_tgtN) return o;
+
 	vector<CWord>::const_iterator cw_it = m_v.begin();
 	vector<CWord>::const_iterator cw_end = m_v.end();
 
-	if (!m_tgtN) return o;
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (cw_it->size() == 0) continue;
 	  if (!cw_it->is_tgtword()) continue;
@@ -691,6 +692,7 @@ namespace ukb {
 								CSentence::const_iterator tgtw_it,
 								vector<float> & ranks) {
 
+	if (!cs.has_tgtwords()) return false; // no target words
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
 
@@ -709,6 +711,8 @@ namespace ukb {
   //   3. use rank for disambiguating word
 
   int calculate_kb_ppr_by_word_and_disamb(CSentence & cs) {
+
+	if (!cs.has_tgtwords()) return 0; // no target words
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> ranks;
@@ -745,6 +749,8 @@ namespace ukb {
   //
 
   bool calculate_kb_ppv_csentence(CSentence & cs, vector<float> & res) {
+
+	if (!cs.has_tgtwords()) return false; // no target words
 
 	Kb & kb = ukb::Kb::instance();
 	bool aux;
@@ -785,8 +791,10 @@ namespace ukb {
   // Disambiguate a CSentence given a vector of ranks
   //
 
-  void disamb_csentence_kb(CSentence & cs,
+  bool disamb_csentence_kb(CSentence & cs,
 						   const vector<float> & ranks) {
+
+	if (!cs.has_tgtwords()) return false; // no target words
 
 	Kb & kb = ukb::Kb::instance();
 
@@ -802,5 +810,6 @@ namespace ukb {
 	  }
 	  cw_it->disamb_cword();
 	}
+	return true;
   }
 }
