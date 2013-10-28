@@ -289,7 +289,7 @@ namespace ukb {
 	  for(size_t i = 0; i != syns.size(); ++i) {
 		rsum += ranks[i];
 	  }
-	  norm_factor *= 1.0 / rsum;
+	  if (rsum) norm_factor *= 1.0 / rsum;
 	}
 	for(size_t i = 0; i != syns.size(); ++i) {
 	  o << " " << syns[i] << "/" << ranks[i]*norm_factor;
