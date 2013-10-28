@@ -158,32 +158,33 @@ namespace ukb {
 	typedef std::vector<CWord>::value_type value_type;
 	typedef std::vector<CWord>::size_type size_type;
 
-	CSentence() {};
+	CSentence() : m_tgtN(0) {};
 	CSentence(const std::vector<std::string> & sent_);
 
-	CSentence(const CSentence & cs_) : v(cs_.v) , cs_id(cs_.cs_id) {};
+	CSentence(const CSentence & cs_) : m_tgtN(0), m_v(cs_.m_v) , m_id(cs_.m_id) {};
 	CSentence & operator=(const CSentence & cs_);
 
 	void append(const CSentence & cs_);
 
-	iterator begin() {return v.begin();}
-	const_iterator begin() const {return v.begin();}
-	iterator end() {return v.end();}
-	const_iterator end() const {return v.end();}
-	void push_back(const CWord & cw_) { v.push_back(cw_); }
-	reference back() {return v.back();}
-	const_reference back() const {return v.back();}
+	iterator begin() {return m_v.begin();}
+	const_iterator begin() const {return m_v.begin();}
+	iterator end() {return m_v.end();}
+	const_iterator end() const {return m_v.end();}
+	void push_back(const CWord & cw_) { m_v.push_back(cw_); }
+	reference back() {return m_v.back();}
+	const_reference back() const {return m_v.back();}
 
 	const CWord & operator[]( int i ) const {
-	  return v[i];
+	  return m_v[i];
 	}
 
 	CWord & operator[]( int i ) {
-	  return v[i];
+	  return m_v[i];
 	}
 
-	size_type size() const {return v.size();}
-	std::string id() const {return cs_id;}
+	size_type size() const {return m_v.size();}
+	size_type has_tgtwords() const { return m_tgtN; }
+	std::string id() const {return m_id;}
 
 	void distinguished_synsets(std::vector<std::string> & res) const;
 
@@ -195,8 +196,9 @@ namespace ukb {
 	std::ostream & print_csent(std::ostream & o) const;
 	std::ostream & debug(std::ostream & o) const;
   private:
-	std::vector<CWord> v;
-	std::string cs_id;
+	size_t m_tgtN; // number of target words in Csentence
+	std::vector<CWord> m_v;
+	std::string m_id;
   };
 
   bool calculate_kb_ppr(const CSentence & cs,

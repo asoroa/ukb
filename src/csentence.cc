@@ -353,7 +353,8 @@ namespace ukb {
   }
 
   static void push_ctx(const vector<string> & ctx,
-					   vector<CWord> & cws) {
+					   vector<CWord> & cws,
+					   size_t & tgtN) {
 
 	CWord *last_nopv = 0;
 	map<string, float> nopv_concepts;
@@ -363,8 +364,12 @@ namespace ukb {
 	  try {
 		if (it == end) {
 		  // last check to fill last nopv
-		  if (!last_nopv->set_concepts(nopv_concepts)) // false means no concepts attached
+		  if (!last_nopv->set_concepts(nopv_concepts)) { // false means no concepts attached
+			if (last_nopv->is_tgtword()) {
+			  tgtN--;
+			}
 			cws.pop_back();
+		  }
 		  break;
 		}
 		ctw_parse_t ctwp = parse_ctw(*it);
@@ -393,15 +398,23 @@ namespace ukb {
 			continue;
 		  }
 		  // new elem is not concept, so set last nopv with new concepts
-		  if (!last_nopv->set_concepts(nopv_concepts)) // false means no concepts attached
+		  if (!last_nopv->set_concepts(nopv_concepts)) {// false means no concepts attached
+			if (last_nopv->is_tgtword()) {
+			  tgtN--;
+			}
 			cws.pop_back();
+		  }
 		  last_nopv = 0; // and reset last_nopv
 		}
 
 		if (cw_type == CWord::cw_tgtword_nopv or cw_type == CWord::cw_ctxword_nopv) {
+		  // New nopv cword
 		  map<string, float>().swap(nopv_concepts);
 		  cws.push_back(new_cw);
 		  last_nopv = &cws.back();
+		  if (new_cw.is_tgtword()) {
+			tgtN++;
+		  }
 		  continue;
 		}
 		if (!new_cw.size()) {
@@ -411,6 +424,9 @@ namespace ukb {
 		  continue;
 		}
 		cws.push_back(new_cw);
+		if (new_cw.is_tgtword()) {
+		  tgtN++;
+		}
 	  } catch (ukb::wdict_error & e) {
 		throw e;
 	  } catch (std::logic_error & e) {
@@ -439,7 +455,7 @@ namespace ukb {
 	  tokenizer<char_separator<char> > tok_id(line, sep);
 	  copy(tok_id.begin(), tok_id.end(), back_inserter(ctx));
 	  if (ctx.size() == 0) return is; // blank line or EOF
-	  cs_id = ctx[0];
+	  m_id = ctx[0];
 	  vector<string>().swap(ctx);
 	  // next comes the context
 	  if(!read_line_noblank(is, line, l_n)) return is;
@@ -447,7 +463,7 @@ namespace ukb {
 	  copy(tok_ctx.begin(), tok_ctx.end(), back_inserter(ctx));
 	  if (ctx.size() == 0) return is; // blank line or EOF
 	  try {
-		push_ctx(ctx, this->v);
+		push_ctx(ctx, m_v, m_tgtN);
 	  } catch (ukb::wdict_error & e) {
 		throw e;
 	  } catch (std::exception & e) {
@@ -458,7 +474,7 @@ namespace ukb {
   }
 
 
-  // CSentence::CSentence(const vector<string> & sent) : cs_id(string()) {
+  // CSentence::CSentence(const vector<string> & sent) : m_id(string()) {
 
   //   set<string> wordS;
 
@@ -469,32 +485,34 @@ namespace ukb {
   //     set<string>::iterator it;
   //     tie(it, insertedP) = wordS.insert(*s_it);
   //     if (insertedP) {
-  //       v.push_back(CWord(*s_it));
+  //       m_v.push_back(CWord(*s_it));
   //     }
   //   }
   // }
 
   CSentence & CSentence::operator=(const CSentence & cs_) {
 	if (&cs_ != this) {
-	  v = cs_.v;
-	  cs_id = cs_.cs_id;
+	  m_tgtN = cs_.m_tgtN;
+	  m_v = cs_.m_v;
+	  m_id = cs_.m_id;
 	}
 	return *this;
   }
 
   void CSentence::append(const CSentence & cs_) {
-	vector<CWord> tenp(v.size() + cs_.v.size());
+	vector<CWord> tenp(m_v.size() + cs_.m_v.size());
 	vector<CWord>::iterator aux_it;
-	aux_it = copy(v.begin(), v.end(), tenp.begin());
-	copy(cs_.v.begin(), cs_.v.end(), aux_it);
-	v.swap(tenp);
+	aux_it = copy(m_v.begin(), m_v.end(), tenp.begin());
+	copy(cs_.m_v.begin(), cs_.m_v.end(), aux_it);
+	m_v.swap(tenp);
+	m_tgtN += cs_.m_tgtN;
   }
 
   void CSentence::distinguished_synsets(vector<string> & res) const {
 
 	vector<CWord>::const_iterator cw_it, cw_end;
-	cw_it = v.begin();
-	cw_end = v.end();
+	cw_it = m_v.begin();
+	cw_end = m_v.end();
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (!cw_it->is_tgtword()) continue;
 	  for(size_t i = 0, m = cw_it->size();
@@ -504,15 +522,15 @@ namespace ukb {
   }
 
   std::ostream& operator<<(std::ostream & o, const CSentence & cs_) {
-	o << cs_.cs_id << endl;
+	o << cs_.m_id << endl;
 	copy(cs_.begin(), cs_.end(), ostream_iterator<CWord>(o, " "));
 	o << "\n";
 	return o;
   }
 
   std::ostream & CSentence::debug(std::ostream & o) const {
-	o << cs_id << endl;
-	for(vector<CWord>::const_iterator it = v.begin(), end=v.end();
+	o << m_id << endl;
+	for(vector<CWord>::const_iterator it = m_v.begin(), end=m_v.end();
 		it != end; ++it) {
 	  o << "**CWord" << endl;
 	  it->debug(o);
@@ -522,15 +540,16 @@ namespace ukb {
 
   std::ostream & CSentence::print_csent(std::ostream & o) const {
 
-	vector<CWord>::const_iterator cw_it = v.begin();
-	vector<CWord>::const_iterator cw_end = v.end();
+	vector<CWord>::const_iterator cw_it = m_v.begin();
+	vector<CWord>::const_iterator cw_end = m_v.end();
 
+	if (!m_tgtN) return o;
 	for(; cw_it != cw_end; ++cw_it) {
 	  if (cw_it->size() == 0) continue;
 	  if (!cw_it->is_tgtword()) continue;
 	  if (!cw_it->is_disambiguated() && !glVars::output::ties) continue;
 	  if (cw_it->is_monosemous() && !glVars::output::monosemous) continue; // Don't output monosemous words
-	  o << cs_id << " ";
+	  o << m_id << " ";
 	  cw_it->print_cword(o);
 	}
 	return o;
