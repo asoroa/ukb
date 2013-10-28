@@ -30,8 +30,18 @@ enum dgraph_rank_methods {
   dstatic
 };
 
+enum dis_method {
+  dgraph_bfs,
+  dgraph_dfs,
+  ppr,
+  ppr_w2w,
+  ppr_static
+};
+
 dgraph_rank_methods dgraph_rank_method = dstatic;
 bool use_dfs_dgraph = false;
+
+dis_method opt_dmethod = ppr;
 
 // Program options stuff
 
@@ -97,70 +107,56 @@ void fill_dgraph(CSentence & cs, DisambGraph & dgraph) {
 
 }
 
-void disamb_dgraph_from_corpus_w2w(istream & fh_in) {
+void disamb_dgraph_from_corpus_w2w(CSentence & cs) {
 
-  CSentence cs;
-  size_t l_n = 0;
-
-  while (cs.read_aw(fh_in, l_n)) {
-	// fall back to static if csentence has only one word
-	if (cs.size() == 1) {
-      if (glVars::debug::warning)
-		cerr << "dis_csent: using static for context " << cs.id() << endl;
-	  const vector<float> ranks = Kb::instance().static_prank();
-	  disamb_csentence_kb(cs, ranks);
-	} else {
-	  DisambGraph dgraph;
-	  fill_dgraph(cs, dgraph);
-	  vector<float> ranks;
-	  for(CSentence::iterator cw_it = cs.begin(), cw_end = cs.end();
-		  cw_it != cw_end; ++cw_it) {
-		if(!cw_it->is_tgtword()) continue;
-		bool ok = csentence_dgraph_ppr(cs, dgraph, ranks, cw_it);
-		if (!ok) {
-		  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-		  cerr << "(No word links to KB ?)\n";
-		  continue;
-		}
-		disamb_cword_dgraph(cw_it, dgraph, ranks);
+  // fall back to static if csentence has only one word
+  if (cs.size() == 1) {
+	if (glVars::debug::warning)
+	  cerr << "dis_csent: using static for context " << cs.id() << endl;
+	const vector<float> ranks = Kb::instance().static_prank();
+	disamb_csentence_kb(cs, ranks);
+  } else {
+	DisambGraph dgraph;
+	fill_dgraph(cs, dgraph);
+	vector<float> ranks;
+	for(CSentence::iterator cw_it = cs.begin(), cw_end = cs.end();
+		cw_it != cw_end; ++cw_it) {
+	  if(!cw_it->is_tgtword()) continue;
+	  bool ok = csentence_dgraph_ppr(cs, dgraph, ranks, cw_it);
+	  if (!ok) {
+		std::cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+		std::cerr << "(No word links to KB ?)\n";
+		return;
 	  }
+	  disamb_cword_dgraph(cw_it, dgraph, ranks);
 	}
-	cs.print_csent(cout);
-	cs = CSentence();
   }
 }
 
-void disamb_dgraph_from_corpus(istream & fh_in) {
+void disamb_dgraph_from_corpus(CSentence & cs) {
 
   if (dgraph_rank_method == dppr_w2w) {
-	disamb_dgraph_from_corpus_w2w(fh_in);
+	disamb_dgraph_from_corpus_w2w(cs);
 	return;
   }
 
-  CSentence cs;
-  size_t l_n = 0;
-
-  while (cs.read_aw(fh_in, l_n)) {
-	// fall back to static if csentence has only one word
-	if (cs.size() == 1) {
-      if (glVars::debug::warning)
-		cerr << "dis_csent: using static for context " << cs.id() << endl;
-	  const vector<float> ranks = Kb::instance().static_prank();
-	  disamb_csentence_kb(cs, ranks);
-	} else {
-	  DisambGraph dgraph;
-	  fill_dgraph(cs, dgraph);
-	  vector<float> ranks;
-	  bool ok = rank_dgraph(cs, dgraph, ranks);
-	  if (!ok) {
-		cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-		cerr << "(No word links to KB ?)\n";
-		continue;
-	  }
-	  disamb_csentence_dgraph(cs, dgraph, ranks);
+  // fall back to static if csentence has only one word
+  if (cs.size() == 1) {
+	if (glVars::debug::warning)
+	  cerr << "dis_csent: using static for context " << cs.id() << endl;
+	const vector<float> ranks = Kb::instance().static_prank();
+	disamb_csentence_kb(cs, ranks);
+  } else {
+	DisambGraph dgraph;
+	fill_dgraph(cs, dgraph);
+	vector<float> ranks;
+	bool ok = rank_dgraph(cs, dgraph, ranks);
+	if (!ok) {
+	  cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
+	  cerr << "(No word links to KB ?)\n";
+	  return;
 	}
-	cs.print_csent(cout);
-	cs = CSentence();
+	disamb_csentence_dgraph(cs, dgraph, ranks);
   }
 }
 
@@ -177,83 +173,78 @@ void ppr_csent(CSentence & cs) {
 }
 
 
-void dis_csent_ppr(istream & fh_in) {
+void dis_csent_ppr(CSentence & cs) {
 
-  CSentence cs;
-
-  size_t l_n = 0;
-
-  while (cs.read_aw(fh_in, l_n)) {
-	// fall back to static if csentence has only one word
-	if (cs.size() == 1) {
-      if (glVars::debug::warning)
-		cerr << "dis_csent: using static for context " << cs.id() << endl;
-	  const vector<float> ranks = Kb::instance().static_prank();
-	  disamb_csentence_kb(cs, ranks);
-	} else {
-	  ppr_csent(cs);
-	}
-	cs.print_csent(cout);
-	cs = CSentence();
-  }
-}
-
-
-void dis_csent_ppr_by_word(istream & fh_in) {
-
-  CSentence cs;
-
-  size_t l_n = 0;
-
-  while (cs.read_aw(fh_in, l_n)) {
-
-	// fall back to static if csentence has only one word
-	if (cs.size() == 1) {
-      if (glVars::debug::warning)
-		cerr << "dis_csent: using static for context " << cs.id() << endl;
-	  const vector<float> ranks = Kb::instance().static_prank();
-	  disamb_csentence_kb(cs, ranks);
-	} else {
-	  calculate_kb_ppr_by_word_and_disamb(cs);
-	}
-	cs.print_csent(cout);
-
-	//cout << cs << '\n';
-	cs = CSentence();
-  }
-}
-
-void dis_csent_classic_prank(istream & fh_in) {
-
-
-  CSentence cs;
-  size_t l_n = 0;
-  const vector<float> ranks = Kb::instance().static_prank();
-  while (cs.read_aw(fh_in, l_n)) {
+  // fall back to static if csentence has only one word
+  if (cs.size() == 1) {
+	// if (glVars::debug::warning)
+	//   cerr << "dis_csent: using static for context " << cs.id() << endl;
+	const vector<float> ranks = Kb::instance().static_prank();
 	disamb_csentence_kb(cs, ranks);
-	cs.print_csent(cout);
-	cs = CSentence();
+  } else {
+	ppr_csent(cs);
   }
 }
 
+void dis_csent_ppr_by_word(CSentence & cs) {
+
+  // fall back to static if csentence has only one word
+  if (cs.size() == 1) {
+	// if (glVars::debug::warning)
+	//   cerr << "dis_csent: using static for context " << cs.id() << endl;
+	const vector<float> ranks = Kb::instance().static_prank();
+	disamb_csentence_kb(cs, ranks);
+  } else {
+	calculate_kb_ppr_by_word_and_disamb(cs);
+  }
+}
+
+void dis_csent_classic_prank(CSentence &cs) {
+
+  static vector<float> ranks;
+  if (!ranks.size()) {
+	ranks = Kb::instance().static_prank();
+  }
+  disamb_csentence_kb(cs, ranks);
+}
+
+
+void dispatch_run_cs(CSentence & cs) {
+
+  switch(opt_dmethod) {
+  case dgraph_bfs:
+	use_dfs_dgraph = false; // use bfs
+	disamb_dgraph_from_corpus(cs);
+	break;
+  case dgraph_dfs:
+	use_dfs_dgraph = true;
+	disamb_dgraph_from_corpus(cs);
+	break;
+  case ppr:
+	dis_csent_ppr(cs);
+	break;
+  case ppr_w2w:
+	dis_csent_ppr_by_word(cs);
+	break;
+  case ppr_static:
+	dis_csent_classic_prank(cs);
+	break;
+  };
+}
+
+void dispatch_run(istream & is, ostream & os) {
+
+  size_t l_n = 0;
+
+  CSentence cs;
+  while (cs.read_aw(is, l_n)) {
+	dispatch_run_cs(cs);
+	cs.print_csent(os);
+	cs = CSentence();
+  }
+}
 
 void test(istream & fh_in) {
-
-
-  disamb_dgraph_from_corpus(fh_in);
-
-  return;
-
-  CSentence cs;
-
-  vector<float> ranks;
-  //Kb::instance().indegree_rank(ranks);
-  size_t l_n = 0;
-  while (cs.read_aw(fh_in, l_n)) {
-	disamb_csentence_kb(cs, ranks);
-	cs.print_csent(cout);
-	cs = CSentence();
-  }
 }
 
 int main(int argc, char *argv[]) {
@@ -266,16 +257,6 @@ int main(int argc, char *argv[]) {
   map_dgraph_ranks["ppr_w2w"] = dppr_w2w;
   map_dgraph_ranks["degree"] = ddegree;
   map_dgraph_ranks["static"] = dstatic;
-
-  enum dis_method {
-	dgraph_bfs,
-	dgraph_dfs,
-	ppr,
-	ppr_w2w,
-	ppr_static
-  };
-
-  dis_method dmethod = ppr;
 
   bool opt_do_test = false;
 
@@ -418,27 +399,27 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("ppr")) {
-	  dmethod = ppr;
+	  opt_dmethod = ppr;
     }
 
     if (vm.count("ppr_w2w")) {
-	  dmethod = ppr_w2w;
+	  opt_dmethod = ppr_w2w;
     }
 
     if (vm.count("static")) {
-	  dmethod = ppr_static;
+	  opt_dmethod = ppr_static;
     }
 
     if (vm.count("dgraph_bfs")) {
-	  dmethod = dgraph_bfs;
+	  opt_dmethod = dgraph_bfs;
     }
 
     if (vm.count("dgraph")) {
-	  dmethod = dgraph_bfs;
+	  opt_dmethod = dgraph_bfs;
     }
 
     if (vm.count("dgraph_dfs")) {
-	  dmethod = dgraph_dfs;
+	  opt_dmethod = dgraph_dfs;
     }
 
     if (vm.count("prank_iter")) {
@@ -455,7 +436,7 @@ int main(int argc, char *argv[]) {
 	  float dp = vm["prank_damping"].as<float>();
 	  if (dp <= 0.0 || dp > 1.0) {
 		cerr << "Error: invalid prank_damping value " << dp << "\n";
-		goto END;
+		exit(-1);
 	  }
       glVars::prank::damping = dp;
     }
@@ -464,7 +445,7 @@ int main(int argc, char *argv[]) {
 	  size_t md = vm["dgraph_maxdepth"].as<size_t>();
 	  if (md == 0) {
 		cerr << "Error: invalid dgraph_maxdepth of zero\n";
-		goto END;
+		exit(-1);
 	  }
 	  glVars::dGraph::max_depth = md;
 	}
@@ -482,7 +463,7 @@ int main(int argc, char *argv[]) {
 			iit != map_dgraph_ranks.end(); ++iit)
 		  cerr << " " << iit->first;
 		cerr << "\n";
-		goto END;
+		exit(-1);
 	  }
 	  dgraph_rank_method = it->second;
 	}
@@ -609,48 +590,17 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_do_test) {
-    test(std::cin);
-	goto END;
+	return 0;
   }
 
   cout << cmdline << "\n";
 
   try {
-	if (opt_do_test) {
-	  test(std::cin);
-	  goto END;
-	}
-
-	switch(dmethod) {
-	case dgraph_bfs:
-	  use_dfs_dgraph = false; // use bfs
-	  disamb_dgraph_from_corpus(std::cin);
-	  goto END;
-	  break;
-	case dgraph_dfs:
-	  use_dfs_dgraph = true;
-	  disamb_dgraph_from_corpus(std::cin);
-	  goto END;
-	  break;
- 	case ppr:
-	  dis_csent_ppr(std::cin);
-	  goto END;
-	  break;
-	case ppr_w2w:
-	  dis_csent_ppr_by_word(std::cin);
-	  goto END;
-	  break;
-	case ppr_static:
-	  dis_csent_classic_prank(std::cin);
-	  goto END;
-	  break;
-	};
+	dispatch_run(std::cin, std::cout);
+  } catch (std::exception & e) {
+	cerr << "Error reading " << fullname_in << "\n" << e.what() << "\n";
+	return 0;
   }
-  catch (std::exception & e) {
-    cerr << "Error reading " << fullname_in << "\n" << e.what() << "\n";
-    exit(-1);
-  }
- END:
 
   return 0;
 }
