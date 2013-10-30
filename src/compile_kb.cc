@@ -204,6 +204,27 @@ void subg(const string & initV, size_t N) {
   cout << "}\n";
 }
 
+void sPath(const string & sPathV) {
+
+  string source;
+  vector<string> aux,targets;
+  std::vector<std::vector<std::string> > paths;
+  aux = split(sPathV, "#");
+  if (aux.size() < 2) {
+	cerr << "Spath error: you must at least specify two nodes\n.";
+	exit(-1);
+  }
+  source = aux[0];
+  set<string> S(aux.begin() + 1, aux.end());
+  copy(S.begin(), S.end(), back_inserter(targets));
+  Kb::instance().get_shortest_paths(source, targets, paths);
+  for(std::vector<std::vector<std::string> >::iterator it = paths.begin(), end = paths.end();
+	  it != end; ++it) {
+	writeV(cout, *it);
+	cout << "\n";
+  }
+}
+
 int main(int argc, char *argv[]) {
 
   srand(3);
@@ -224,6 +245,7 @@ int main(int argc, char *argv[]) {
   string fullname_out("kb_wnet.bin");
   string kb_file;
   string query_vertex;
+  string sPathV;
 
   glVars::kb::v1_kb = false; // Use v2 format
   glVars::kb::filter_src = false; // by default, don't filter relations by src
@@ -275,6 +297,7 @@ int main(int argc, char *argv[]) {
     ("iquery,Q", "Interactively query graph.")
 	("subG,S", value<string>(), "Get a subgraph starting at this vertex. See subG_depth.")
 	("subG_N", value<size_t>(), "Max. number of nodes in subgraph (see --subG). Default is 100.")
+	("sPaths", value<string>(), "Get shortest paths. Value is a vector of nodes, separated by character '#'. First node is source.")
     ("dict_file,D", value<string>(), "Dictionary text file. Use only when querying (--quey or --iquery) or when creating serialized dict (--serialize_dict).")
 	;
 
@@ -342,6 +365,10 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("subG_depth")) {
       subgN = vm["subG_depth"].as<size_t>();
+    }
+
+    if (vm.count("sPaths")) {
+      sPathV = vm["sPaths"].as<string>();
     }
 
     if (vm.count("dict_file")) {
@@ -444,6 +471,12 @@ int main(int argc, char *argv[]) {
   if(subg_init.size()) {
 	Kb::create_from_binfile(kb_file);
 	subg(subg_init, subgN);
+	return 0;
+  }
+
+  if(sPathV.size()) {
+	Kb::create_from_binfile(kb_file);
+	sPath(sPathV);
 	return 0;
   }
 

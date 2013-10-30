@@ -189,8 +189,13 @@ namespace ukb {
   };
 
 
-  bool Kb::bfs (Kb_vertex_t src,
-				std::vector<Kb_vertex_t> & parents) const {
+  // Note:
+  //
+  // after bfs, if (parents[v] == v) and (v != u), then u and v are not
+  // connected in the graph.
+
+  bool Kb::bfs(Kb_vertex_t src,
+			   std::vector<Kb_vertex_t> & parents) const {
 
 	size_t m = num_vertices(*m_g);
 	if(parents.size() == m) {
@@ -351,6 +356,36 @@ namespace ukb {
 	  }
 	  E[i].swap(l);
 	}
+  }
+
+  bool Kb::get_shortest_paths(const std::string & src,
+							  const std::vector<std::string> & targets,
+							  std::vector<std::vector<std::string> > & paths) {
+	vector<Kb_vertex_t> parents;
+	Kb_vertex_t u;
+	bool aux;
+	tie(u,aux) = get_vertex_by_name(src);
+	if(!aux) return false;
+	std::vector<std::vector<std::string> >().swap(paths);
+	this->bfs(u, parents);
+	for(std::vector<std::string>::const_iterator it = targets.begin(), end = targets.end();
+		it != end; ++it) {
+	  Kb_vertex_t v;
+	  tie(v,aux) = get_vertex_by_name(*it);
+	  if (!aux) continue;
+	  if (parents[v] == v) continue; // either (u == v) or v is not connected to u.
+	  paths.push_back(vector<string>());
+	  vector<string> & P = paths.back();
+	  // iterate until source is met
+	  P.push_back(get_vertex_name(v));
+	  while(1) {
+		v = parents[v];
+		P.push_back(get_vertex_name(v));
+		if (v == u) break;
+	  }
+	  std::reverse(P.begin(), P.end());
+	}
+	return paths.size();
   }
 
 

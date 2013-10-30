@@ -171,12 +171,6 @@ namespace ukb {
 							  vector<CWord>::const_iterator s_end,
 							  DisambGraph & dgraph) {
 
-	//   if (src_str == "00663525-a") {
-	//     int deb;
-	//     cerr << "Eooo!" << endl;
-	//     deb++;
-	//   }
-
 	//bfs from src
 	std::vector<Kb_vertex_t> parents;
 	Kb & kb = ukb::Kb::instance();

@@ -208,6 +208,15 @@ public:
 					std::vector<std::vector<std::string> > & E,
 					size_t limit = 100);
 
+  // given a source node and a set of targets, compute the shortest paths from
+  // source to each target
+  // Output:
+  //  paths -> a vector with the shortest paths (one elemet per source-target pair)
+
+  bool get_shortest_paths(const std::string & src,
+						  const std::vector<std::string> & targets,
+						  std::vector<std::vector<std::string> > & paths);
+
   std::ostream & dump_graph(std::ostream & o) const;
 
   static void create_from_kbgraph16(Kb16 & kbg) ;
