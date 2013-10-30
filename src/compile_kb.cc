@@ -190,6 +190,20 @@ void iquery() {
   }
 }
 
+void subg(const string & initV, size_t N) {
+
+  std::vector<std::string> V;
+  std::vector<std::vector<std::string> > E;
+  Kb::instance().get_subgraph(initV, V, E, N);
+  cout << "graph UMLS_subg {\n";
+  for (size_t i = 0, im = V.size(); i != im; ++i) {
+	for(size_t j = 0, jm = E[i].size(); j != jm; ++j) {
+	  cout << V[i] << " -- " << E[i][j] << ";\n";
+	}
+  }
+  cout << "}\n";
+}
+
 int main(int argc, char *argv[]) {
 
   srand(3);
@@ -202,6 +216,10 @@ int main(int argc, char *argv[]) {
   bool opt_query = false;
   bool opt_iquery = false;
   bool opt_dump = false;
+
+  // subgraph options
+  string subg_init;
+  size_t subgN = 100;
 
   string fullname_out("kb_wnet.bin");
   string kb_file;
@@ -255,6 +273,8 @@ int main(int argc, char *argv[]) {
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
     ("query,q", value<string>(), "Given a vertex name, display its relations.")
     ("iquery,Q", "Interactively query graph.")
+	("subG,S", value<string>(), "Get a subgraph starting at this vertex. See subG_depth.")
+	("subG_N", value<size_t>(), "Max. number of nodes in subgraph (see --subG). Default is 100.")
     ("dict_file,D", value<string>(), "Dictionary text file. Use only when querying (--quey or --iquery) or when creating serialized dict (--serialize_dict).")
 	;
 
@@ -314,6 +334,14 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("iquery")) {
       opt_iquery = true;
+    }
+
+    if (vm.count("subG")) {
+      subg_init = vm["subG"].as<string>();
+    }
+
+    if (vm.count("subG_depth")) {
+      subgN = vm["subG_depth"].as<size_t>();
     }
 
     if (vm.count("dict_file")) {
@@ -410,6 +438,12 @@ int main(int argc, char *argv[]) {
   if (opt_query) {
 	Kb::create_from_binfile(kb_file);
 	query(query_vertex);
+	return 0;
+  }
+
+  if(subg_init.size()) {
+	Kb::create_from_binfile(kb_file);
+	subg(subg_init, subgN);
 	return 0;
   }
 
