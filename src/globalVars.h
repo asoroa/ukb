@@ -129,7 +129,7 @@ namespace ukb {
 
 	//     static size_t vertexFreqMin;
 
-	//     // Edges with a weigth below 0.1 are arbitrarily (totally) elminiated
+	//     // Edges with a weight below 0.1 are arbitrarily (totally) elminiated
 	//     static float ertzPisuMin;
 
 	//     // Context containing fewer than 4 words are discarded

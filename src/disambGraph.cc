@@ -154,9 +154,9 @@ namespace ukb {
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  // Reset edge weigths
+  // Reset edge weights
 
-  void DisambGraph::reset_edge_weigths() {
+  void DisambGraph::reset_edge_weights() {
 	graph_traits<DisambG>::edge_iterator it, end;
 	tie(it, end) = edges(g);
 	for(;it != end; ++it)
@@ -873,7 +873,7 @@ namespace ukb {
   public:
 	myE_writer(const DisambG & g_) : g(g_) {};
 	void operator()(std::ostream& out, const Dis_edge_t & e) const {
-	  out << " [weigth=\"" << get(edge_weight, g, e) << "\"]";
+	  out << " [weight=\"" << get(edge_weight, g, e) << "\"]";
 	}
 	const DisambG & g;
   };
@@ -914,6 +914,6 @@ namespace ukb {
 						  //boost::default_writer(),
 						  //make_my_writer(get(vertex_name, g), "label"),
 						  make_my_writer(get(vertex_name, g), "label"),
-						  make_my_writer(get(edge_weight, g), "weigth"));
+						  make_my_writer(get(edge_weight, g), "weight"));
   }
 }

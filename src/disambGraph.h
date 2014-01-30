@@ -67,7 +67,7 @@ namespace ukb {
 
 	DisambG & graph() {return g;}
 	void prune() {}
-	void reset_edge_weigths();
+	void reset_edge_weights();
 
 
 	// prank
