@@ -131,7 +131,7 @@ namespace ukb {
 
 	// ask for edge preperties
 
-	std::vector<std::string> get_edge_reltypes(Kb16_edge_t e) const;
+	std::vector<std::string> edge_reltypes(Kb16_edge_t e) const;
 
 
 	// Nodes can be synsets or words

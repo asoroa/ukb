@@ -114,7 +114,7 @@ namespace ukb {
 	  ++m_esize;
 	}
 	eProp[eit->second].etype |= etype;
-	eProp[eit->second].weight += w;
+	eProp[eit->second].weight = w;
 
 	return eit->second;
   }

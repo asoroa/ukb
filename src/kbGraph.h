@@ -46,7 +46,9 @@ namespace ukb {
 
   typedef graph_traits<KbGraph>::vertex_descriptor Kb_vertex_t;
   typedef graph_traits<KbGraph>::edge_descriptor Kb_edge_t;
-  typedef graph_traits < KbGraph >::vertices_size_type Kb_vertex_size_t;
+  typedef graph_traits<KbGraph>::vertices_size_type Kb_vertex_size_t;
+  typedef graph_traits<KbGraph>::out_edge_iterator Kb_out_edge_iter_t;
+  typedef graph_traits<KbGraph>::in_edge_iterator Kb_in_edge_iter_t;
 
 class Kb {
 
@@ -132,12 +134,20 @@ public:
   const std::string & get_vertex_name(Kb_vertex_t u) const {return (*m_g)[u].name;}
   //std::string  get_vertex_gloss(Kb_vertex_t u) const {return get(vertex_gloss, g, u);}
 
+  // Get out-edges for vertex u
+
+  std::pair<Kb_out_edge_iter_t, Kb_out_edge_iter_t> out_neighbors(Kb_vertex_t u);
+  std::pair<Kb_in_edge_iter_t, Kb_in_edge_iter_t> in_neighbors(Kb_vertex_t u);
+
   Kb_vertex_t edge_source(Kb_edge_t e) const { return source(e, *m_g); }
   Kb_vertex_t edge_target(Kb_edge_t e) const { return target(e, *m_g); }
 
   // ask for edge preperties
 
-  std::vector<std::string> get_edge_reltypes(Kb_edge_t e) const;
+  std::vector<std::string> edge_reltypes(Kb_edge_t e) const;
+
+  float get_edge_weight(Kb_edge_t e) const;
+  void set_edge_weight(Kb_edge_t e, float w);
 
   // get static pageRank
 

@@ -195,7 +195,7 @@ namespace ukb {
 	put(edge_rtype, g, e, m);
   }
 
-  std::vector<std::string> Kb16::get_edge_reltypes(Kb16_edge_t e) const {
+  std::vector<std::string> Kb16::edge_reltypes(Kb16_edge_t e) const {
 	vector<string> res;
 	boost::uint32_t m = get(edge_rtype, g, e);
 	vector<string>::size_type idx = 0;

@@ -404,9 +404,26 @@ namespace ukb {
 	m_rtypes.add_type(rel, (*m_g)[e].etype);
   }
 
-  std::vector<std::string> Kb::get_edge_reltypes(Kb_edge_t e) const {
+  std::vector<std::string> Kb::edge_reltypes(Kb_edge_t e) const {
 	return m_rtypes.tvector((*m_g)[e].etype);
   }
+
+  float Kb::get_edge_weight(Kb_edge_t e) const {
+	return (*m_g)[e].weight;
+  }
+
+  void Kb::set_edge_weight(Kb_edge_t e, float w) {
+	(*m_g)[e].weight = w;
+  }
+
+  std::pair<Kb_out_edge_iter_t, Kb_out_edge_iter_t> Kb::out_neighbors(Kb_vertex_t u) {
+  	return out_edges(u, *m_g);
+  }
+
+  std::pair<Kb_in_edge_iter_t, Kb_in_edge_iter_t> Kb::in_neighbors(Kb_vertex_t u) {
+  	return in_edges(u, *m_g);
+  }
+
 
   ////////////////////////////////////////////////////////////////////////////////
   // Query and retrieval
@@ -504,7 +521,7 @@ namespace ukb {
   // i: (inverse) relation type of edge v->u (hyponym, etc). Optional. Useless on undirected graphs.
   // s: source of relation (wn30, kb17, etc). Optional.
   // d: wether the relation is directed. Optional, default is undirected.
-  // w: relation weigth. Must be positive. Optional.
+  // w: relation weight. Must be positive. Optional.
 
 
   struct rel_parse {
@@ -798,7 +815,7 @@ namespace ukb {
 		o << "\n";
 	  for(; e != e_end; ++e) {
 		o << "  ";
-		vector<string> r = get_edge_reltypes(*e);
+		vector<string> r = edge_reltypes(*e);
 		writeV(o, r);
 		o << " " << (*m_g)[target(*e, *m_g)].name;
 		o << " (" << (*m_g)[*e].weight << ")\n";
