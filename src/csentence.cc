@@ -145,27 +145,34 @@ namespace ukb {
 
   size_t CWord::set_concepts(map<string, float> & C) {
 
-	this->empty_synsets();
-
+	std::vector<std::string> syns;
+	std::vector<std::pair<Kb_vertex_t, float> > V;
 	Kb_vertex_t u;
 	bool P;
 	float total_w = 0.0f;
 	size_t N = 0;
 	for(map<string, float>::iterator it = C.begin(), end = C.end();
 		it != end; ++it) {
-	  N++;
 	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(it->first);
 	  if (!P) {
+		if (glVars::input::swallow) continue;
 		throw std::logic_error("reset_concepts: " + it->first + " not in KB");
 	  }
-	  m_syns.push_back(it->first);
-	  m_V.push_back(make_pair(u, it->second));
+	  N++;
+	  syns.push_back(it->first);
+	  V.push_back(make_pair(u, it->second));
 	  total_w += it->second;
 	}
-	if (total_w == 0.0f) return 0;
+	if (total_w == 0.0f) {
+	  this->empty_synsets();
+	  return 0;
+	}
+
+	// Update concepts
 	m_linkw_factor = 1.0 / total_w;
-	// Update ranks
-	vector<float>(m_syns.size(), 0.0).swap(m_ranks);
+	m_syns.swap(syns);
+	m_V.swap(V);
+	vector<float>(N, 0.0).swap(m_ranks);
 	m_disamb = (N == 1); // monosemous words are disambiguated
 	return N;
   }
@@ -388,8 +395,6 @@ namespace ukb {
 		if(!glVars::input::weight)
 		  ctwp.w = 1.0;
 
-		CWord new_cw(ctwp.lemma, ctwp.id, pos, cw_type, ctwp.w);
-
 		if (last_nopv) {
 		  // there is a nopv element 'active'
 		  if (cw_type == CWord::cw_concept) {
@@ -406,6 +411,8 @@ namespace ukb {
 		  }
 		  last_nopv = 0; // and reset last_nopv
 		}
+
+		CWord new_cw(ctwp.lemma, ctwp.id, pos, cw_type, ctwp.w);
 
 		if (cw_type == CWord::cw_tgtword_nopv or cw_type == CWord::cw_ctxword_nopv) {
 		  // New nopv cword
