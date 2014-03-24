@@ -139,6 +139,10 @@ public:
   std::pair<Kb_out_edge_iter_t, Kb_out_edge_iter_t> out_neighbors(Kb_vertex_t u);
   std::pair<Kb_in_edge_iter_t, Kb_in_edge_iter_t> in_neighbors(Kb_vertex_t u);
 
+  bool exists_edge(Kb_vertex_t u, Kb_vertex_t v) const {
+	return edge(u, v, *m_g).second;
+  }
+
   Kb_vertex_t edge_source(Kb_edge_t e) const { return source(e, *m_g); }
   Kb_vertex_t edge_target(Kb_edge_t e) const { return target(e, *m_g); }
 
