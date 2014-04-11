@@ -200,6 +200,17 @@ public:
 
   Kb_vertex_t get_random_vertex() const;
 
+  /**
+  *Functions to delete
+  */
+  void buildSemanticSignatures(std::string vertexName);
+  void rwr(Kb_vertex_t v, float alpha, int n, float p);
+  std::map<Kb_vertex_t, Kb_vertex_t> getVertices(Kb_vertex_t source, bool inFlag);
+
+  std::map<Kb_vertex_t, std::pair<std::vector<Kb_vertex_t>, std::vector<Kb_vertex_t> > > graphToMap(Kb_vertex_t initial, std::map<Kb_vertex_t, std::pair<std::vector<Kb_vertex_t>,std::vector<Kb_vertex_t> > >graph);
+
+  //static void test();
+
   // Graph algorithms
 
   bool bfs (Kb_vertex_t source_synset, std::vector<Kb_vertex_t> & synv) const ;
