@@ -45,8 +45,9 @@ namespace ukb {
 									  edge_prop_t> KbGraph;
 
   typedef graph_traits<KbGraph>::vertex_descriptor Kb_vertex_t;
-  typedef graph_traits<KbGraph>::edge_descriptor Kb_edge_t;
+  typedef graph_traits<KbGraph>::vertex_iterator Kb_vertex_iter_t;
   typedef graph_traits<KbGraph>::vertices_size_type Kb_vertex_size_t;
+  typedef graph_traits<KbGraph>::edge_descriptor Kb_edge_t;
   typedef graph_traits<KbGraph>::out_edge_iterator Kb_out_edge_iter_t;
   typedef graph_traits<KbGraph>::in_edge_iterator Kb_in_edge_iter_t;
 
@@ -133,6 +134,10 @@ public:
   std::string & get_vertex_name(Kb_vertex_t u) {return (*m_g)[u].name;}
   const std::string & get_vertex_name(Kb_vertex_t u) const {return (*m_g)[u].name;}
   //std::string  get_vertex_gloss(Kb_vertex_t u) const {return get(vertex_gloss, g, u);}
+
+  // Get vertices iterator
+
+  std::pair<Kb_vertex_iter_t, Kb_vertex_iter_t> vertices() { return boost::vertices(*m_g); }
 
   // Get out-edges for vertex u
 
