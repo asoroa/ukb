@@ -175,7 +175,7 @@ void sPath(const string & sPathV) {
 }
 
 //FUNCTION TO DELETE
-  static void test(){
+/*  static void test(){
     Kb_out_edge_iter_t it, end;
       Kb_in_edge_iter_t in_it, in_end;
       Kb_vertex_t u;
@@ -199,7 +199,7 @@ void sPath(const string & sPathV) {
       }
       kb.dump_graph(cout);
     }
-
+*/
 
 
   //START OF THE MAIN FUNCTION
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
   bool opt_info = false;
   bool opt_Info = false;
   bool opt_query = false;
-  bool opt_iquery = false;
+  bool opt_semSign = false;
   bool opt_dump = false;
 
   // subgraph options
@@ -318,8 +318,8 @@ int main(int argc, char *argv[]) {
       kb_binfile = vm["kb_binfile"].as<string>();
     }
 
-    if (vm.count("iquery")) {
-      opt_iquery = true;
+    if (vm.count("sem_signatures")) {
+      opt_semSign = true;
     }
 
     if (vm.count("dict_file")) {
@@ -346,9 +346,26 @@ int main(int argc, char *argv[]) {
   }
 
   //Kb::create_from_binfile(kb_binfile); // load graph
-  test();
-  if (opt_iquery) {
-        iquery();
+  //test();
+  if (opt_semSign) {
+        //iquery();
+    std::map<Kb_vertex_t, Kb_vertex_t> verticesMap;
+    Kb_vertex_t v;
+    bool aux = false; 
+
+
+   
+    Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
+    Kb & kb = ukb::Kb::instance();
+    tie(v, aux) = kb.get_vertex_by_name("00000001n");
+
+    Kb::buildSemanticSignatures(v, verticesMap);
+    //if(!aux){
+      //Random Walk with Restart algorith setup based in the document experimental parameters:  Alpha=0.85, N=1.000.000 and restart probability (p)=0.6
+      //rwr(v, 0.85, 1000000, 0.6);  
+    //}
+    
+
         return 0;
   }
 

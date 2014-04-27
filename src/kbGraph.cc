@@ -1024,7 +1024,7 @@ namespace ukb {
    *
    */
 
-     std::map<Kb_vertex_t, std::pair<std::map<Kb_vertex_t, Kb_vertex_t>, std::map<Kb_vertex_t, Kb_vertex_t> > > graphToMap(Kb_vertex_t initial, std::map<Kb_vertex_t, std::pair<std::map<Kb_vertex_t, Kb_vertex_t>,std::map<Kb_vertex_t, Kb_vertex_t> > > graph){
+    /* std::map<Kb_vertex_t, std::pair<std::map<Kb_vertex_t, Kb_vertex_t>, std::map<Kb_vertex_t, Kb_vertex_t> > > graphToMap(Kb_vertex_t initial, std::map<Kb_vertex_t, std::pair<std::map<Kb_vertex_t, Kb_vertex_t>,std::map<Kb_vertex_t, Kb_vertex_t> > > graph){
  		cout << "Graph is going to be created" << endl;
       	Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
       	Kb & kb = ukb::Kb::instance();
@@ -1102,93 +1102,90 @@ namespace ukb {
 
      		}
 
-     }
+     }*/
 
-   /*
-  void Kb::buildSemanticSignatures(string vertexName){
+   
+  void buildSemanticSignatures(Kb_vertex_t vertex, std::map<Kb_vertex_t, Kb_vertex_t>& verticesMap){
 		
-		//Creates two vectors (all IN and OUT vertices) of the given vertex.
-		//The IN vector will be a simple vector.  
-		//Each element of the OUT vector will contain the vertex itself and its all OUT vertices vector
-		//Then we will analyze the all elements in IN vector seeing if they are in the each element of OUT vectors OUT vertex.  When this condition happens we add in one unit to the weight of the edge.
-		//Finishing, we will do this again for each and every one of the OUT vertices, recursively.
 
 	    Kb_out_edge_iter_t it, end, itOut, itOutEnd;
-	    Kb_in_edge_iter_t in_it, in_end, itIn, itInEnd;
-	    Kb_vertex_t u; //Source vertex
-	    Kb_vertex_t v; //Auxiliar vertex, i.e returning OUT or IN vertex
-	    Kb_vertex_t x; //Another auxiliar vertex.
+	    Kb_in_edge_iter_t itIn, itInEnd;
+	    Kb_vertex_t v; //Source vertex
+	    Kb_vertex_t u; //Auxiliar vertex, i.e returning OUT or IN vertex
 	    bool aux;
-	    float w = 1.0;
-
 	    
-		std::map<std::string, Kb_vertex_t> inVertexMap; //HashMap for the IN vertices. (UNUSED?!?!) It'll be used to collect the IN vertices of each out vertex of the main vertex.  KEY:  Vertex name.  VALUE:  Vertex object.
-	    std::map<std::string, Kb_vertex_t> outVertexMap; //It has the same purpose of the inVertexMap but instead it0ll be used for the OUT vertices.  KEY:  Vertex name.  VALUE:  Vertex object.
+		std::map<std::string, Kb_vertex_t> inVertexMap; //HashMap for the IN vertices. It'll be used to collect the IN vertices of each out vertex of the main vertex.  KEY:  Vertex name.  VALUE:  Vertex object.
+		std::map<std::string, Kb_vertex_t>::iterator inMapIt;
 
-	    std::vector<Kb_vertex_t> inVertexVector; //Vector containing IN vertices of the main vertex.  
-	    //The main vertex will be considered as the vertes wich is analyzed. This is going to be changing to analyze all vertices of the graph.
-	    std::vector<std::pair<Kb_vertex_t, outVertexMap>> outVertexVector; //Vector containing OUT vertices of the main vertex
-	    
-
+		std::map<Kb_vertex_t, Kb_vertex_t>::iterator verticesIt;
 
 	    Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
 	    Kb & kb = ukb::Kb::instance();
-		//tie(u, aux) = kb.get_vertex_by_name("00000001n");
-		tie(u, aux) = kb.get_vertex_by_name(vertexName);
-	    if(!aux){
-	    	tie(itIn, itInEnd) = Kb::in_neighbors(u);
-	    	tie(itOut, itOutEnd) = kb.out_neighbors(u);
-	    	for(; itOut != itOutEnd; ++itOut) {
-	    		 v = kb.edge_source(*itOut);
-	    		 outVertexVector.push_back(pair<v, outVertexMap);  //Now we are assigning an empty map to the pair <vertex, map>.  We will fill it up 
-
-	    		if(itIn != itInEnd){
-	    		 v = kb.edge_source(*itIn);
-	    		 inVertexVector.push_back(v);
-	    		 ++itIn;
-	    		}
-	    	}
-	    	//Finished analyzing in and out vertices of the node.  
-	    	//Now it's time to identify triangular relations between nodes. 
-	    	for(int i=0; i < outVertexVector.length; i++){
-				if(outVertexMap.size > 0){ //If the map is not empty clear the content
-					outVertexMap.clear();
-				}
-	    		tie (v, outVertexMap) = outVertexVector[i]; //Fetch one OUT vertex and its OUT vertices
-	    		tie(itOut, itOutEnd) = kb.out_neighbors(v); //Take all it's OUT vertices and put in a map
-	    		for(; itOut != itOutEnd; ++itOutEnd){
-	    			x = kb.edge_source(*itOut);
-	    			outVertexMap.insert(VERTEXNAME, x);
-	    		}
-	    		outVertexVector[i] = std::make_pair(v, outVertexMap); //Reinsert in the ORIGINAL VERTEX OUT vertex vector.  
-	    	}
-
-	    	//Now it's prepared to see if it has triangular relations.  Let's analyze
-	    	outVertexMap.clear();
-	    	for(int i = 0; i < inVertexVector.length; i++){
-	    		for(int j = 0; j < outVertexVector.length; j++){
-	    			tie (x, outVertexMap) = outVertexVector[j];
-	    			outVertexMap.at(inVertexVector[i]); //Catch the exception out_of_range.  This happens when the provided key is not a key of an element in the map.  
-	    			//In this case we have to BREAK the outVertexVector loop.  BUT BEFORE, we have to assign weight 1 to the edge.
-	    			//If there is not an exception we say that there is a triangular relationship 
-	    			w  + = 0.01;
-
-	    			//In all cases, 
-	    			kb.set_edge_weight(*in_it, w);
-	    		}
-	    	}
-
-	    	//For each vertex run this procedure
-	    	for( ;itOut != itOutEnd; ++itOut){
-				v = kb.edge_source(*itOut);
-				buildSemanticSignatures(v);//
-	    	}
-	    	
-	    	
+	    if(!vertex){
+	      tie(v, aux) = kb.get_vertex_by_name("00000001n");	
+	    }else{
+	    	v = vertex;
 	    }
-	    kb.dump_graph(cout);
+		
+		verticesIt = verticesMap.find(v);
+	   	if(verticesIt != verticesMap.end() && vertex){
+	   		return; //If the vertex exists in the analized vertices map then stop the execution.
+	   	}		
+	   	if(verticesMap.size() == Kb::instance().components()){
+	   		return;//If the vertices map elements count is the same as the graph components it means that we've analized all the graph. STOP THE EXECUTION.
+	   	}
+
+	   	verticesIt = verticesMap.end();
+		if(verticesIt != verticesMap.begin()){
+			-- verticesIt;
+		}
+		verticesMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t>(v, v)); //The vertex has not been analized for the triangular relations with its neighbors.  First of all we will insert in the analized vertices map
+
+
+		//Get the vertex IN vertices map
+	    tie(itIn, itInEnd) = kb.in_neighbors(v);
+	    for(; itIn != itInEnd; ++itIn) {
+	    	 u = kb.edge_source(*itIn);
+	    	 inMapIt = inVertexMap.end();
+	    	 if(inMapIt != inVertexMap.begin() ){
+	    	   --inMapIt;
+	    	 }
+	    	 inVertexMap.insert(std::pair<std::string, Kb_vertex_t>(kb.get_vertex_name(u) ,u));
+	    }
+
+	    tie(itOut, itOutEnd) = kb.out_neighbors(v); //Get all OUT vertices
+
+	    for(; itOut != itOutEnd; ++itOut){
+	    	u = kb.edge_target(*itOut);	//For each one get all OUT vertices
+	    	tie(it, end) = kb.out_neighbors(u);
+	    	for(; it != end; ++it){		//See if exists in the source vertex (v) IN vertice set.  
+	    	  u = kb.edge_target(*it);
+			  inMapIt = inVertexMap.find(kb.get_vertex_name(u));
+	    	  if(inMapIt != inVertexMap.end()){
+	    	  	kb.set_edge_weight(*itOut, kb.get_edge_weight(*itOut) + (float)0.1); //If exists increase edges weight
+	    	  }
+	    	}
+		}
+		
+
+	    //For each vertex run this procedure
+   	    tie(itOut, itOutEnd) = kb.out_neighbors(v);
+
+	    for( ;itOut != itOutEnd; ++itOut){
+			u = kb.edge_target(*itOut);
+			buildSemanticSignatures(u, verticesMap);
+	    }	
+
+	     tie(itIn, itInEnd) = kb.in_neighbors(v); 
+
+	    for( ;itIn != itInEnd; ++itIn){
+			u = kb.edge_source(*itIn);
+			buildSemanticSignatures(u, verticesMap);
+	    }	
+	    //kb.dump_graph(cout);
+	}
  
-  }*/
+  
 
 
 	void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
@@ -1216,10 +1213,11 @@ namespace ukb {
       	float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
       	if(random > alpha){
       		typedef std::map<Kb_vertex_t, Kb_vertex_t>::iterator it_type;
-      		std::map<Kb_vertex_t, Kb_vertex_t> auxiliar = getVertices(v, false);
+      		std::map<Kb_vertex_t, Kb_vertex_t> auxiliar = getVertices(v, false);  //Get all OUT vertices in a map
       		int i = int ((auxiliar.size() * random)+0.5); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
       		int j = 0;
-      		for(it_type iterator = auxiliar.begin(); iterator != auxiliar.end(); ++iterator){
+      		it_type iterator = auxiliar.begin();
+      		for(; iterator != auxiliar.end(); ++iterator){  //Move the map iterator to the random position that is chosen
       			if(j == i){
       				break;
       			}
@@ -1238,22 +1236,23 @@ namespace ukb {
 		//PARAMETERS:  
 		//source:  The source vertex to analyze.  
 		//inFlag:  A boolean flag.  When TRUE this function will return sources all IN vertices.  When FALSE, all OUT vertices are returned.
-	 	Kb_in_edge_iter_t itOut, itOutEnd;
-	 	std::vector<Kb_vertex_t> vertexMap;
+	 	Kb_in_edge_iter_t itIn, itInEnd;
+	 	Kb_out_edge_iter_t itOut, itOutEnd;
+	 	std::map<Kb_vertex_t, Kb_vertex_t> vertexMap;
 	 	Kb_vertex_t x;
 	 	Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
 	 	Kb & kb = ukb::Kb::instance();
 	 	if(inFlag){
-			tie(itOut, itOutEnd) = kb.in_neighbors(source);
-			for(; itOut < itOutEnd; ++itOut){
-				x = kb.edge_target(*itOut);
-	    		vertexMap.insert(x, x);
+			tie(itIn, itInEnd) = kb.in_neighbors(source);
+			for(; itIn < itInEnd; ++itIn){
+				x = kb.edge_target(*itIn);
+	    		vertexMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t> (x, x));
 			}
 	 	}else{
 			tie(itOut, itOutEnd) = kb.out_neighbors(source);
 			for(; itOut < itOutEnd; ++itOut){
 				x = kb.edge_source(*itOut);
-	    		vertexMap.insert(x, x);
+	    		vertexMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t> (x, x));
 			}
 	 	}
 		return vertexMap;
