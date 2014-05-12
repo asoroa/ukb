@@ -255,6 +255,7 @@ int main(int argc, char *argv[]) {
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb).")
     ("dict_file,D", value<string>(), "Dictionary text file.")
     ("verbose,v", "Be verbose.")
+    ("sem_signatures,s", "Builds semantic signatures.")
     ;
 
   options_description po_desc_create("Options for creating binary graphs");
@@ -320,6 +321,7 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("sem_signatures")) {
       opt_semSign = true;
+      kb_binfile = vm["sem_signatures"].as<string>();
     }
 
     if (vm.count("dict_file")) {
@@ -328,7 +330,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("minput")) {
-          glVars::input::swallow = true;
+      glVars::input::swallow = true;
     }
 
     if (vm.count("input-file")) {
@@ -354,15 +356,16 @@ int main(int argc, char *argv[]) {
     bool aux = false; 
 
 
-   
-    Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
+    //Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin"); 
+    Kb::create_from_binfile(kb_binfile);
     Kb & kb = ukb::Kb::instance();
-    tie(v, aux) = kb.get_vertex_by_name("00000001n");
-
-    Kb::buildSemanticSignatures(v, verticesMap);
+    //tie(v, aux) = kb.get_vertex_by_name("00000001n");
+    v = kb.get_random_vertex();
+    kb.buildSemanticSignatures(v, verticesMap);
+    //kb.dump_graph(cout);
     //if(!aux){
       //Random Walk with Restart algorith setup based in the document experimental parameters:  Alpha=0.85, N=1.000.000 and restart probability (p)=0.6
-      //rwr(v, 0.85, 1000000, 0.6);  
+      kb.rwr(v, 0.85, 1000000, 0.6);  
     //}
     
 
@@ -373,3 +376,4 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+

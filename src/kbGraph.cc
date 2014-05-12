@@ -32,9 +32,9 @@
 #include <boost/pending/indirect_cmp.hpp>
 
 #if BOOST_VERSION > 104400
-  #include <boost/range/irange.hpp>
+#include <boost/range/irange.hpp>
 #else
-  #include <boost/pending/integer_range.hpp>
+#include <boost/pending/integer_range.hpp>
 #endif
 
 #include <boost/graph/graph_utility.hpp> // for boost::make_list
@@ -759,7 +759,7 @@ namespace ukb {
   // PPV version
 
   void Kb::pageRank_ppv(const vector<float> & ppv_map,
-						 vector<float> & ranks) {
+						vector<float> & ranks) {
 
 	typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
 	property_map<Kb::boost_graph_t, float edge_prop_t::*>::type weight_map = get(&edge_prop_t::weight, *m_g);
@@ -1018,245 +1018,172 @@ namespace ukb {
   }
 
 
-   /**
+  /**
    *
    * TODO:  Egiteko funtzioa
    *
    */
 
-    /* std::map<Kb_vertex_t, std::pair<std::map<Kb_vertex_t, Kb_vertex_t>, std::map<Kb_vertex_t, Kb_vertex_t> > > graphToMap(Kb_vertex_t initial, std::map<Kb_vertex_t, std::pair<std::map<Kb_vertex_t, Kb_vertex_t>,std::map<Kb_vertex_t, Kb_vertex_t> > > graph){
- 		cout << "Graph is going to be created" << endl;
-      	Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
-      	Kb & kb = ukb::Kb::instance();
-      	Kb_vertex_t u;
-      	bool aux = false;
-      	if(initial == 0){
-      		tie(u, aux) = kb.get_vertex_by_name("bn00000001n");
-      	}else{
-      		u = initial;
-      	}
-      	try{ //If the vertex u exists in the graph we will end the execution.  If not, we will get all its IN and OUT vertices and put in the graph
-      		graph.at(u);
-      		//return graph;
-      	}catch(...){
-      		std::map<Kb_vertex_t, Kb_vertex_t> outVertexMap = Kb::getVertices(u, false);
-      		std::map<Kb_vertex_t, Kb_vertex_t> inVertexMap = Kb::getVertices(u, true);
-      		std::pair <std::map<Kb_vertex_t>, std::map<Kb_vertex_t> > maps;  
-      		maps = std::make_pair(outVertexMap, inVertexMap);
-      		graph.insert(u, maps);
 
-			typedef std::map<Kb_vertex_t, Kb_vertex_t>::iterator it_type;
-			for(it_type iterator = outVertexMap.begin(); iterator != outVertexMap.end(); iterator++) {
-    		
-    				graph = graphToMap(iterator->second, graph);	
-			}
-			for(it_type iterator = inVertexMap.begin(); iterator != inVertexMap.end(); iterator++) {
-    			
-    				graph = graphToMap(iterator->second, graph);	
-			}
-      		//return graph;
-      	}
-      return graph;
-     }
+  void Kb::buildSemanticSignatures(Kb_vertex_t vertex, std::map<Kb_vertex_t, Kb_vertex_t>& verticesMap){
 
-     void buildSemanticSignatures (Kb_vertex_t initial){
-     	std::map<Kb_vertex_t, std::pair<std::map<Kb_vertex_t, Kb_vertex_t>, std::map<Kb_vertex_t, Kb_vertex_t> > > graph;
-     	typedef std::map<Kb_vertex_t, std::pair<std::map<Kb_vertex_t, Kb_vertex_t>, std::map<Kb_vertex_t, Kb_vertex_t> > >::iterator itGraph;
+	Kb_out_edge_iter_t it, end, itOut, itOutEnd;
+	Kb_in_edge_iter_t itIn, itInEnd;
+	Kb_vertex_t v; //Source vertex
+	Kb_vertex_t u; //Auxiliar vertex, i.e returning OUT or IN vertex
+	bool aux;
 
+	std::map<std::string, Kb_vertex_t> inVertexMap; //HashMap for the IN vertices. It'll be used to collect the IN vertices of each out vertex of the main vertex.  KEY:  Vertex name.  VALUE:  Vertex object.
+	std::map<std::string, Kb_vertex_t>::iterator inMapIt;
 
-		std::map<Kb_vertex_t, Kb_vertex_t> vSecondInMap, vSecondOutMap, inMap, outMap;
-     	Kb_vertex_t v;
-     	bool aux  = true;
-     	std::vector<Kb_vertex_t> inVector, outVector;
-     	Kb_in_edge_iter_t edge_it;
+	std::map<Kb_vertex_t, Kb_vertex_t>::iterator verticesIt;
 
-     		graph = graphToMap(0, graph);
-     		if(v == 0){
-     			Kb & kb = ukb::Kb::instance();
-      			tie(v, aux) = kb.get_vertex_by_name("bn00000001n");
-      		}else{
-      			v = initial;
-      		}
+	Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
+	Kb & kb = ukb::Kb::instance();
+	//if(!vertex){
+	  //tie(v, aux) = kb.get_vertex_by_name("00000001n");
+	//}else{
+	  v = vertex;
+	//}
+	//  cout << "Going to build weights for the edge ";
+	//  cout << kb.get_vertex_name(v)<< endl;
 
-      		if(aux != 0){
-    			tie (inMap, outMap) = graph.at(v);  // Get IN and OUT vertices of the first vertex (v)
-    		
-     				for(itGraph it = outMap.begin(); it != outMap.end(); ++it){ 
-     					
-     						tie (vSecondInMap, vSecondOutMap) = graph.at(it->second); 
-
-		     				for(itGraph itSecond = vSecondOutMap.begin(); itSecond != vSecondOutMap.end(); ++itSecond){ 
-		     					try{
-
-		     						inMap.at(itSecond->second);
-		     						//Increase weight of the edge between the first vertex and the out vertex
-
-		     					}catch(...){
-		     						//Nothing to do
-		     					}
-		     				}
-     					
-     				}
-
-     				//Iterate recursively trough the graph
-
-     		}
-
-     }*/
-
-   
-  void buildSemanticSignatures(Kb_vertex_t vertex, std::map<Kb_vertex_t, Kb_vertex_t>& verticesMap){
-		
-
-	    Kb_out_edge_iter_t it, end, itOut, itOutEnd;
-	    Kb_in_edge_iter_t itIn, itInEnd;
-	    Kb_vertex_t v; //Source vertex
-	    Kb_vertex_t u; //Auxiliar vertex, i.e returning OUT or IN vertex
-	    bool aux;
-	    
-		std::map<std::string, Kb_vertex_t> inVertexMap; //HashMap for the IN vertices. It'll be used to collect the IN vertices of each out vertex of the main vertex.  KEY:  Vertex name.  VALUE:  Vertex object.
-		std::map<std::string, Kb_vertex_t>::iterator inMapIt;
-
-		std::map<Kb_vertex_t, Kb_vertex_t>::iterator verticesIt;
-
-	    Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
-	    Kb & kb = ukb::Kb::instance();
-	    if(!vertex){
-	      tie(v, aux) = kb.get_vertex_by_name("00000001n");	
-	    }else{
-	    	v = vertex;
-	    }
-		
-		verticesIt = verticesMap.find(v);
-	   	if(verticesIt != verticesMap.end() && vertex){
-	   		return; //If the vertex exists in the analized vertices map then stop the execution.
-	   	}		
-	   	if(verticesMap.size() == Kb::instance().components()){
-	   		return;//If the vertices map elements count is the same as the graph components it means that we've analized all the graph. STOP THE EXECUTION.
-	   	}
-
-	   	verticesIt = verticesMap.end();
-		if(verticesIt != verticesMap.begin()){
-			-- verticesIt;
-		}
-		verticesMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t>(v, v)); //The vertex has not been analized for the triangular relations with its neighbors.  First of all we will insert in the analized vertices map
-
-
-		//Get the vertex IN vertices map
-	    tie(itIn, itInEnd) = kb.in_neighbors(v);
-	    for(; itIn != itInEnd; ++itIn) {
-	    	 u = kb.edge_source(*itIn);
-	    	 inMapIt = inVertexMap.end();
-	    	 if(inMapIt != inVertexMap.begin() ){
-	    	   --inMapIt;
-	    	 }
-	    	 inVertexMap.insert(std::pair<std::string, Kb_vertex_t>(kb.get_vertex_name(u) ,u));
-	    }
-
-	    tie(itOut, itOutEnd) = kb.out_neighbors(v); //Get all OUT vertices
-
-	    for(; itOut != itOutEnd; ++itOut){
-	    	u = kb.edge_target(*itOut);	//For each one get all OUT vertices
-	    	tie(it, end) = kb.out_neighbors(u);
-	    	for(; it != end; ++it){		//See if exists in the source vertex (v) IN vertice set.  
-	    	  u = kb.edge_target(*it);
-			  inMapIt = inVertexMap.find(kb.get_vertex_name(u));
-	    	  if(inMapIt != inVertexMap.end()){
-	    	  	kb.set_edge_weight(*itOut, kb.get_edge_weight(*itOut) + (float)0.1); //If exists increase edges weight
-	    	  }
-	    	}
-		}
-		
-
-	    //For each vertex run this procedure
-   	    tie(itOut, itOutEnd) = kb.out_neighbors(v);
-
-	    for( ;itOut != itOutEnd; ++itOut){
-			u = kb.edge_target(*itOut);
-			buildSemanticSignatures(u, verticesMap);
-	    }	
-
-	     tie(itIn, itInEnd) = kb.in_neighbors(v); 
-
-	    for( ;itIn != itInEnd; ++itIn){
-			u = kb.edge_source(*itIn);
-			buildSemanticSignatures(u, verticesMap);
-	    }	
-	    //kb.dump_graph(cout);
+	verticesIt = verticesMap.find(v);
+	if(verticesIt != verticesMap.end()){
+	  return; //If the vertex exists in the analized vertices map then stop the execution.
 	}
- 
-  
+	
+	verticesMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t>(v, v)); //The vertex has not been analized for the triangular relations with its neighbors.  First of all we will insert in the analized vertices map
 
 
-	void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
+	//Get the vertex IN vertices map
+	tie(itIn, itInEnd) = kb.in_neighbors(v);
+	for(; itIn != itInEnd; ++itIn) {
+	  u = kb.edge_source(*itIn);
+	  inMapIt = inVertexMap.end();
+	  if(inMapIt != inVertexMap.begin() ){
+		--inMapIt;
+	  }
+	  inVertexMap.insert(std::pair<std::string, Kb_vertex_t>(kb.get_vertex_name(u) ,u));
+	}
+
+	tie(itOut, itOutEnd) = kb.out_neighbors(v); //Get all OUT vertices
+
+	for(; itOut != itOutEnd; ++itOut){
+	  u = kb.edge_target(*itOut);	//For each one get all OUT vertices
+	  tie(it, end) = kb.out_neighbors(u);
+	  for(; it != end; ++it){		//See if exists in the source vertex (v) IN vertice set.
+		u = kb.edge_target(*it);
+		inMapIt = inVertexMap.find(kb.get_vertex_name(u));
+		if(inMapIt != inVertexMap.end()){
+		  kb.set_edge_weight(*itOut, kb.get_edge_weight(*itOut) + (float)0.1); //If exists increase edges weight
+		}
+	  }
+	}
+
+
+	//For each vertex run this procedure
+	tie(itOut, itOutEnd) = kb.out_neighbors(v);
+
+	for( ;itOut != itOutEnd; ++itOut){
+	  u = kb.edge_target(*itOut);
+	  buildSemanticSignatures(u, verticesMap);
+	}
+
+	tie(itIn, itInEnd) = kb.in_neighbors(v);
+
+	for( ;itIn != itInEnd; ++itIn){
+	  u = kb.edge_source(*itIn);
+	  buildSemanticSignatures(u, verticesMap);
+	}
+  }
+
+
+
+
+  void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
 
 	/**
-	*v:  The starting vertex
-	*alpha:  Restart probability.  Should be between 0 and 1.
-	*n: Number of step to be executed
-	*p:  The transition probability. Should be between 0 and 1.
-	*/
+	 *v:  The starting vertex
+	 *alpha:  Restart probability.  Should be between 0 and 1.
+	 *n: Number of step to be executed
+	 *p:  The transition probability. Should be between 0 and 1.
+	 */
 
-	  srand (static_cast <unsigned> (time(0)));
+	srand (static_cast <unsigned> (time(0)));
 
-      //typedef boost::mt19937 RNGType; //The mersenne twister generator.
-      //RNGType rng(time(0));  //Instance of the twister generator.  If we don't put time(0)  the random numbers will be the same always.  
-      //That's the main reason to put a time dependant generator creator.  In all executions the generated numbers will be different because the generator itself is different.
-      //boost::uniform_float<> distr(0, 1);  //Distribution distance.  We want from 0 to 1.
-      //boost::variate_generator< RNGType, boost::uniform_float<> > dice(rng, distr);  //Takes the raw numbers and the distribution, and creates the random numbers.
-   	  std::vector<Kb_vertex_t> semSignVector;
-   	  Kb_vertex_t initial = v;
+	//typedef boost::mt19937 RNGType; //The mersenne twister generator.
+	//RNGType rng(time(0));  //Instance of the twister generator.  If we don't put time(0)  the random numbers will be the same always.
+	//That's the main reason to put a time dependant generator creator.  In all executions the generated numbers will be different because the generator itself is different.
+	//boost::uniform_float<> distr(0, 1);  //Distribution distance.  We want from 0 to 1.
+	//boost::variate_generator< RNGType, boost::uniform_float<> > dice(rng, distr);  //Takes the raw numbers and the distribution, and creates the random numbers.
+	std::vector<Kb_vertex_t> semSignVector;  //Semantic signatures of the v vertex
+	Kb_vertex_t initial = v;
+	//Kb & kb = ukb::Kb::instance();
 
-      
-      while(n > 0){
-      	
-      	float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-      	if(random > alpha){
-      		typedef std::map<Kb_vertex_t, Kb_vertex_t>::iterator it_type;
-      		std::map<Kb_vertex_t, Kb_vertex_t> auxiliar = getVertices(v, false);  //Get all OUT vertices in a map
-      		int i = int ((auxiliar.size() * random)+0.5); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
-      		int j = 0;
-      		it_type iterator = auxiliar.begin();
-      		for(; iterator != auxiliar.end(); ++iterator){  //Move the map iterator to the random position that is chosen
-      			if(j == i){
-      				break;
-      			}
-      		}
-      		semSignVector.push_back(auxiliar.at(iterator->first)); //Add to the semantic signature group
-      		v = auxiliar.at(iterator->first);
-       	}else{
-       		v = initial;
-      	}
-      	n--;
-    	 }
+	while(n > 0){
+
+	  float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+	  if(random > alpha){
+		typedef std::map<Kb_vertex_t, Kb_vertex_t>::iterator it_type;
+		std::map<Kb_vertex_t, Kb_vertex_t> auxiliar = getVertices(v, false);  //Get all OUT vertices in a map
+		//int i = int ((auxiliar.size() * random)+0.5); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
+		int i = int ((auxiliar.size() - 1) * random); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
+		int j = 0;
+		it_type iterator;
+		it_type auxIterator = auxiliar.begin();
+		for(iterator = auxiliar.begin(); iterator != auxiliar.end(); ++iterator){  //Move the map iterator to the random position that is chosen
+		  ++auxIterator;
+		  if(auxIterator == auxiliar.end()){
+		    break;
+		  }
+		  if(j == i){
+		    break;
+		  }
+		  ++j;
+		}
+		//std::cout << " Auxiliar size:" ;
+		//std::cout << auxiliar.size() << std::endl;
+		//std::cout << " Random number:";
+		//std::cout << random << std::endl;
+		//std::cout << " i number:";
+		//std::cout << i << std::endl;
+		semSignVector.push_back(auxiliar.at(iterator->first)); //Add to the semantic signature group
+		//std::cout << "Auxiliar map's second at function" << std::endl;
+		v = auxiliar.at(iterator->first);
+	  }else{
+		v = initial;
+	  }
+	  n--;
 	}
+  }
 
-	std::map<Kb_vertex_t, Kb_vertex_t> Kb::getVertices(Kb_vertex_t source, bool inFlag){
-		//Returns a map containing source vertex's all in and out vertices in a array.  
-		//PARAMETERS:  
-		//source:  The source vertex to analyze.  
-		//inFlag:  A boolean flag.  When TRUE this function will return sources all IN vertices.  When FALSE, all OUT vertices are returned.
-	 	Kb_in_edge_iter_t itIn, itInEnd;
-	 	Kb_out_edge_iter_t itOut, itOutEnd;
-	 	std::map<Kb_vertex_t, Kb_vertex_t> vertexMap;
-	 	Kb_vertex_t x;
-	 	Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
-	 	Kb & kb = ukb::Kb::instance();
-	 	if(inFlag){
-			tie(itIn, itInEnd) = kb.in_neighbors(source);
-			for(; itIn < itInEnd; ++itIn){
-				x = kb.edge_target(*itIn);
-	    		vertexMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t> (x, x));
-			}
-	 	}else{
-			tie(itOut, itOutEnd) = kb.out_neighbors(source);
-			for(; itOut < itOutEnd; ++itOut){
-				x = kb.edge_source(*itOut);
-	    		vertexMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t> (x, x));
-			}
-	 	}
-		return vertexMap;
+  std::map<Kb_vertex_t, Kb_vertex_t> Kb::getVertices(Kb_vertex_t source, bool inFlag){
+	//Returns a map containing source vertex's all in and out vertices in a array.
+	//PARAMETERS:
+	//source:  The source vertex to analyze.
+	//inFlag:  A boolean flag.  When TRUE this function will return sources all IN vertices.  When FALSE, all OUT vertices are returned.
+	Kb_in_edge_iter_t itIn, itInEnd;
+	Kb_out_edge_iter_t itOut, itOutEnd;
+	std::map<Kb_vertex_t, Kb_vertex_t> vertexMap;
+	Kb_vertex_t x;
+	Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
+	Kb & kb = ukb::Kb::instance();
+	if(inFlag){
+	  tie(itIn, itInEnd) = kb.in_neighbors(source);
+	  for(; itIn != itInEnd; ++itIn){
+		x = kb.edge_source(*itIn);
+		vertexMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t> (x, x));
+	  }
+	}else{
+	  tie(itOut, itOutEnd) = kb.out_neighbors(source);
+	  for(; itOut != itOutEnd; ++itOut){
+		x = kb.edge_target(*itOut);
+		vertexMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t> (x, x));
+	  }
 	}
+	return vertexMap;
+  }
 
 
 
