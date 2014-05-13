@@ -203,7 +203,9 @@ public:
   /**
   *Functions to delete
   */
-  void buildSemanticSignatures(Kb_vertex_t vertex, std::map<Kb_vertex_t, Kb_vertex_t>& verticesMap);
+  //void buildSemanticSignatures(Kb_vertex_t vertex, std::map<Kb_vertex_t, Kb_vertex_t>& verticesMap);
+  float intersect_vin_wout(std::set<Kb_vertex_t> & inVertexSet, Kb_vertex_t w);
+  void structural_weighting();
   void rwr(Kb_vertex_t v, float alpha, int n, float p);
   std::map<Kb_vertex_t, Kb_vertex_t> getVertices(Kb_vertex_t source, bool inFlag);
 

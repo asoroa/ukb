@@ -361,11 +361,12 @@ int main(int argc, char *argv[]) {
     Kb & kb = ukb::Kb::instance();
     //tie(v, aux) = kb.get_vertex_by_name("00000001n");
     v = kb.get_random_vertex();
-    kb.buildSemanticSignatures(v, verticesMap);
+    //kb.buildSemanticSignatures(v, verticesMap);
+    kb.structural_weighting();
     //kb.dump_graph(cout);
     //if(!aux){
       //Random Walk with Restart algorith setup based in the document experimental parameters:  Alpha=0.85, N=1.000.000 and restart probability (p)=0.6
-      kb.rwr(v, 0.85, 1000000, 0.6);  
+      //kb.rwr(v, 0.85, 1000000, 0.6);  
     //}
     
 
