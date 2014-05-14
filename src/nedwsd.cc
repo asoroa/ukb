@@ -365,8 +365,12 @@ int main(int argc, char *argv[]) {
     kb.structural_weighting();
     //kb.dump_graph(cout);
     //if(!aux){
-      //Random Walk with Restart algorith setup based in the document experimental parameters:  Alpha=0.85, N=1.000.000 and restart probability (p)=0.6
-      //kb.rwr(v, 0.85, 1000000, 0.6);  
+    //Random Walk with Restart algorith setup based in the document experimental parameters:  Alpha=0.85, N=1.000.000 and restart probability (p)=0.6
+    graph_traits<KbGraph>::vertex_iterator v_it, v_end;
+    tie(v_it, v_end) = vertices(kb.graph());
+    for(; v_it != v_end; ++v_it) {
+      kb.rwr(v, 0.85, 1000000, 0.6);  
+    }
     //}
     
 

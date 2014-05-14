@@ -1092,6 +1092,19 @@ namespace ukb {
 
   }
 
+    struct MyStruct{
+          int weight;
+          Kb_out_edge_iter_t iter;
+
+          MyStruct(int k, Kb_out_edge_iter_t s) : weight(k), iter(s) {}
+        
+
+		  bool operator < (const MyStruct& str) const{
+            return (weight > str.weight);
+    	  }
+		};
+
+
   void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
 
         /**
@@ -1100,6 +1113,8 @@ namespace ukb {
          *n: Number of step to be executed
          *p:  The transition probability. Should be between 0 and 1.
          */
+
+      
 
         srand (static_cast <unsigned> (time(0)));
 
@@ -1110,21 +1125,43 @@ namespace ukb {
         //boost::variate_generator< RNGType, boost::uniform_float<> > dice(rng, distr);  //Takes the raw numbers and the distribution, and creates the random numbers.
         std::vector<Kb_vertex_t> semSignVector;  //Semantic signatures of the v vertex
         Kb_vertex_t initial = v;
-        //Kb & kb = ukb::Kb::instance();
+        Kb_out_edge_iter_t itOut, itOutEnd;
+        Kb & kb = ukb::Kb::instance();
 
         while(n > 0){
 
           float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
           cout << random << endl;
           if(random > alpha){
-                typedef std::map<Kb_vertex_t, Kb_vertex_t>::iterator it_type;
-                std::map<Kb_vertex_t, Kb_vertex_t> auxiliar = getVertices(v, false);  //Get all OUT vertices in a map
+                //typedef std::map<Kb_vertex_t, Kb_vertex_t>::iterator it_type;
+                //std::map<Kb_vertex_t, Kb_vertex_t> auxiliar = getVertices(v, false);  //Get all OUT vertices in a map
                 //int i = int ((auxiliar.size() * random)+0.5); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
-                int i = int ((auxiliar.size() - 1) * random); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
-                int j = 0;
-                it_type iterator;
-                it_type auxIterator = auxiliar.begin();
-                for(iterator = auxiliar.begin(); iterator != auxiliar.end(); ++iterator){  //Move the map iterator to the random position that is chosen
+                //int i = int ((auxiliar.size() - 1) * random); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
+                //int j = 0;
+                //it_type iterator;
+                //it_type auxIterator = auxiliar.begin();
+
+                std::vector <MyStruct> vec;
+                tie(itOut, itOutEnd) = kb.out_neighbors(v);
+                int total_weight = 0;
+          		for(; itOut != itOutEnd; ++itOut){
+                  vec.push_back(MyStruct(kb.get_edge_weight(*itOut), itOut));
+                  total_weight += kb.get_edge_weight(*itOut);
+       			}
+
+       			float r_number = random * total_weight;
+       			int aux = 0;
+       			std::vector<MyStruct>::size_type i = 0;
+       			while(i != vec.size()){
+       				//aux += vec[i].weight;
+       				aux += vec[i].weight;
+       			  if(r_number <= aux){
+       			    break;
+       			  }
+       			  ++i;
+       			}
+
+                /*for(iterator = auxiliar.begin(); iterator != auxiliar.end(); ++iterator){  //Move the map iterator to the random position that is chosen
                   ++auxIterator;
                   if(auxIterator == auxiliar.end()){
                     break;
@@ -1133,18 +1170,22 @@ namespace ukb {
                     break;
                   }
                   ++j;
-                }
+                }*/
                 //std::cout << " Auxiliar size:" ;
                 //std::cout << auxiliar.size() << std::endl;
                 //std::cout << " Random number:";
                 //std::cout << random << std::endl;
                 //std::cout << " i number:";
                 //std::cout << i << std::endl;
-                semSignVector.push_back(auxiliar.at(iterator->first)); //Add to the semantic signature group
+                //semSignVector.push_back(auxiliar.at(iterator->first)); //Add to the semantic signature group
+                //itOut = vec[i].iter;
+                itOut = vec[i].iter;
+                semSignVector.push_back(kb.edge_target(*itOut)); //Add to the semantic signature group
                 //std::cout << "Auxiliar map's second at function" << std::endl;
-                v = auxiliar.at(iterator->first);
+                //v = auxiliar.at(iterator->first);
+                v = kb.edge_target(*itOut);
           }else{
-                v = initial;
+             v = initial;
           }
           n--;
         }
