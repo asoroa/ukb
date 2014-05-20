@@ -124,7 +124,7 @@ void show_neighbours(string & str) {
   Kb & kb = Kb::instance();
   KbGraph & g = kb.graph();
 
-  bool inv;
+  bool inv = false;
   bool aux;
   Kb_vertex_t u;
 
