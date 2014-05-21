@@ -174,32 +174,7 @@ void sPath(const string & sPathV) {
   }
 }
 
-//FUNCTION TO DELETE
-/*  static void test(){
-    Kb_out_edge_iter_t it, end;
-      Kb_in_edge_iter_t in_it, in_end;
-      Kb_vertex_t u;
-      Kb_vertex_t v;
-      bool aux;
-      cout << "Graph is going to be created" << endl;
-      Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin");
-      Kb & kb = ukb::Kb::instance();
-      tie(u, aux) = kb.get_vertex_by_name("bn00000001n");
-      tie(it, end) = kb.out_neighbors(u);
-      for(; it != end; it++) {
-      v = kb.edge_target(*it);
-        cout << "OUT erpina:"<<endl;
-        cout << kb.get_vertex_name(v)<<endl;
-      }
-      tie(in_it, in_end) = kb.in_neighbors(u);
-      for(; in_it != in_end; in_it++) {
-          v = kb.edge_source(*in_it);
-          cout<< "IN erpina"<<endl;
-          cout << kb.get_vertex_name(v)<<endl;
-      }
-      kb.dump_graph(cout);
-    }
-*/
+
 
 
   //START OF THE MAIN FUNCTION
@@ -347,31 +322,22 @@ int main(int argc, char *argv[]) {
         exit(-1);
   }
 
-  //Kb::create_from_binfile(kb_binfile); // load graph
-  //test();
   if (opt_semSign) {
-        //iquery();
     std::map<Kb_vertex_t, Kb_vertex_t> verticesMap;
     Kb_vertex_t v;
     bool aux = false; 
 
-
-    //Kb::create_from_binfile("/media/datuak/Proiektua/konpilatutakoProbaGrafoa.bin"); 
     Kb::create_from_binfile(kb_binfile);
     Kb & kb = ukb::Kb::instance();
-    //tie(v, aux) = kb.get_vertex_by_name("00000001n");
     v = kb.get_random_vertex();
-    //kb.buildSemanticSignatures(v, verticesMap);
     kb.structural_weighting();
     //kb.dump_graph(cout);
-    //if(!aux){
     //Random Walk with Restart algorith setup based in the document experimental parameters:  Alpha=0.85, N=1.000.000 and restart probability (p)=0.6
     graph_traits<KbGraph>::vertex_iterator v_it, v_end;
     tie(v_it, v_end) = vertices(kb.graph());
     for(; v_it != v_end; ++v_it) {
       kb.rwr(v, 0.85, 1000000, 0.6);  
-    }
-    //}
+   } 
     
 
         return 0;

@@ -1104,17 +1104,136 @@ namespace ukb {
     	  }
 		};
 
+void page_rank(Kb_vertex_t v, float alpha, int num_iteration, std::map<Kb_vertex_t, float> &pi_vector){
 
-  void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
+    graph_traits<KbGraph>::vertex_iterator v_it, v_end;
+    Kb & kb = ukb::Kb::instance();
+    Kb_in_edge_iter_t it_in, it_in_end;
+    Kb_out_edge_iter_t it_out, it_out_end;
+
+	if(pi_vector.empty()){
+		for(;v_it != v_end; ++v_it){
+    		pi_vector.insert(std::pair<Kb_vertex_t, float> (*v_it, 1/ num_vertices(*m_g)));
+    	}
+	}
+	tie (it_in, it_in_end) = kb.in_neighbors(v);
+	float j_sum = 0.0;
+	for(;it_in != it_in_end; ++it_in){
+		float pi_j = pi_vector.at(kb.edge_source(*it_in));  
+		float weight = kb.get_edge_weight(*it_in);
+		tie(it_out, it_out_end) = kb.out_neighbors(kb.edge_source(*it_in));
+		int total_weight = 0;
+		for(; it_out != it_out_end; ++it_out){
+			total_weight += kb.get_edge_weight(*it_out);
+		}
+		j_sum += pi_j * weight / total_weight;
+	}
+	float pi_i = (j_sum * alpha) + ((1 - alpha) * (1/  num_vertices(*m_g)));
+    pi_vector.insert(std::pair<Kb_vertex_t, float>(v, pi_i) );
+}
+
+
+  void Kb::monte_carlo_complete(float alpha, int m){
 
         /**
-         *v:  The starting vertex
-         *alpha:  Restart probability.  Should be between 0 and 1.
-         *n: Number of step to be executed
-         *p:  The transition probability. Should be between 0 and 1.
-         */
 
-      
+         *alpha:  Restart probability.  Should be between 0 and 1.
+         *iterations_per_vertex: Also called m, number of steps to be executed on each vertex.
+         */
+    	
+        graph_traits<KbGraph>::vertex_iterator v_it, v_end;
+        Kb & kb = ukb::Kb::instance();
+        tie(v_it, v_end) = vertices(kb.graph());
+    	std::map<Kb_vertex_t, float> pi_vector; //PageRank PI vector.  Key:  Vertex.  Value:  Its PageRank value.
+
+    	//Initialize pi_vector with 1/n value.
+    	for(;v_it != v_end; ++v_it){
+    		pi_vector.insert(std::pair<Kb_vertex_t, float> (*v_it, 0.0));
+
+    	}
+
+    	tie(v_it, v_end) = vertices(kb.graph());
+    	int steps = 0;
+    	while(v_it != v_end) {
+    	  ++steps;
+          kb.do_mc_complete(*v_it, alpha, pi_vector);
+
+      	  if(steps == m){
+      	    ++v_it;
+      	    steps = 0;
+      	  }
+   		} 
+
+   		for(std::map<Kb_vertex_t, float>::iterator pi_it = pi_vector.begin(); pi_it != pi_vector.end(); ++pi_it){  
+   			//The article says:  "For any page i, evaluate pi_j as the total number of visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to take all elements of the vector and multiply them.
+   			float pi_j = (pi_it->first * (1-alpha)) / (num_vertices(*m_g)*m);
+    		pi_vector.insert(std::pair<Kb_vertex_t, float> (*v_it, pi_j));
+   		}
+
+
+}
+/////////////////////////
+
+        void do_mc_complete(Kb_vertex_t v, float alpha, std::map<Kb_vertex_t, float> &pi_vector){
+
+
+		  Kb_out_edge_iter_t itOut, itOutEnd;
+          Kb & kb = ukb::Kb::instance();
+
+          srand (static_cast <unsigned> (time(0)));
+          float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+          Kb_vertex_t vertex = v;
+          while(random <= alpha){
+
+            tie(itOut, itOutEnd) = kb.out_neighbors(vertex);
+            int total_weight = 0;
+            for(; itOut != itOutEnd; ++itOut){
+              total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
+       		 }
+
+       		float r_number = random * total_weight;
+       		int aux = 0;
+       		tie(itOut, itOutEnd) = kb.out_neighbors(vertex);
+       		while (itOut != itOutEnd){  //Based in the edge weights decide by the random number which path to choose
+       			aux += kb.get_edge_weight(*itOut);
+       			if(r_number <= aux){
+       				break;
+       			}
+       			++itOut;
+       		}
+       		vertex = kb.edge_target(*itOut); 
+     		pi_vector.insert(std::pair<Kb_vertex_t, int> (vertex, pi_vector.at(vertex)));
+
+		  srand (static_cast <unsigned> (time(0)));
+          random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+
+          }
+       
+
+        }
+
+
+
+////////////////////////
+
+
+
+  /*void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
+
+        //
+        // v:  The starting vertex
+        // alpha:  Restart probability.  Should be between 0 and 1.
+        // n: Number of step to be executed
+        // p:  The transition probability. Should be between 0 and 1.
+        // 
+    	Kb & kb = ukb::Kb::instance();
+    	graph_traits<KbGraph>::vertex_iterator v_it, v_end;
+      	std::map<Kb_vertex_t, float> pi_vector; //PageRank PI vector.  Key:  Vertex.  Value:  Its PageRank value.
+      	tie(v_it, v_end) = vertices(kb.graph());
+      	//Initializing the PI vector
+   		for(; v_it != v_end; ++v_it) {
+   		  pi_vector.insert(std::pair<Kb_vertex_t, int> (*v_it, 1/num_vertices(*m_g)));
+        } 
 
         srand (static_cast <unsigned> (time(0)));
 
@@ -1126,7 +1245,6 @@ namespace ukb {
         std::vector<Kb_vertex_t> semSignVector;  //Semantic signatures of the v vertex
         Kb_vertex_t initial = v;
         Kb_out_edge_iter_t itOut, itOutEnd;
-        Kb & kb = ukb::Kb::instance();
 
         while(n > 0){
 
@@ -1161,35 +1279,15 @@ namespace ukb {
        			  ++i;
        			}
 
-                /*for(iterator = auxiliar.begin(); iterator != auxiliar.end(); ++iterator){  //Move the map iterator to the random position that is chosen
-                  ++auxIterator;
-                  if(auxIterator == auxiliar.end()){
-                    break;
-                  }
-                  if(j == i){
-                    break;
-                  }
-                  ++j;
-                }*/
-                //std::cout << " Auxiliar size:" ;
-                //std::cout << auxiliar.size() << std::endl;
-                //std::cout << " Random number:";
-                //std::cout << random << std::endl;
-                //std::cout << " i number:";
-                //std::cout << i << std::endl;
-                //semSignVector.push_back(auxiliar.at(iterator->first)); //Add to the semantic signature group
-                //itOut = vec[i].iter;
                 itOut = vec[i].iter;
                 semSignVector.push_back(kb.edge_target(*itOut)); //Add to the semantic signature group
-                //std::cout << "Auxiliar map's second at function" << std::endl;
-                //v = auxiliar.at(iterator->first);
                 v = kb.edge_target(*itOut);
           }else{
              v = initial;
           }
           n--;
         }
-  }
+  }*/
 
   std::map<Kb_vertex_t, Kb_vertex_t> Kb::getVertices(Kb_vertex_t source, bool inFlag){
         //Returns a map containing source vertex's all in and out vertices in a array.

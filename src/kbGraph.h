@@ -201,12 +201,14 @@ public:
   Kb_vertex_t get_random_vertex() const;
 
   /**
-  *Functions to delete
+  *Project's functions
   */
-  //void buildSemanticSignatures(Kb_vertex_t vertex, std::map<Kb_vertex_t, Kb_vertex_t>& verticesMap);
+  void page_rank(Kb_vertex_t v, float alpha, int num_iteration, std::map<Kb_vertex_t, float> &pi_vector);
+  void do_mc_complete(Kb_vertex_t v, float alpha, std::map<Kb_vertex_t, float> &pi_vector);
+  void monte_carlo_complete(float alpha, int m);
   float intersect_vin_wout(std::set<Kb_vertex_t> & inVertexSet, Kb_vertex_t w);
   void structural_weighting();
-  void rwr(Kb_vertex_t v, float alpha, int n, float p);
+  //void rwr(Kb_vertex_t v, float alpha, int n, float p);
   std::map<Kb_vertex_t, Kb_vertex_t> getVertices(Kb_vertex_t source, bool inFlag);
 
   //std::map<Kb_vertex_t, std::pair<std::vector<Kb_vertex_t>, std::vector<Kb_vertex_t> > > graphToMap(Kb_vertex_t initial, std::map<Kb_vertex_t, std::pair<std::vector<Kb_vertex_t>,std::vector<Kb_vertex_t> > >graph);

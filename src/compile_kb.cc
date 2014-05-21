@@ -48,7 +48,7 @@ void query (const string & str) {
 }
 
 bool parse_csv(const string & str,
-			   vector<string> & V) {
+         vector<string> & V) {
 
   typedef tokenizer<char_separator<char> > tokenizer_t;
 
@@ -59,7 +59,7 @@ bool parse_csv(const string & str,
 }
 
 void set_source_rels(const string & str,
-					 set<string> & S) {
+           set<string> & S) {
 
   vector<string> V;
   set<string>().swap(S); // empty set
@@ -67,7 +67,7 @@ void set_source_rels(const string & str,
   parse_csv(str, V);
 
   copy(V.begin(), V.end(),
-	   inserter(S, S.end())); // Remove duplicates
+     inserter(S, S.end())); // Remove duplicates
 
 }
 
@@ -76,12 +76,12 @@ void print_iquery_v(KbGraph & g, Kb_vertex_t u, float w = 0, int sp = 0) {
   string hw(g[u].name);
 
   for (int i = 0; i < sp; ++i)
-	cout << "  ";
+  cout << "  ";
   cout << hw;
   if (w)
     cout << ":" << w;
   if (opt_variants)
-	cout << " " << WDict::instance().variant(hw);
+  cout << " " << WDict::instance().variant(hw);
   cout << "\n";
 }
 
@@ -96,25 +96,25 @@ void show_bfs_path(string & str) {
 
   path_str = split(str, " ");
   if(path_str.size() < 2) {
-	cout << "\n"<< " p needs two concepts!";
-	return;
+  cout << "\n"<< " p needs two concepts!";
+  return;
   }
   tie(u, aux) = kb.get_vertex_by_name(path_str[0]);
   if(!aux) {
-	cout << path_str[0] << " not present!";
-	return;
+  cout << path_str[0] << " not present!";
+  return;
   }
 
   tie(v, aux) = kb.get_vertex_by_name(path_str[1]);
   if(!aux) {
-	cout << path_str[1] << " not present!";
-	return;
+  cout << path_str[1] << " not present!";
+  return;
   }
   kb.bfs(u, p);
   Kb_vertex_t w = v;
   while(w != u) {
-	print_iquery_v(g, w, 0, 1);
-	w = p[w];
+  print_iquery_v(g, w, 0, 1);
+  w = p[w];
   }
   print_iquery_v(g, u, 0, 1);
 }
@@ -129,27 +129,27 @@ void show_neighbours(string & str) {
   Kb_vertex_t u;
 
   if (str.substr(0, 2) == "i:") {
-	inv=true;
-	str = str.substr(2);
+  inv=true;
+  str = str.substr(2);
   }
   tie(u, aux) = kb.get_vertex_by_name(str);
   if (aux) {
-	print_iquery_v(g, u);
-	if (!inv) {
-	  graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
-	  tie(it, end) = out_edges(u, g);
-	  for(;it != end; ++it) {
-		print_iquery_v(g, target(*it, g), g[*it].weight, 2);
-	  }
-	} else {
-	  graph_traits<Kb::boost_graph_t>::in_edge_iterator iit , iend;
-	  tie(iit, iend) = in_edges(u, g);
-	  for(;iit != iend; ++iit) {
-		print_iquery_v(g, source(*iit, g), g[*iit].weight, 2);
-	  }
-	}
+  print_iquery_v(g, u);
+  if (!inv) {
+    graph_traits<Kb::boost_graph_t>::out_edge_iterator it , end;
+    tie(it, end) = out_edges(u, g);
+    for(;it != end; ++it) {
+    print_iquery_v(g, target(*it, g), g[*it].weight, 2);
+    }
   } else {
-	cout << "\n"<< str << " not present!\n";
+    graph_traits<Kb::boost_graph_t>::in_edge_iterator iit , iend;
+    tie(iit, iend) = in_edges(u, g);
+    for(;iit != iend; ++iit) {
+    print_iquery_v(g, source(*iit, g), g[*iit].weight, 2);
+    }
+  }
+  } else {
+  cout << "\n"<< str << " not present!\n";
   }
 }
 
@@ -158,35 +158,35 @@ void show_dict_entries(const string & str) {
   WDict_entries entries = WDict::instance().get_entries(str);
 
   if (!entries.size()) {
-	cout << str << " not in dictionary.\n";
-	return;
+  cout << str << " not in dictionary.\n";
+  return;
   }
   cout << str << " ->";
   for(size_t i = 0; i < entries.size(); i++) {
-	cout << " " << entries.get_entry_str(i) << ":" << entries.get_freq(i);
+  cout << " " << entries.get_entry_str(i) << ":" << entries.get_freq(i);
   }
   cout << "\n";
 }
 
 void iquery() {
 
-  while	(cin) {
-	string str;
-	size_t l;
-	cout << "\nQ:";
-	read_line_noblank(cin, str, l);;
-	if (str == "q") break;
-	if (str.substr(0, 2) == "p:") {
-	  str = str.substr(2);
-	  show_bfs_path(str);
-	  continue;
-	}
-	if (str.substr(0, 2) == "d:") {
-	  str = str.substr(2);
-	  show_dict_entries(str);
-	  continue;
-	}
-	show_neighbours(str);
+  while (cin) {
+  string str;
+  size_t l;
+  cout << "\nQ:";
+  read_line_noblank(cin, str, l);;
+  if (str == "q") break;
+  if (str.substr(0, 2) == "p:") {
+    str = str.substr(2);
+    show_bfs_path(str);
+    continue;
+  }
+  if (str.substr(0, 2) == "d:") {
+    str = str.substr(2);
+    show_dict_entries(str);
+    continue;
+  }
+  show_neighbours(str);
   }
 }
 
@@ -197,9 +197,9 @@ void subg(const string & initV, size_t N) {
   Kb::instance().get_subgraph(initV, V, E, N);
   cout << "graph UMLS_subg {\n";
   for (size_t i = 0, im = V.size(); i != im; ++i) {
-	for(size_t j = 0, jm = E[i].size(); j != jm; ++j) {
-	  cout << V[i] << " -- " << E[i][j] << ";\n";
-	}
+  for(size_t j = 0, jm = E[i].size(); j != jm; ++j) {
+    cout << V[i] << " -- " << E[i][j] << ";\n";
+  }
   }
   cout << "}\n";
 }
@@ -211,17 +211,17 @@ void sPath(const string & sPathV) {
   std::vector<std::vector<std::string> > paths;
   aux = split(sPathV, "#");
   if (aux.size() < 2) {
-	cerr << "Spath error: you must at least specify two nodes\n.";
-	exit(-1);
+  cerr << "Spath error: you must at least specify two nodes\n.";
+  exit(-1);
   }
   source = aux[0];
   set<string> S(aux.begin() + 1, aux.end());
   copy(S.begin(), S.end(), back_inserter(targets));
   Kb::instance().get_shortest_paths(source, targets, paths);
   for(std::vector<std::vector<std::string> >::iterator it = paths.begin(), end = paths.end();
-	  it != end; ++it) {
-	writeV(cout, *it);
-	cout << "\n";
+    it != end; ++it) {
+  writeV(cout, *it);
+  cout << "\n";
   }
 }
 
@@ -237,6 +237,7 @@ int main(int argc, char *argv[]) {
   bool opt_query = false;
   bool opt_iquery = false;
   bool opt_dump = false;
+  bool opt_sweight = false;
 
   // subgraph options
   string subg_init;
@@ -283,10 +284,11 @@ int main(int argc, char *argv[]) {
     ("filter_src,f", value<string>(), "Filter relations according to their sources.")
     ("undirected,U", "Force undirected graph.")
     ("rtypes,r", "Keep relation types on edges.")
-	("minput", "Do not die when dealing with malformed input.")
-	("nopos", "Don't filter words by Part of Speech when reading dict.")
-	("note", value<string>(), "Add a comment to the graph.")
-	;
+  ("sweight", "Calculate edge weigths using structural weighting (by counting triangles a la Navigli)")
+  ("minput", "Do not die when dealing with malformed input.")
+  ("nopos", "Don't filter words by Part of Speech when reading dict.")
+  ("note", value<string>(), "Add a comment to the graph.")
+  ;
 
   options_description po_desc_query("Options for querying over binary graphs");
   po_desc_query.add_options()
@@ -295,11 +297,11 @@ int main(int argc, char *argv[]) {
     ("dump", "Dump a serialized graph. Warning: very verbose!.")
     ("query,q", value<string>(), "Given a vertex name, display its relations.")
     ("iquery,Q", "Interactively query graph.")
-	("subG,S", value<string>(), "Get a subgraph starting at this vertex. See subG_depth.")
-	("subG_N", value<size_t>(), "Max. number of nodes in subgraph (see --subG). Default is 100.")
-	("sPaths", value<string>(), "Get shortest paths. Value is a vector of nodes, separated by character '#'. First node is source.")
+  ("subG,S", value<string>(), "Get a subgraph starting at this vertex. See subG_depth.")
+  ("subG_N", value<size_t>(), "Max. number of nodes in subgraph (see --subG). Default is 100.")
+  ("sPaths", value<string>(), "Get shortest paths. Value is a vector of nodes, separated by character '#'. First node is source.")
     ("dict_file,D", value<string>(), "Dictionary text file. Use only when querying (--quey or --iquery) or when creating serialized dict (--serialize_dict).")
-	;
+  ;
 
   options_description po_hidden("Hidden");
   po_hidden.add_options()
@@ -318,9 +320,9 @@ int main(int argc, char *argv[]) {
 
   try {
     store(command_line_parser(argc, argv).
-	  options(po_desc_all).
-	  positional(po_optdesc).
-	  run(), vm);
+    options(po_desc_all).
+    positional(po_optdesc).
+    run(), vm);
     notify(vm);
 
     // If asked for help, don't do anything more
@@ -340,7 +342,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("nopos")) {
-	  glVars::input::filter_pos = false;
+    glVars::input::filter_pos = false;
     }
 
     if (vm.count("serialize_dict")) {
@@ -373,7 +375,7 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("dict_file")) {
       glVars::dict::text_fname = vm["dict_file"].as<string>();
-	  opt_variants = true;
+    opt_variants = true;
     }
 
     if (vm.count("note")) {
@@ -385,24 +387,28 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("filter_src")) {
-	  glVars::kb::filter_src = true;
-	  set_source_rels(vm["filter_src"].as<string>(), src_allowed);
+    glVars::kb::filter_src = true;
+    set_source_rels(vm["filter_src"].as<string>(), src_allowed);
     }
 
     if (vm.count("dump")) {
       opt_dump = true;
     }
 
+    if (vm.count("sweight")) {
+      opt_sweight = true;
+    }
+
     if (vm.count("undirected")) {
-	  glVars::kb::keep_directed = false;
+    glVars::kb::keep_directed = false;
     }
 
     if (vm.count("rtypes")) {
-	  glVars::kb::keep_reltypes = true;
+    glVars::kb::keep_reltypes = true;
     }
 
     if (vm.count("minput")) {
-	  glVars::input::swallow = true;
+    glVars::input::swallow = true;
     }
 
     if (vm.count("input-file")) {
@@ -415,69 +421,69 @@ int main(int argc, char *argv[]) {
   }
   catch(std::exception& e) {
     cerr << e.what() << "\n";
-	exit(-1);
+  exit(-1);
   }
 
   if (!kb_file.size()) {
-	cerr << po_visible << "\n";
+  cerr << po_visible << "\n";
     cerr << "Error: no input files\n" << endl;
-	exit(1);
+  exit(1);
   }
 
   if (opt_info) {
-	Kb::create_from_binfile(kb_file);
-	Kb::instance().display_info(cout);
-	return 0;
+  Kb::create_from_binfile(kb_file);
+  Kb::instance().display_info(cout);
+  return 0;
   }
 
   if (opt_Info) {
-	Kb::create_from_binfile(kb_file);
+  Kb::create_from_binfile(kb_file);
 
-	int id_m, id_M;
-	int od_m, od_M;
-	int comp;
+  int id_m, id_M;
+  int od_m, od_M;
+  int comp;
 
-	Kb::instance().display_info(cout);
+  Kb::instance().display_info(cout);
 
-	tie(id_m, id_M) = Kb::instance().indeg_maxmin();
-	tie(od_m, od_M) = Kb::instance().outdeg_maxmin();
-	comp = Kb::instance().components();
+  tie(id_m, id_M) = Kb::instance().indeg_maxmin();
+  tie(od_m, od_M) = Kb::instance().outdeg_maxmin();
+  comp = Kb::instance().components();
 
-	cout << "In degree (max, min):  (" << id_m << ", " << id_M << ")\n";
-	cout << "Out degree (max, min): (" << od_m << ", " << od_M << ")\n";
-	cout << "Number of (strong) components: " << comp << endl;
+  cout << "In degree (max, min):  (" << id_m << ", " << id_M << ")\n";
+  cout << "Out degree (max, min): (" << od_m << ", " << od_M << ")\n";
+  cout << "Number of (strong) components: " << comp << endl;
 
-	return 0;
+  return 0;
   }
 
   if (opt_iquery) {
-	Kb::create_from_binfile(kb_file);
-	iquery();
-	return 0;
+  Kb::create_from_binfile(kb_file);
+  iquery();
+  return 0;
   }
 
   if (opt_dump) {
-	Kb::create_from_binfile(kb_file);
-	Kb::instance().dump_graph(cout);
-	return 0;
+  Kb::create_from_binfile(kb_file);
+  Kb::instance().dump_graph(cout);
+  return 0;
   }
 
   if (opt_query) {
-	Kb::create_from_binfile(kb_file);
-	query(query_vertex);
-	return 0;
+  Kb::create_from_binfile(kb_file);
+  query(query_vertex);
+  return 0;
   }
 
   if(subg_init.size()) {
-	Kb::create_from_binfile(kb_file);
-	subg(subg_init, subgN);
-	return 0;
+  Kb::create_from_binfile(kb_file);
+  subg(subg_init, subgN);
+  return 0;
   }
 
   if(sPathV.size()) {
-	Kb::create_from_binfile(kb_file);
-	sPath(sPathV);
-	return 0;
+  Kb::create_from_binfile(kb_file);
+  sPath(sPathV);
+  return 0;
   }
 
   if (glVars::verbose) {
@@ -488,36 +494,38 @@ int main(int argc, char *argv[]) {
     cerr << "Reading relations"<< endl;
 
   if (opt_dbfile) {
-	// Serialize dict
-	if (glVars::dict::text_fname.size() == 0) {
-	  cerr << "--serialize_dict error: -D option missing.\n";
-	}
-	if (kb_file.size() == 0) {
-	  cerr << "--serialize_dict error: graph missing.\n";
-	  exit(-1);
-	}
-	Kb::create_from_binfile(kb_file);
-	WDict::instance().write_wdict_binfile(fullname_out);
-	exit(0);
+  // Serialize dict
+  if (glVars::dict::text_fname.size() == 0) {
+    cerr << "--serialize_dict error: -D option missing.\n";
+  }
+  if (kb_file.size() == 0) {
+    cerr << "--serialize_dict error: graph missing.\n";
+    exit(-1);
+  }
+  Kb::create_from_binfile(kb_file);
+  WDict::instance().write_wdict_binfile(fullname_out);
+  exit(0);
   }
 
   try {
-	// If first input file is "-", open std::cin
-	if (kb_file == "-") {
-	  cmdline += " <STDIN>";
-	  Kb::create_from_txt(std::cin, src_allowed );
-	} else {
-	  Kb::create_from_txt(kb_file, src_allowed );
-	}
+  // If first input file is "-", open std::cin
+  if (kb_file == "-") {
+    cmdline += " <STDIN>";
+    Kb::create_from_txt(std::cin, src_allowed );
+  } else {
+    Kb::create_from_txt(kb_file, src_allowed );
+  }
   }  catch(std::exception& e) {
     cerr << e.what() << "\n";
-	exit(-1);
+  exit(-1);
   }
-
 
   if (glVars::verbose)
     cerr << "Writing binary file: "<< fullname_out<< endl;
   Kb::instance().add_comment(cmdline);
+  if (opt_sweight) {
+  Kb::instance().structural_weighting();
+  }
   Kb::instance().write_to_binfile(fullname_out);
   if (glVars::verbose)
     cerr << "Wrote " << num_vertices(Kb::instance().graph()) << " vertices and " << num_edges(Kb::instance().graph()) << " edges" << endl;
