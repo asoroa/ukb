@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
   if (opt_semSign) {
     std::map<Kb_vertex_t, Kb_vertex_t> verticesMap;
     Kb_vertex_t v;
-    bool aux = false; 
+    bool aux = false;
 
     Kb::create_from_binfile(kb_binfile);
     Kb & kb = ukb::Kb::instance();
@@ -335,10 +335,10 @@ int main(int argc, char *argv[]) {
     //Random Walk with Restart algorith setup based in the document experimental parameters:  Alpha=0.85, N=1.000.000 and restart probability (p)=0.6
     graph_traits<KbGraph>::vertex_iterator v_it, v_end;
     tie(v_it, v_end) = vertices(kb.graph());
-    for(; v_it != v_end; ++v_it) {
-      kb.rwr(v, 0.85, 1000000, 0.6);  
-   } 
-    
+    //for(; v_it != v_end; ++v_it) {
+     // kb.rwr(v, 0.85, 1000000, 0.6);
+   //}
+
 
         return 0;
   }

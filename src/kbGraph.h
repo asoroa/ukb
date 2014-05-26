@@ -203,8 +203,11 @@ public:
   /**
   *Project's functions
   */
-  void page_rank(Kb_vertex_t v, float alpha, int num_iteration, std::map<Kb_vertex_t, float> &pi_vector);
-  void do_mc_complete(Kb_vertex_t v, float alpha, std::map<Kb_vertex_t, float> &pi_vector);
+  //void page_rank(Kb_vertex_t v, float alpha, int num_iteration, std::vector<float> &pi_vector);
+
+  void do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector);
+  void monte_carlo_end_point_cyclic(float alpha, int m);
+  void do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector);
   void monte_carlo_complete(float alpha, int m);
   float intersect_vin_wout(std::set<Kb_vertex_t> & inVertexSet, Kb_vertex_t w);
   void structural_weighting();
