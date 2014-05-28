@@ -137,7 +137,7 @@ public:
 
   // Get vertices iterator
 
-  std::pair<Kb_vertex_iter_t, Kb_vertex_iter_t> vertices() { return boost::vertices(*m_g); }
+  std::pair<Kb_vertex_iter_t, Kb_vertex_iter_t> get_vertices() { return boost::vertices(*m_g); }
 
   // Get out-edges for vertex u
 
