@@ -204,6 +204,12 @@ namespace ukb {
   bool calculate_kb_ppr(const CSentence & cs,
 						std::vector<float> & res);
 
+  bool calculate_kb_ppr_mc_complete(const CSentence & cs,
+						std::vector<float> & res, int iterations);
+
+  bool calculate_kb_ppr_mc_end(const CSentence & cs,
+						std::vector<float> & res, int iterations);
+
   bool calculate_kb_ppr_by_word(const CSentence & cs,
 								CSentence::const_iterator tgtw_it,
 								std::vector<float> & ranks);

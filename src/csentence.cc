@@ -667,6 +667,30 @@ namespace ukb {
 	return true;
   }
 
+  bool calculate_kb_ppr_mc_complete(const CSentence & cs,
+						vector<float> & res, int iterations) {
+
+	Kb & kb = ukb::Kb::instance();
+	vector<float> pv;
+	int aux = pv_from_cs_onlyC(cs, pv, cs.end());
+	if (!aux) return false;
+	// Execute Monte Carlo method.
+	kb.monte_carlo_complete(glVars::prank::damping, pv, iterations, res); //Monte Carlo complete path algorithm with m = 100 value.
+	return true;
+  }
+
+  bool calculate_kb_ppr_mc_end(const CSentence & cs,
+						vector<float> & res, int iterations) {
+
+	Kb & kb = ukb::Kb::instance();
+	vector<float> pv;
+	int aux = pv_from_cs_onlyC(cs, pv, cs.end());
+	if (!aux) return false;
+	// Execute Monte Carlo method.
+	kb.monte_carlo_end_point_cyclic(glVars::prank::damping, pv, iterations, res); //Monte Carlo end-point algorithm with m = 100 value.
+	return true;
+  }
+
 
   // Given 2 vectors (va, vb) return the vector going from va to vb
   // res[i] = vb[i] - va[1]

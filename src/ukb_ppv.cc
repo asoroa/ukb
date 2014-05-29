@@ -292,6 +292,12 @@ int main(int argc, char *argv[]) {
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
     ;
 
+  options_description po_desc_mc("Monte Carlo general options");
+  po_desc_mc.add_options()
+    ("mc_complete_path,mc_complete", value<size_t>(), "Perform a Monte Carlo complete path with the given iterations.")
+    ("mc_end_point, mc_end", value<size_t>(), "Perform a Monte Carlo end point with cyclic start with the given iterations.")
+    ;
+
   options_description po_desc_dict("Dictionary options");
   po_desc_dict.add_options()
 	("altdict", value<string>(), "Provide an alternative dictionary overriding the values of default dictionary.")
@@ -436,6 +442,19 @@ int main(int argc, char *argv[]) {
 		goto END;
 	  }
       glVars::prank::damping = dp;
+    }
+
+    if (vm.count("mc_complete_path")) {
+      iterations = vm["mc_complete_path"].as<int>();
+      //check_convergence = true;
+      vector<float> ranks;
+      bool ok = calculate_kb_ppr_mc_complete(cs,ranks, iterations);
+    }
+
+     if (vm.count("mc_end_point")) {
+      iterations = vm["mc_end_point"].as<int>();
+      //check_convergence = true;
+      bool ok = calculate_kb_ppr_mc_end(cs,ranks, iterations);
     }
 
     if (vm.count("trunc_ppv")) {
