@@ -244,7 +244,13 @@ void dispatch_run(istream & is, ostream & os) {
   }
 }
 
-void test(istream & fh_in) {
+void test() {
+
+  size_t l_n = 0;
+
+  CSentence cs;
+  cs.read_aw(cin, l_n);
+  cs.debug(cerr);
 }
 
 int main(int argc, char *argv[]) {
@@ -590,6 +596,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_do_test) {
+	test();
 	return 0;
   }
 

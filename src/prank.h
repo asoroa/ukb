@@ -59,7 +59,6 @@ namespace ukb {
 						  coefmap_t W,
 						  wmap_t wmap) {
 
-	  typedef typename graph_traits<G>::vertex_descriptor vertex_t;
 	  typename graph_traits<G>::vertex_iterator v;
 	  typename graph_traits<G>::vertex_iterator end;
 	  tie(v, end) = vertices(g);
