@@ -51,6 +51,8 @@ namespace ukb {
 	  int num_iterations = 30; // Conservative, but stop if threshold is reached. If zero, just use threshold.
 	  float threshold = 0.0001; // If zero just use num_iterations
 	  float damping = 0.85; // damping factor
+	  PrankImpl impl = pm; // default is power method
+	  int mc_m = 1000;      // TODO: change default value
 	}
 
 	namespace input {
@@ -67,6 +69,7 @@ namespace ukb {
 	}
 
 	RankAlg rAlg = pageRank;
+
 
 	namespace kb {
 	  bool keep_reltypes = false;

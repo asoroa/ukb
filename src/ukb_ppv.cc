@@ -55,8 +55,8 @@ struct CWSort {
 
   CWSort(const vector<float> & _v) : v(_v) {}
   int operator () (const int & i, const int & j) {
-	// Descending order
-	return v[i] > v[j];
+    // Descending order
+    return v[i] > v[j];
   }
   const vector<float> & v;
 };
@@ -69,24 +69,24 @@ void truncate_ppv(vector<float> & ppv, float thres) {
   vector<int> idx(n);
 
   for(size_t i=0; i < n; ++i)
-	idx[i] = i;
+    idx[i] = i;
   sort(idx.begin(), idx.end(), CWSort(ppv));
 
   size_t cut_i = 99;
   float cut_th = ppv[idx[0]]*thres;
   for(; cut_i < n; ++cut_i) {
-	if ((ppv[idx[cut_i-99]] - ppv[idx[cut_i]]) < cut_th) break;
+    if ((ppv[idx[cut_i-99]] - ppv[idx[cut_i]]) < cut_th) break;
   }
 
   // truncate ppv
   for(; cut_i < n; ++cut_i) {
-	ppv[idx[cut_i]] = 0.0;
+    ppv[idx[cut_i]] = 0.0;
   }
 
   // Normalize result
 
   if(opt_normalize_ranks)
-	normalize_pvector(ppv);
+    normalize_pvector(ppv);
 
 }
 
@@ -100,14 +100,14 @@ void top_k(vector<float> & ppv, size_t k) {
   vector<int> idx(n);
 
   for(size_t i=0; i < n; ++i)
-	idx[i] = i;
+    idx[i] = i;
   sort(idx.begin(), idx.end(), CWSort(ppv));
 
   for(size_t i = k; i < n; ++i) {
-	ppv[idx[i]] = 0.0;
+    ppv[idx[i]] = 0.0;
   }
   if(opt_normalize_ranks)
-	normalize_pvector(ppv);
+    normalize_pvector(ppv);
 }
 
 
@@ -119,57 +119,57 @@ static void output_ppv_stream(const vector<float> & outranks, ostream & os) {
   const vector<float> * theranks = &outranks;
 
   if (trunc_ppv > 0.0f) {
-	vector<float>(outranks).swap(ranks_trunc);
-	theranks = &ranks_trunc;
-	if (trunc_ppv < 1.0f)
-	  truncate_ppv(ranks_trunc, trunc_ppv);
-	else {
-	  // For top k calculation
-	  //
-	  //  - fill with zeros all values except top k
-	  //  - set nozero = 1 so only top k are printed
-	  //
-	  // * could be a problem if top k had zeros in it, as they
-	  //   will not be properly printed.
+    vector<float>(outranks).swap(ranks_trunc);
+    theranks = &ranks_trunc;
+    if (trunc_ppv < 1.0f)
+      truncate_ppv(ranks_trunc, trunc_ppv);
+    else {
+      // For top k calculation
+      //
+      //  - fill with zeros all values except top k
+      //  - set nozero = 1 so only top k are printed
+      //
+      // * could be a problem if top k had zeros in it, as they
+      //   will not be properly printed.
 
-	  top_k(ranks_trunc, lexical_cast<size_t>(trunc_ppv));
-	  nozero = true;
-	}
+      top_k(ranks_trunc, lexical_cast<size_t>(trunc_ppv));
+      nozero = true;
+    }
   }
 
   if (output_control_line)
-	os << cmdline << "\n";
+    os << cmdline << "\n";
   for(size_t i = 0; i < theranks->size(); ++i) {
-	string sname = kb.get_vertex_name(i);
-	if (nozero && (*theranks) [i] == 0.0) continue;
-	os << sname << "\t" << (*theranks)[i];
-	if (output_variants_ppv) {
-	  os << "\t" << WDict::instance().variant(sname);
-	}
-	os << "\n";
+    string sname = kb.get_vertex_name(i);
+    if (nozero && (*theranks) [i] == 0.0) continue;
+    os << sname << "\t" << (*theranks)[i];
+    if (output_variants_ppv) {
+      os << "\t" << WDict::instance().variant(sname);
+    }
+    os << "\n";
   }
 }
 
 static void create_output_ppv(vector<float> & ranks,
-							  const string & filename,
-							  File_elem & fout) {
+                              const string & filename,
+                              File_elem & fout) {
   fout.fname = filename;
 
   ofstream fo(fout.get_fname().c_str(),  ofstream::out);
   if (!fo) {
-	cerr << "Error: can't create" << fout.get_fname() << endl;
-	exit(-1);
+    cerr << "Error: can't create" << fout.get_fname() << endl;
+    exit(-1);
   }
   output_ppv_stream(ranks, fo);
 }
 
 static void maybe_postproc_ranks(vector<float> & ranks) {
   if (glVars::csentence::disamb_minus_static) {
-	const vector<float> & static_ranks = Kb::instance().static_prank();
-	for(size_t s_i = 0, s_m = static_ranks.size();
-		s_i != s_m; ++s_i) {
-	  ranks[s_i] -= static_ranks[s_i];
-	}
+    const vector<float> & static_ranks = Kb::instance().static_prank();
+    for(size_t s_i = 0, s_m = static_ranks.size();
+        s_i != s_m; ++s_i) {
+      ranks[s_i] -= static_ranks[s_i];
+    }
   }
 }
 
@@ -183,16 +183,16 @@ void compute_sentence_vectors(string & out_dir) {
   // Read sentences and compute rank vectors
   size_t l_n  = 0;
   while (cs.read_aw(std::cin, l_n)) {
-	// Initialize rank vector
-	vector<float> ranks;
-	bool ok = calculate_kb_ppr(cs,ranks);
-	if (!ok) {
-	  cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
-	  continue;
-	}
-	maybe_postproc_ranks(ranks);
-	create_output_ppv(ranks, ppv_prefix + cs.id(), fout);
-	cs = CSentence();
+    // Initialize rank vector
+    vector<float> ranks;
+    bool ok = calculate_kb_ppr(cs,ranks);
+    if (!ok) {
+      cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
+      continue;
+    }
+    maybe_postproc_ranks(ranks);
+    create_output_ppv(ranks, ppv_prefix + cs.id(), fout);
+    cs = CSentence();
   }
 }
 
@@ -206,22 +206,22 @@ void compute_sentence_vectors_w2w(string & out_dir) {
   // Read sentences and compute rank vectors
   size_t l_n  = 0;
   while (cs.read_aw(std::cin, l_n)) {
-	vector<float> ranks;
-	int w_n = 1;
-	for(vector<CWord>::iterator cw_it = cs.begin(), cw_end = cs.end();
-		cw_it != cw_end; ++cw_it, ++w_n) {
-	  if(!cw_it->is_tgtword()) continue;
-	  bool ok = calculate_kb_ppr_by_word(cs, cw_it, ranks);
-	  if (!ok) {
-		cerr << "Error when calculating ranks for word " << cw_it->wpos() << " in csentence " << cs.id() << endl;
-		continue;
-	  }
-	  maybe_postproc_ranks(ranks);
-	  string ofile = cs.id() + "#";
-	  ofile += lexical_cast<string>(w_n);
-	  create_output_ppv(ranks, ppv_prefix + ofile, fout);
-	}
-	cs = CSentence();
+    vector<float> ranks;
+    int w_n = 1;
+    for(vector<CWord>::iterator cw_it = cs.begin(), cw_end = cs.end();
+        cw_it != cw_end; ++cw_it, ++w_n) {
+      if(!cw_it->is_tgtword()) continue;
+      bool ok = calculate_kb_ppr_by_word(cs, cw_it, ranks);
+      if (!ok) {
+        cerr << "Error when calculating ranks for word " << cw_it->wpos() << " in csentence " << cs.id() << endl;
+        continue;
+      }
+      maybe_postproc_ranks(ranks);
+      string ofile = cs.id() + "#";
+      ofile += lexical_cast<string>(w_n);
+      create_output_ppv(ranks, ppv_prefix + ofile, fout);
+    }
+    cs = CSentence();
   }
 }
 
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
   bool check_convergence = false;
 
   const char desc_header[] = "ukb_ppv: get personalized PageRank vector if a KB\n"
-	"Usage examples:\n"
+    "Usage examples:\n"
     "ukb_ppv -K kb.bin -D dict.txt -O outdir input.txt\n"
     "  Creates one file per sentence (.ppv extension) with the vector of the PPV vector given the input sentence"
     "Options";
@@ -279,9 +279,9 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_input("Input options");
   po_desc_input.add_options()
-	("nopos", "Don't filter words by Part of Speech.")
-	("minput", "Do not die when dealing with malformed input.")
-	("ctx_noweight", "Do not use weights of input words (defaut is use context weights).")
+    ("nopos", "Don't filter words by Part of Speech.")
+    ("minput", "Do not die when dealing with malformed input.")
+    ("ctx_noweight", "Do not use weights of input words (defaut is use context weights).")
     ;
 
   options_description po_desc_prank("pageRank general options");
@@ -294,13 +294,13 @@ int main(int argc, char *argv[]) {
 
   options_description po_desc_mc("Monte Carlo general options");
   po_desc_mc.add_options()
-    ("mc_complete_path,mc_complete", value<size_t>(), "Perform a Monte Carlo complete path with the given iterations.")
-    ("mc_end_point, mc_end", value<size_t>(), "Perform a Monte Carlo end point with cyclic start with the given iterations.")
+    ("mc_complete_path,mc_complete", "Perform a Monte Carlo complete path with the given iterations.")
+    ("mc_end_point, mc_end", "Perform a Monte Carlo end point with cyclic start with the given iterations.")
     ;
 
   options_description po_desc_dict("Dictionary options");
   po_desc_dict.add_options()
-	("altdict", value<string>(), "Provide an alternative dictionary overriding the values of default dictionary.")
+    ("altdict", value<string>(), "Provide an alternative dictionary overriding the values of default dictionary.")
     ("dict_weight", "Use weights when linking words to concepts (dict file has to have weights).")
     ("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
     ("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
     ("nozero", "Do not return concepts with zero rank.")
     ("variants,r", "Write also concept variants in PPV.")
     ("control_line,l", "First line in PPV files is control.")
-	("prefix,p", value<string>(), "Prefix added to all output ppv files.")
+    ("prefix,p", value<string>(), "Prefix added to all output ppv files.")
     ("ranks_nonorm", "Do not normalize ranks even with topK or threshold cuts.")
     ;
 
@@ -340,9 +340,9 @@ int main(int argc, char *argv[]) {
   try {
     variables_map vm;
     store(command_line_parser(argc, argv).
-	  options(po_desc_all).
-	  positional(po_optdesc).
-	  run(), vm);
+      options(po_desc_all).
+      positional(po_optdesc).
+      run(), vm);
     notify(vm);
 
     // If asked for help, don't do anything more
@@ -369,23 +369,23 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("nopos")) {
-	  glVars::input::filter_pos = false;
+      glVars::input::filter_pos = false;
     }
 
     if (vm.count("minput")) {
-	  glVars::input::swallow = true;
+      glVars::input::swallow = true;
     }
 
     if (vm.count("ctx_noweight")) {
-	  glVars::input::weight = false;
+      glVars::input::weight = false;
     }
 
     if (vm.count("variants")) {
-	  output_variants_ppv = true;
+      output_variants_ppv = true;
     }
 
     if (vm.count("control_line")) {
-	  output_control_line = true;
+      output_control_line = true;
     }
 
     if (vm.count("out_dir")) {
@@ -401,7 +401,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("prank_weight")) {
-	  glVars::prank::use_weight = true;
+      glVars::prank::use_weight = true;
     }
 
     if (vm.count("dict_strict")) {
@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("dict_weight")) {
-	  glVars::dict::use_weight = true;
+      glVars::dict::use_weight = true;
       glVars::prank::use_weight = true;
     }
 
@@ -418,43 +418,41 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("static")) {
-	  opt_static=true;
+      opt_static=true;
     }
 
     if (vm.count("nostatic")) {
-	  glVars::csentence::disamb_minus_static = true;
+      glVars::csentence::disamb_minus_static = true;
     }
 
     if (vm.count("prank_iter")) {
-	  iterations = vm["prank_iter"].as<size_t>();
-	  check_convergence = true;
+      iterations = vm["prank_iter"].as<size_t>();
+      check_convergence = true;
     }
 
     if (vm.count("prank_threshold")) {
-	  thresh = vm["prank_threshold"].as<float>();
-	  check_convergence = true;
+      thresh = vm["prank_threshold"].as<float>();
+      check_convergence = true;
     }
 
     if (vm.count("prank_damping")) {
-	  float dp = vm["prank_damping"].as<float>();
-	  if (dp <= 0.0 || dp > 1.0) {
-		cerr << "Error: invalid prank_damping value " << dp << "\n";
-		goto END;
-	  }
+      float dp = vm["prank_damping"].as<float>();
+      if (dp <= 0.0 || dp > 1.0) {
+        cerr << "Error: invalid prank_damping value " << dp << "\n";
+        goto END;
+      }
       glVars::prank::damping = dp;
     }
 
     if (vm.count("mc_complete_path")) {
-      iterations = vm["mc_complete_path"].as<int>();
+      glVars::prank::mc_m = vm["mc_complete_path"].as<size_t>();
       //check_convergence = true;
-      vector<float> ranks;
-      bool ok = calculate_kb_ppr_mc_complete(cs,ranks, iterations);
+      glVars::prank::impl = glVars::mc_complete;
     }
 
      if (vm.count("mc_end_point")) {
-      iterations = vm["mc_end_point"].as<int>();
-      //check_convergence = true;
-      bool ok = calculate_kb_ppr_mc_end(cs,ranks, iterations);
+      glVars::prank::mc_m = vm["mc_end_point"].as<size_t>();
+      glVars::prank::impl = glVars::mc_end;
     }
 
     if (vm.count("trunc_ppv")) {
@@ -462,16 +460,16 @@ int main(int argc, char *argv[]) {
     }
 
     if (vm.count("trunc_topK")) {
-	  size_t topK = vm["trunc_topK"].as<size_t>();
-	  if(!topK) {
-		cerr << "Error: trunc_topK is zero\n.";
-		goto END;
-	  }
+      size_t topK = vm["trunc_topK"].as<size_t>();
+      if(!topK) {
+        cerr << "Error: trunc_topK is zero\n.";
+        goto END;
+      }
       trunc_ppv = topK;
     }
 
     if (vm.count("nozero")) {
-	  nozero = true;
+      nozero = true;
     }
 
     if (vm.count("input-file")) {
@@ -485,19 +483,19 @@ int main(int argc, char *argv[]) {
   }
   catch(std::exception& e) {
     cerr << e.what() << "\n";
-	exit(-1);
+    exit(-1);
   }
 
   if (check_convergence) set_pr_convergence(iterations, thresh);
 
   if (opt_static) {
-	if (glVars::verbose)
-	  cerr << "Reading binary kb file " << kb_binfile;
-	Kb::create_from_binfile(kb_binfile);
-	if (glVars::verbose)
-	  Kb::instance().display_info(cerr);
-	compute_static_ppv();
-	goto END;
+    if (glVars::verbose)
+      cerr << "Reading binary kb file " << kb_binfile;
+    Kb::create_from_binfile(kb_binfile);
+    if (glVars::verbose)
+      Kb::instance().display_info(cerr);
+    compute_static_ppv();
+    goto END;
   }
 
   if(!fullname_in.size()) {
@@ -507,30 +505,30 @@ int main(int argc, char *argv[]) {
   }
 
   if (fullname_in == "-" ) {
-	// read from <STDIN>
+    // read from <STDIN>
     cmdline += " <STDIN>";
-	fullname_in = "<STDIN>";
+    fullname_in = "<STDIN>";
   } else {
-	input_ifs.open(fullname_in.c_str(), ofstream::in);
-	if (!input_ifs) {
-	  cerr << "Can't open " << fullname_in << endl;
-	  exit(-1);
-	}
-	// redirect std::cin to read from file
-	std::cin.rdbuf(input_ifs.rdbuf());
+    input_ifs.open(fullname_in.c_str(), ofstream::in);
+    if (!input_ifs) {
+      cerr << "Can't open " << fullname_in << endl;
+      exit(-1);
+    }
+    // redirect std::cin to read from file
+    std::cin.rdbuf(input_ifs.rdbuf());
   }
 
   Kb::create_from_binfile(kb_binfile);
 
   if (alternative_dict_fname.size()) {
-	WDict::instance().read_alternate_file(alternative_dict_fname);
+    WDict::instance().read_alternate_file(alternative_dict_fname);
   }
 
   try {
-	compute_sentence_vectors(out_dir);
+    compute_sentence_vectors(out_dir);
   } catch(std::exception& e) {
     cerr << "Errore reading " << fullname_in << "\n" << e.what() << "\n";
-	exit(-1);
+    exit(-1);
   }
 
  END:

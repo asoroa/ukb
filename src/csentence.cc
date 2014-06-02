@@ -650,13 +650,9 @@ namespace ukb {
   }
 
 
-  // Given a CSentence apply Personalized PageRank and obtain obtain it's
-  // Personalized PageRank Vector (PPV)
-  //
-  // Initial V is computed by activating the words of the context
-
-  bool calculate_kb_ppr(const CSentence & cs,
-						vector<float> & res) {
+  // Use Power method
+  bool calculate_kb_ppr_pm(const CSentence & cs,
+						   vector<float> & res) {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
@@ -667,28 +663,53 @@ namespace ukb {
 	return true;
   }
 
+  // Use MonteCarlo "complete" method
   bool calculate_kb_ppr_mc_complete(const CSentence & cs,
-						vector<float> & res, int iterations) {
+									vector<float> & res) {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
 	int aux = pv_from_cs_onlyC(cs, pv, cs.end());
 	if (!aux) return false;
-	// Execute Monte Carlo method.
-	kb.monte_carlo_complete(glVars::prank::damping, pv, iterations, res); //Monte Carlo complete path algorithm with m = 100 value.
+	kb.monte_carlo_complete(glVars::prank::damping, pv, glVars::prank::mc_m, res); //Monte Carlo complete path algorithm with m = 100 value.
 	return true;
   }
 
+  // Use MonteCarlo "end" method
   bool calculate_kb_ppr_mc_end(const CSentence & cs,
-						vector<float> & res, int iterations) {
+							   vector<float> & res) {
 
 	Kb & kb = ukb::Kb::instance();
 	vector<float> pv;
 	int aux = pv_from_cs_onlyC(cs, pv, cs.end());
 	if (!aux) return false;
-	// Execute Monte Carlo method.
-	kb.monte_carlo_end_point_cyclic(glVars::prank::damping, pv, iterations, res); //Monte Carlo end-point algorithm with m = 100 value.
+	kb.monte_carlo_end_point_cyclic(glVars::prank::damping, pv, glVars::prank::mc_m, res); //Monte Carlo end-point algorithm with m = 100 value.
 	return true;
+  }
+
+  // Given a CSentence apply Personalized PageRank and obtain obtain it's
+  // Personalized PageRank Vector (PPV)
+  //
+  // * Initial V is computed by activating the words of the context
+  //
+  // * Dispatch to proper implementation using glVars::pprImpl global variable
+
+  bool calculate_kb_ppr(const CSentence & cs,
+						vector<float> & res) {
+
+	bool result;
+	switch(glVars::prank::impl) {
+	case glVars::pm:
+	  result = calculate_kb_ppr_pm(cs, res);
+	  break;
+	case glVars::mc_complete:
+	  result = calculate_kb_ppr_mc_complete(cs, res);
+	  break;
+	case glVars::mc_end:
+	  result = calculate_kb_ppr_mc_end(cs, res);
+	  break;
+	}
+	return result;
   }
 
 
@@ -717,15 +738,7 @@ namespace ukb {
 								vector<float> & ranks) {
 
 	if (!cs.has_tgtwords()) return false; // no target words
-	Kb & kb = ukb::Kb::instance();
-	vector<float> pv;
-
-	int aux = pv_from_cs_onlyC(cs, pv, tgtw_it);
-	// Execute PageRank
-	if (aux) {
-	  kb.pageRank_ppv(pv, ranks);
-	}
-	return aux;
+	return calculate_kb_ppr(cs, ranks);
   }
 
   // given a CSentence

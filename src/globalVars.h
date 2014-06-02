@@ -24,6 +24,18 @@ namespace ukb {
 	  extern bool warning;
 	}
 
+	enum RankAlg {
+	  no_alg, // error
+	  pageRank,
+	  degree
+	};
+
+	enum PrankImpl {
+	  pm,          // power method, default
+	  mc_complete, // monte carlo, complete
+	  mc_end       // monte carlo, end
+	};
+
 	extern std::vector<std::string> rel_source;
 
 	namespace csentence {
@@ -51,6 +63,8 @@ namespace ukb {
 	  extern int num_iterations;
 	  extern float threshold;
 	  extern float damping;
+	  extern PrankImpl impl;
+	  extern int mc_m;
 	}
 
 	// Input
@@ -89,13 +103,6 @@ namespace ukb {
 	// Maiztasunak
 
 	// Ezaugarriak
-
-	enum RankAlg {
-	  no_alg, // error
-	  pageRank,
-	  degree
-	};
-
 
 	extern RankAlg rAlg;
 
