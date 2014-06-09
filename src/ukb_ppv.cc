@@ -229,6 +229,29 @@ void compute_static_ppv() {
 
 
   // Calculate static (static) pageRank over KB
+//  vector<float> ranks;
+//  std::vector<float> pv;
+//  std::fill_n(pv, glVars::prank::mc_m, 1/glVars::prank::mc_m);
+//if(glVars::prank::impl == glVars::mc_complete){
+
+
+//}
+
+//if(glVars::prank::impl == glVars::mc_complete){
+//  Kb::instance().monte_carlo_complete(glVars::prank::damping,
+//                                            pv,
+//                                            glVars::prank::mc_m,
+//                                            ranks);
+//}
+
+//if(glVars::prank::impl == glVars::mc_end){
+
+//  Kb::instance().monte_carlo_end_point_cyclic(glVars::prank::damping,
+//                                                pv,
+//                                                glVars::prank::mc_m,
+//                                                ranks);
+//}
+
   const vector<float> & ranks = Kb::instance().static_prank();
 
   output_ppv_stream(ranks, cout);
@@ -290,12 +313,9 @@ int main(int argc, char *argv[]) {
     ("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
     ("prank_threshold", value<float>(), "Threshold for pageRank convergence. Default is 0.0001.")
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
-    ;
-
-  options_description po_desc_mc("Monte Carlo general options");
-  po_desc_mc.add_options()
-    ("mc_complete_path,mc_complete", "Perform a Monte Carlo complete path with the given iterations.")
-    ("mc_end_point, mc_end", "Perform a Monte Carlo end point with cyclic start with the given iterations.")
+    ("mc_complete_path","Perform a Monte Carlo complete path with the given iterations.")
+    ("mc_end_point", "Perform a Monte Carlo end point with cyclic start with the given iterations.")
+    ("mc_iterations",  value<size_t>(), "Number of iterations for monte carlo implementation (m. Default 10000).")
     ;
 
   options_description po_desc_dict("Dictionary options");
@@ -444,15 +464,18 @@ int main(int argc, char *argv[]) {
       glVars::prank::damping = dp;
     }
 
+    if (vm.count("mc_iterations")) {
+      glVars::prank::mc_m = vm["mc_iterations"].as<size_t>();
+    }
+
     if (vm.count("mc_complete_path")) {
-      glVars::prank::mc_m = vm["mc_complete_path"].as<size_t>();
-      //check_convergence = true;
       glVars::prank::impl = glVars::mc_complete;
+      glVars::prank::use_weight = true;
     }
 
      if (vm.count("mc_end_point")) {
-      glVars::prank::mc_m = vm["mc_end_point"].as<size_t>();
       glVars::prank::impl = glVars::mc_end;
+      glVars::prank::use_weight = true;
     }
 
     if (vm.count("trunc_ppv")) {

@@ -759,12 +759,13 @@ namespace ukb {
   // PPV version
 
   void Kb::pageRank_ppv(const vector<float> & ppv_map,
-												vector<float> & ranks) {
+						vector<float> & ranks) {
 
 		typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
 		property_map<Kb::boost_graph_t, float edge_prop_t::*>::type weight_map = get(&edge_prop_t::weight, *m_g);
 		prank::constant_property_map <edge_descriptor, float> cte_weight(1.0); // always return 1
-
+		vector<float> pi_vector;
+		vector<float>(m_vertexN, 0.0f).swap(pi_vector);
 		if (0 == m_out_coefs.size()) {
 		  vector<float>(m_vertexN, 0.0f).swap(m_out_coefs);
 		  if (glVars::prank::use_weight) {
@@ -780,21 +781,39 @@ namespace ukb {
 		}
 		vector<float> rank_tmp(m_vertexN, 0.0);    // auxiliary rank vector
 
-		if (glVars::prank::use_weight) {
-		  prank::do_pageRank(*m_g, m_vertexN, &ppv_map[0],
-												 weight_map, &ranks[0], &rank_tmp[0],
-												 glVars::prank::num_iterations,
-												 glVars::prank::threshold,
-												 glVars::prank::damping,
-												 m_out_coefs);
-		} else {
-		  prank::do_pageRank(*m_g, m_vertexN, &ppv_map[0],
-												 cte_weight, &ranks[0], &rank_tmp[0],
-												 glVars::prank::num_iterations,
-												 glVars::prank::threshold,
-												 glVars::prank::damping,
-												 m_out_coefs);
+		// TODO: ENEKO erabili m_out_coefs monte carlo funtzioetan
+		//
+		// TODO: ENEKO Kb_vertex_t u -> m_out_coefs[u] = 1 / sum weights starting at u
+
+
+		switch(glVars::prank::impl) {
+		  case glVars::pm:
+
+			if (glVars::prank::use_weight) {
+			  prank::do_pageRank(*m_g, m_vertexN, &ppv_map[0],
+							 weight_map, &ranks[0], &rank_tmp[0],
+							 glVars::prank::num_iterations,
+							 glVars::prank::threshold,
+							 glVars::prank::damping,
+							 m_out_coefs);
+			} else {
+			  prank::do_pageRank(*m_g, m_vertexN, &ppv_map[0],
+							 cte_weight, &ranks[0], &rank_tmp[0],
+							 glVars::prank::num_iterations,
+							 glVars::prank::threshold,
+							 glVars::prank::damping,
+							 m_out_coefs);
+			}
+
+			break;
+		  case glVars::mc_complete:
+			ukb::Kb::instance().monte_carlo_complete(glVars::prank::damping, ppv_map, glVars::prank::num_iterations, ref_pi_vector);
+			break;
+		  case glVars::mc_end:
+			ukb::Kb::instance().monte_carlo_end_point_cyclic(glVars::prank::damping, ppv_map, glVars::prank::num_iterations, ref_pi_vector);
+			break;
 		}
+
   }
 
 
@@ -1185,6 +1204,8 @@ namespace ukb {
 		size_t N = num_vertices(*m_g);
 		// pi_vector (N, 0.0);  //PageRank PI vector.  Key:  Vertex.  Value:  Its PageRank value.
 		vector<float>(N, 0.0).swap(pi_vector);
+
+		vector<float>(m_vertexN, 0.0f).swap(m_out_coefs);
 
 		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
