@@ -500,7 +500,6 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("dict_weight")) {
       glVars::dict::use_weight = true;
-      glVars::prank::use_weight = true;
     }
 
     if (vm.count("smooth_dict_weight")) {

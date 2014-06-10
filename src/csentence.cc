@@ -155,8 +155,10 @@ namespace ukb {
 		it != end; ++it) {
 	  tie(u, P) = ukb::Kb::instance().get_vertex_by_name(it->first);
 	  if (!P) {
-		if (glVars::input::swallow) continue;
-		throw std::logic_error("reset_concepts: " + it->first + " not in KB");
+		if (glVars::debug::warning)
+		  // No synset for that word.
+		  cerr << "reset_concepts: " + it->first + " not in KB\n";
+		continue;
 	  }
 	  N++;
 	  syns.push_back(it->first);
@@ -388,7 +390,7 @@ namespace ukb {
 		if (cw_type == CWord::cw_error) {
 		  throw std::logic_error(*it + " fourth field is invalid.");
 		}
-		if ((cw_type == CWord::cw_ctxword || cw_type == CWord::cw_tgtword) && glVars::input::filter_pos) {
+		if (glVars::input::filter_pos & (cw_type == CWord::cw_ctxword || cw_type == CWord::cw_tgtword)) {
 		  if (!ctwp.pos.size()) throw std::logic_error(*it + " has no POS.");
 		  pos = ctwp.pos;
 		}
@@ -427,7 +429,7 @@ namespace ukb {
 		if (!new_cw.size()) {
 		  if (glVars::debug::warning)
 			// No synset for that word.
-			cerr << "W:" << *it << " can't be mapped to KB.";
+			cerr << "W:" << *it << " can't be mapped to KB.\n";
 		  continue;
 		}
 		cws.push_back(new_cw);
@@ -725,8 +727,6 @@ namespace ukb {
 	vector<float> ranks;
 	int success_n = 0;
 
-	bool use_prior = glVars::dict::use_weight && glVars::csentence::mult_priors; // If --dict-weight and ppr_w2w, use priors when ranking synsets
-
 	vector<CWord>::iterator cw_it = cs.begin();
 	vector<CWord>::iterator cw_end = cs.end();
 	for(; cw_it != cw_end; ++cw_it) {
@@ -738,9 +738,9 @@ namespace ukb {
 		success_n++;
 		if (glVars::csentence::disamb_minus_static) {
 		  struct va2vb newrank(ranks, kb.static_prank());
-		  cw_it->rank_synsets(newrank, use_prior);
+		  cw_it->rank_synsets(newrank, glVars::csentence::mult_priors);
 		} else {
-		  cw_it->rank_synsets(ranks, use_prior);
+		  cw_it->rank_synsets(ranks, glVars::csentence::mult_priors);
 		}
 	  }
 	  cw_it->disamb_cword();
