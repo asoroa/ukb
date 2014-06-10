@@ -109,6 +109,19 @@ namespace ukb {
 	  }
 	}
 
+	// Used when only one tw. Apply MFS.
+	void rank_synsets_one_tw(bool use_prior) {
+	  size_t n = m_syns.size();
+	  size_t i;
+	  if (!n) return; // No synsets
+	  float factor = 1.0 / (float) n;
+	  for(i = 0; i != n; ++i) {
+		m_ranks[i] = factor;
+		if(use_prior) m_ranks[i] *= m_V[i].second * m_linkw_factor;
+	  }
+	}
+
+
 	// Used in disambGraph
 	template <typename G, typename Map>
 	void rank_synsets(G & g, Map rankMap) {
