@@ -206,9 +206,9 @@ public:
   //void page_rank(Kb_vertex_t v, float alpha, int num_iteration, std::vector<float> &pi_vector);
 
   void do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector);
-  void monte_carlo_end_point_cyclic(float alpha, std::vector<float> & pv, int m, std::vector<float> & pi_vector);
+  void monte_carlo_end_point_cyclic(float alpha, const std::vector<float> & pv, int m, std::vector<float> & pi_vector);
   void do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector);
-  void monte_carlo_complete(float alpha, std::vector<float> & pv, int m, std::vector<float> & pi_vector);
+  void monte_carlo_complete(float alpha, const std::vector<float> & pv, int m, std::vector<float> & pi_vector);
   float intersect_vin_wout(std::set<Kb_vertex_t> & inVertexSet, Kb_vertex_t w);
   void structural_weighting();
   //void rwr(Kb_vertex_t v, float alpha, int n, float p);

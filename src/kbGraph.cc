@@ -764,8 +764,6 @@ namespace ukb {
 		typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
 		property_map<Kb::boost_graph_t, float edge_prop_t::*>::type weight_map = get(&edge_prop_t::weight, *m_g);
 		prank::constant_property_map <edge_descriptor, float> cte_weight(1.0); // always return 1
-		vector<float> pi_vector;
-		vector<float>(m_vertexN, 0.0f).swap(pi_vector);
 		if (0 == m_out_coefs.size()) {
 		  vector<float>(m_vertexN, 0.0f).swap(m_out_coefs);
 		  if (glVars::prank::use_weight) {
@@ -780,11 +778,6 @@ namespace ukb {
 		  vector<float>(m_vertexN, 0.0).swap(ranks); // Initialize rank vector
 		}
 		vector<float> rank_tmp(m_vertexN, 0.0);    // auxiliary rank vector
-
-		// TODO: ENEKO erabili m_out_coefs monte carlo funtzioetan
-		//
-		// TODO: ENEKO Kb_vertex_t u -> m_out_coefs[u] = 1 / sum weights starting at u
-
 
 		switch(glVars::prank::impl) {
 		  case glVars::pm:
@@ -807,10 +800,10 @@ namespace ukb {
 
 			break;
 		  case glVars::mc_complete:
-			ukb::Kb::instance().monte_carlo_complete(glVars::prank::damping, ppv_map, glVars::prank::num_iterations, ref_pi_vector);
+			monte_carlo_complete(glVars::prank::damping, ppv_map, glVars::prank::num_iterations, ranks);
 			break;
 		  case glVars::mc_end:
-			ukb::Kb::instance().monte_carlo_end_point_cyclic(glVars::prank::damping, ppv_map, glVars::prank::num_iterations, ref_pi_vector);
+			monte_carlo_end_point_cyclic(glVars::prank::damping, ppv_map, glVars::prank::num_iterations, ranks);
 			break;
 		}
 
@@ -1189,7 +1182,7 @@ namespace ukb {
 
   }
 
-  void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> & pv,int m, vector<float> & pi_vector){
+  void Kb::monte_carlo_end_point_cyclic(float alpha, const vector<float> & pv,int m, vector<float> & pi_vector){
 		//Monte Carlo end-point with cyclic start.
 		/**
 
@@ -1209,7 +1202,7 @@ namespace ukb {
 
 		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
-		while(v_it != v_end) {
+		/*while(v_it != v_end) {
 		  ++steps;
 		  if(pv[*v_it] != 0){
 		    kb.do_mc_end_cyclic(*v_it, alpha, pi_vector);
@@ -1220,7 +1213,18 @@ namespace ukb {
 		    ++v_it;
 		    steps = 0;
 		  }
+		}*/
+
+		for(;v_it != v_end; ++v_it){
+		  if(pv[*v_it] == 0){
+		  	continue;
+		  }
+		  for(steps = 0; steps < m; ++steps){
+		  	kb.do_mc_complete(*v_it, alpha, pi_vector);
+		  }
 		}
+
+
 		float factor = 1.0 / ( (float) N * (float) m);
 		std::vector<float>::iterator pi_it, pi_end;
 		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
@@ -1231,7 +1235,12 @@ namespace ukb {
 		  pi_vector[*pi_it] = pi_j;
 		  *pi_it = pi_j;
 		}
-		normalize_pvector(pi_vector);
+		//normalize_pvector(pi_vector);
+		vector<float>::const_iterator pers_iterator = pv.begin();
+		for(std::vector<float>::iterator pi_iterator = pi_vector.begin(); pi_iterator != pi_vector.end(); ++ pi_iterator){
+		  *pi_iterator = *pers_iterator * *pi_iterator;
+		  ++pers_iterator;
+		}
   }
 
   void Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector){
@@ -1262,7 +1271,7 @@ namespace ukb {
 		}
   }
 
-  void Kb::monte_carlo_complete(float alpha, vector<float> & pv, int m, vector<float> & pi_vector){
+  void Kb::monte_carlo_complete(float alpha, const vector<float> & pv, int m, vector<float> & pi_vector){
 		//Monte Carlo complete path
 		/**
 
@@ -1280,7 +1289,7 @@ namespace ukb {
 
 		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
-		while(v_it != v_end) {
+		/*while(v_it != v_end) {
 		  ++steps;
 		  if(pv[*v_it] != 0){
 		    kb.do_mc_complete(*v_it, alpha, pi_vector);
@@ -1291,7 +1300,18 @@ namespace ukb {
 		    ++v_it;
 		    steps = 0;
 		  }
+		}*/
+
+		for(;v_it != v_end; ++v_it){
+		  if(pv[*v_it] == 0){
+		  	continue;
+		  }
+		  for(steps = 0; steps < m; ++steps){
+		  	kb.do_mc_complete(*v_it, alpha, pi_vector);
+		  }
 		}
+
+
 		float factor = 1.0 / ( (float) N / (float) m );
 		std::vector<float>::iterator pi_it, pi_end;
 		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
@@ -1302,7 +1322,12 @@ namespace ukb {
 		  pi_vector[*pi_it] = pi_j;
 		  *pi_it = pi_j;
 		}
-		normalize_pvector(pi_vector);
+		//normalize_pvector(pi_vector);
+		vector<float>::const_iterator pers_iterator = pv.begin();
+		for(std::vector<float>::iterator pi_iterator = pi_vector.begin(); pi_iterator != pi_vector.end(); ++ pi_iterator){
+		  *pi_iterator = *pers_iterator * *pi_iterator;
+		  ++pers_iterator;
+		}
   }
 
   /*void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
