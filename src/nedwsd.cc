@@ -185,16 +185,11 @@ int main(int argc, char *argv[]) {
 
   timer load;
 
-  bool opt_dbfile = false;
-  bool opt_info = false;
-  bool opt_Info = false;
-  bool opt_query = false;
   bool opt_semSign = false;
-  bool opt_dump = false;
 
   // subgraph options
   string subg_init;
-  size_t subgN = 100;
+
 
   string kb_file;
   string kb_binfile;
@@ -238,18 +233,6 @@ int main(int argc, char *argv[]) {
         ("minput", "Do not die when dealing with malformed input.")
         ;
 
-  // options_description po_desc_query("Options for querying over binary graphs");
-  // po_desc_query.add_options()
-  //   ("info,i", "Give info about some Kb binfile.")
-  //   ("Info,I", "Give more info about Kb binfile. This option can be computationally expensive.")
-  //   ("dump", "Dump a serialized graph. Warning: very verbose!.")
-  //   ("query,q", value<string>(), "Given a vertex name, display its relations.")
-  //   ("iquery,Q", "Interactively query graph.")
-  //         ("subG,S", value<string>(), "Get a subgraph starting at this vertex. See subG_depth.")
-  //         ("subG_N", value<size_t>(), "Max. number of nodes in subgraph (see --subG). Default is 100.")
-  //         ("sPaths", value<string>(), "Get shortest paths. Value is a vector of nodes, separated by character '#'. First node is source.")
-  //   ("dict_file,D", value<string>(), "Dictionary text file. Use only when querying (--quey or --iquery) or when creating serialized dict (--serialize_dict).")
-  //         ;
 
   options_description po_hidden("Hidden");
   po_hidden.add_options()
@@ -311,11 +294,6 @@ int main(int argc, char *argv[]) {
     if (vm.count("input-file")) {
       kb_binfile = vm["input-file"].as<string>();
     }
-
-     /*if (vm.count("test")) {
-       //fullname_out = vm["output"].as<string>();
-        test();
-     }*/
   }
   catch(std::exception& e) {
     cerr << e.what() << "\n";
@@ -323,24 +301,11 @@ int main(int argc, char *argv[]) {
   }
 
   if (opt_semSign) {
-    std::map<Kb_vertex_t, Kb_vertex_t> verticesMap;
-    Kb_vertex_t v;
-    bool aux = false;
-
     Kb::create_from_binfile(kb_binfile);
     Kb & kb = ukb::Kb::instance();
-    v = kb.get_random_vertex();
     kb.structural_weighting();
-    //kb.dump_graph(cout);
-    //Random Walk with Restart algorith setup based in the document experimental parameters:  Alpha=0.85, N=1.000.000 and restart probability (p)=0.6
-    graph_traits<KbGraph>::vertex_iterator v_it, v_end;
-    tie(v_it, v_end) = vertices(kb.graph());
-    //for(; v_it != v_end; ++v_it) {
-     // kb.rwr(v, 0.85, 1000000, 0.6);
-   //}
-
-
-        return 0;
+    //kb.dump_graph(cout)
+    return 0;
   }
 
 

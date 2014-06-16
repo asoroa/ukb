@@ -764,6 +764,7 @@ namespace ukb {
 		typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
 		property_map<Kb::boost_graph_t, float edge_prop_t::*>::type weight_map = get(&edge_prop_t::weight, *m_g);
 		prank::constant_property_map <edge_descriptor, float> cte_weight(1.0); // always return 1
+		std::vector<float> pers = ppv_map;
 		if (0 == m_out_coefs.size()) {
 		  vector<float>(m_vertexN, 0.0f).swap(m_out_coefs);
 		  if (glVars::prank::use_weight) {
@@ -800,10 +801,10 @@ namespace ukb {
 
 			break;
 		  case glVars::mc_complete:
-			monte_carlo_complete(glVars::prank::damping, ppv_map, glVars::prank::num_iterations, ranks);
+			monte_carlo_complete(glVars::prank::damping, pers, glVars::prank::num_iterations, ranks);
 			break;
 		  case glVars::mc_end:
-			monte_carlo_end_point_cyclic(glVars::prank::damping, ppv_map, glVars::prank::num_iterations, ranks);
+			monte_carlo_end_point_cyclic(glVars::prank::damping, pers, glVars::prank::num_iterations, ranks);
 			break;
 		}
 
@@ -1182,7 +1183,7 @@ namespace ukb {
 
   }
 
-  void Kb::monte_carlo_end_point_cyclic(float alpha, const vector<float> & pv,int m, vector<float> & pi_vector){
+  void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> & pv,int m, vector<float> & pi_vector){
 		//Monte Carlo end-point with cyclic start.
 		/**
 
@@ -1231,16 +1232,11 @@ namespace ukb {
 		  //The article says: "For any page i, evaluate PI_j as the total number of
 		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
 		  //take all elements of the vector and multiply them.
-		  float pi_j = *pi_it * factor * pv[*pi_it] ;
+		  float pi_j = *pi_it * factor * pv[*pi_it] ;  //We also multiply the factor of the personalization vector
 		  pi_vector[*pi_it] = pi_j;
 		  *pi_it = pi_j;
 		}
 		//normalize_pvector(pi_vector);
-		vector<float>::const_iterator pers_iterator = pv.begin();
-		for(std::vector<float>::iterator pi_iterator = pi_vector.begin(); pi_iterator != pi_vector.end(); ++ pi_iterator){
-		  *pi_iterator = *pers_iterator * *pi_iterator;
-		  ++pers_iterator;
-		}
   }
 
   void Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector){
@@ -1249,14 +1245,15 @@ namespace ukb {
 		Kb & kb = ukb::Kb::instance();
 
 		Kb_vertex_t current = v;
-		while(rnumber01() <= alpha){
-		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  int total_weight = 0;
-		  for(; itOut != itOutEnd; ++itOut){
+		float total_weight = m_out_coefs[v];
+		while(rnumber01()<= alpha){
+		  //tie(itOut, itOutEnd) = kb.out_neighbors(current);
+		  //float total_weight = 0.0;
+		  /*for(; itOut != itOutEnd; ++itOut){
 		    total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		  }
+		  }*/
 
-		  float r_number = rnumber01() * total_weight;
+		  int r_number = floor(1.0 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(total_weight - 1.0))));  //Random nunber between 1.0 and the edges total weight
 		  int aux = 0;
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
 		  while (itOut != itOutEnd){  //Based in the edge weights decide by the random number which path to choose
@@ -1271,7 +1268,7 @@ namespace ukb {
 		}
   }
 
-  void Kb::monte_carlo_complete(float alpha, const vector<float> & pv, int m, vector<float> & pi_vector){
+  void Kb::monte_carlo_complete(float alpha, vector<float> & pv, int m, vector<float> & pi_vector){
 		//Monte Carlo complete path
 		/**
 
@@ -1285,11 +1282,11 @@ namespace ukb {
 		graph_traits<KbGraph>::vertex_iterator v_it, v_end;
 		size_t N = num_vertices(*m_g);
 		//pi_vector (N, 0.0);  //PageRank PI vector.
-		vector<float>(m_vertexN, 0.0).swap(pi_vector);
+		//vector<float>(m_vertexN, 0.0).swap(pi_vector);
 
 		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
-		/*while(v_it != v_end) {
+		while(v_it != v_end) {
 		  ++steps;
 		  if(pv[*v_it] != 0){
 		    kb.do_mc_complete(*v_it, alpha, pi_vector);
@@ -1300,16 +1297,16 @@ namespace ukb {
 		    ++v_it;
 		    steps = 0;
 		  }
-		}*/
+		}
 
-		for(;v_it != v_end; ++v_it){
+		/*for(;v_it != v_end; ++v_it){
 		  if(pv[*v_it] == 0){
 		  	continue;
 		  }
 		  for(steps = 0; steps < m; ++steps){
 		  	kb.do_mc_complete(*v_it, alpha, pi_vector);
 		  }
-		}
+		}*/
 
 
 		float factor = 1.0 / ( (float) N / (float) m );
@@ -1318,16 +1315,11 @@ namespace ukb {
 		  //The article says: "For any page i, evaluate PI_j as the total number of
 		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
 		  //take all elements of the vector and multiply them.
-		  float pi_j = (*pi_it * (1-alpha)) * factor * pv[*pi_it] ;
+		  float pi_j = (*pi_it * (1-alpha)) * factor * pv[*pi_it] ;  //We also multiply the factor of the personalization vector
 		  pi_vector[*pi_it] = pi_j;
 		  *pi_it = pi_j;
 		}
 		//normalize_pvector(pi_vector);
-		vector<float>::const_iterator pers_iterator = pv.begin();
-		for(std::vector<float>::iterator pi_iterator = pi_vector.begin(); pi_iterator != pi_vector.end(); ++ pi_iterator){
-		  *pi_iterator = *pers_iterator * *pi_iterator;
-		  ++pers_iterator;
-		}
   }
 
   /*void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
