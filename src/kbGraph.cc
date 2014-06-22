@@ -1227,14 +1227,20 @@ namespace ukb {
 
 
 		float factor = 1.0 / ( (float) N * (float) m);
-		std::vector<float>::iterator pi_it, pi_end;
+		std::vector<float>::iterator pi_it, pi_end, pv_vector_it;
+		pv_vector_it = pi_vector.begin();
+		tie(v_it, v_end) = vertices(kb.graph()); //To delete
 		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
 		  //The article says: "For any page i, evaluate PI_j as the total number of
 		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
 		  //take all elements of the vector and multiply them.
-		  float pi_j = *pi_it * factor * pv[*pi_it] ;  //We also multiply the factor of the personalization vector
-		  pi_vector[*pi_it] = pi_j;
+		  float pi_j = *pi_it * factor * *pv_vector_it ;  //We also multiply the factor of the personalization vector
+		  cout << kb.get_vertex_name(*v_it) << " ";
+		  cout << *pv_vector_it << endl;
+		  ++v_it;
+		  //pi_vector[*pi_it] = pi_j;
 		  *pi_it = pi_j;
+		  ++pv_vector_it;
 		}
 		//normalize_pvector(pi_vector);
   }
@@ -1245,13 +1251,13 @@ namespace ukb {
 		Kb & kb = ukb::Kb::instance();
 
 		Kb_vertex_t current = v;
-		float total_weight = m_out_coefs[v];
+		//float total_weight = m_out_coefs[v];
 		while(rnumber01()<= alpha){
-		  //tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  //float total_weight = 0.0;
-		  /*for(; itOut != itOutEnd; ++itOut){
+		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
+		  float total_weight = 0.0;
+		  for(; itOut != itOutEnd; ++itOut){
 		    total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		  }*/
+		  }
 
 		  int r_number = floor(1.0 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(total_weight - 1.0))));  //Random nunber between 1.0 and the edges total weight
 		  int aux = 0;
@@ -1282,11 +1288,11 @@ namespace ukb {
 		graph_traits<KbGraph>::vertex_iterator v_it, v_end;
 		size_t N = num_vertices(*m_g);
 		//pi_vector (N, 0.0);  //PageRank PI vector.
-		//vector<float>(m_vertexN, 0.0).swap(pi_vector);
+		vector<float>(N, 0.0).swap(pi_vector);
 
 		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
-		while(v_it != v_end) {
+		/*while(v_it != v_end) {
 		  ++steps;
 		  if(pv[*v_it] != 0){
 		    kb.do_mc_complete(*v_it, alpha, pi_vector);
@@ -1297,27 +1303,32 @@ namespace ukb {
 		    ++v_it;
 		    steps = 0;
 		  }
-		}
+		}*/
 
-		/*for(;v_it != v_end; ++v_it){
+		for(;v_it != v_end; ++v_it){
 		  if(pv[*v_it] == 0){
 		  	continue;
 		  }
 		  for(steps = 0; steps < m; ++steps){
 		  	kb.do_mc_complete(*v_it, alpha, pi_vector);
 		  }
-		}*/
+		}
 
 
 		float factor = 1.0 / ( (float) N / (float) m );
-		std::vector<float>::iterator pi_it, pi_end;
+		std::vector<float>::iterator pi_it, pi_end, pv_vector_it;
+		pv_vector_it = pi_vector.begin();
+		tie(v_it, v_end) = vertices(kb.graph()); //To delete
 		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
 		  //The article says: "For any page i, evaluate PI_j as the total number of
 		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
 		  //take all elements of the vector and multiply them.
-		  float pi_j = (*pi_it * (1-alpha)) * factor * pv[*pi_it] ;  //We also multiply the factor of the personalization vector
-		  pi_vector[*pi_it] = pi_j;
+		  float pi_j = (*pi_it * (1-alpha)) * factor * *pv_vector_it;  //We also multiply the factor of the personalization vector
+		  cout << kb.get_vertex_name(*v_it) << " ";
+		  cout << *pv_vector_it << endl;
+		  //pi_vector[*pi_it] = pi_j;
 		  *pi_it = pi_j;
+		  ++pv_vector_it;
 		}
 		//normalize_pvector(pi_vector);
   }
