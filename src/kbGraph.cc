@@ -767,6 +767,9 @@ namespace ukb {
 		std::vector<float> pers = ppv_map;
 		if (0 == m_out_coefs.size()) {
 		  vector<float>(m_vertexN, 0.0f).swap(m_out_coefs);
+		  if(glVars::prank::impl == glVars::mc_complete || glVars::prank::impl == glVars::mc_end){
+		  	glVars::prank::use_weight = true;
+		  }
 		  if (glVars::prank::use_weight) {
 				prank::init_out_coefs(*m_g,  &m_out_coefs[0], weight_map);
 		  } else {
@@ -1105,47 +1108,6 @@ namespace ukb {
 
   }
 
-  /*struct MyStruct{
-		int weight;
-		Kb_out_edge_iter_t iter;
-
-		MyStruct(int k, Kb_out_edge_iter_t s) : weight(k), iter(s) {}
-
-
-		bool operator < (const MyStruct& str) const{
-		  return (weight > str.weight);
-		}
-  };*/
-
- /* void page_rank(Kb_vertex_t v, float alpha, int num_iteration, std::map<Kb_vertex_t, float> &pi_vector){
-
-	graph_traits<KbGraph>::vertex_iterator v_it, v_end;
-	Kb & kb = ukb::Kb::instance();
-	Kb_in_edge_iter_t it_in, it_in_end;
-	Kb_out_edge_iter_t it_out, it_out_end;
-
-		if(pi_vector.empty()){
-		  for(;v_it != v_end; ++v_it){
-				pi_vector.insert(std::pair<Kb_vertex_t, float> (*v_it, 1/ num_vertices(*m_g)));
-		  }
-		}
-		tie (it_in, it_in_end) = kb.in_neighbors(v);
-		float j_sum = 0.0;
-		for(;it_in != it_in_end; ++it_in){
-		  float pi_j = pi_vector.at(kb.edge_source(*it_in));
-		  float weight = kb.get_edge_weight(*it_in);
-		  tie(it_out, it_out_end) = kb.out_neighbors(kb.edge_source(*it_in));
-		  int total_weight = 0;
-		  for(; it_out != it_out_end; ++it_out){
-				total_weight += kb.get_edge_weight(*it_out);
-		  }
-		  j_sum += pi_j * weight / total_weight;
-		}
-		float pi_i = (j_sum * alpha) + ((1 - alpha) * (1/  num_vertices(*m_g)));
-	pi_vector.insert(std::pair<Kb_vertex_t, float>(v, pi_i) );
-  }*/
-
-
   static float rnumber01() {
 
 		static float factor = 1.0 / static_cast <float> (RAND_MAX);
@@ -1162,11 +1124,10 @@ namespace ukb {
 		Kb_vertex_t current = v;
 		while(rnumber01() <= alpha){
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  int total_weight = 0;
-		  for(; itOut != itOutEnd; ++itOut){
-				total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		  }
-
+		  //for(; itOut != itOutEnd; ++itOut){
+			//	total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
+		  //}
+		  float total_weight = m_out_coefs[v];
 		  float r_number = rnumber01() * total_weight;
 		  int aux = 0;
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
@@ -1195,12 +1156,9 @@ namespace ukb {
 
 		Kb & kb = ukb::Kb::instance();
 		graph_traits<KbGraph>::vertex_iterator v_it, v_end;
+
 		size_t N = num_vertices(*m_g);
-		// pi_vector (N, 0.0);  //PageRank PI vector.  Key:  Vertex.  Value:  Its PageRank value.
 		vector<float>(N, 0.0).swap(pi_vector);
-
-		vector<float>(m_vertexN, 0.0f).swap(m_out_coefs);
-
 		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
 		/*while(v_it != v_end) {
@@ -1228,21 +1186,17 @@ namespace ukb {
 
 		float factor = 1.0 / ( (float) N * (float) m);
 		std::vector<float>::iterator pi_it, pi_end, pv_vector_it;
-		pv_vector_it = pi_vector.begin();
+		pv_vector_it = pv.begin();
 		tie(v_it, v_end) = vertices(kb.graph()); //To delete
 		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
 		  //The article says: "For any page i, evaluate PI_j as the total number of
 		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
 		  //take all elements of the vector and multiply them.
 		  float pi_j = *pi_it * factor * *pv_vector_it ;  //We also multiply the factor of the personalization vector
-		  cout << kb.get_vertex_name(*v_it) << " ";
-		  cout << *pv_vector_it << endl;
 		  ++v_it;
-		  //pi_vector[*pi_it] = pi_j;
 		  *pi_it = pi_j;
 		  ++pv_vector_it;
 		}
-		//normalize_pvector(pi_vector);
   }
 
   void Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector){
@@ -1251,14 +1205,12 @@ namespace ukb {
 		Kb & kb = ukb::Kb::instance();
 
 		Kb_vertex_t current = v;
-		//float total_weight = m_out_coefs[v];
 		while(rnumber01()<= alpha){
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  float total_weight = 0.0;
-		  for(; itOut != itOutEnd; ++itOut){
-		    total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		  }
-
+		  //for(; itOut != itOutEnd; ++itOut){
+		  //  total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
+		  //}
+		  float total_weight = m_out_coefs[v];
 		  int r_number = floor(1.0 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(total_weight - 1.0))));  //Random nunber between 1.0 and the edges total weight
 		  int aux = 0;
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
@@ -1286,10 +1238,9 @@ namespace ukb {
 
 		Kb & kb = ukb::Kb::instance();
 		graph_traits<KbGraph>::vertex_iterator v_it, v_end;
-		size_t N = num_vertices(*m_g);
-		//pi_vector (N, 0.0);  //PageRank PI vector.
-		vector<float>(N, 0.0).swap(pi_vector);
 
+		size_t N = num_vertices(*m_g);
+		vector<float>(N, 0.0).swap(pi_vector);
 		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
 		/*while(v_it != v_end) {
@@ -1314,123 +1265,19 @@ namespace ukb {
 		  }
 		}
 
-
 		float factor = 1.0 / ( (float) N / (float) m );
 		std::vector<float>::iterator pi_it, pi_end, pv_vector_it;
-		pv_vector_it = pi_vector.begin();
+		pv_vector_it = pv.begin();
 		tie(v_it, v_end) = vertices(kb.graph()); //To delete
 		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
 		  //The article says: "For any page i, evaluate PI_j as the total number of
 		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
 		  //take all elements of the vector and multiply them.
 		  float pi_j = (*pi_it * (1-alpha)) * factor * *pv_vector_it;  //We also multiply the factor of the personalization vector
-		  cout << kb.get_vertex_name(*v_it) << " ";
-		  cout << *pv_vector_it << endl;
-		  //pi_vector[*pi_it] = pi_j;
 		  *pi_it = pi_j;
 		  ++pv_vector_it;
 		}
-		//normalize_pvector(pi_vector);
   }
-
-  /*void Kb::rwr(Kb_vertex_t v, float alpha, int n, float p){
-
-  //
-  // v:  The starting vertex
-  // alpha:  Restart probability.  Should be between 0 and 1.
-  // n: Number of step to be executed
-  // p:  The transition probability. Should be between 0 and 1.
-  //
-  Kb & kb = ukb::Kb::instance();
-  graph_traits<KbGraph>::vertex_iterator v_it, v_end;
-  std::map<Kb_vertex_t, float> pi_vector; //PageRank PI vector.  Key:  Vertex.  Value:  Its PageRank value.
-  tie(v_it, v_end) = vertices(kb.graph());
-  //Initializing the PI vector
-  for(; v_it != v_end; ++v_it) {
-  pi_vector.insert(std::pair<Kb_vertex_t, int> (*v_it, 1/num_vertices(*m_g)));
-  }
-
-  srand (static_cast <unsigned> (time(0)));
-
-  //typedef boost::mt19937 RNGType; //The mersenne twister generator.
-  //RNGType rng(time(0));  //Instance of the twister generator.  If we don't put time(0)  the random numbers will be the same always.
-  //That's the main reason to put a time dependant generator creator.  In all executions the generated numbers will be different because the generator itself is different.
-  //boost::uniform_float<> distr(0, 1);  //Distribution distance.  We want from 0 to 1.
-  //boost::variate_generator< RNGType, boost::uniform_float<> > dice(rng, distr);  //Takes the raw numbers and the distribution, and creates the random numbers.
-  std::vector<Kb_vertex_t> semSignVector;  //Semantic signatures of the v vertex
-  Kb_vertex_t initial = v;
-  Kb_out_edge_iter_t itOut, itOutEnd;
-
-  while(n > 0){
-
-  float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-  cout << random << endl;
-  if(random > alpha){
-  //typedef std::map<Kb_vertex_t, Kb_vertex_t>::iterator it_type;
-  //std::map<Kb_vertex_t, Kb_vertex_t> auxiliar = getVertices(v, false);  //Get all OUT vertices in a map
-  //int i = int ((auxiliar.size() * random)+0.5); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
-  //int i = int ((auxiliar.size() - 1) * random); //Choose an out neighbor using the random number.  We have to use an integer as an index and now we are rounding it before use.
-  //int j = 0;
-  //it_type iterator;
-  //it_type auxIterator = auxiliar.begin();
-
-  std::vector <MyStruct> vec;
-  tie(itOut, itOutEnd) = kb.out_neighbors(v);
-  int total_weight = 0;
-  for(; itOut != itOutEnd; ++itOut){
-  vec.push_back(MyStruct(kb.get_edge_weight(*itOut), itOut));
-  total_weight += kb.get_edge_weight(*itOut);
-  }
-
-  float r_number = random * total_weight;
-  int aux = 0;
-  std::vector<MyStruct>::size_type i = 0;
-  while(i != vec.size()){
-  //aux += vec[i].weight;
-  aux += vec[i].weight;
-  if(r_number <= aux){
-  break;
-  }
-  ++i;
-  }
-
-  itOut = vec[i].iter;
-  semSignVector.push_back(kb.edge_target(*itOut)); //Add to the semantic signature group
-  v = kb.edge_target(*itOut);
-  }else{
-  v = initial;
-  }
-  n--;
-  }
-  }*/
-
-  std::map<Kb_vertex_t, Kb_vertex_t> Kb::getVertices(Kb_vertex_t source, bool inFlag){
-		//Returns a map containing source vertex's all in and out vertices in a array.
-		//PARAMETERS:
-		//source:  The source vertex to analyze.
-		//inFlag:  A boolean flag.  When TRUE this function will return sources all IN vertices.  When FALSE, all OUT vertices are returned.
-		Kb_in_edge_iter_t itIn, itInEnd;
-		Kb_out_edge_iter_t itOut, itOutEnd;
-		std::map<Kb_vertex_t, Kb_vertex_t> vertexMap;
-		Kb_vertex_t x;
-		Kb & kb = ukb::Kb::instance();
-		if(inFlag){
-		  tie(itIn, itInEnd) = kb.in_neighbors(source);
-		  for(; itIn != itInEnd; ++itIn){
-				x = kb.edge_source(*itIn);
-				vertexMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t> (x, x));
-		  }
-		}else{
-		  tie(itOut, itOutEnd) = kb.out_neighbors(source);
-		  for(; itOut != itOutEnd; ++itOut){
-				x = kb.edge_target(*itOut);
-				vertexMap.insert(std::pair<Kb_vertex_t, Kb_vertex_t> (x, x));
-		  }
-		}
-		return vertexMap;
-  }
-
-
 
 
 }

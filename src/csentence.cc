@@ -678,7 +678,7 @@ namespace ukb {
 							  res); // monte carlo complete
 	  break;
 	case glVars::mc_end:
-	  kb.monte_carlo_end_point_cyclic(glVars::prank::damping,
+		  kb.monte_carlo_end_point_cyclic(glVars::prank::damping,
 									  pv,
 									  glVars::prank::mc_m,
 									  res); // monte carlo endpoint

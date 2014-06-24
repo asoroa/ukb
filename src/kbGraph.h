@@ -203,19 +203,13 @@ public:
   /**
   *Project's functions
   */
-  //void page_rank(Kb_vertex_t v, float alpha, int num_iteration, std::vector<float> &pi_vector);
+
   void do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector);
   void monte_carlo_end_point_cyclic(float alpha, std::vector<float> & pv, int m, std::vector<float> & pi_vector);
   void do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector);
   void monte_carlo_complete(float alpha, std::vector<float> & pv, int m, std::vector<float> & pi_vector);
   float intersect_vin_wout(std::set<Kb_vertex_t> & inVertexSet, Kb_vertex_t w);
   void structural_weighting();
-  //void rwr(Kb_vertex_t v, float alpha, int n, float p);
-  std::map<Kb_vertex_t, Kb_vertex_t> getVertices(Kb_vertex_t source, bool inFlag);
-
-  //std::map<Kb_vertex_t, std::pair<std::vector<Kb_vertex_t>, std::vector<Kb_vertex_t> > > graphToMap(Kb_vertex_t initial, std::map<Kb_vertex_t, std::pair<std::vector<Kb_vertex_t>,std::vector<Kb_vertex_t> > >graph);
-
-  //static void test();
 
   // Graph algorithms
 
