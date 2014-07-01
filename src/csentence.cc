@@ -667,23 +667,7 @@ namespace ukb {
 	int aux = pv_from_cs_onlyC(cs, pv, tgtw_it);
 	//const std::vector<float> pers = pv;
 	if (!aux) return false;
-	switch(glVars::prank::impl) {
-	case glVars::pm:
-	  kb.pageRank_ppv(pv, res); // power method
-	  break;
-	case glVars::mc_complete:
-	  kb.monte_carlo_complete(glVars::prank::damping,
-							  pv,
-							  glVars::prank::mc_m,
-							  res); // monte carlo complete
-	  break;
-	case glVars::mc_end:
-		  kb.monte_carlo_end_point_cyclic(glVars::prank::damping,
-									  pv,
-									  glVars::prank::mc_m,
-									  res); // monte carlo endpoint
-	  break;
-	}
+	kb.pageRank_ppv(pv, res);
 	return true;
   }
 
