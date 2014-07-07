@@ -7,7 +7,7 @@
 
 namespace ukb {
 
-  void parse_config(const std::string & fizena);
+	void parse_config(const std::string & fizena);
 }
 
 #endif // AGGRAFOA_H

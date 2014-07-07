@@ -22,122 +22,122 @@
 
 namespace ukb {
 
-  class Kb; // forward decl.
+	class Kb; // forward decl.
 
-  // A class for dealing with edge types
+	// A class for dealing with edge types
 
-  class etype_t {
-  public:
+	class etype_t {
+	public:
 
-	typedef boost::uint32_t value_type;
-	etype_t() : m_strtypes() {}
-	etype_t(const etype_t & o) : m_strtypes(o.m_strtypes) {}
-	etype_t &operator=(const etype_t & o);
+		typedef boost::uint32_t value_type;
+		etype_t() : m_strtypes() {}
+		etype_t(const etype_t & o) : m_strtypes(o.m_strtypes) {}
+		etype_t &operator=(const etype_t & o);
 
-	void swap(etype_t & o);
+		void swap(etype_t & o);
 
-	size_t size() const;
+		size_t size() const;
 
-	void add_type(const std::string & tstr, value_type & val);
-	bool has_type(const std::string & tstr, value_type val) const;
-	std::vector<std::string> tvector(value_type val) const;
+		void add_type(const std::string & tstr, value_type & val);
+		bool has_type(const std::string & tstr, value_type val) const;
+		std::vector<std::string> tvector(value_type val) const;
 
-	friend class Kb;
+		friend class Kb;
 
-  private:
+	private:
 
-	void read_from_stream (std::istream & o);
-	std::ostream & write_to_stream(std::ostream & o) const;
+		void read_from_stream (std::istream & o);
+		std::ostream & write_to_stream(std::ostream & o) const;
 
-	int strpos(const std::string & tstr) const;
-	size_t stradd(const std::string & tstr);
+		int strpos(const std::string & tstr) const;
+		size_t stradd(const std::string & tstr);
 
-	// member variables
+		// member variables
 
-	std::vector<std::string> m_strtypes;
-  };
-
-  // Vertex and edge properties
-
-  struct vertex_prop_t {
-	std::string name;
-
-	vertex_prop_t() : name(std::string()) {}
-	vertex_prop_t(const std::string & str) : name(str) {}
-  };
-
-  struct edge_prop_t {
-	float weight;
-	etype_t::value_type etype;
-
-	edge_prop_t() : weight(0.0f), etype(0) {}
-	edge_prop_t(float w) : weight(w), etype(0) {}
-	edge_prop_t(float w, etype_t::value_type et) : weight(w), etype(et) {}
-  };
-
-  // temporary class used for creating CSR graphs. When reading (or converting)
-  // a graph, we first fill this structure and then initialize the graph.
-
-  struct precsr_t {
-
-  private:
-
-	typedef std::pair<size_t, size_t> vertex_pair_t;
-
-	struct precsr_edge_comp
-	  : std::binary_function<vertex_pair_t, vertex_pair_t, bool> {
-	  bool operator()(const vertex_pair_t & e1, const vertex_pair_t & e2) const {
-		return e1.first == e2.first && e1.second == e2.second;
-	  }
+		std::vector<std::string> m_strtypes;
 	};
 
-	struct precsr_edge_hash
-	  : std::unary_function<vertex_pair_t, std::size_t> {
+	// Vertex and edge properties
 
-	  std::size_t operator()(const vertex_pair_t & e) const {
+	struct vertex_prop_t {
+		std::string name;
 
-		std::size_t seed = 0;
-		boost::hash_combine(seed, e.first);
-		boost::hash_combine(seed, e.second);
-		return seed;
-	  }
+		vertex_prop_t() : name(std::string()) {}
+		vertex_prop_t(const std::string & str) : name(str) {}
 	};
 
-  public:
+	struct edge_prop_t {
+		float weight;
+		etype_t::value_type etype;
 
-	std::vector<vertex_pair_t>             E;
-	std::vector<vertex_prop_t>             vProp;
-	std::vector<edge_prop_t>               eProp;
+		edge_prop_t() : weight(0.0f), etype(0) {}
+		edge_prop_t(float w) : weight(w), etype(0) {}
+		edge_prop_t(float w, etype_t::value_type et) : weight(w), etype(et) {}
+	};
 
-	etype_t                                m_rtypes;
+	// temporary class used for creating CSR graphs. When reading (or converting)
+	// a graph, we first fill this structure and then initialize the graph.
 
-	size_t m_vsize;
-	size_t m_esize;
+	struct precsr_t {
 
-	precsr_t() : m_vsize(0), m_esize(0) {};
+	private:
 
-	// used by read_kb
+		typedef std::pair<size_t, size_t> vertex_pair_t;
 
-	typedef boost::unordered_map<vertex_pair_t, size_t,
-								 precsr_edge_hash,
-								 precsr_edge_comp> edge_map_t;
-	typedef std::map<std::string, size_t> vertex_map_t;
+		struct precsr_edge_comp
+			: std::binary_function<vertex_pair_t, vertex_pair_t, bool> {
+			bool operator()(const vertex_pair_t & e1, const vertex_pair_t & e2) const {
+				return e1.first == e2.first && e1.second == e2.second;
+			}
+		};
 
-	edge_map_t m_eMap;
-	vertex_map_t m_vMap;
+		struct precsr_edge_hash
+			: std::unary_function<vertex_pair_t, std::size_t> {
 
-	size_t insert_vertex(const std::string & ustr);
+			std::size_t operator()(const vertex_pair_t & e) const {
 
-	size_t insert_edge(const std::string & ustr,
-					   const std::string & vstr,
-					   float w,
-					   etype_t::value_type etype);
+				std::size_t seed = 0;
+				boost::hash_combine(seed, e.first);
+				boost::hash_combine(seed, e.second);
+				return seed;
+			}
+		};
 
-	size_t insert_edge(const std::string & ustr,
-					   const std::string & vstr,
-					   float w,
-					   const std::string & rtype);
-  };
+	public:
+
+		std::vector<vertex_pair_t>             E;
+		std::vector<vertex_prop_t>             vProp;
+		std::vector<edge_prop_t>               eProp;
+
+		etype_t                                m_rtypes;
+
+		size_t m_vsize;
+		size_t m_esize;
+
+		precsr_t() : m_vsize(0), m_esize(0) {};
+
+		// used by read_kb
+
+		typedef boost::unordered_map<vertex_pair_t, size_t,
+									 precsr_edge_hash,
+									 precsr_edge_comp> edge_map_t;
+		typedef std::map<std::string, size_t> vertex_map_t;
+
+		edge_map_t m_eMap;
+		vertex_map_t m_vMap;
+
+		size_t insert_vertex(const std::string & ustr);
+
+		size_t insert_edge(const std::string & ustr,
+						   const std::string & vstr,
+						   float w,
+						   etype_t::value_type etype);
+
+		size_t insert_edge(const std::string & ustr,
+						   const std::string & vstr,
+						   float w,
+						   const std::string & rtype);
+	};
 }
 
 #endif
