@@ -324,6 +324,10 @@ int main(int argc, char *argv[]) {
     ("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, ppr_w2w, degree.")
     ("dgraph_maxdepth", value<size_t>(), "If --dgraph_dfs is set, specify the maximum depth (default is 6).")
     ("dgraph_nocosenses", "If --dgraph_dfs, stop DFS when finding one co-sense of target word in path.")
+    ("mc_complete_path","Perform a Monte Carlo complete path with the given iterations.")
+    ("mc_end_point", "Perform a Monte Carlo end point with cyclic start with the given iterations.")
+    ("mc_iterations",  value<size_t>(), "Number of iterations for monte carlo implementation (m. Default 10000).")
+    ;
     ;
 
   options_description po_desc_dict("Dictionary options");
@@ -467,6 +471,21 @@ int main(int argc, char *argv[]) {
 	  }
 	  dgraph_rank_method = it->second;
 	}
+
+   if (vm.count("mc_iterations")) {
+      glVars::prank::mc_m = vm["mc_iterations"].as<size_t>();
+    }
+
+    if (vm.count("mc_complete_path")) {
+      glVars::prank::impl = glVars::mc_complete;
+      glVars::prank::use_weight = true;
+    }
+
+     if (vm.count("mc_end_point")) {
+      glVars::prank::impl = glVars::mc_end;
+      glVars::prank::use_weight = true;
+    }
+
 
     if (vm.count("nostatic")) {
 	  glVars::csentence::disamb_minus_static = true;

@@ -1179,7 +1179,7 @@ namespace ukb {
 		  	continue;
 		  }
 		  for(steps = 0; steps < m; ++steps){
-		  	kb.do_mc_complete(*v_it, alpha, pi_vector);
+		  	kb.do_mc_end_cyclic(*v_it, alpha, pi_vector);
 		  }
 		}
 
