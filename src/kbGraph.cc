@@ -804,10 +804,10 @@ namespace ukb {
 
 			break;
 		  case glVars::mc_complete:
-			monte_carlo_complete(glVars::prank::damping, pers, glVars::prank::num_iterations, ranks);
+			monte_carlo_complete(glVars::prank::damping, pers, glVars::prank::mc_m, ranks);
 			break;
 		  case glVars::mc_end:
-			monte_carlo_end_point_cyclic(glVars::prank::damping, pers, glVars::prank::num_iterations, ranks);
+			monte_carlo_end_point_cyclic(glVars::prank::damping, pers, glVars::prank::mc_m, ranks);
 			break;
 		}
 
@@ -1187,15 +1187,27 @@ namespace ukb {
 		float factor = 1.0 / ( (float) N * (float) m);
 		std::vector<float>::iterator pi_it, pi_end, pv_vector_it;
 		pv_vector_it = pv.begin();
-		tie(v_it, v_end) = vertices(kb.graph()); //To delete
+		//tie(v_it, v_end) = vertices(kb.graph()); //To delete
+		float total = 0.0;
+		//cout << "Factor: " << factor << endl;
 		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
 		  //The article says: "For any page i, evaluate PI_j as the total number of
 		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
 		  //take all elements of the vector and multiply them.
+			if(*pv_vector_it == 0){
+			  *pi_it = 0;
+			  ++pv_vector_it;
+			  continue;
+			}
 		  float pi_j = *pi_it * factor * *pv_vector_it ;  //We also multiply the factor of the personalization vector
-		  ++v_it;
+		  total =total + (pi_j * pi_j);
 		  *pi_it = pi_j;
 		  ++pv_vector_it;
+		}
+		//Normalizing
+		float norm = sqrt(total);
+		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
+			*pi_it = *pi_it / norm;
 		}
   }
 
@@ -1267,16 +1279,30 @@ namespace ukb {
 
 		float factor = 1.0 / ( (float) N / (float) m );
 		std::vector<float>::iterator pi_it, pi_end, pv_vector_it;
+		//cout << "Factor: " << factor << endl;
 		pv_vector_it = pv.begin();
-		tie(v_it, v_end) = vertices(kb.graph()); //To delete
+		//tie(v_it, v_end) = vertices(kb.graph()); //To delete
+		float total = 0.0;
 		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
 		  //The article says: "For any page i, evaluate PI_j as the total number of
 		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
 		  //take all elements of the vector and multiply them.
-		  float pi_j = (*pi_it * (1-alpha)) * factor * *pv_vector_it;  //We also multiply the factor of the personalization vector
+			if(*pv_vector_it == 0){
+			  *pi_it = 0;
+			  ++pv_vector_it;
+			  continue;
+			}
+		  float pi_j = *pi_it * (1-alpha) * factor * *pv_vector_it;  //We also multiply the factor of the personalization vector
+		  total =total + (pi_j * pi_j);
 		  *pi_it = pi_j;
 		  ++pv_vector_it;
 		}
+		//Normalizing
+		float norm = sqrt(total);
+		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
+			*pi_it = *pi_it / norm;
+		}
+
   }
 
 
