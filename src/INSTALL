@@ -29,16 +29,15 @@ $ rm -fr /tmp/boost_src
 
 * Compiling UKB
 
-If you have boost properly installed, just run by the standard compilation
-procedure:
+If you have installed boost following the reciple above, just do the following:
 
-# Check dependencies and generate Makefile
+$ cd src
+$ ./configure --with-boost-include=/usr/local/include
+$ make
 
-$ ./configure 
+the ./configure script has some options (./configure --help to see them
+ all). The important options are:
 
-# the ./configure script has some options (./configure --help to see them
-# all). The important options are:
-#
 #  --prefix
 #             path were the executables will be installed (after 'make
 #             install')
@@ -53,13 +52,4 @@ $ ./configure
 #  --enable-static
 #            Enable static linkage
 
-# Compile 
-
-$ make
-
-# The executables are now in the current directory. Now, if you want
-# to install them on a different location (set by the --prefix option
-# of ./configure), just 'cp' them, or execute
-
-$ make install
-
+After ./configure, just do a typical 'make'
