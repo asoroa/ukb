@@ -10,18 +10,31 @@ following Boost libraries:
       * boost numeric conversions
       * boost asio
 
-if you need to compile the boost libraries yourself, you should to call the
-'bootstrap.sh' script and then use b2 with the --layout=system option.
+* Compiling boost
 
-% ./bootstrap.sh
-% ./b2 install --layout=system
+If you have a linux distribution, just install the packages for boost
+development. However, if you want to compile the boost libraries yourself, there
+are some steps you can follow. This would install boost version 1.54. The files
+will be installed into the /usr/local directory:
+
+$ mkdir /tmp/boost_src
+$ cd /tmp/boost_src
+$ wget http://downloads.sourceforge.net/project/boost/boost/1.54.0/boost_1_54_0.tar.bz2
+$ tar xjf boost_1_54_0.tar.bz2
+$ cd boost_1_54_0
+$ ./bootstrap.sh --with-libraries=graph,system,filesystem,program_options,regex
+$ sudo ./b2 install --layout=system
+$ cd
+$ rm -fr /tmp/boost_src
+
+* Compiling UKB
 
 If you have boost properly installed, just run by the standard compilation
 procedure:
 
 # Check dependencies and generate Makefile
 
-% ./configure 
+$ ./configure 
 
 # the ./configure script has some options (./configure --help to see them
 # all). The important options are:
@@ -42,11 +55,11 @@ procedure:
 
 # Compile 
 
-% make
+$ make
 
 # The executables are now in the current directory. Now, if you want
 # to install them on a different location (set by the --prefix option
 # of ./configure), just 'cp' them, or execute
 
-% make install
+$ make install
 
