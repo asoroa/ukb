@@ -15,15 +15,19 @@
 #include <algorithm>
 #include <ostream>
 
+
 // Tokenizer
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 
 // Stuff for generating random numbers
 
+#include <boost/random/mersenne_twister.hpp>
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/variate_generator.hpp>
+#include "boost/random.hpp"
+#include "boost/generator_iterator.hpp"
 
 // bfs
 
@@ -1109,12 +1113,19 @@ namespace ukb {
   }
 
   static float rnumber01() {
-
-		static float factor = 1.0 / static_cast <float> (RAND_MAX);
-
-		return static_cast <float> (rand()) * factor;
-
+  //Returns a random float number between 0 and 1 (inclusive).
+	static float factor = 1.0 / static_cast <float> (RAND_MAX);
+  	return static_cast <float> (rand()) * factor;
   }
+
+  boost::mt19937 gen;
+
+  int random_numb(int min_num, int max_num){
+  //Returns a random integer number between min_num and max_num (inclusive).
+    boost::uniform_int<> dist(min_num, max_num);
+    boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(gen, dist);
+    return die();
+}
 
   void Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector){
 
@@ -1123,12 +1134,14 @@ namespace ukb {
 
 		Kb_vertex_t current = v;
 		while(rnumber01() <= alpha){
+		  float total_weight = 0.0;
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  //for(; itOut != itOutEnd; ++itOut){
-			//	total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		  //}
-		  float total_weight = m_out_coefs[v];
-		  float r_number = rnumber01() * total_weight;
+		   for(; itOut != itOutEnd; ++itOut){
+		     total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
+		   }
+		  //float total_weight = m_out_coefs[current]; //Debug line
+		  //cout << total_weight << endl;	//Debug line
+		  int r_number = random_numb(1 ,total_weight);
 		  int aux = 0;
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
 		  while (itOut != itOutEnd){  //Based in the edge weights decide by the random number which path to choose
@@ -1141,16 +1154,18 @@ namespace ukb {
 		  current = kb.edge_target(*itOut);
 		}
 		pi_vector[current]++;
-
   }
 
   void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> & pv,int m, vector<float> & pi_vector){
 		//Monte Carlo end-point with cyclic start.
-		/**
+		//The article says: "Simulate N = mn runs os the random walk initiated at each page exactly m times.
+		//Evaluate each element of the pi vector as a fraction of N random walks wich end at page j.".
 
+		/**
+		PARAMETERS
 		 *alpha:  Restart probability.  Should be between 0 and 1.
 		 *pv:  Personalization vector.
-		 *m: Number of steps to be executed on each vertex.
+		 *m: Number of steps to be executed on each vertex.  Default value is 3.
 		 *pi_vector:  Edge vector containing rankings.
 		 */
 
@@ -1161,148 +1176,79 @@ namespace ukb {
 		vector<float>(N, 0.0).swap(pi_vector);
 		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
-		/*while(v_it != v_end) {
-		  ++steps;
-		  if(pv[*v_it] != 0){
-		    kb.do_mc_end_cyclic(*v_it, alpha, pi_vector);
-		  }else{
-		    steps = m;
-		  }
-		  if(steps == m){
-		    ++v_it;
-		    steps = 0;
-		  }
-		}*/
 
 		for(;v_it != v_end; ++v_it){
-		  if(pv[*v_it] == 0){
-		  	continue;
-		  }
 		  for(steps = 0; steps < m; ++steps){
 		  	kb.do_mc_end_cyclic(*v_it, alpha, pi_vector);
 		  }
 		}
 
-
-		float factor = 1.0 / ( (float) N * (float) m);
-		std::vector<float>::iterator pi_it, pi_end, pv_vector_it;
-		pv_vector_it = pv.begin();
-		//tie(v_it, v_end) = vertices(kb.graph()); //To delete
-		float total = 0.0;
-		//cout << "Factor: " << factor << endl;
-		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
-		  //The article says: "For any page i, evaluate PI_j as the total number of
-		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
-		  //take all elements of the vector and multiply them.
-			if(*pv_vector_it == 0){
-			  *pi_it = 0;
-			  ++pv_vector_it;
-			  continue;
-			}
-		  float pi_j = *pi_it * factor * *pv_vector_it ;  //We also multiply the factor of the personalization vector
-		  total =total + (pi_j * pi_j);
-		  *pi_it = pi_j;
-		  ++pv_vector_it;
-		}
-		//Normalizing
-		float norm = sqrt(total);
-		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
-			*pi_it = *pi_it / norm;
+		float invertN = pow (N, -1.0);
+		for(int i = 0; i < pi_vector.size(); ++i){
+		  pi_vector[i] = pi_vector[i]/m;
+		  pi_vector[i] = invertN * pi_vector[i];
 		}
   }
 
-  void Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector){
+  void Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, int m){
 
 		Kb_out_edge_iter_t itOut, itOutEnd;
 		Kb & kb = ukb::Kb::instance();
 
 		Kb_vertex_t current = v;
+
 		while(rnumber01()<= alpha){
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  //for(; itOut != itOutEnd; ++itOut){
-		  //  total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		  //}
-		  float total_weight = m_out_coefs[v];
-		  int r_number = floor(1.0 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(total_weight - 1.0))));  //Random nunber between 1.0 and the edges total weight
+		  float total_weight = 0.0;
+		  for(; itOut != itOutEnd; ++itOut){
+		    total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
+		  }
+
+		  int r_number = random_numb(1, total_weight);
 		  int aux = 0;
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
 		  while (itOut != itOutEnd){  //Based in the edge weights decide by the random number which path to choose
 		    aux += kb.get_edge_weight(*itOut);
 		    if(r_number <= aux){
+		      pi_vector[current]++;
 		      break;
 		    }
 		    ++itOut;
 		  }
-		  pi_vector[current]++;
 		  current = kb.edge_target(*itOut);
 		}
   }
 
   void Kb::monte_carlo_complete(float alpha, vector<float> & pv, int m, vector<float> & pi_vector){
 		//Monte Carlo complete path
-		/**
+		//The article says: "For any page i, evaluate PI_j as the total number of
+		//visits to page j multiplied by (1-c)/(n*m)".
 
+		/**
+		  PARAMETERS:
 		 *alpha:  Restart probability.  Should be between 0 and 1.
 		 *pv:  Personalization vector.
-		 *m:  Number of steps to be executed on each vertex.
+		 *m:  Number of steps to be executed on each vertex.  Default value is 3.
 		 **pi_vector:  Edge vector containing rankings.
 		 */
-
 		Kb & kb = ukb::Kb::instance();
 		graph_traits<KbGraph>::vertex_iterator v_it, v_end;
 
 		size_t N = num_vertices(*m_g);
 		vector<float>(N, 0.0).swap(pi_vector);
-		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
-		/*while(v_it != v_end) {
-		  ++steps;
-		  if(pv[*v_it] != 0){
-		    kb.do_mc_complete(*v_it, alpha, pi_vector);
-		  }else{
-		    steps = m;
-		  }
-		  if(steps == m){
-		    ++v_it;
-		    steps = 0;
-		  }
-		}*/
 
 		for(;v_it != v_end; ++v_it){
-		  if(pv[*v_it] == 0){
-		  	continue;
-		  }
-		  for(steps = 0; steps < m; ++steps){
-		  	kb.do_mc_complete(*v_it, alpha, pi_vector);
+		  for(int steps = 0; steps < m; ++steps){
+		  	kb.do_mc_complete(*v_it, alpha, pi_vector, m);
 		  }
 		}
 
-		float factor = 1.0 / ( (float) N / (float) m );
-		std::vector<float>::iterator pi_it, pi_end, pv_vector_it;
-		//cout << "Factor: " << factor << endl;
-		pv_vector_it = pv.begin();
-		//tie(v_it, v_end) = vertices(kb.graph()); //To delete
-		float total = 0.0;
-		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
-		  //The article says: "For any page i, evaluate PI_j as the total number of
-		  //visits to page j multiplied by (1-c)/(n*m)".  So finishing, we have to
-		  //take all elements of the vector and multiply them.
-			if(*pv_vector_it == 0){
-			  *pi_it = 0;
-			  ++pv_vector_it;
-			  continue;
-			}
-		  float pi_j = *pi_it * (1-alpha) * factor * *pv_vector_it;  //We also multiply the factor of the personalization vector
-		  total =total + (pi_j * pi_j);
-		  *pi_it = pi_j;
-		  ++pv_vector_it;
+		float invertN = pow (N, -1.0);
+		for(int i = 0; i < pi_vector.size(); ++i){
+		  pi_vector[i] = (1-alpha) * pi_vector[i]/m;
+		  pi_vector[i] = invertN * pi_vector[i];
 		}
-		//Normalizing
-		float norm = sqrt(total);
-		for(pi_it = pi_vector.begin(), pi_end = pi_vector.end(); pi_it != pi_end; ++pi_it){
-			*pi_it = *pi_it / norm;
-		}
-
   }
 
 

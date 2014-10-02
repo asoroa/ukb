@@ -326,7 +326,7 @@ int main(int argc, char *argv[]) {
     ("dgraph_nocosenses", "If --dgraph_dfs, stop DFS when finding one co-sense of target word in path.")
     ("mc_complete_path","Perform a Monte Carlo complete path with the given iterations.")
     ("mc_end_point", "Perform a Monte Carlo end point with cyclic start with the given iterations.")
-    ("mc_iterations",  value<size_t>(), "Number of iterations for monte carlo implementation (m. Default 10000).")
+    ("mc_iterations",  value<size_t>(), "Number of iterations for monte carlo implementation (m. Default 3).")
     ;
     ;
 

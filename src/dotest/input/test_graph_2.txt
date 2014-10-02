@@ -1,0 +1,7 @@
+u:A v:E d:0
+u:A v:D d:0
+u:B v:E d:0
+u:B v:C d:0
+u:C v:E d:0
+u:C v:D d:0
+u:E v:F d:0
