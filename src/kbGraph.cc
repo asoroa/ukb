@@ -1134,12 +1134,12 @@ namespace ukb {
 
 		Kb_vertex_t current = v;
 		while(rnumber01() <= alpha){
-		  float total_weight = 0.0;
-		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		   for(; itOut != itOutEnd; ++itOut){
-		     total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		   }
-		  //float total_weight = m_out_coefs[current]; //Debug line
+		  //float total_weight = 0.0;
+		  //tie(itOut, itOutEnd) = kb.out_neighbors(current);
+		   //for(; itOut != itOutEnd; ++itOut){
+		     //total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
+		   //}
+		  float total_weight = pow (m_out_coefs[current], -1.0); //Debug line
 		  //cout << total_weight << endl;	//Debug line
 		  int r_number = random_numb(1 ,total_weight);
 		  int aux = 0;
@@ -1198,12 +1198,12 @@ namespace ukb {
 		Kb_vertex_t current = v;
 
 		while(rnumber01()<= alpha){
-		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  float total_weight = 0.0;
-		  for(; itOut != itOutEnd; ++itOut){
-		    total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		  }
-
+		  //tie(itOut, itOutEnd) = kb.out_neighbors(current);
+		  //float total_weight = 0.0;
+		  //for(; itOut != itOutEnd; ++itOut){
+		    //total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
+		  //}
+		  float total_weight = pow (m_out_coefs[current], -1.0); //Debug line
 		  int r_number = random_numb(1, total_weight);
 		  int aux = 0;
 		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
