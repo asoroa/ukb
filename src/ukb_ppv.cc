@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
     ("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
     ("mc_complete_path","Perform a Monte Carlo complete path with the given iterations.")
     ("mc_end_point", "Perform a Monte Carlo end point with cyclic start with the given iterations.")
-    ("mc_iterations",  value<size_t>(), "Number of iterations for monte carlo implementation (m. Default 10000).")
+    ("mc_iterations",  value<size_t>(), "Number of iterations for monte carlo implementation (m. Default 3).")
     ;
 
   options_description po_desc_dict("Dictionary options");

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <ostream>
 
+#include <numeric>
 
 // Tokenizer
 #include <boost/tokenizer.hpp>
@@ -1120,40 +1121,64 @@ namespace ukb {
 
   boost::mt19937 gen;
 
-  int random_numb(int min_num, int max_num){
-  //Returns a random integer number between min_num and max_num (inclusive).
-    boost::uniform_int<> dist(min_num, max_num);
-    boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(gen, dist);
-    return die();
+  int random_numb(int max_num){
+  //Returns a random integer number between 1 and max_num (inclusive).
+    //boost::uniform_int<> dist(min_num, max_num);
+    //boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(gen, dist);
+    //return die();
+    double y = round(rnumber01() * ( (float)max_num -1.0)  + 1.0 );
+    return  static_cast<int> (y);
 }
 
-  void Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector){
+  void Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, int m){
 
 		Kb_out_edge_iter_t itOut, itOutEnd;
 		Kb & kb = ukb::Kb::instance();
+		Kb_out_edge_iter_t before_child;
 
 		Kb_vertex_t current = v;
-		while(rnumber01() <= alpha){
-		  //float total_weight = 0.0;
-		  //tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		   //for(; itOut != itOutEnd; ++itOut){
-		     //total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		   //}
-		  float total_weight = pow (m_out_coefs[current], -1.0); //Debug line
-		  //cout << total_weight << endl;	//Debug line
-		  int r_number = random_numb(1 ,total_weight);
-		  int aux = 0;
-		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  while (itOut != itOutEnd){  //Based in the edge weights decide by the random number which path to choose
+
+		for(int i = 0; i < m; ++i){  //Iterate for the given steps
+
+		  Kb_vertex_t current = v;  //Start the iteration in the V vertex
+			while(rnumber01() <= alpha){
+
+		  	//float total_weight = 0.0;
+		  	//tie(itOut, itOutEnd) = kb.out_neighbors(current);
+		   	//for(; itOut != itOutEnd; ++itOut){
+		    	 //total_weight += kb.get_edge_weight(*itOut);  //Calculate manually the total weight of the out edges
+		   	//}
+		  	float total_weight = pow (m_out_coefs[current], -1.0);
+		  	int r_number = random_numb(total_weight);
+
+		  	tie(itOut, itOutEnd) = kb.out_neighbors(current);
+		  	if(itOut == itOutEnd){ //When we reach a dangling node we will stop the execution
+		  		break;
+		  	}
+		  	int aux = 0;
+		  	before_child = itOut;
+		  	while (itOut != itOutEnd){  //Based in the edge weights decide by the random number which path to choose
 				aux += kb.get_edge_weight(*itOut);
-				if(r_number <= aux){
-				  break;
+				if(r_number == aux){ //In non directed graphs a dangling node will have weight 1 ALWAYS.  In directed graphs a dangling node does not hace any OUT vertex.
+			  	  current = kb.edge_target(*itOut);
+			  	break;
 				}
-				++itOut;
+		      	if(r_number < aux){
+		    	  if(itOut == itOutEnd){
+		       		current = kb.edge_target(*before_child);
+		       	  }else{
+		       	    current = kb.edge_target(*itOut);
+		       	  }
+		          break;
+		        }else{ //Continue searching the appropiate node
+				  before_child = itOut;
+		          ++itOut;
+		      	}
+		  	}
 		  }
-		  current = kb.edge_target(*itOut);
+		  //cout << kb.get_vertex_name(current) << " ukituta" << endl;
+		  pi_vector[current]++;
 		}
-		pi_vector[current]++;
   }
 
   void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> & pv,int m, vector<float> & pi_vector){
@@ -1174,19 +1199,23 @@ namespace ukb {
 
 		size_t N = num_vertices(*m_g);
 		vector<float>(N, 0.0).swap(pi_vector);
-		int steps = 0;
 		tie(v_it, v_end) = vertices(kb.graph());
 
-		for(;v_it != v_end; ++v_it){
-		  for(steps = 0; steps < m; ++steps){
-		  	kb.do_mc_end_cyclic(*v_it, alpha, pi_vector);
-		  }
+		float inv_factor = pow( N,-1);
+
+		for (;v_it != v_end; ++v_it){
+			//cout << kb.get_vertex_name(*v_it) << " aztertzen-------------------------------" << endl;
+		  	kb.do_mc_end_cyclic(*v_it, alpha, pi_vector, m);
 		}
 
-		float invertN = pow (N, -1.0);
-		for(int i = 0; i < pi_vector.size(); ++i){
-		  pi_vector[i] = pi_vector[i]/m;
-		  pi_vector[i] = invertN * pi_vector[i];
+		float tot = 0.0;
+		for(int i = pi_vector.size() - 1; i >= 0; --i){ //Calculate
+		  pi_vector[i] = inv_factor * pi_vector[i];
+		  tot = tot + pi_vector[i];
+		}
+
+		for(int i =  pi_vector.size() -1; i >= 0; --i){  //Normalize
+			pi_vector[i] = pi_vector[i] / tot;
 		}
   }
 
@@ -1195,28 +1224,58 @@ namespace ukb {
 		Kb_out_edge_iter_t itOut, itOutEnd;
 		Kb & kb = ukb::Kb::instance();
 
-		Kb_vertex_t current = v;
+		Kb_out_edge_iter_t before_child;
 
-		while(rnumber01()<= alpha){
-		  //tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  //float total_weight = 0.0;
-		  //for(; itOut != itOutEnd; ++itOut){
-		    //total_weight += kb.get_edge_weight(*itOut);  //Calculate the total weight of the out edges
-		  //}
-		  float total_weight = pow (m_out_coefs[current], -1.0); //Debug line
-		  int r_number = random_numb(1, total_weight);
-		  int aux = 0;
-		  tie(itOut, itOutEnd) = kb.out_neighbors(current);
-		  while (itOut != itOutEnd){  //Based in the edge weights decide by the random number which path to choose
-		    aux += kb.get_edge_weight(*itOut);
-		    if(r_number <= aux){
-		      pi_vector[current]++;
-		      break;
+		size_t N = num_vertices(*m_g);
+
+		for(int i = 0; i < m; ++i){  //Iterate for the given steps
+
+		  Kb_vertex_t current = v;  //Start the iteration in the V vertex
+		  pi_vector[current]++;
+
+		  while(rnumber01() <= alpha){
+
+		    //tie(itOut, itOutEnd) = kb.out_neighbors(current);
+		    //float total_weight = 0.0;
+
+		    //for(; itOut != itOutEnd; ++itOut){
+		      //total_weight += kb.get_edge_weight(*itOut);  //Calculate manually the total weight of the out edges
+		    //}
+
+		    float total_weight = pow (m_out_coefs[current], -1.0);
+		    int r_number = random_numb(total_weight);
+
+		    tie(itOut, itOutEnd) = kb.out_neighbors(current);
+		    if(itOut == itOutEnd){ //When we reach a dangling node we will stop the execution.
+		  	  break;	//In non directed graphs a dangling node will have weight 1 ALWAYS.  In directed graphs a dangling node does not hace any OUT vertex.
 		    }
-		    ++itOut;
-		  }
-		  current = kb.edge_target(*itOut);
+			int aux = 0;
+		    before_child = itOut;
+		    while (itOut != itOutEnd){  //Based in the edge weights decide by the random number which path to choose
+		      aux += kb.get_edge_weight(*itOut);
+		      if(r_number == aux){
+		        current = kb.edge_target(*itOut);
+		        break;
+		      }
+		      if(r_number < aux){
+		      	if(itOut == itOutEnd){
+		       	  current = kb.edge_target(*before_child);
+		       	}else{
+		       	  current = kb.edge_target(*itOut);
+		       	}
+		        break;
+		      }else{ //Continue searching the appropiate node
+				before_child = itOut;
+		        ++itOut;
+		      }
+		    }
+
+		    pi_vector[current]++;
+
+
+		    }
 		}
+
   }
 
   void Kb::monte_carlo_complete(float alpha, vector<float> & pv, int m, vector<float> & pi_vector){
@@ -1232,22 +1291,37 @@ namespace ukb {
 		 **pi_vector:  Edge vector containing rankings.
 		 */
 		Kb & kb = ukb::Kb::instance();
-		graph_traits<KbGraph>::vertex_iterator v_it, v_end;
+		graph_traits<KbGraph>::vertex_iterator v_it, v_end, v_aux;
 
 		size_t N = num_vertices(*m_g);
 		vector<float>(N, 0.0).swap(pi_vector);
 		tie(v_it, v_end) = vertices(kb.graph());
 
+		std::vector<float> vec;
+		float tot = 0.0;
+
+		float inv_alpha = 1-alpha;
+		float inv_factor = pow( (N*m),-1);
+
+
 		for(;v_it != v_end; ++v_it){
-		  for(int steps = 0; steps < m; ++steps){
-		  	kb.do_mc_complete(*v_it, alpha, pi_vector, m);
-		  }
+
+		  	kb.do_mc_complete(*v_it, alpha, pi_vector, m);  //Do a Random Walk starting in the vertex V for m times
+
 		}
 
-		float invertN = pow (N, -1.0);
-		for(int i = 0; i < pi_vector.size(); ++i){
-		  pi_vector[i] = (1-alpha) * pi_vector[i]/m;
-		  pi_vector[i] = invertN * pi_vector[i];
+
+		for(int i = pi_vector.size() -1; i >= 0; --i){	//Calculate
+		  	  pi_vector[i] = pi_vector[i] * inv_factor * inv_alpha;
+
+		  	  if(v_aux == v_end){
+		  	    tot += pi_vector[i];
+		  	  }
+
+			}
+
+		for(int i =  pi_vector.size() -1; i >= 0; --i){  //Normalize
+			pi_vector[i] = pi_vector[i] / tot;
 		}
   }
 

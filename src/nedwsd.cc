@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 
   timer load;
 
-  bool opt_semSign = false;
+  bool opt_weight = false;
 
   // subgraph options
   string subg_init;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     ("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb).")
     ("dict_file,D", value<string>(), "Dictionary text file.")
     ("verbose,v", "Be verbose.")
-    ("sem_signatures,s", "Builds semantic signatures.")
+    ("build_weights,w", "Calculate edges weights.")
     ;
 
   options_description po_desc_create("Options for creating binary graphs");
@@ -210,9 +210,9 @@ int main(int argc, char *argv[]) {
       kb_binfile = vm["kb_binfile"].as<string>();
     }
 
-    if (vm.count("sem_signatures")) {
-      opt_semSign = true;
-      kb_binfile = vm["sem_signatures"].as<string>();
+    if (vm.count("build_weights")) {
+      opt_weight = true;
+      kb_binfile = vm["build_weights"].as<string>();
     }
 
     if (vm.count("dict_file")) {
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
         exit(-1);
   }
 
-  if (opt_semSign) {
+  if (opt_weight) {
     Kb::create_from_binfile(kb_binfile);
     Kb & kb = ukb::Kb::instance();
     kb.structural_weighting();
