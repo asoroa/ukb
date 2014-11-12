@@ -325,7 +325,7 @@ namespace ukb {
 
 		for (map<string, ccache_map_t>::iterator it = concept_cache.begin(), end = concept_cache.end();
 			 it != end; ++it) {
-			WDict::wdicts_t::iterator map_value_it = m_wdicts.insert(make_pair(it->first, wdict_rhs_t())).first;
+			WDict::wdict_t::iterator map_value_it = m_wdict.insert(make_pair(it->first, wdict_rhs_t())).first;
 			fill_wdict_hw(map_value_it->second, it->second.V);
 		}
 	}
@@ -339,9 +339,9 @@ namespace ukb {
 
 		for (map<string, ccache_map_t>::iterator it = concept_cache.begin(), end = concept_cache.end();
 			 it != end; ++it) {
-			wdicts_t::iterator mit;
+			wdict_t::iterator mit;
 			wdict_rhs_t empty_rhs;
-			tie (mit, insertedP) = m_wdicts.insert(make_pair(it->first, empty_rhs));
+			tie (mit, insertedP) = m_wdict.insert(make_pair(it->first, empty_rhs));
 			if (!insertedP) {
 				// already in map, so empty existing concepts (will be replaced by alternate dict)
 				mit->second.swap(empty_rhs);
@@ -366,8 +366,13 @@ namespace ukb {
 		return inst;
 	}
 
-	size_t WDict::size() {
+	size_t WDict::size() const {
 		return m_N;
+	}
+
+	size_t WDict::size_inv() const {
+		if (!m_wdict_inv.size()) create_inverse_dict();
+		return m_wdict_inv.size();
 	}
 
 	void WDict::size_bytes() {
@@ -379,8 +384,8 @@ namespace ukb {
 		long O_ranges = 0; // overhead
 		long O_hash = 0; // overhead
 		long V = 0;
-		O_hash += sizeof(m_wdicts);
-		for (WDict::wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
+		O_hash += sizeof(m_wdict);
+		for (WDict::wdict_t::const_iterator it = m_wdict.begin(), end = m_wdict.end();
 			 it != end; ++it) {
 			O_hash += sizeof(*it);
 			O_str += sizeof(it->first);
@@ -440,7 +445,7 @@ namespace ukb {
 
 	void WDict::create_variant_map() {
 
-		for(wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
+		for(wdict_t::const_iterator it = m_wdict.begin(), end = m_wdict.end();
 			it != end; ++it) {
 			const string & hw = it->first;
 			const wdict_rhs_t & rhs(it->second);
@@ -462,6 +467,74 @@ namespace ukb {
 		}
 	}
 
+	struct functor_invdict_prob {
+		int operator () (const winvdict_item_t & a, const winvdict_item_t & b) {
+			// Descending order
+			return a.m_count > b.m_count;
+		}
+	};
+
+	void WDict::create_inverse_dict() const {
+
+		bool P;
+		for(wdict_t::const_iterator it = m_wdict.begin(), end = m_wdict.end();
+			it != end; ++it) {
+			const string & hw = it->first;
+			const wdict_rhs_t & rhs(it->second);
+
+			// no pos
+			for(wdict_vector<wdict_item_t>::const_iterator rhs_it = rhs.m_items.begin(), rhs_end = rhs.m_items.end();
+				rhs_it < rhs_end; ++rhs_it) {
+				winvdict_t::iterator winv_it;
+				tie(winv_it, P) = m_wdict_inv.insert(make_pair(rhs_it->m_syn, vector<winvdict_item_t>()));
+				winv_it->second.push_back(winvdict_item_t(hw, rhs_it->m_count));
+			}
+		}
+		// normalize probabilities
+		for(winvdict_t::iterator it = m_wdict_inv.begin(), end = m_wdict_inv.end();
+			it != end; ++it) {
+			float sum = 0.0f;
+			for(winvdict_rhs_t::iterator rhs_it = it->second.begin(), rhs_end = it->second.end();
+				rhs_it != rhs_end; ++rhs_it) {
+				sum += rhs_it->m_count;
+			}
+			if (sum == 0.0f) continue;
+			float factor = 1.0f / sum;
+			for(winvdict_rhs_t::iterator rhs_it = it->second.begin(), rhs_end = it->second.end();
+				rhs_it != rhs_end; ++rhs_it) {
+				rhs_it->m_count *= factor;
+			}
+			// sort according to prob
+			sort(it->second.begin(), it->second.end(), functor_invdict_prob());
+		}
+	}
+
+
+	WInvdict_entries WDict::words(Kb_vertex_t u) const {
+		static winvdict_rhs_t null_entry;
+		if (!m_wdict_inv.size()) create_inverse_dict();
+		winvdict_t::const_iterator it = m_wdict_inv.find(u);
+		if (it == m_wdict_inv.end()) return WInvdict_entries(null_entry);
+		return WInvdict_entries(it->second);
+	}
+
+	WInvdict_entries WDict::words(const std::string & ustr) const {
+		static winvdict_rhs_t null_entry;
+		Kb_vertex_t u;
+		bool aux;
+		tie(u, aux) = Kb::instance().get_vertex_by_name(ustr);
+		if (!aux) return WInvdict_entries(null_entry);
+		return words(u);
+	}
+
+	const winvdict_rhs_t::const_iterator WInvdict_entries::begin() const {
+		return m_rhs.begin();
+	};
+
+	const winvdict_rhs_t::const_iterator WInvdict_entries::end() const {
+		return m_rhs.end();
+	};
+
 	std::string WDict::variant(std::string & concept_id) const {
 
 		static string res("Not in Dictionary");
@@ -478,10 +551,10 @@ namespace ukb {
 
 	WDict_entries WDict::get_entries(const std::string & word, const string & pos) const {
 		static wdict_rhs_t null_entry;
-		wdicts_t::const_iterator map_value_it = m_wdicts.find(word);
-		if (map_value_it == m_wdicts.end()) return WDict_entries(null_entry);
+		wdict_t::const_iterator map_value_it = m_wdict.find(word);
+		if (map_value_it == m_wdict.end()) return WDict_entries(null_entry);
 		return WDict_entries(map_value_it->second, pos);
-		//return WDict_entries(m_wdicts[&word]);
+		//return WDict_entries(m_wdict[&word]);
 	}
 
 	//////////////////////////////////////////////////////////////
@@ -518,6 +591,14 @@ namespace ukb {
 		return m_right - m_left;
 	}
 
+	const wdict_item_t *WDict_entries::begin() const {
+		return m_rhs.m_items.begin() + m_left;
+	};
+
+	const wdict_item_t *WDict_entries::end() const {
+		return m_rhs.m_items.begin() + m_right;
+	};
+
 	Kb_vertex_t WDict_entries::get_entry(size_t i) const {
 		return m_rhs.m_items[i + m_left].m_syn;
 	}
@@ -537,7 +618,7 @@ namespace ukb {
 
 	std::ostream & operator<<(std::ostream & o, const WDict & dict) {
 
-		for (WDict::wdicts_t::const_iterator it = dict.m_wdicts.begin(), end = dict.m_wdicts.end();
+		for (WDict::wdict_t::const_iterator it = dict.m_wdict.begin(), end = dict.m_wdict.end();
 			 it != end; ++it) {
 			o << it->first << it->second << "\n";
 		}
@@ -649,7 +730,7 @@ namespace ukb {
 		// Write map
 		os.write(reinterpret_cast<const char *>(&m_N), sizeof(m_N));
 		if(m_N) {
-			for(wdicts_t::const_iterator it = m_wdicts.begin(), end = m_wdicts.end();
+			for(wdict_t::const_iterator it = m_wdict.begin(), end = m_wdict.end();
 				it != end; ++it) {
 				write_atom_to_stream(os, it->first);
 				write_rhs_to_stream(os, it->second);
@@ -672,7 +753,29 @@ namespace ukb {
 			read_atom_from_stream(is, hw);
 			wdict_rhs_t e;
 			read_rhs_from_stream(is, e);
-			m_wdicts.insert(make_pair(hw, e));
+			m_wdict.insert(make_pair(hw, e));
 		}
+	}
+
+	// WDictHeadwords
+
+	WDictHeadwords::WDictHeadwords(const WDict & wdict) {
+		for(WDict::wdict_t::const_iterator it = wdict.m_wdict.begin(),
+				end = wdict.m_wdict.end();
+			it != end; ++it) {
+			m_V.push_back(&(*it));
+		}
+	}
+
+	const std::string & WDictHeadwords::hw(size_t i) const {
+		return m_V[i]->first;
+	}
+
+	WDict_entries WDictHeadwords::rhs(size_t i) const {
+		return WDict_entries(m_V[i]->second);
+	}
+
+	size_t WDictHeadwords::size() const {
+		return m_V.size();
 	}
 }
