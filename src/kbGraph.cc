@@ -1301,8 +1301,8 @@ namespace ukb {
 		float tot = 0.0;
 
 		float inv_alpha = 1-alpha;
-		float inv_factor = pow( (N*m),-1);
-
+		//float inv_factor = pow( (N*m),-1);
+		float inv_factor = 0.0;
 
 		for(;v_it != v_end; ++v_it){
 
@@ -1312,14 +1312,13 @@ namespace ukb {
 
 
 		for(int i = pi_vector.size() -1; i >= 0; --i){	//Calculate
-		  	  pi_vector[i] = pi_vector[i] * inv_factor * inv_alpha;
-
-		  	  if(v_aux == v_end){
-		  	    tot += pi_vector[i];
-		  	  }
+		  inv_factor = pow( m,-1);
+		  pi_vector[i] = pi_vector[i] * inv_factor * inv_alpha * pv[i];
+		  if(v_aux == v_end){
+		    tot += pi_vector[i];
+		  }
 
 			}
-
 		for(int i =  pi_vector.size() -1; i >= 0; --i){  //Normalize
 			pi_vector[i] = pi_vector[i] / tot;
 		}
