@@ -1219,7 +1219,7 @@ namespace ukb {
 		}
   }
 
-  void Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, int m){
+  std::vector<float> Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, int m){
 
 		Kb_out_edge_iter_t itOut, itOutEnd;
 		Kb & kb = ukb::Kb::instance();
@@ -1227,11 +1227,12 @@ namespace ukb {
 		Kb_out_edge_iter_t before_child;
 
 		size_t N = num_vertices(*m_g);
+		vector<float> results(N, 0.0);
 
 		for(int i = 0; i < m; ++i){  //Iterate for the given steps
 
 		  Kb_vertex_t current = v;  //Start the iteration in the V vertex
-		  pi_vector[current]++;
+		  results[current]++;
 
 		  while(rnumber01() <= alpha){
 
@@ -1270,12 +1271,12 @@ namespace ukb {
 		      }
 		    }
 
-		    pi_vector[current]++;
+		    results[current]++;
 
 
 		    }
 		}
-
+		return results;
   }
 
   void Kb::monte_carlo_complete(float alpha, vector<float> & pv, int m, vector<float> & pi_vector){
@@ -1302,23 +1303,30 @@ namespace ukb {
 
 		float inv_alpha = 1-alpha;
 		//float inv_factor = pow( (N*m),-1);
-		float inv_factor = 0.0;
-
+		//float inv_factor = 0.0;
+		float inv_factor = pow( m,-1);
+		std::vector<float> results;
 		for(;v_it != v_end; ++v_it){
-
-		  	kb.do_mc_complete(*v_it, alpha, pi_vector, m);  //Do a Random Walk starting in the vertex V for m times
-
+			if(pv[*v_it] != 0){
+		  		results = kb.do_mc_complete(*v_it, alpha, pi_vector, m);  //Do a Random Walk starting in the vertex V for m times
+		  		for(int i = pi_vector.size() -1; i >= 0; --i){	//Calculate
+		  		  //inv_factor = pow( m,-1);
+		  		  results[i] = results[i] * inv_factor * inv_alpha * pv[*v_it];
+		  		  pi_vector[i] += results[i];
+				}
+				results.clear();
+			}
 		}
 
 
 		for(int i = pi_vector.size() -1; i >= 0; --i){	//Calculate
-		  inv_factor = pow( m,-1);
-		  pi_vector[i] = pi_vector[i] * inv_factor * inv_alpha * pv[i];
+		  //inv_factor = pow( m,-1);
+		  //pi_vector[i] = pi_vector[i] * inv_factor * inv_alpha * pv[i];
 		  if(v_aux == v_end){
 		    tot += pi_vector[i];
 		  }
 
-			}
+		}
 		for(int i =  pi_vector.size() -1; i >= 0; --i){  //Normalize
 			pi_vector[i] = pi_vector[i] / tot;
 		}

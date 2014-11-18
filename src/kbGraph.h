@@ -207,7 +207,7 @@ public:
   //int random_numb(int min_num, int max_num);
   void do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, int m);
   void monte_carlo_end_point_cyclic(float alpha, std::vector<float> & pv, int m, std::vector<float> & pi_vector);
-  void do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector, int m);
+  std::vector<float> do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector, int m);
   void monte_carlo_complete(float alpha, std::vector<float> & pv, int m, std::vector<float> & pi_vector);
   float intersect_vin_wout(std::set<Kb_vertex_t> & inVertexSet, Kb_vertex_t w);
   void structural_weighting();
