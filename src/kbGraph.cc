@@ -1272,8 +1272,6 @@ namespace ukb {
 		    }
 
 		    results[current]++;
-
-
 		    }
 		}
 		return results;
