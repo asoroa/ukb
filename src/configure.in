@@ -79,6 +79,11 @@ AC_CHECK_LIB(boost_filesystem,
 	     [LDFLAGS="${LDFLAGS} -lboost_filesystem"],
 	     echo "libboost_filesystem not found. Please add BOOST library directory to your LD_LIBRARY_PATH or specify a suitable BOOST library directory: --with-boost-lib=DIR"; exit 1)
 
+AC_CHECK_LIB(boost_random,
+	     main,
+	     [LDFLAGS="${LDFLAGS} -lboost_random"],
+	     echo "libboost_random not found. Please add BOOST library directory to your LD_LIBRARY_PATH or specify a suitable BOOST library directory: --with-boost-lib=DIR"; exit 1)
+
 AC_SUBST(BOOST_LIB_DIR)
 
 AC_SUBST(LDFLAGS)

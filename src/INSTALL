@@ -9,6 +9,7 @@ following Boost libraries:
       * boost lexical cast
       * boost numeric conversions
       * boost asio
+      * boost random
 
 * Compiling boost
 
@@ -22,10 +23,11 @@ $ cd /tmp/boost_src
 $ wget http://downloads.sourceforge.net/project/boost/boost/1.54.0/boost_1_54_0.tar.bz2
 $ tar xjf boost_1_54_0.tar.bz2
 $ cd boost_1_54_0
-$ ./bootstrap.sh --with-libraries=graph,system,filesystem,program_options,regex
+$ ./bootstrap.sh --with-libraries=graph,system,filesystem,program_options,regex,random
 $ sudo ./b2 install --layout=system
+$ sudo ldconfig
 $ cd
-$ rm -fr /tmp/boost_src
+$ sudo rm -fr /tmp/boost_src
 
 * Compiling UKB
 
