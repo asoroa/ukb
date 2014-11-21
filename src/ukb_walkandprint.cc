@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
 	ifstream input_ifs;
 
 	bool opt_do_test = false;
-
+	glVars::input::filter_pos = false;
 
 	using namespace boost::program_options;
 
