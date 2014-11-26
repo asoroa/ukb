@@ -1,7 +1,6 @@
 #include "kbGraph.h"
 #include "common.h"
 #include "globalVars.h"
-#include "wdict.h"
 #include "prank.h"
 
 #include <string>
@@ -409,6 +408,7 @@ namespace ukb {
 	}
 
 	float Kb::get_edge_weight(Kb_edge_t e) const {
+		if (!glVars::prank::use_weight) return 1.0f;
 		return (*m_g)[e].weight;
 	}
 

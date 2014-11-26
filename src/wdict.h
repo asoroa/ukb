@@ -3,6 +3,7 @@
 #ifndef WDICT_H
 #define WDICT_H
 
+#include "globalVars.h"
 #include "wdict_vector.h"
 
 #include <string>
@@ -101,6 +102,8 @@ namespace ukb {
 			friend class boost::iterator_core_access;
 
 			const float & dereference() const {
+				static float one = 1.0f;
+				if (!glVars::dict::use_weight) return one;
 				return m_current->m_count;
 			}
 			void increment() { ++m_current; }
@@ -173,6 +176,8 @@ namespace ukb {
 			friend class boost::iterator_core_access;
 
 			const float & dereference() const {
+				static float one = 1.0f;
+				if (!glVars::dict::use_weight) return one;
 				return m_current->m_count;
 			}
 			void increment() { ++m_current; }
