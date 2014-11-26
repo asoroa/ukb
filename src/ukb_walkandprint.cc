@@ -61,12 +61,12 @@ void do_mc_complete(Kb_vertex_t v, vector<string> & emited_words) {
 	Kb_vertex_t current = v;  //Start the iteration in the V vertex
 	vector<string>().swap(emited_words);
 
-	for (float r = rnumber(1.0f); r <= glVars::prank::damping; r = rnumber(1.0f) ){
+	for (float r = rnumber(1.0f); r <= glVars::prank::damping; r = rnumber(1.0f) ) {
 
 		// emit word from current vertex
 		string emit_word;
 		WInvdict_entries words = WDict::instance().words(current);
-
+		if(!words.size()) break;
 		float & total_weight = vertex2word_tweight[current];
 		if (total_weight == 0.0f) {
 			WInvdict_entries::freq_const_iterator freq_it( words.begin() );
@@ -138,7 +138,6 @@ void do_mc_word(const string & hw, size_t n) {
 	static std::tr1::unordered_map<const std::string &, float > dweight_cache;
 	std::tr1::unordered_map<const std::string &, float >::iterator dweight_it;
 	bool P;
-	size_t m = dicthws.size();
 
 	WDict_entries synsets(WDict::instance().get_entries(hw));
 
