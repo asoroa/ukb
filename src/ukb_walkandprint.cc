@@ -389,6 +389,8 @@ int main(int argc, char *argv[]) {
 	// }
 	// cout << "\n";
 	//do_mc_words(N);
+	cout << cmdline << "\n";
+
 	if (seed_word.size()) {
 		do_mc_word(seed_word, N);
 	} else {
