@@ -1130,14 +1130,13 @@ namespace ukb {
     return  static_cast<int> (y);
 }
 
-  void Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, int m){
+  std::vector<float> Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, int m){
 
 		Kb_out_edge_iter_t itOut, itOutEnd;
 		Kb & kb = ukb::Kb::instance();
 		Kb_out_edge_iter_t before_child;
 
-		Kb_vertex_t current = v;
-
+		vector<float> results(num_vertices(*m_g), 0.0);
 		for(int i = 0; i < m; ++i){  //Iterate for the given steps
 
 		  Kb_vertex_t current = v;  //Start the iteration in the V vertex
@@ -1177,8 +1176,9 @@ namespace ukb {
 		  	}
 		  }
 		  //cout << kb.get_vertex_name(current) << " ukituta" << endl;
-		  pi_vector[current]++;
+		  results[current]++;
 		}
+		return results;
   }
 
   void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> & pv,int m, vector<float> & pi_vector){
@@ -1203,15 +1203,27 @@ namespace ukb {
 
 		float inv_factor = pow( N,-1);
 
+		std::vector<float> results;
 		for (;v_it != v_end; ++v_it){
-			//cout << kb.get_vertex_name(*v_it) << " aztertzen-------------------------------" << endl;
-		  	kb.do_mc_end_cyclic(*v_it, alpha, pi_vector, m);
+			if(pv[*v_it] != 0){
+			  results = kb.do_mc_end_cyclic(*v_it, alpha, pi_vector, m);
+			  for(int i = pi_vector.size() - 1; i >= 0; --i){ //Calculate
+
+			  	if(results[i] != 0){
+		  		  results[i] = results[i] * inv_factor * pv[*v_it];
+		  		  pi_vector[i] +=results[i];
+		  		}
+			  }
+			  results.clear();
+			}
 		}
 
 		float tot = 0.0;
 		for(int i = pi_vector.size() - 1; i >= 0; --i){ //Calculate
-		  pi_vector[i] = inv_factor * pi_vector[i];
-		  tot = tot + pi_vector[i];
+		  //pi_vector[i] = inv_factor * pi_vector[i];
+			if(pi_vector[i != 0]){
+		  	  tot = tot + pi_vector[i];
+		  	}
 		}
 
 		for(int i =  pi_vector.size() -1; i >= 0; --i){  //Normalize
@@ -1309,8 +1321,10 @@ namespace ukb {
 		  		results = kb.do_mc_complete(*v_it, alpha, pi_vector, m);  //Do a Random Walk starting in the vertex V for m times
 		  		for(int i = pi_vector.size() -1; i >= 0; --i){	//Calculate
 		  		  //inv_factor = pow( m,-1);
-		  		  results[i] = results[i] * inv_factor * inv_alpha * pv[*v_it];
-		  		  pi_vector[i] += results[i];
+		  		  if(results[i] != 0){
+		  		  	results[i] = results[i] * inv_factor * inv_alpha * pv[*v_it];
+		  		  	pi_vector[i] += results[i];
+		  		  }
 				}
 				results.clear();
 			}
@@ -1320,7 +1334,7 @@ namespace ukb {
 		for(int i = pi_vector.size() -1; i >= 0; --i){	//Calculate
 		  //inv_factor = pow( m,-1);
 		  //pi_vector[i] = pi_vector[i] * inv_factor * inv_alpha * pv[i];
-		  if(v_aux == v_end){
+		  if(pi_vector[i] !=0 ){
 		    tot += pi_vector[i];
 		  }
 
