@@ -26,7 +26,7 @@ using namespace boost;
 
 boost::random::mt19937 mt;
 
-bool opt_emit_words = false; // whether to emit words
+float opt_wemit_prob = 1.0; // whether to emit words
 
 template<class It>
 int rnumber_distribution(It beg, It end) {
@@ -56,6 +56,12 @@ bool emit_word_vertex(Kb_vertex_t current, string & emit_word) {
 	static vector<float> vertex2word_tweight;
 
 	Kb & kb = Kb::instance();
+
+	float toss = rnumber(1.0f);
+	if (toss >= opt_wemit_prob) {
+		emit_word = kb.get_vertex_name(current);
+		return true;
+	}
 
 	if (!vertex2word_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex2word_tweight);
 
@@ -110,19 +116,14 @@ bool select_next_vertex(Kb_vertex_t & current) {
 
 void do_mc_complete(Kb_vertex_t v, vector<string> & emited_words) {
 
-	Kb & kb = Kb::instance();
-
 	Kb_vertex_t current = v;  //Start the iteration in the V vertex
 	vector<string>().swap(emited_words);
 
 	for (float r = rnumber(1.0f); r <= glVars::prank::damping; r = rnumber(1.0f) ) {
 		// emit word from current vertex
 		string emit_word;
-		if (!opt_emit_words) {
-			emited_words.push_back(kb.get_vertex_name(current));
-		} else if (emit_word_vertex(current, emit_word)) {
+		if (emit_word_vertex(current, emit_word))
 			emited_words.push_back(emit_word);
-		}
 		// Select next vertex to jump
 		if (!select_next_vertex(current)) break;
 	}
@@ -292,7 +293,7 @@ int main(int argc, char *argv[]) {
 
 	options_description po_desc_waprint("walk and print options");
 	po_desc_waprint.add_options()
-		("emit_concepts", "When on an vertex, emit the vertex and not the word. Default is false (emit word).")
+		("wemit_prob", value<float>(), "Probability to emit a word when on an vertex (emit vertex name instead). Default is 1.0 (always emit word).")
 		("seed_word", value<string>(), "Select concepts associate to the word to start the random walk. Default is start at any vertex at random.")
 		;
 
@@ -346,15 +347,19 @@ int main(int argc, char *argv[]) {
 			exit(0);
 		}
 
-		if (vm.count("emit_concepts")) {
-			opt_emit_words = false;
+		if (vm.count("wemit_prob")) {
+			opt_wemit_prob = vm["wemit_prob"].as<float>();
+			if (opt_wemit_prob < 0.0f || opt_wemit_prob > 1.0f) {
+				cerr << "Error: invalid wemit_prob value:" << opt_wemit_prob << "\n";
+				exit(1);
+			}
 		}
 
 		if (vm.count("prank_damping")) {
 			float dp = vm["prank_damping"].as<float>();
 			if (dp <= 0.0 || dp > 1.0) {
 				cerr << "Error: invalid prank_damping value " << dp << "\n";
-				exit(-1);
+				exit(1);
 			}
 			glVars::prank::damping = dp;
 		}
