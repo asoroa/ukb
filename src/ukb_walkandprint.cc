@@ -26,6 +26,8 @@ using namespace boost;
 
 boost::random::mt19937 mt;
 
+bool opt_emit_words = false; // whether to emit words
+
 template<class It>
 int rnumber_distribution(It beg, It end) {
 	boost::random::discrete_distribution<> dist(beg, end);
@@ -49,60 +51,80 @@ float rnumber(float b) {
     return dist(mt);
 }
 
+bool emit_word_vertex(Kb_vertex_t current, string & emit_word) {
+
+	static vector<float> vertex2word_tweight;
+
+	Kb & kb = Kb::instance();
+
+	if (!vertex2word_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex2word_tweight);
+
+	WInvdict_entries words = WDict::instance().words(current);
+	if (!words.size()) return false;
+	float & total_weight = vertex2word_tweight[current];
+	if (total_weight == 0.0f) {
+		WInvdict_entries::freq_const_iterator freq_it( words.begin() );
+		WInvdict_entries::freq_const_iterator freq_end( words.end() );
+		for(;freq_it != freq_end; ++freq_it) total_weight += *freq_it;
+	}
+	if (total_weight == 0.0f) return false; // Should never happen
+	float rand_value = rnumber(total_weight);
+	float w_accum = 0;
+	for(size_t i = 0; i < words.size(); ++i) {
+		w_accum += words.get_prob(i);
+		emit_word = words.get_word(i);
+		if (rand_value < w_accum) break;
+	}
+	return true;
+}
+
+bool select_next_vertex(Kb_vertex_t & current) {
+
+	static vector<float> vertex_out_tweight;
+
+	Kb & kb = Kb::instance();
+	Kb_vertex_t previous = current;
+
+	if (!vertex_out_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex_out_tweight);
+
+	Kb_out_edge_iter_t out_it, out_end;
+
+	tie(out_it, out_end) = kb.out_neighbors(previous);
+	float & total_weight = vertex_out_tweight[previous];
+	if (total_weight == 0.0f) {
+		for(; out_it < out_end; ++out_it) {
+			total_weight += kb.get_edge_weight(*out_it);
+		}
+		tie(out_it, out_end) = kb.out_neighbors(previous);
+	}
+	if (total_weight == 0.0f) return false; // danglink link. The RW is over.
+	float rand_value = rnumber(total_weight);
+	float w_accum = 0.0f;
+	for(; out_it < out_end; ++out_it) {
+		w_accum += kb.get_edge_weight(*out_it);
+		current = kb.edge_target(*out_it);
+		if (rand_value < w_accum) break;
+	}
+	return true;
+}
+
 void do_mc_complete(Kb_vertex_t v, vector<string> & emited_words) {
 
 	Kb & kb = Kb::instance();
-	static vector<float> vertex2word_tweight;
-	static vector<float> vertex_out_tweight;
-
-	if (!vertex2word_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex2word_tweight);
-	if (!vertex_out_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex_out_tweight);
 
 	Kb_vertex_t current = v;  //Start the iteration in the V vertex
 	vector<string>().swap(emited_words);
 
 	for (float r = rnumber(1.0f); r <= glVars::prank::damping; r = rnumber(1.0f) ) {
-
 		// emit word from current vertex
 		string emit_word;
-		WInvdict_entries words = WDict::instance().words(current);
-		if(!words.size()) break;
-		float & total_weight = vertex2word_tweight[current];
-		if (total_weight == 0.0f) {
-			WInvdict_entries::freq_const_iterator freq_it( words.begin() );
-			WInvdict_entries::freq_const_iterator freq_end( words.end() );
-			for(;freq_it != freq_end; ++freq_it) total_weight += *freq_it;
+		if (!opt_emit_words) {
+			emited_words.push_back(kb.get_vertex_name(current));
+		} else if (emit_word_vertex(current, emit_word)) {
+			emited_words.push_back(emit_word);
 		}
-
-		float rand_value = rnumber(total_weight);
-		float w_accum = 0;
-		for(size_t i = 0; i < words.size(); ++i) {
-			w_accum += words.get_prob(i);
-			emit_word = words.get_word(i);
-			if (rand_value < w_accum) break;
-		}
-		emited_words.push_back(emit_word);
-
 		// Select next vertex to jump
-		{
-			Kb_out_edge_iter_t out_it, out_end;
-
-			tie(out_it, out_end) = kb.out_neighbors(current);
-			float & total_weight = vertex_out_tweight[current];
-			if (total_weight == 0.0f) {
-				for(; out_it < out_end; ++out_it) {
-					total_weight += kb.get_edge_weight(*out_it);
-				}
-				tie(out_it, out_end) = kb.out_neighbors(current);
-			}
-			float rand_value = rnumber(total_weight);
-			w_accum = 0;
-			for(; out_it < out_end; ++out_it) {
-				w_accum += kb.get_edge_weight(*out_it);
-				current = kb.edge_target(*out_it);
-				if (rand_value < w_accum) break;
-			}
-		}
+		if (!select_next_vertex(current)) break;
 	}
 }
 
@@ -150,6 +172,7 @@ void do_mc_word(const string & hw, size_t n) {
 				total_weight += synsets.get_freq(i);
 			}
 		}
+		if (total_weight == 0.0f) break; // word has no attached vertices
 		float rand_value = rnumber(total_weight);
 		float w_accum = 0;
 		Kb_vertex_t synset;
@@ -265,7 +288,12 @@ int main(int argc, char *argv[]) {
 		("verbose,v", "Be verbose.")
 		("kb_binfile,K", value<string>(), "Binary file of KB (see compile_kb).")
 		("dict_file,D", value<string>(), "Dictionary text file.")
-		("word", value<string>(), "Seed word.")
+		;
+
+	options_description po_desc_waprint("walk and print options");
+	po_desc_waprint.add_options()
+		("emit_concepts", "When on an vertex, emit the vertex and not the word. Default is false (emit word).")
+		("seed_word", value<string>(), "Select concepts associate to the word to start the random walk. Default is start at any vertex at random.")
 		;
 
 	options_description po_desc_prank("pageRank general options");
@@ -281,7 +309,7 @@ int main(int argc, char *argv[]) {
 		;
 
 	options_description po_visible(desc_header);
-	po_visible.add(po_desc).add(po_desc_prank).add(po_desc_dict);
+	po_visible.add(po_desc).add(po_desc_waprint).add(po_desc_prank).add(po_desc_dict);
 
 	options_description po_hidden("Hidden");
 	po_hidden.add_options()
@@ -318,6 +346,10 @@ int main(int argc, char *argv[]) {
 			exit(0);
 		}
 
+		if (vm.count("emit_concepts")) {
+			opt_emit_words = false;
+		}
+
 		if (vm.count("prank_damping")) {
 			float dp = vm["prank_damping"].as<float>();
 			if (dp <= 0.0 || dp > 1.0) {
@@ -347,7 +379,7 @@ int main(int argc, char *argv[]) {
 			kb_binfile = vm["kb_binfile"].as<string>();
 		}
 
-		if (vm.count("word")) {
+		if (vm.count("seed_word")) {
 			seed_word = vm["word"].as<string>();
 		}
 
