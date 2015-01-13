@@ -51,6 +51,85 @@ float rnumber(float b) {
     return dist(mt);
 }
 
+///////////////////////////////////////////////
+
+
+struct vpart_sort_t {
+
+	const vector<float> & m_v ;
+	vpart_sort_t(const vector<float> & score) : m_v(score) {}
+	int operator()(const int & i, const int & j) {
+		// Descending order
+		return m_v[i] > m_v[j];
+	}
+};
+
+struct vsampling_t {
+
+	vector<int> m_idx;
+	size_t m_N; // size of graph
+	size_t m_bucket_N;
+	vector<pair<int, int> > m_intervals;
+
+	void debug() {
+		const vector<float> & sprank = Kb::instance().static_prank();
+		cout << std::setprecision(4) << 1.0f / static_cast<float>(m_bucket_N) << "\n";
+		for(size_t i = 0; i < m_intervals.size(); i++) {
+			cout << "Interval " << i << ": ";
+			for (int j = m_intervals[i].first; j != m_intervals[i].second; j++) {
+				string v = Kb::instance().get_vertex_name(m_idx[j]);
+				float rank = sprank[m_idx[j]];
+				cout << v << ":" << std::setprecision(4) << rank << " ";
+			}
+			cout << "\n";
+		}
+	}
+
+	vsampling_t(size_t buckets = 10) : m_bucket_N(buckets) {
+
+		Kb & kb = Kb::instance();
+		m_N = kb.size();
+		if (!buckets) return ;
+		const vector<float> & sprank = kb.static_prank();
+		vector<int>(m_N).swap(m_idx);
+		for(size_t i = 0; i < m_N; i++) m_idx[i] = i;
+		// sort idx according to static prank
+		sort(m_idx.begin(), m_idx.end(), vpart_sort_t(sprank));
+		float factor = 1.0f / static_cast<float>(m_bucket_N) ;
+		float accum = 0.0;
+		pair<int, int> interval = make_pair(0,0);
+		for(size_t i = 0; i < m_N; i++) {
+			interval.second++;
+			accum += sprank[ m_idx[i] ];
+			if (accum > factor) {
+				m_intervals.push_back(interval);
+				if (m_intervals.size() == m_bucket_N) break;
+				interval = make_pair(interval.second, interval.second);
+				accum = 0.0;
+			}
+		}
+		m_intervals.back().second = m_N;
+		m_bucket_N = m_intervals.size();
+	}
+
+	// Method to sample a vertex
+	// First, decide which bucket, then select one at random from the bucket
+	int sample() {
+		if (!m_bucket_N) {
+			return rnumber(m_N);
+		}
+		size_t bucket_i = rnumber(m_bucket_N - 1);
+		int left = m_intervals[bucket_i].first;
+		int m = m_intervals[bucket_i].second - left;
+		assert(m > 0);
+		size_t off = rnumber(m);
+		return m_idx[left + off];
+	}
+};
+
+///////////////////////////////////////////////
+
+
 bool emit_word_vertex(Kb_vertex_t current, string & emit_word) {
 
 	static vector<float> vertex2word_tweight;
@@ -129,15 +208,16 @@ void do_mc_complete(Kb_vertex_t v, vector<string> & emited_words) {
 	}
 }
 
-void do_mc_synsets(size_t n) {
+void do_mc_synsets(size_t n, size_t bucket_size) {
 
 	Kb & kb = Kb::instance();
 	size_t m = kb.size();
 	vector<string> emited_words;
+	vsampling_t vsampler(bucket_size);
 	if (!m) return;
 	m--;
 	for(size_t i = 0; i < n; ++i) {
-		int idx = rnumber(m);
+		int idx = vsampler.sample();
 		Kb_vertex_t u(idx);
 		do_mc_complete(u, emited_words);
 		if(emited_words.size() > 1) {
@@ -269,6 +349,7 @@ int main(int argc, char *argv[]) {
 
 	bool opt_do_test = false;
 	glVars::input::filter_pos = false;
+	size_t opt_bucket_size = 0;
 
 	using namespace boost::program_options;
 
@@ -293,6 +374,8 @@ int main(int argc, char *argv[]) {
 
 	options_description po_desc_waprint("walk and print options");
 	po_desc_waprint.add_options()
+		("vsample", "Sample vertices according to static prank.")
+		("buckets", value<size_t>(), "Number of buckets used in vertex sampling (default is 10).")
 		("wemit_prob", value<float>(), "Probability to emit a word when on an vertex (emit vertex name instead). Default is 1.0 (always emit word).")
 		("seed_word", value<string>(), "Select concepts associate to the word to start the random walk. Default is start at any vertex at random.")
 		;
@@ -333,7 +416,6 @@ int main(int argc, char *argv[]) {
 			  run(), vm);
 
 		notify(vm);
-
 
 		// If asked for help, don't do anything more
 
@@ -380,6 +462,14 @@ int main(int argc, char *argv[]) {
 			glVars::dict::weight_smoothfactor = vm["smooth_dict_weight"].as<float>();
 		}
 
+		if (vm.count("vsample")) {
+			opt_bucket_size = 10 ; // default value
+		}
+
+		if (vm.count("buckets")) {
+			opt_bucket_size = vm["buckets"].as<size_t>();
+		}
+
 		if (vm.count("kb_binfile")) {
 			kb_binfile = vm["kb_binfile"].as<string>();
 		}
@@ -417,20 +507,12 @@ int main(int argc, char *argv[]) {
 	N = lexical_cast<size_t>(N_str);
 	Kb::create_from_binfile(kb_binfile);
 
-	// string w0 = "plane";
-
-	// WInvdict_entries W = WDict::instance().words("01443021-v");
-	// for(size_t i = 0; i < W.size(); ++i) {
-	// 	cout << W.get_word(i) << "#" << W.get_prob(i) << " ";
-	// }
-	// cout << "\n";
-	//do_mc_words(N);
 	cout << cmdline << "\n";
 
 	if (seed_word.size()) {
 		do_mc_word(seed_word, N);
 	} else {
-		do_mc_synsets(N);
+		do_mc_synsets(N, opt_bucket_size);
 	}
 
 }
