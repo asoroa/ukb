@@ -43,6 +43,8 @@
 
 =cut
 
+use FindBin qw($Bin);
+use lib $Bin;
 use Getopt::Long qw(:config auto_help);
 use Pod::Usage;
 use File::Temp qw(tempdir) ;
@@ -50,7 +52,7 @@ use Similarity ;
 use strict ;
 
 my $SIM = 'dot';
-my $RUNDIR = '../bin/' ;
+my $RUNDIR = "$Bin/../src" ;
 my $UKBARGS = "" ;
 GetOptions("x=s" => \$RUNDIR,
 	   "sim=s" => \$SIM,
@@ -90,6 +92,8 @@ foreach my $pair (@pairs)  {
 close O ;
 
 # call to ukb
+# print STDERR "$RUNDIR/ukb_ppv  $UKBARGS -O  $tmpdir $tmpdir/sim-$$.txt" ;
+# die;
 system("$RUNDIR/ukb_ppv  $UKBARGS -O  $tmpdir $tmpdir/sim-$$.txt") ;
 
 

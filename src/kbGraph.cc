@@ -1222,39 +1222,48 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
   std::vector<float> hits(N, 0.0);
 
   bool exit_now = false;
-  vector<float> tres(N, 0.0);
+  float tres = 0.0;
 
-  int i = 0;
-  for (; i < m; ++i)
+  int i = 1;
+  for (; i <= m; ++i)
   {
     after_vec = kb.do_mc_complete(*v_it, alpha, before_vec, pv, hits, i); //Do a Random Walk for all vertex
 
     for (int k = 0; k < after_vec.size(); k++)
     {
-      pi_vector[k] = after_vec[k];
-      tres[k] = fabs(after_vec[k] - before_vec[k]);
-      if (i > 0)
-      {
-        if (after_vec[k] != 0 || before_vec[k] != 0)
+      //pi_vector[k] = after_vec[k];
+      if(pv[k] != 0){
+        tres = tres + fabs(after_vec[k] - before_vec[k]);
+        if (i > 1)
         {
-          if (tres[k] < glVars::prank::threshold)
-          {
-            exit_now = true;
-          }
+          //if (after_vec[k] != 0 || before_vec[k] != 0)
+          //{
+            if (tres < glVars::prank::threshold)
+            {
+              exit_now = true;
+            }else{
+              exit_now = false;
+            }
+          //}
         }
       }
+      if(exit_now && k == after_vec.size()-1){
+        cout << "Convergence reached: "  << tres << endl;
+      }
     }
+    pi_vector = after_vec;
     if (exit_now)
     {
-      cout << "Iterations done before reaching convergence: " << i + 1 << endl;
+      cout << "Iterations done before reaching convergence: " << i << endl;
       break;
     }
     before_vec = after_vec;
     after_vec.clear();
+    tres = 0.0;
   }
   if (!exit_now)
   {
-    cout << "Iterations done: " << i + 1 << endl;
+    cout << "Iterations done: " << i << endl;
   }
 }
 }
