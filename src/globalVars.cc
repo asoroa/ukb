@@ -52,7 +52,7 @@ namespace ukb {
 	  float threshold = 0.0001; // If zero just use num_iterations
 	  float damping = 0.85; // damping factor
 	  PrankImpl impl = pm; // default is power method
-	  int mc_m = 3;      // Monte Carlo iterations default value
+	  int mc_m = 30;      // Monte Carlo iterations default value
 	}
 
 	namespace input {

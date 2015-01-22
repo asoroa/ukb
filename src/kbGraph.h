@@ -137,7 +137,7 @@ Kb_vertex_t get_random_vertex() const;
 */
 //static float rnumber01();
 //int random_numb(int min_num, int max_num);
-std::vector<float> do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, int m);
+std::vector<float> do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> & pi_vector, std::vector<float> &pv, std::vector<float> &hits, int m);
 void monte_carlo_end_point_cyclic(float alpha, std::vector<float> & pv, int m, std::vector<float> & pi_vector);
 std::vector<float> do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector,std::vector<float> &pv, std::vector<float> &hits, int m);
 void monte_carlo_complete(float alpha, std::vector<float> & pv, int m, std::vector<float> & pi_vector);

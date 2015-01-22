@@ -466,6 +466,8 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("mc_iterations")) {
       glVars::prank::mc_m = vm["mc_iterations"].as<size_t>();
+      iterations = vm["mc_iterations"].as<size_t>();
+      check_convergence = true;
     }
 
     if (vm.count("mc_complete_path")) {
