@@ -1147,13 +1147,13 @@ void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> &pv, int m, vec
         }
       }
       if(exit_now && k == after_vec.size()-1){
-        cout << "Convergence reached: "  << tres << endl;
+        //out << "Convergence reached: "  << tres << endl; //Debugging info
       }
     }
     pi_vector = after_vec;
     if (exit_now)
     {
-      cout << "Iterations done before reaching convergence: " << i << endl;
+      //cout << "Iterations done before reaching convergence: " << i << endl; //Debugging info
       break;
     }
     before_vec = after_vec;
@@ -1162,7 +1162,7 @@ void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> &pv, int m, vec
   }
   if (!exit_now)
   {
-    cout << "Iterations done: " << i << endl;
+    //cout << "Iterations done: " << i << endl; // Debugging info
   }
 }
 
@@ -1295,13 +1295,13 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
         }
       }
       if(exit_now && k == after_vec.size()-1){
-        cout << "Convergence reached: "  << tres << endl;
+        //cout << "Convergence reached: "  << tres << endl; //Debugging info
       }
     }
     pi_vector = after_vec;
     if (exit_now)
     {
-      cout << "Iterations done before reaching convergence: " << i << endl;
+      //cout << "Iterations done before reaching convergence: " << i << endl;  //Debugging info
       break;
     }
     before_vec = after_vec;
@@ -1310,7 +1310,7 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
   }
   if (!exit_now)
   {
-    cout << "Iterations done: " << i << endl;
+    //cout << "Iterations done: " << i << endl;  //Debugging info
   }
 }
 }
