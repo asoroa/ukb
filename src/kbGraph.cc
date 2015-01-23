@@ -1092,13 +1092,22 @@ std::vector<float> Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<
   float tot = 0.0;
   for (int i = hits.size() - 1; i >= 0; --i) //Calculate
   {
+    if(pv[i] != 0 ){
+      results[i] = hits[i] * inv_factor*pv[i];
+      tot += results[i];
+    }else{
+      results[i] = 0;
+    }
 
-    results[i] = hits[i] * inv_factor*pv[i];
-    tot += results[i];
   }
   for (int i = results.size() - 1; i >= 0; --i) //Normalize
   {
-    results[i] = results[i] / tot;
+    if (results[i] != 0)
+    {
+      results[i] = results[i] / tot;
+    }else{
+      results[i] = 0;
+    }
   }
   return results;
 }
@@ -1147,7 +1156,7 @@ void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> &pv, int m, vec
         }
       }
       if(exit_now && k == after_vec.size()-1){
-        //out << "Convergence reached: "  << tres << endl; //Debugging info
+        //cout << "Convergence reached: "  << tres << endl; //Debugging info
       }
     }
     pi_vector = after_vec;
@@ -1241,12 +1250,22 @@ std::vector<float> Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<fl
   float tot = 0.0;
   for (int i = hits.size() - 1; i >= 0; --i) //Calculate
   {
-    results[i] = hits[i] * inv_factor * inv_alpha * pv[i];
-    tot += results[i];
+    if (pv[i] != 0)
+    {
+      results[i] = hits[i] * inv_factor * inv_alpha * pv[i];
+      tot += results[i];
+    }else{
+      results[i] = 0;
+    }
   }
   for (int i = results.size() - 1; i >= 0; --i) //Normalize
   {
-    results[i] = results[i] / tot;
+    //if (results[i] != 0)
+    //{
+      results[i] = results[i] / tot;
+    //}else{
+      //results[i] = 0;
+    //}
   }
   return results;
 }
@@ -1308,6 +1327,7 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
     after_vec.clear();
     tres = 0.0;
   }
+  cout << endl;
   if (!exit_now)
   {
     //cout << "Iterations done: " << i << endl;  //Debugging info
