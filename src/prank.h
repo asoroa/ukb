@@ -4,7 +4,9 @@
 #define PRANK_H
 
 #include <boost/graph/graph_concepts.hpp>
-#include<boost/tuple/tuple.hpp> // for "tie"
+#include <boost/unordered_set.hpp>
+#include <queue>
+#include <boost/tuple/tuple.hpp> // for "tie"
 #include <iosfwd>
 
 /////////////////////////////////////////////////////////////////////
@@ -242,6 +244,164 @@ namespace ukb {
 			typedef typename graph_traits<G>::edge_descriptor edge_descriptor;
 			constant_property_map <edge_descriptor, float> cte_weight(1); // always return 1
 			pageRank_iterate(g, ppv_V, cte_weight, rank_map1, rank_map2, iterations, threshold, damping);
+		}
+
+
+		//
+		// PageRank nibble
+		//
+		// This is achieved by the algorithm finding the approximate
+		// personalized PageRank score of every node with respect to the seed
+		// node. This implementation extends the original algorithm so that it
+		// takes any personalized vector as input (in original formulation all
+		// mass of the pv is concentrated in a single node, the seed node).
+		//
+		// See: Local Graph Partitioning using PageRank Vectors by R. Andersen, F. Chung and K. Lang
+		// URL: http://www.math.ucsd.edu/~fan/wp/localpartition.pdf
+
+
+		template<class G>
+		void pageRank_nibble(G & g,
+							 const std::vector<float> & ppv_map,
+							 const std::vector<float> & out_coefs,
+							 float damping,
+							 float epsilon,
+							 std::vector<float> & p) {
+
+			typedef typename boost::graph_traits<G>::vertex_descriptor vertex_descriptor;
+			typedef typename boost::graph_traits<G>::adjacency_iterator adjacency_iterator;
+			typedef typename boost::graph_traits<G>::vertex_iterator vertex_iterator;
+
+			boost::unordered_set<vertex_descriptor> S;
+			std::queue<vertex_descriptor> Q;
+			std::vector<float> r(ppv_map);
+			std::fill(p.begin(), p.end(), 0.0f);
+
+			vertex_iterator it, end;
+			tie(it, end) = vertices(g);
+			for(; it != end; ++it) {
+				if (r[*it] * out_coefs[*it] >= epsilon) {
+					S.insert(*it); Q.push(*it);
+				}
+			}
+			while(Q.size()) {
+				vertex_descriptor u = Q.front();
+				Q.pop();
+				S.erase(u);
+				do {
+					// Push
+					adjacency_iterator it, end;
+					boost::tie(it, end) = adjacent_vertices(u, g);
+					float pushVal = r[u];
+					float putVal = damping * 0.5 * r[u];
+					p[u] += (1.0 - damping) * pushVal;
+					r[u] = putVal;
+					for(; it != end; ++it) {
+						r[*it] += putVal * out_coefs[u];
+						if (r[*it] * out_coefs[*it] >= epsilon) {
+							if (S.insert(*it).second) Q.push(*it);
+						}
+					}
+				} while(r[u] * out_coefs[u] >= epsilon);
+			}
+		}
+
+		// PageRank nibble, version described in the Phd
+		//
+		// the main difference is that this version uses a lazy random walk model
+
+
+		template<class G>
+		void pageRank_nibble_lazy(G & g,
+								  const std::vector<float> & ppv_map,
+								  const std::vector<float> & out_coefs,
+								  float damping,
+								  float epsilon,
+								  std::vector<float> & p) {
+
+			typedef typename boost::graph_traits<G>::vertex_descriptor vertex_descriptor;
+			typedef typename boost::graph_traits<G>::adjacency_iterator adjacency_iterator;
+			typedef typename boost::graph_traits<G>::vertex_iterator vertex_iterator;
+
+			boost::unordered_set<vertex_descriptor> S;
+			std::queue<vertex_descriptor> Q;
+			std::vector<float> r(ppv_map);
+			std::fill(p.begin(), p.end(), 0.0f);
+
+			vertex_iterator it, end;
+			tie(it, end) = vertices(g);
+			for(; it != end; ++it) {
+				if (r[*it] * out_coefs[*it] >= epsilon) {
+					S.insert(*it); Q.push(*it);
+				}
+			}
+			while(Q.size()) {
+				vertex_descriptor u = Q.front();
+				Q.pop();
+				S.erase(u);
+				do {
+					// Push
+					adjacency_iterator it, end;
+					boost::tie(it, end) = adjacent_vertices(u, g);
+					float pushVal = r[u] - 0.5 * epsilon;
+					float putVal = damping * (r[u] - 0.5 * epsilon) * out_coefs[u];
+					p[u] += (1.0 - damping) * pushVal;
+					r[u] = 0.5 * epsilon;
+					for(; it != end; ++it) {
+						r[*it] += putVal;
+						if (r[*it] * out_coefs[*it] >= epsilon) {
+							if (S.insert(*it).second) Q.push(*it);
+						}
+					}
+				} while(r[u] * out_coefs[u] >= epsilon);
+			}
+		}
+
+		template<class G>
+		void pageRank_nibble_snap(G & g,
+								  const std::vector<float> & ppv_map,
+								  const std::vector<float> & out_coefs,
+								  float damping,
+								  float epsilon,
+								  std::vector<float> & p) {
+
+			typedef typename boost::graph_traits<G>::vertex_descriptor vertex_descriptor;
+			typedef typename boost::graph_traits<G>::adjacency_iterator adjacency_iterator;
+			typedef typename boost::graph_traits<G>::vertex_iterator vertex_iterator;
+
+			boost::unordered_set<vertex_descriptor> S;
+			std::queue<vertex_descriptor> Q;
+			std::vector<float> r(ppv_map);
+			std::fill(p.begin(), p.end(), 0.0f);
+
+			vertex_iterator it, end;
+			tie(it, end) = vertices(g);
+			for(; it != end; ++it) {
+				if (r[*it] * out_coefs[*it] >= epsilon) {
+					S.insert(*it); Q.push(*it);
+				}
+			}
+			while(Q.size()) {
+				vertex_descriptor u = Q.front();
+				Q.pop();
+				S.erase(u);
+				do {
+					// Push
+					adjacency_iterator it, end;
+					boost::tie(it, end) = adjacent_vertices(u, g);
+					float pushVal = r[u] - 0.5 * epsilon * (end - it);
+					float putVal = damping * (r[u] - 0.5 * epsilon); // (1-damping) * pushVal / (end-it);
+					p[u] += (1.0 - damping) * pushVal;
+					r[u] = 0.5 * epsilon * (end - it);
+					for(; it != end; ++it) {
+						r[*it] += putVal;
+						if (r[*it] * out_coefs[*it] >= epsilon) {
+							if (S.insert(*it).second) Q.push(*it);
+						}
+					}
+				} while(r[u] * out_coefs[u] >= epsilon);
+			}
+
 		}
 
 		/////////////////////////////////////////////////////////////////////////
