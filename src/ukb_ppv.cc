@@ -286,10 +286,12 @@ int main(int argc, char *argv[]) {
 
 	options_description po_desc_prank("pageRank general options");
 	po_desc_prank.add_options()
+		("prank_aprox", "Use PageRank approximation (PageRank-nibble). See also nibble_epsilon.")
 		("prank_weight,w", "Use weights in pageRank calculation. Serialized graph edges must have some weight.")
 		("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
 		("prank_threshold", value<float>(), "Threshold for pageRank convergence. Default is 0.0001.")
 		("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
+		("nibble_epsilon", value<float>(), "Error for approximate pageRank as computed by the nibble algorithm.")
 		;
 
 	options_description po_desc_dict("Dictionary options");
@@ -432,9 +434,22 @@ int main(int argc, char *argv[]) {
 			float dp = vm["prank_damping"].as<float>();
 			if (dp <= 0.0 || dp > 1.0) {
 				cerr << "Error: invalid prank_damping value " << dp << "\n";
-				goto END;
+				exit(1);
 			}
 			glVars::prank::damping = dp;
+		}
+
+		if (vm.count("prank_aprox")) {
+			glVars::prank::impl = glVars::nibble;
+		}
+
+		if (vm.count("nibble_epsilon")) {
+			float dp = vm["nibble_epsilon"].as<float>();
+			if (dp <= 0.0 || dp > 1.0) {
+				cerr << "Error: invalid nibble_epsilon value " << dp << "\n";
+				exit(1);
+			}
+			glVars::prank::nibble_epsilon = dp;
 		}
 
 		if (vm.count("trunc_ppv")) {

@@ -296,6 +296,7 @@ int main(int argc, char *argv[]) {
 
 	options_description po_desc_prank("pageRank general options");
 	po_desc_prank.add_options()
+		("prank_aprox", "Use PageRank approximation (PageRank-nibble). See also nibble_epsilon.")
 		("prank_weight,w", "Use weights in pageRank calculation. Serialized graph edges must have some weight.")
 		("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
 		("prank_threshold", value<float>(), "Threshold for stopping PageRank. Default is zero. Good value is 0.0001.")
@@ -303,6 +304,7 @@ int main(int argc, char *argv[]) {
 		("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, ppr_w2w, degree.")
 		("dgraph_maxdepth", value<size_t>(), "If --dgraph_dfs is set, specify the maximum depth (default is 6).")
 		("dgraph_nocosenses", "If --dgraph_dfs, stop DFS when finding one co-sense of target word in path.")
+		("nibble_epsilon", value<float>(), "Error for approximate pageRank as computed by the nibble algorithm.")
 		;
 
 	options_description po_desc_dict("Dictionary options");
@@ -418,6 +420,19 @@ int main(int argc, char *argv[]) {
 				exit(-1);
 			}
 			glVars::prank::damping = dp;
+		}
+
+		if (vm.count("prank_aprox")) {
+			glVars::prank::impl = glVars::nibble;
+		}
+
+		if (vm.count("nibble_epsilon")) {
+			float dp = vm["nibble_epsilon"].as<float>();
+			if (dp <= 0.0 || dp > 1.0) {
+				cerr << "Error: invalid nibble_epsilon value " << dp << "\n";
+				exit(-1);
+			}
+			glVars::prank::nibble_epsilon = dp;
 		}
 
 		if (vm.count("dgraph_maxdepth")) {
