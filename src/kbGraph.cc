@@ -780,20 +780,31 @@ namespace ukb {
 		}
 		vector<float> rank_tmp(m_vertexN, 0.0);    // auxiliary rank vector
 
-		if (glVars::prank::use_weight) {
-			prank::do_pageRank(*m_g, m_vertexN, &ppv_map[0],
-							   weight_map, &ranks[0], &rank_tmp[0],
-							   glVars::prank::num_iterations,
-							   glVars::prank::threshold,
-							   glVars::prank::damping,
-							   m_out_coefs);
-		} else {
-			prank::do_pageRank(*m_g, m_vertexN, &ppv_map[0],
-							   cte_weight, &ranks[0], &rank_tmp[0],
-							   glVars::prank::num_iterations,
-							   glVars::prank::threshold,
-							   glVars::prank::damping,
-							   m_out_coefs);
+		switch(glVars::prank::impl) {
+		  case glVars::pm:
+			  if (glVars::prank::use_weight) {
+				  prank::do_pageRank(*m_g, m_vertexN, &ppv_map[0],
+									 weight_map, &ranks[0], &rank_tmp[0],
+									 glVars::prank::num_iterations,
+									 glVars::prank::threshold,
+									 glVars::prank::damping,
+									 m_out_coefs);
+			  } else {
+				  prank::do_pageRank(*m_g, m_vertexN, &ppv_map[0],
+									 cte_weight, &ranks[0], &rank_tmp[0],
+									 glVars::prank::num_iterations,
+									 glVars::prank::threshold,
+									 glVars::prank::damping,
+									 m_out_coefs);
+			  }
+			  break;
+		  case glVars::nibble:
+			  prank::pageRank_nibble_lazy(*m_g, ppv_map, m_out_coefs, glVars::prank::damping, glVars::prank::nibble_epsilon, ranks);
+			  break;
+		default:
+			cerr << "Error! undefined method for PageRank calculation.\n";
+			exit(1);
+			break;
 		}
 	}
 
