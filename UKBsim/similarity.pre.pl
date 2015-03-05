@@ -10,6 +10,8 @@
  Options:
   --help
   --sim=cos|dot   similarity used: dot product (DEFAULT), cosine.
+  --trunc=N       number of dimensions to use (default is to use all)
+  --pos=[nvar]+   which pos to check for each lemma (default n)
   --ppvdir=dir    directory where ppv files live
 
  This script takes two nouns from the standard input and outputs their
@@ -17,26 +19,46 @@
 
  Examples:
 
-   $ ./similarity.pl --sim dot --ppvdir wn30g.trunc1000/en
+   Given precomputed ppv files (as downloaded from UKB website)
+
+   $ cat >input
+   house farm
+   ^D
+   $ ./similarity.pre.pl --sim dot --ppvdir wn30g.trunc1000/en \\
+     <input >output
 
  Authors: Eneko Agirre and Aitor Soroa
+
+=head1 CHANGES
+
+ 20/10/2010
+
+   --trunc option added
+   --pos   option added
 
 =cut
 
 use Getopt::Long qw(:config auto_help);
 use Pod::Usage ;
+use FindBin qw($Bin);
+use lib $Bin;
 use Similarity ;
 use strict ;
 
+my $TRUNC ;
 my $SIM = 'dot';
 my $PPVDIR = "./" ;
+my $POS = "n" ;
 GetOptions(
 	   "sim=s" => \$SIM,
+	   "pos=s" => \$POS,
+	   "trunc=s" => \$TRUNC,
 	   "ppvdir=s" => \$PPVDIR)
     or
     pod2usage() ;
 
 if ($SIM !~ /^(cos|dot)$/) { pod2usage() } ;
+if ($POS !~ /^[nvra]+$/) { pod2usage() } ;
 $Similarity::SIM = $SIM ; # Similarity package parameter
 
 if (! $PPVDIR)    { pod2usage() } ;
@@ -69,14 +91,10 @@ sub makevectorlemma {
     my $vector = {} ;
     my $lemma0 = substr($lemma,0,1);
     my $lemma1 = substr($lemma,1,1);
-    my @files =  <$PPVDIR/$lemma0/$lemma0$lemma1/$lemma.n*ppv*> ;
+    my @files =  <$PPVDIR/$lemma0/$lemma0$lemma1/$lemma.[$POS]*ppv*> ;
 
-    # By default we use only PPV's of nouns.
-    # Use the following for combining information from different PoS:
-    # my @files =  <$PPVDIR/$lemma0/$lemma0$lemma1/$lemma.*ppv*> ;
-
-    # Thus, @files is usually a single file, unless information is
-    # combined from different PoS for the same lemma
+    # If $POS is n then only nominal lemmas are checked, otherwise
+    # all matching PoS are used, and the vector is a combination
 
     if (@files ) {
 	# Initialize $vector with first file
@@ -104,10 +122,13 @@ sub makevectorlemmapos {
     } else {
 	open(I,"$f") or die $!;
     }
+    my ($i) ;
     while (<I>) {
 	chomp ;
 	my @F = split(/\t/,$_) ;
 	$vector->{$F[0]} = $F[1] ;
+	$i++ ;
+	last if $TRUNC and $TRUNC < $i ;
     }
     return $vector ;
 }
@@ -119,4 +140,3 @@ sub addvector {
 	$v1->{$k} = $w + ($v1->{$k} or 0);
     }
 }
-
