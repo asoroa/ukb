@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
 
 	options_description po_desc_prank("pageRank general options");
 	po_desc_prank.add_options()
-		("prank_aprox", "Use PageRank approximation (PageRank-nibble). See also nibble_epsilon.")
+		("prank_nibble", "Use PageRank approximation (PageRank-nibble). See also nibble_epsilon.")
 		("prank_weight,w", "Use weights in pageRank calculation. Serialized graph edges must have some weight.")
 		("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
 		("prank_threshold", value<float>(), "Threshold for pageRank convergence. Default is 0.0001.")
@@ -439,7 +439,7 @@ int main(int argc, char *argv[]) {
 			glVars::prank::damping = dp;
 		}
 
-		if (vm.count("prank_aprox")) {
+		if (vm.count("prank_nibble")) {
 			glVars::prank::impl = glVars::nibble;
 		}
 

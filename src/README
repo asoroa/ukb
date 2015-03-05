@@ -296,7 +296,7 @@ man#n#w1#3 man1-n##c1#2#0.6 man2-n##c2#2#0.3 man3-n##c3#2#0.1
        in this case, the fourth field of word 'man' is 3, meaning that we want
        do disambiguate 'man' but we don't want to activate in PageRank, because
        all its concepts are already in the context with the desired
-       weights. 
+       weights.
 
 	   Some notes regarding elements with control number '3' (or '4', see below)
 
@@ -490,6 +490,14 @@ criterium is met. Note that this is the default scenarion, where
   If --dgraph_dfs is set, stop DFS when finding one co-sense of target word
   in path.
 
+  --prank_nibble
+
+  Use the 'PageRank nibble' approximation for calculating PageRank.
+
+  --nibble_epsilon
+
+  Error threshold for the nibble method.
+
 *** Input options
 
   --nopos
@@ -523,7 +531,6 @@ criterium is met. Note that this is the default scenarion, where
 
   Be strict when reading the dictionary and stop when any error is found
   (for instance when a concept is not in the graph).
-
 
 *** Output options:
 
@@ -637,7 +644,7 @@ The 'ukb_ppv application has several options:
   Do not use weights of input words (defaut is use context weights). Same as
   ukb_wsd --ctx_noweight option.
 
-*** PageRank general options (see also ukb_wsd "PageRank general options")
+*** PageRank general options (see also 4.1 ukb_wsd "PageRank general options")
 
   -w [ --prank_weight ]
 
@@ -656,7 +663,15 @@ The 'ukb_ppv application has several options:
 
   Set damping factor in PageRank equation. Default is 0.85.
 
-*** Dictionary options (see also ukb_wsd "Dictionary options")
+  --prank_nibble
+
+  Use the 'PageRank nibble' approximation for calculating PageRank.
+
+  --nibble_epsilon
+
+  Error threshold for the nibble method.
+
+*** Dictionary options (see also 4.1 ukb_wsd "Dictionary options")
 
   --dict_weight
 
@@ -697,10 +712,10 @@ The 'ukb_ppv application has several options:
   Following the example present in the beginning of the section, if we call
 
   % ./ukb_ppv -K wn17.bin -D wn17_dict.txt --variants -O /tmp context.txt
-  
+
   we get the following:
 
-  % head /tmp/ctx_01.ppv 
+  % head /tmp/ctx_01.ppv
 
   00001740-n	1.52558e-05	entity#1
   00002254-n	1.18902e-06	thing#1
@@ -722,7 +737,7 @@ The 'ukb_ppv application has several options:
   Add a line in PPVs with control information (ukb version command-line switches etc).
 
   % ./ukb_ppv -K wn17.bin -D wn17_dict.txt -l -O /tmp context.txt
-  % head /tmp/ctx_01.ppv 
+  % head /tmp/ctx_01.ppv
 
   !! -v 0.1.6.51.g38e133b.dirty ./ukb_ppv -K wn17.bin -D wnet17_dict.txt -l -O /tmp context.txt
   00001740-n	1.52558e-05

@@ -52,7 +52,7 @@ namespace ukb {
 			float threshold = 0.0001; // If zero just use num_iterations
 			float damping = 0.85; // damping factor
 			PrankImpl impl = pm; // default is power method
-			float nibble_epsilon = 0.00001;
+			float nibble_epsilon = 0.0000005;
 		}
 
 		namespace input {
