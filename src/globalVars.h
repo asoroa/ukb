@@ -17,6 +17,14 @@ namespace ukb {
 
 		extern char ukb_version[];
 
+		namespace rnd {
+			void init_random_device(); // call me if you want random numbers
+			extern boost::random::mt19937 mt;
+			// for random shuffling
+			extern boost::mt19937 rand_generator;
+			void init_random_device(int s); // using constant seed (for debugging)
+		}
+
 		// debug
 		extern int verbose;
 
@@ -100,9 +108,13 @@ namespace ukb {
 			extern bool stopCosenses;
 		}
 
-		extern boost::mt19937 rand_generator;
-
 		RankAlg get_algEnum(const std::string & alg);
+
+		// walk and print
+		namespace wap {
+			extern float wemit_prob; // whether to emit words or synsets
+		}
+
 	}
 
 	void show_global_variables (std::ostream & o);

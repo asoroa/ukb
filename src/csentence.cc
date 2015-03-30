@@ -66,7 +66,7 @@ namespace ukb {
 
 		if(glVars::dict::use_shuffle) {
 			// Shuffle index vector
-			boost::random_number_generator<boost::mt19937, long int> rand_dist(glVars::rand_generator);
+			boost::random_number_generator<boost::mt19937, long int> rand_dist(glVars::rnd::mt);
 			std::random_shuffle(sidxV.begin(), sidxV.end(), rand_dist);
 		}
 

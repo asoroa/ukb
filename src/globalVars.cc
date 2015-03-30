@@ -4,6 +4,7 @@
 #include <iostream>
 #include <ctime>
 
+#include <boost/random/random_device.hpp>
 
 #ifdef UKB_UKB_VERSION
 #define UKB_VERSION UKB_UKB_VERSION
@@ -24,7 +25,17 @@ namespace ukb {
 
 		std::vector<std::string> rel_source;
 
-		boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
+		namespace rnd {
+			boost::random::mt19937 mt;
+			boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
+			void init_random_device() {
+				boost::random::random_device rd;
+				mt.seed(rd());
+			}
+			void init_random_device(int s) {
+				mt.seed(s);
+			}
+		}
 
 		namespace csentence {
 			bool concepts_in = true;
@@ -81,6 +92,12 @@ namespace ukb {
 			int max_depth = 6;
 			bool stopCosenses = false;
 		}
+
+		// walk and print
+		namespace wap {
+			float wemit_prob = 1.0;
+		}
+
 
 		//   bool word_norep = 0;
 		//   int hub_neighborhood = 0;
