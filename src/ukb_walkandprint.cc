@@ -227,26 +227,28 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
+	glVars::rnd::init_random_device();
+
+	vector<string> ctx;
+
+	if(opt_deepwalk) {
+		Kb::create_from_binfile(kb_binfile);
+		cout << cmdline << "\n";
+		DeepWalk walker(opt_deepwalk_gamma, opt_deepwalk_t);
+		while(walker.next(ctx))
+			print_ctx(ctx);
+		exit(0);
+	}
+
+	Kb::create_from_binfile(kb_binfile);
+	cout << cmdline << "\n";
+
 	if (!N_str.size()) {
 		cout << po_visible << endl;
 		cout << "Please specify the number of random walks" << endl;
 		exit(-1);
 	}
-
-	glVars::rnd::init_random_device();
-
 	N = lexical_cast<size_t>(N_str);
-	Kb::create_from_binfile(kb_binfile);
-
-	cout << cmdline << "\n";
-
-	vector<string> ctx;
-
-	if(opt_deepwalk) {
-		DeepWalk walker(opt_deepwalk_gamma, opt_deepwalk_t);
-		while(walker.next(ctx))
-			print_ctx(ctx);
-	}
 
 	if (seed_word.size()) {
 		WapWord walker(seed_word, N);
