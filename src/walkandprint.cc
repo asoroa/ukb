@@ -107,7 +107,7 @@ namespace ukb {
 		int left = m_intervals[bucket_i].first;
 		int m = m_intervals[bucket_i].second - left;
 		assert(m > 0);
-		size_t off = rnumber(m);
+		size_t off = rnumber(m - 1);
 		return m_idx[left + off];
 	}
 
