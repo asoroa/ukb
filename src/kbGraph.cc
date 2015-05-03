@@ -1027,6 +1027,8 @@ std::vector<float> Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<
   Kb_out_edge_iter_t before_child;
   size_t N = num_vertices(*m_g);
   vector<float> results(N, 0.0);
+  vector<float> v_results(N, 0.0);
+
 
   float inv_factor = pow(N, -1);
 
@@ -1037,81 +1039,74 @@ std::vector<float> Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<
   {
     if (pv[*v_it] != 0)
     {
-
-      Kb_vertex_t current = *v_it; //Start the iteration in the V vertex
-      hits[current]++;
-      while (rnumber01() <= alpha)
-      {
-        //tie(itOut, itOutEnd) = kb.out_neighbors(current);
-        //float total_weight = 0.0;
-        //for(; itOut != itOutEnd; ++itOut){
-        //total_weight += kb.get_edge_weight(*itOut); //Calculate manually the total weight of the out edges
-        //}
-        float total_weight = pow (m_out_coefs[current], -1.0);
-        int r_number = random_numb(total_weight);
-        tie(itOut, itOutEnd) = kb.out_neighbors(current);
-        if (itOut == itOutEnd) //When we reach a dangling node we will stop the execution.
+      for(int ind = 1; ind <= m; ++ind){
+        Kb_vertex_t current = *v_it; //Start the iteration in the V vertex
+        results[current]++;
+        while (rnumber01() <= alpha)
         {
-          break; //In non directed graphs a dangling node will have weight 1 ALWAYS. In directed graphs a dangling node does not hace any OUT vertex.
-        }
-        int aux = 0;
-        before_child = itOut;
-        while (itOut != itOutEnd)  //Based in the edge weights decide by the random number which path to choose
-        {
-          aux += kb.get_edge_weight(*itOut);
-          if (r_number == aux)
+          //tie(itOut, itOutEnd) = kb.out_neighbors(current);
+          //float total_weight = 0.0;
+          //for(; itOut != itOutEnd; ++itOut){
+          //total_weight += kb.get_edge_weight(*itOut); //Calculate manually the total weight of the out edges
+          //}
+          float total_weight = pow (m_out_coefs[current], -1.0);
+          int r_number = random_numb(total_weight);
+          tie(itOut, itOutEnd) = kb.out_neighbors(current);
+          if (itOut == itOutEnd) //When we reach a dangling node we will stop the execution.
           {
-            current = kb.edge_target(*itOut);
-            break;
+            break; //In non directed graphs a dangling node will have weight 1 ALWAYS. In directed graphs a dangling node does not hace any OUT vertex.
           }
-          if (r_number < aux)
+          int aux = 0;
+          before_child = itOut;
+          while (itOut != itOutEnd)  //Based in the edge weights decide by the random number which path to choose
           {
-            if (itOut == itOutEnd)
-            {
-              current = kb.edge_target(*before_child);
-            }
-            else
+            aux += kb.get_edge_weight(*itOut);
+            if (r_number == aux)
             {
               current = kb.edge_target(*itOut);
+              break;
             }
-            break;
-          }
-          else   //Continue searching the appropiate node
-          {
-            before_child = itOut;
-            ++itOut;
+            if (r_number < aux)
+            {
+              if (itOut == itOutEnd)
+              {
+                current = kb.edge_target(*before_child);
+              }
+              else
+              {
+                current = kb.edge_target(*itOut);
+              }
+              break;
+            }
+            else   //Continue searching the appropiate node
+            {
+              before_child = itOut;
+              ++itOut;
+            }
           }
         }
+         results[current]++;
       }
-      hits[current]++;
-
+      for(int results_index = 0; results_index <= results.size()-1; ++results_index){
+        pi_vector[results_index] = pi_vector[results_index] + (results[results_index] * inv_factor * pv[*v_it]);
+      }
+      results.clear();
+      results = v_results;
     }
   }
-
 
   float tot = 0.0;
-  for (int i = hits.size() - 1; i >= 0; --i) //Calculate
+  for (int lag = pi_vector.size() - 1; lag >= 0; --lag) //Calculate
   {
-    if(pv[i] != 0 ){
-      results[i] = hits[i] * inv_factor*pv[i];
-      tot += results[i];
-    }else{
-      results[i] = 0;
-    }
-
+      tot += pi_vector[lag];
   }
-  for (int i = results.size() - 1; i >= 0; --i) //Normalize
+  for (int results_index = pi_vector.size() - 1; results_index >= 0; --results_index) //Normalize
   {
-    if (results[i] != 0)
-    {
-      results[i] = results[i] / tot;
-    }else{
-      results[i] = 0;
-    }
+      pi_vector[results_index] = pi_vector[results_index] / tot;
   }
-  return results;
+  return pi_vector;
 }
-void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> &pv, int m, vector<float> &pi_vector)
+void Kb::monte_carlo_end_point_cyclic(float alpha, std::vector<float> &pv, int m, std::vector<float> &pi_vector)
 {
   //Monte Carlo end-point with cyclic start.
   //The article says: "Simulate N = mn runs os the random walk initiated at each page exactly m times.
@@ -1123,7 +1118,7 @@ void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> &pv, int m, vec
   *m: Number of steps to be executed on each vertex. Default value is 3.
   *pi_vector: Edge vector containing rankings.
   */
-   Kb &kb = ukb::Kb::instance();
+  Kb &kb = ukb::Kb::instance();
   size_t N = num_vertices(*m_g);
   vector<float>(N, 0.0).swap(pi_vector);
   graph_traits<KbGraph>::vertex_iterator v_it, v_end, v_aux;
@@ -1136,8 +1131,8 @@ void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> &pv, int m, vec
   bool exit_now = false;
   float tres = 0.0;
 
-  int i = 1;
-  for (; i <= m; ++i)
+  pi_vector = kb.do_mc_end_cyclic(*v_it, alpha, pi_vector, pv, hits, m); //Do a Random Walk for all vertex
+  /*for (; i <= m; ++i)
   {
     after_vec = kb.do_mc_end_cyclic(*v_it, alpha, before_vec, pv, hits, i); //Do a Random Walk for all vertex
 
@@ -1168,7 +1163,7 @@ void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> &pv, int m, vec
     before_vec = after_vec;
     after_vec.clear();
     tres = 0.0;
-  }
+  }*/
   if (!exit_now)
   {
     //cout << "Iterations done: " << i << endl; // Debugging info
@@ -1294,8 +1289,8 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
 
   int i = 1;
 
-  //pi_vector = kb.do_mc_complete(*v_it, alpha, before_vec, pv, hits, m); //Debug line
-  pi_vector = kb.do_mc_complete(*v_it, alpha, pi_vector, pv, hits, m); //Debug line
+  pi_vector = kb.do_mc_complete(*v_it, alpha, pi_vector, pv, hits, m); //Work well this line
+
   /*for (; i <= m; ++i)
   {
     after_vec = kb.do_mc_complete(*v_it, alpha, before_vec, pv, hits, i); //Do a Random Walk for all vertex
