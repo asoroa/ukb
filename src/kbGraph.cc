@@ -1177,34 +1177,37 @@ void Kb::monte_carlo_end_point_cyclic(float alpha, vector<float> &pv, int m, vec
 
 
 
-std::vector<float> Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector, std::vector<float> &pv, std::vector<float> &hits, int m)
+std::vector<float> Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector, std::vector<float> &pv,  std::map<float, std::map<float, int> > &hits, int m)
 {
   Kb_out_edge_iter_t itOut, itOutEnd;
   Kb &kb = ukb::Kb::instance();
   Kb_out_edge_iter_t before_child;
   size_t N = num_vertices(*m_g);
   vector<float> results(N, 0.0);
+  vector<float> v_results(N, 0.0);
 
   float inv_alpha = 1 - alpha;
   float inv_factor = pow( (N * m), -1);
 
   graph_traits<KbGraph>::vertex_iterator v_it, v_end, v_aux;
   tie(v_it, v_end) = vertices(kb.graph());
-
+  std::map<float, int> hit_counter;  //Map for control the hits. Only in the selected vertexes
+  float tot = 0.0;
   for (; v_it != v_end; ++v_it) //Iterate for the given steps
   {
+
+
     if (pv[*v_it] != 0)
     {
+      for (int ind = 1; ind <= m; ++ind)
+      {
 
       Kb_vertex_t current = *v_it; //Start the iteration in the V vertex
-      hits[current]++;
+      Kb_vertex_t starting_vertex = *v_it;
+
+
       while (rnumber01() <= alpha)
       {
-        //tie(itOut, itOutEnd) = kb.out_neighbors(current);
-        //float total_weight = 0.0;
-        //for(; itOut != itOutEnd; ++itOut){
-        //total_weight += kb.get_edge_weight(*itOut); //Calculate manually the total weight of the out edges
-        //}
         float total_weight = pow (m_out_coefs[current], -1.0);
         int r_number = random_numb(total_weight);
         tie(itOut, itOutEnd) = kb.out_neighbors(current);
@@ -1240,34 +1243,26 @@ std::vector<float> Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<fl
             ++itOut;
           }
         }
-        hits[current]++;
+          results[current]++;
       }
+    }
 
+      for(int results_index = 0; results_index <= results.size()-1; ++results_index){
+        pi_vector[results_index] = pi_vector[results_index] + (results[results_index] * inv_factor * inv_alpha * pv[*v_it]);
+      }
+       results.clear();
+      results = v_results;
     }
   }
 
+  for(int lag = 0; lag <= pi_vector.size()-1; ++lag){
+    tot = tot + pi_vector[lag];
+  }
 
-  float tot = 0.0;
-  for (int i = hits.size() - 1; i >= 0; --i) //Calculate
-  {
-    if (pv[i] != 0)
-    {
-      results[i] = hits[i] * inv_factor * inv_alpha * pv[i];
-      tot += results[i];
-    }else{
-      results[i] = 0;
-    }
-  }
-  for (int i = results.size() - 1; i >= 0; --i) //Normalize
-  {
-    //if (results[i] != 0)
-    //{
-      results[i] = results[i] / tot;
-    //}else{
-      //results[i] = 0;
-    //}
-  }
-  return results;
+  for(int results_index = 0; results_index <= pi_vector.size()-1; ++results_index){
+        pi_vector[results_index] = pi_vector[results_index] / tot;
+      }
+  return pi_vector;
 }
 void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<float> &pi_vector)
 {
@@ -1289,19 +1284,26 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
 
   std::vector<float> before_vec(N, 0.0);
   std::vector<float> after_vec(N, 0.0);
-  std::vector<float> hits(N, 0.0);
+
+ //std::vector<float> hits_vector(N, 0.0);
+  //std::vector<std::vector<float> > hits(N, hits_vector);
+  std::map<float, std::map<float, int> > hits;
 
   bool exit_now = false;
   float tres = 0.0;
 
   int i = 1;
-  for (; i <= m; ++i)
+
+  //pi_vector = kb.do_mc_complete(*v_it, alpha, before_vec, pv, hits, m); //Debug line
+  pi_vector = kb.do_mc_complete(*v_it, alpha, pi_vector, pv, hits, m); //Debug line
+  /*for (; i <= m; ++i)
   {
     after_vec = kb.do_mc_complete(*v_it, alpha, before_vec, pv, hits, i); //Do a Random Walk for all vertex
 
     for (int k = 0; k < after_vec.size(); k++)
     {
       if(pv[k] != 0){
+        //cout << "after k" << after_vec[k] << " before k " << before_vec[k] << endl;
         tres = tres + fabs(after_vec[k] - before_vec[k]);
         if (i > 1)
         {
@@ -1317,6 +1319,9 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
         //cout << "Convergence reached: "  << tres << endl; //Debugging info
       }
     }
+    //string string_tres = std::to_string(tres);
+    //string_tres = std::replace(string_tres.begin(), string_tres.end(), '.', ',');
+    //cout << string_tres << "-";
     pi_vector = after_vec;
     if (exit_now)
     {
@@ -1326,11 +1331,11 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
     before_vec = after_vec;
     after_vec.clear();
     tres = 0.0;
-  }
+  }*/
   cout << endl;
   if (!exit_now)
   {
-    //cout << "Iterations done: " << i << endl;  //Debugging info
+    //cout << "Iterations done: " << i << " with convergence " << tres << endl;  //Debugging info
   }
 }
 }
