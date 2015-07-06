@@ -715,6 +715,7 @@ namespace ukb {
 
 		Kb & kb = ukb::Kb::instance();
 		vector<float> pv;
+		if (tgtw_it->is_monosemous()) return true;
 
 		int aux = pv_from_cs_onlyC(cs, pv, tgtw_it);
 		// Execute PageRank
