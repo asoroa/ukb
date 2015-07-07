@@ -686,6 +686,9 @@ namespace ukb {
 		float operator[](size_t i) const {
 			return m_vb[i] - m_va[i];
 		}
+		size_t size() const {
+			return m_va.size();
+		}
 	private:
 		const vector<float> & m_va;
 		const vector<float> & m_vb;

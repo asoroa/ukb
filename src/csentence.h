@@ -103,6 +103,7 @@ namespace ukb {
 			size_t n = m_syns.size();
 			size_t i;
 			if (!n) return; // No synsets
+			if (rankMap.size()) return; // No ranks
 			for(i = 0; i != n; ++i) {
 				m_ranks[i] = rankMap[m_V[i].first];
 				if (use_prior) m_ranks[i] *= m_V[i].second * m_linkw_factor;
