@@ -638,6 +638,7 @@ namespace ukb {
 			cs_uniq.push_back(&(*it));
 			CW_w += w;
 		}
+		if (CW_w == 0.0) return 0;
 		float CW_w_factor = 1.0f / CW_w;
 
 		// put pv to the synsets of words
@@ -695,18 +696,6 @@ namespace ukb {
 	};
 
 
-	// Special case: w2w and CSentence only has one target word
-	static void cs_w2w_disambiguate_single_tw(CSentence &cs) {
-		// find tgt word and disambiguate
-		vector<CWord>::iterator cw_it = cs.begin();
-		vector<CWord>::iterator cw_end = cs.end();
-		for(; cw_it != cw_end; ++cw_it) {
-			if(!cw_it->is_tgtword()) continue;
-			cw_it->rank_synsets_one_tw(glVars::csentence::mult_priors);
-			cw_it->disamb_cword();
-		}
-	}
-
 	// given a word (pointed by tgtw_it),
 	// 1. put a ppv in the synsets of the rest of words.
 	// 2. Pagerank
@@ -738,10 +727,6 @@ namespace ukb {
 
 		size_t tgtN = cs.has_tgtwords();
 		if (!tgtN) return 0; // no target words
-		if (tgtN == 1) { // only one tw.
-			cs_w2w_disambiguate_single_tw(cs);
-			return 1;
-		}
 
 		Kb & kb = ukb::Kb::instance();
 		vector<float> ranks;
