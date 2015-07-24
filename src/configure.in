@@ -61,6 +61,12 @@ AC_CHECK_FILE($BOOST_INCLUDE_DIR/boost/filesystem/path.hpp, ,
 	      echo "$BOOST_INCLUDE_DIR/boost/filesystem/path.hpp not found";
               echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1)
 
+dnl check boost random include
+AC_CHECK_FILE($BOOST_INCLUDE_DIR/boost/random.hpp, ,
+              echo "BOOST include directory does not contain the Random library !";
+              echo "$BOOST_INCLUDE_DIR/boost/random.hpp not found";
+              echo "Please specify a suitable BOOST include directory: --with-boost-include=DIR"; exit 1)
+
 AC_SUBST(BOOST_INCLUDE_DIR)
 
 dnl BOOST program options library
