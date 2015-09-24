@@ -970,20 +970,9 @@ void Kb::structural_weighting()
   graph_traits<KbGraph>::vertex_iterator v_it, v_end;
   tie(v_it, v_end) = vertices(kb.graph());
   int v_count = 0;
-  int v_count_aux = v_count;
-  int percentage = 0;
   for (; v_it != v_end; ++v_it)
   {
     v_count++;
-    if (v_count - v_count_aux == 1000)
-    {
-      v_count_aux = v_count;
-      percentage = v_count * 100 / num_vertices(*m_g);
-      if (percentage != 100)
-      {
-        cout << "Percentage analyzed: " << percentage << "%. (" << v_count << " vertices out of " << num_vertices(*m_g) << ")" << endl;
-      }
-    }
     std::set<Kb_vertex_t> inVertexSet; // Set for the IN vertices. It'll be used to collect the IN vertices.
     Kb_vertex_t v = *v_it;
     tie(itIn, itInEnd) = kb.in_neighbors(v);
@@ -999,10 +988,6 @@ void Kb::structural_weighting()
       kb.set_edge_weight(*itOut, weight);
     }
   }
-  if (percentage == 100)
-  {
-    cout << "Percentage analyzed: " << percentage << "%" << endl;
-  }
 }
 static float rnumber01()
 {
@@ -1014,17 +999,13 @@ boost::mt19937 gen;
 int random_numb(int max_num)
 {
   //Returns a random integer number between 1 and max_num (inclusive).
-  //boost::uniform_int<> dist(min_num, max_num);
-  //boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(gen, dist);
-  //return die();
   double y = round(rnumber01() * ( (float)max_num - 1.0) + 1.0 );
   return static_cast<int> (y);
 }
-std::vector<float> Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector, std::vector<float> &pv, std::vector<float> &hits, int m)
+std::vector<float> Kb::do_mc_end_cyclic(float alpha, std::vector<float> &pi_vector, std::vector<float> &pv, int m)
 {
-  Kb_out_edge_iter_t itOut, itOutEnd;
+  Kb_out_edge_iter_t itOut, itOutEnd, before_child;
   Kb &kb = ukb::Kb::instance();
-  Kb_out_edge_iter_t before_child;
   size_t N = num_vertices(*m_g);
   vector<float> results(N, 0.0);
   vector<float> v_results(N, 0.0);
@@ -1044,11 +1025,6 @@ std::vector<float> Kb::do_mc_end_cyclic(Kb_vertex_t v, float alpha, std::vector<
         results[current]++;
         while (rnumber01() <= alpha)
         {
-          //tie(itOut, itOutEnd) = kb.out_neighbors(current);
-          //float total_weight = 0.0;
-          //for(; itOut != itOutEnd; ++itOut){
-          //total_weight += kb.get_edge_weight(*itOut); //Calculate manually the total weight of the out edges
-          //}
           float total_weight = pow (m_out_coefs[current], -1.0);
           int r_number = random_numb(total_weight);
           tie(itOut, itOutEnd) = kb.out_neighbors(current);
@@ -1121,62 +1097,16 @@ void Kb::monte_carlo_end_point_cyclic(float alpha, std::vector<float> &pv, int m
   Kb &kb = ukb::Kb::instance();
   size_t N = num_vertices(*m_g);
   vector<float>(N, 0.0).swap(pi_vector);
-  graph_traits<KbGraph>::vertex_iterator v_it, v_end, v_aux;
-  tie(v_it, v_end) = vertices(kb.graph());
 
-  std::vector<float> before_vec(N, 0.0);
-  std::vector<float> after_vec(N, 0.0);
-  std::vector<float> hits(N, 0.0);
-
-  bool exit_now = false;
-  float tres = 0.0;
-
-  pi_vector = kb.do_mc_end_cyclic(*v_it, alpha, pi_vector, pv, hits, m); //Do a Random Walk for all vertex
-  /*for (; i <= m; ++i)
-  {
-    after_vec = kb.do_mc_end_cyclic(*v_it, alpha, before_vec, pv, hits, i); //Do a Random Walk for all vertex
-
-    for (int k = 0; k < after_vec.size(); k++)
-    {
-      if(pv[k] != 0){
-        tres = tres + fabs(after_vec[k] - before_vec[k]);
-        if (i > 1)
-        {
-            if (tres < glVars::prank::threshold)
-            {
-              exit_now = true;
-            }else{
-              exit_now = false;
-            }
-        }
-      }
-      if(exit_now && k == after_vec.size()-1){
-        //cout << "Convergence reached: "  << tres << endl; //Debugging info
-      }
-    }
-    pi_vector = after_vec;
-    if (exit_now)
-    {
-      //cout << "Iterations done before reaching convergence: " << i << endl; //Debugging info
-      break;
-    }
-    before_vec = after_vec;
-    after_vec.clear();
-    tres = 0.0;
-  }*/
-  if (!exit_now)
-  {
-    //cout << "Iterations done: " << i << endl; // Debugging info
-  }
+  pi_vector = kb.do_mc_end_cyclic(alpha, pi_vector, pv, m); //Do a Random Walk for all vertex
 }
 
 
 
-std::vector<float> Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<float> &pi_vector, std::vector<float> &pv,  std::map<float, std::map<float, int> > &hits, int m)
+std::vector<float> Kb::do_mc_complete(float alpha, std::vector<float> &pi_vector, std::vector<float> &pv, int m)
 {
-  Kb_out_edge_iter_t itOut, itOutEnd;
+  Kb_out_edge_iter_t itOut, itOutEnd, before_child;
   Kb &kb = ukb::Kb::instance();
-  Kb_out_edge_iter_t before_child;
   size_t N = num_vertices(*m_g);
   vector<float> results(N, 0.0);
   vector<float> v_results(N, 0.0);
@@ -1198,9 +1128,8 @@ std::vector<float> Kb::do_mc_complete(Kb_vertex_t v, float alpha, std::vector<fl
       {
 
       Kb_vertex_t current = *v_it; //Start the iteration in the V vertex
-      Kb_vertex_t starting_vertex = *v_it;
 
-
+      results[current]++;
       while (rnumber01() <= alpha)
       {
         float total_weight = pow (m_out_coefs[current], -1.0);
@@ -1274,63 +1203,8 @@ void Kb::monte_carlo_complete(float alpha, vector<float> &pv, int m, vector<floa
   Kb &kb = ukb::Kb::instance();
   size_t N = num_vertices(*m_g);
   vector<float>(N, 0.0).swap(pi_vector);
-  graph_traits<KbGraph>::vertex_iterator v_it, v_end, v_aux;
-  tie(v_it, v_end) = vertices(kb.graph());
 
-  std::vector<float> before_vec(N, 0.0);
-  std::vector<float> after_vec(N, 0.0);
+  pi_vector = kb.do_mc_complete(alpha, pi_vector, pv, m); //Work well this line
 
- //std::vector<float> hits_vector(N, 0.0);
-  //std::vector<std::vector<float> > hits(N, hits_vector);
-  std::map<float, std::map<float, int> > hits;
-
-  bool exit_now = false;
-  float tres = 0.0;
-
-  int i = 1;
-
-  pi_vector = kb.do_mc_complete(*v_it, alpha, pi_vector, pv, hits, m); //Work well this line
-
-  /*for (; i <= m; ++i)
-  {
-    after_vec = kb.do_mc_complete(*v_it, alpha, before_vec, pv, hits, i); //Do a Random Walk for all vertex
-
-    for (int k = 0; k < after_vec.size(); k++)
-    {
-      if(pv[k] != 0){
-        //cout << "after k" << after_vec[k] << " before k " << before_vec[k] << endl;
-        tres = tres + fabs(after_vec[k] - before_vec[k]);
-        if (i > 1)
-        {
-            if (tres < glVars::prank::threshold)
-            {
-              exit_now = true;
-            }else{
-              exit_now = false;
-            }
-        }
-      }
-      if(exit_now && k == after_vec.size()-1){
-        //cout << "Convergence reached: "  << tres << endl; //Debugging info
-      }
-    }
-    //string string_tres = std::to_string(tres);
-    //string_tres = std::replace(string_tres.begin(), string_tres.end(), '.', ',');
-    //cout << string_tres << "-";
-    pi_vector = after_vec;
-    if (exit_now)
-    {
-      //cout << "Iterations done before reaching convergence: " << i << endl;  //Debugging info
-      break;
-    }
-    before_vec = after_vec;
-    after_vec.clear();
-    tres = 0.0;
-  }*/
-  cout << endl;
-  if (!exit_now)
-  {
-    //cout << "Iterations done: " << i << " with convergence " << tres << endl;  //Debugging info
-  }
 }
 }
