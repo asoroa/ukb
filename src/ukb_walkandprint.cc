@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("seed_word")) {
-			seed_word = vm["word"].as<string>();
+			seed_word = vm["seed_word"].as<string>();
 		}
 
 		if (vm.count("N")) {
