@@ -101,7 +101,7 @@ namespace ukb {
 	// First, decide which bucket, then select one at random from the bucket
 	int vsampling_t::sample() {
 		if (!m_bucket_N) {
-			return rnumber(m_N);
+			return rnumber(m_N - 1);
 		}
 		size_t bucket_i = rnumber(m_bucket_N - 1);
 		int left = m_intervals[bucket_i].first;
