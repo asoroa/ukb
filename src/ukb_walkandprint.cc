@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
 		("deepwalk", "Use deepwalk algorithm.")
 		("deepwalk_walks", value<size_t>(), "Deekwalk walks per vertex (gamma).")
 		("deepwalk_length", value<size_t>(), "Deekwalk walk length (t).")
+		("indeg", "Prefer vertices with higher indegree when walking")
 		("vsample", "Sample vertices according to static prank.")
 		("buckets", value<size_t>(), "Number of buckets used in vertex sampling (default is 10).")
 		("wemit_prob", value<float>(), "Probability to emit a word when on an vertex (emit vertex name instead). Default is 1.0 (always emit word).")
@@ -214,6 +215,10 @@ int main(int argc, char *argv[]) {
 			N_str = vm["N"].as<string>();
 		}
 
+		if (vm.count("indeg")) {
+			glVars::wap::prefer_indegree = true;
+		}
+
 		if (vm.count("verbose")) {
 			glVars::verbose = 1;
 			glVars::debug::warning = 1;
@@ -231,37 +236,47 @@ int main(int argc, char *argv[]) {
 
 	vector<string> ctx;
 
-	if(opt_deepwalk) {
+	try {
+		if (!kb_binfile.size()) {
+			cout << po_visible << endl;
+			cout << "Error: no KB file\n";
+			exit(0);
+		}
+		if(opt_deepwalk) {
+			Kb::create_from_binfile(kb_binfile);
+			cout << cmdline << "\n";
+			DeepWalk walker(opt_deepwalk_gamma, opt_deepwalk_t);
+			while(walker.next(ctx))
+				print_ctx(ctx);
+			exit(0);
+		}
+
 		Kb::create_from_binfile(kb_binfile);
 		cout << cmdline << "\n";
-		DeepWalk walker(opt_deepwalk_gamma, opt_deepwalk_t);
-		while(walker.next(ctx))
-			print_ctx(ctx);
-		exit(0);
-	}
 
-	Kb::create_from_binfile(kb_binfile);
-	cout << cmdline << "\n";
-
-	if (!N_str.size()) {
-		cout << po_visible << endl;
-		cout << "Please specify the number of random walks" << endl;
-		exit(-1);
-	}
-	N = lexical_cast<size_t>(N_str);
-
-	if (seed_word.size()) {
-		WapWord walker(seed_word, N);
-		while(walker.next(ctx)) {
-			if(ctx.size() > 1) {
-				cout << seed_word << "\t";
-				print_ctx(ctx);
-			}
+		if (!N_str.size()) {
+			cout << po_visible << endl;
+			cout << "Please specify the number of random walks" << endl;
+			exit(-1);
 		}
-	} else {
-		Wap walker(N, opt_bucket_size);
-		while(walker.next(ctx))
-			print_ctx(ctx);
+		N = lexical_cast<size_t>(N_str);
+
+		if (seed_word.size()) {
+			WapWord walker(seed_word, N);
+			while(walker.next(ctx)) {
+				if(ctx.size() > 1) {
+					cout << seed_word << "\t";
+					print_ctx(ctx);
+				}
+			}
+		} else {
+			Wap walker(N, opt_bucket_size);
+			while(walker.next(ctx))
+				print_ctx(ctx);
+		}
+	} catch(std::exception& e) {
+		cerr << e.what() << "\n";
+		exit(-1);
 	}
 
 }

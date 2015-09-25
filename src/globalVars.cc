@@ -96,6 +96,7 @@ namespace ukb {
 		// walk and print
 		namespace wap {
 			float wemit_prob = 1.0;
+			bool prefer_indegree = false; // prefer vertex with higher indegree when walking
 		}
 
 

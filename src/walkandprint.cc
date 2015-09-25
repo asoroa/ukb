@@ -149,7 +149,7 @@ namespace ukb {
 		return true;
 	}
 
-	static bool select_next_vertex(Kb_vertex_t & current) {
+	static bool select_next_vertex_prank(Kb_vertex_t & current) {
 
 		static vector<float> vertex_out_tweight;
 
@@ -180,6 +180,44 @@ namespace ukb {
 		return true;
 	}
 
+	static bool select_next_vertex_degree(Kb_vertex_t & current) {
+
+		static vector<float> vertex_out_tweight;
+
+		Kb & kb = Kb::instance();
+		KbGraph & G = kb.graph();
+		Kb_vertex_t previous = current;
+
+		if (!vertex_out_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex_out_tweight);
+
+		Kb_out_edge_iter_t out_it, out_end;
+
+		tie(out_it, out_end) = kb.out_neighbors(previous);
+		float & total_weight = vertex_out_tweight[previous];
+		if (total_weight == 0.0f) {
+			float T = 0.0f;
+			for(Kb_out_edge_iter_t auxit = out_it; auxit < out_end; ++auxit) {
+				Kb_vertex_t uu = kb.edge_target(*auxit);
+				T += in_degree(uu, G);
+			}
+			total_weight = T;
+		}
+		if (total_weight == 0.0f) return false; // danglink link. The RW is over.
+		float rand_value = rnumber(total_weight);
+		float w_accum = 0.0f;
+		for(; out_it < out_end; ++out_it) {
+			Kb_vertex_t uu = kb.edge_target(*out_it);
+			w_accum += in_degree(uu, G);
+			current = uu;
+			if (rand_value < w_accum) break;
+		}
+		return true;
+	}
+
+	static bool select_next_vertex(Kb_vertex_t & current) {
+		if (glVars::wap::prefer_indegree) return select_next_vertex_degree(current);
+		return select_next_vertex_prank(current);
+	}
 
 	// perform one complete rw starting from v
 

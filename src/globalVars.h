@@ -113,6 +113,7 @@ namespace ukb {
 		// walk and print
 		namespace wap {
 			extern float wemit_prob; // whether to emit words or synsets
+			extern bool prefer_indegree; // prefer vertex with higher indegree when walking
 		}
 
 	}
