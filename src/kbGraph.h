@@ -92,7 +92,11 @@ namespace ukb {
 		// write_to_textfile
 		// Write kb graph to a text file
 
-		void write_to_textfile (const std::string & fName);
+		void write_to_textfile (const std::string & fName) const;
+
+		// write_to_textstream
+		// Write kb graph to a text file
+		std::ostream & write_to_textstream(std::ostream & o) const;
 
 		// read_from_txt
 		// add relations from synsFile to the graph
@@ -236,6 +240,8 @@ namespace ukb {
 								const std::vector<std::string> & targets,
 								std::vector<std::vector<std::string> > & paths);
 
+		// Write graph in txt format (source of ukb)
+		std::ostream & write_txt(std::ostream & o) const;
 		std::ostream & dump_graph(std::ostream & o) const;
 
 		static void create_from_kbgraph16(Kb16 & kbg) ;
@@ -255,7 +261,6 @@ namespace ukb {
 
 		void read_from_stream (std::istream & o);
 		std::ostream & write_to_stream(std::ostream & o) const;
-
 		// Private members
 		std::auto_ptr<KbGraph> m_g;
 		std::set<std::string> m_relsSource;              // Relation sources

@@ -237,6 +237,7 @@ int main(int argc, char *argv[]) {
 	bool opt_query = false;
 	bool opt_iquery = false;
 	bool opt_dump = false;
+	bool opt_textdump = false;
 
 	// subgraph options
 	string subg_init;
@@ -262,7 +263,7 @@ int main(int argc, char *argv[]) {
 	const char desc_header[] = "compile_kb: create a serialized image of the KB\n"
 		"Usage:\n"
 		"compile_kb -o output.bin [-f \"src1, src2\"] kb_file.txt kb_file.txt ... -> Create a KB image reading relations textfiles.\n"
-		"compile_kb -o dict.bin -D dict_textfile --serialize_dict kb_file.bin -> Create a dictionary image reading text dictionary.\n"
+		"compile_kb -t kb_file.bin > graph.txt   -> Dump text file of graph.\n"
 		"compile_kb -i kb_file.bin -> Get info of a previously compiled KB.\n"
 		"compile_kb -q concept-id kb_file.bin -> Query a node on a previously compiled KB.\n"
 		"Options:";
@@ -292,7 +293,6 @@ int main(int argc, char *argv[]) {
 	po_desc_query.add_options()
 		("info,i", "Give info about some Kb binfile.")
 		("Info,I", "Give more info about Kb binfile. This option can be computationally expensive.")
-		("dump", "Dump a serialized graph. Warning: very verbose!.")
 		("query,q", value<string>(), "Given a vertex name, display its relations.")
 		("iquery,Q", "Interactively query graph.")
 		("subG,S", value<string>(), "Get a subgraph starting at this vertex. See subG_depth.")
@@ -301,12 +301,18 @@ int main(int argc, char *argv[]) {
 		("dict_file,D", value<string>(), "Dictionary text file. Use only when querying (--quey or --iquery) or when creating serialized dict (--serialize_dict).")
 		;
 
+	options_description po_desc_dump("Options for dumping binary graphs");
+	po_desc_dump.add_options()
+		("text,t", "Write Kb binfile in text format.")
+		("dump", "Dump a serialized graph. Warning: very verbose!.")
+		;
+
 	options_description po_hidden("Hidden");
 	po_hidden.add_options()
 		("input-file",value<string>(), "Input files.")
 		;
 	options_description po_visible(desc_header);
-	po_visible.add(po_desc).add(po_desc_create).add(po_desc_query);
+	po_visible.add(po_desc).add(po_desc_create).add(po_desc_query).add(po_desc_dump);
 
 	options_description po_desc_all("All options");
 	po_desc_all.add(po_visible).add(po_hidden);
@@ -393,6 +399,10 @@ int main(int argc, char *argv[]) {
 			opt_dump = true;
 		}
 
+		if (vm.count("text")) {
+			opt_textdump = true;
+		}
+
 		if (vm.count("undirected")) {
 			glVars::kb::keep_directed = false;
 		}
@@ -459,6 +469,12 @@ int main(int argc, char *argv[]) {
 	if (opt_dump) {
 		Kb::create_from_binfile(kb_file);
 		Kb::instance().dump_graph(cout);
+		return 0;
+	}
+
+	if (opt_textdump) {
+		Kb::create_from_binfile(kb_file);
+		Kb::instance().write_to_textstream(cout);
 		return 0;
 	}
 

@@ -1006,25 +1006,33 @@ namespace ukb {
 
 	// text write
 
-	ostream & write_to_textstream(const KbGraph & g, ostream & o) {
+	ostream & Kb::write_to_textstream(ostream & o) const {
 
-		graph_traits<KbGraph>::edge_iterator e_it, e_end;
-
-		tie(e_it, e_end) = edges(g);
-		for(; e_it != e_end; ++e_it) {
-			o << "u:" << g[source(*e_it, g)].name << " ";
-			o << "v:" << g[target(*e_it, g)].name << " d:1\n";
+		graph_traits<KbGraph>::edge_iterator it, end;
+		tie(it, end) = edges(*m_g);
+		for(;it != end; ++it) {
+			const string & u_str = (*m_g)[source(*it, *m_g)].name;
+			const string & v_str = (*m_g)[target(*it, *m_g)].name;
+			vector<string> r = edge_reltypes(*it);
+			if (r.size()) {
+				for(vector<string>::const_iterator rit = r.begin(), rend = r.end();
+					rit != rend; ++rit) {
+					o << "u:" << u_str << " v:" << v_str << " s:" << *rit << " d:1\n";
+				}
+			} else {
+				o << "u:" << u_str << " v:" << v_str << " d:1\n";
+			}
 		}
 		return o;
 	}
 
-	void Kb::write_to_textfile (const string & fName) {
+	void Kb::write_to_textfile (const string & fName) const {
 
 		ofstream fo(fName.c_str(),  ofstream::out);
 		if (!fo) {
 			cerr << "Error: can't create" << fName << endl;
 			exit(-1);
 		}
-		write_to_textstream(*m_g, fo);
+		write_to_textstream(fo);
 	}
 }
