@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
 	bool opt_deepwalk = false;
 	size_t opt_deepwalk_gamma = 80; // as for (Perozzi et al., 2014)
 	size_t opt_deepwalk_t = 10; // as for (Perozzi et al., 2014)
+	int opt_srand = 0;
 
 	using namespace boost::program_options;
 
@@ -86,7 +87,8 @@ int main(int argc, char *argv[]) {
 		("deepwalk", "Use deepwalk algorithm.")
 		("deepwalk_walks", value<size_t>(), "Deekwalk walks per vertex (gamma).")
 		("deepwalk_length", value<size_t>(), "Deekwalk walk length (t).")
-		("indeg", "Prefer vertices with higher indegree when walking")
+		("indeg", "Prefer vertices with higher indegree when walking.")
+		("srand", value<int>(), "Seed number for random number generator.")
 		("vsample", "Sample vertices according to static prank.")
 		("buckets", value<size_t>(), "Number of buckets used in vertex sampling (default is 10).")
 		("wemit_prob", value<float>(), "Probability to emit a word when on an vertex (emit vertex name instead). Default is 1.0 (always emit word).")
@@ -195,6 +197,14 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
+		if (vm.count("srand")) {
+			opt_srand = vm["srand"].as<int>();
+			if (opt_srand == 0) {
+				cerr << "Error: --srand parameter can not be zero.\n";
+				exit(1);
+			}
+		}
+
 		if (vm.count("vsample")) {
 			opt_bucket_size = 10 ; // default value
 		}
@@ -232,7 +242,11 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
-	glVars::rnd::init_random_device();
+	if (!opt_srand) {
+		glVars::rnd::init_random_device();
+	} else {
+		glVars::rnd::init_random_device(static_cast<int>(opt_srand));
+	}
 
 	vector<string> ctx;
 
