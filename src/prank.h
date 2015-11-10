@@ -63,7 +63,7 @@ namespace ukb {
 
 			typename graph_traits<G>::vertex_iterator v;
 			typename graph_traits<G>::vertex_iterator end;
-			tie(v, end) = vertices(g);
+			boost::tie(v, end) = vertices(g);
 			size_t N = 0;
 			for (; v != end; ++v) {
 				size_t i = 0;
@@ -278,7 +278,7 @@ namespace ukb {
 			std::fill(p.begin(), p.end(), 0.0f);
 
 			vertex_iterator it, end;
-			tie(it, end) = vertices(g);
+			boost::tie(it, end) = vertices(g);
 			for(; it != end; ++it) {
 				if (r[*it] * out_coefs[*it] >= epsilon) {
 					S.insert(*it); Q.push(*it);
@@ -329,7 +329,7 @@ namespace ukb {
 			std::fill(p.begin(), p.end(), 0.0f);
 
 			vertex_iterator it, end;
-			tie(it, end) = vertices(g);
+			boost::tie(it, end) = vertices(g);
 			for(; it != end; ++it) {
 				if (r[*it] * out_coefs[*it] >= epsilon) {
 					S.insert(*it); Q.push(*it);
@@ -375,7 +375,7 @@ namespace ukb {
 			std::fill(p.begin(), p.end(), 0.0f);
 
 			vertex_iterator it, end;
-			tie(it, end) = vertices(g);
+			boost::tie(it, end) = vertices(g);
 			for(; it != end; ++it) {
 				if (r[*it] * out_coefs[*it] >= epsilon) {
 					S.insert(*it); Q.push(*it);
@@ -412,7 +412,7 @@ namespace ukb {
 
 			typename graph_traits<G>::vertex_iterator v, v_end;
 
-			tie(v, v_end) = vertices(g);
+			boost::tie(v, v_end) = vertices(g);
 			for(; v != v_end; ++v) {
 				In[*v] = in_degree(*v, g);
 			}
