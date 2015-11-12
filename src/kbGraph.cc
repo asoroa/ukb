@@ -742,6 +742,19 @@ namespace ukb {
 
 	}
 
+	int Kb::components(vector<size_t> & v) const {
+
+		vector<size_t> (num_vertices(*m_g)).swap(v);
+		boost::iterator_property_map<
+			std::vector<size_t>::iterator,
+			boost::property_map<KbGraph, boost::vertex_index_t>::type> pm(v.begin(), get(boost::vertex_index, *m_g));
+
+		int i = boost::strong_components(*m_g, pm);
+
+		return i;
+
+	}
+
 	void Kb::ppv_weights(const vector<float> & ppv) {
 
 		graph_traits<KbGraph>::edge_iterator it, end;

@@ -202,6 +202,8 @@ namespace ukb {
 
 		// get how many (strong) components the graph has
 		int components() const;
+		// get components vector cv[u] = number of component where u belongs
+		int components(std::vector<size_t> & cv) const;
 
 		const std::vector<std::string> & get_comments() const;
 

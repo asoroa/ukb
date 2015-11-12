@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
 	size_t opt_deepwalk_gamma = 80; // as for (Perozzi et al., 2014)
 	size_t opt_deepwalk_t = 10; // as for (Perozzi et al., 2014)
 	int opt_srand = 0;
+	bool opt_vcomponents = 0;
 
 	using namespace boost::program_options;
 
@@ -90,6 +91,7 @@ int main(int argc, char *argv[]) {
 		("indeg", "Prefer vertices with higher indegree when walking.")
 		("srand", value<int>(), "Seed number for random number generator.")
 		("vsample", "Sample vertices according to static prank.")
+		("vcomponents", "Sample vertices according to graph components.")
 		("buckets", value<size_t>(), "Number of buckets used in vertex sampling (default is 10).")
 		("wemit_prob", value<float>(), "Probability to emit a word when on an vertex (emit vertex name instead). Default is 1.0 (always emit word).")
 		("seed_word", value<string>(), "Select concepts associate to the word to start the random walk. Default is start at any vertex at random.")
@@ -213,6 +215,10 @@ int main(int argc, char *argv[]) {
 			opt_bucket_size = vm["buckets"].as<size_t>();
 		}
 
+		if (vm.count("vcomponents")) {
+			opt_vcomponents = true;
+		}
+
 		if (vm.count("kb_binfile")) {
 			kb_binfile = vm["kb_binfile"].as<string>();
 		}
@@ -283,6 +289,10 @@ int main(int argc, char *argv[]) {
 					print_ctx(ctx);
 				}
 			}
+		} else if (opt_vcomponents) {
+			WapComponents walker(N);
+			while(walker.next(ctx))
+				print_ctx(ctx);
 		} else {
 			Wap walker(N, opt_bucket_size);
 			while(walker.next(ctx))

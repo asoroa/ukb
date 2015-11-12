@@ -15,7 +15,7 @@ namespace ukb {
 	// bucket sampling
 	struct vsampling_t {
 
-		struct vsampling_sort_t; // predicate for sorting
+		struct sort_t; // predicate for sorting
 
 		vsampling_t(size_t buckets = 10);
 		int sample();
@@ -27,6 +27,23 @@ namespace ukb {
 		std::vector<std::pair<int, int> > m_intervals;
 
 	};
+
+	struct vsampling_components_t {
+
+		struct sort_t; // predicate for sorting
+
+		vsampling_components_t();
+		int sample();
+		void debug();
+
+		size_t m_N; // size of graph
+		size_t m_component_N; // number of components in graph
+		std::vector<float> m_compW; // accumulated probabilities of components
+		std::vector<int> m_idx; // vertices ordered by component (from larger to smaller)
+		std::vector<std::pair<int, int> > m_intervals;
+
+	};
+
 
 	// Walk&Print class
 	class Wap {
@@ -46,6 +63,26 @@ namespace ukb {
 		size_t m_n;     // number of contexts to produce
 		size_t m_bsize; // bucket size
 		vsampling_t m_vsampler; // sampling from buckets
+		size_t m_i;     // number of context produced so far
+	};
+
+	// Walk&Print class
+	class WapComponents {
+
+	public:
+
+		WapComponents(size_t n) : m_n(n), m_vsampler(), m_i(0) {}
+		~WapComponents() {};
+
+		// perform an iteration leaving the result context in C
+		// return false if iteration is over
+
+		bool next(std::vector<std::string> & C);
+
+	private:
+
+		size_t m_n;     // number of contexts to produce
+		vsampling_components_t m_vsampler; // sampling from buckets
 		size_t m_i;     // number of context produced so far
 	};
 

@@ -13,6 +13,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/uniform_real.hpp>
+#include <boost/random/uniform_01.hpp>
 #include <boost/random/discrete_distribution.hpp>
 
 namespace ukb {
@@ -23,6 +24,12 @@ namespace ukb {
 	template<class It>
 	int rnumber_distribution(It beg, It end) {
 		boost::random::discrete_distribution<> dist(beg, end);
+		return dist(glVars::rnd::urng);
+	}
+
+	// returns a random floating-point value uniformly distributed in the range [0..1)
+	static float rnumber_01() {
+		boost::random::uniform_01<> dist;
 		return dist(glVars::rnd::urng);
 	}
 
@@ -46,10 +53,10 @@ namespace ukb {
 	///////////////////////////////////////////////
 	// vsampling stuff
 
-	struct vsampling_t::vsampling_sort_t {
+	struct vsampling_t::sort_t {
 
 		const vector<float> & m_v ;
-		vsampling_sort_t(const vector<float> & score) : m_v(score) {}
+		sort_t(const vector<float> & score) : m_v(score) {}
 		int operator()(const int & i, const int & j) {
 			// Descending order
 			return m_v[i] > m_v[j];
@@ -79,7 +86,7 @@ namespace ukb {
 		vector<int>(m_N).swap(m_idx);
 		for(size_t i = 0; i < m_N; i++) m_idx[i] = i;
 		// sort idx according to static prank
-		sort(m_idx.begin(), m_idx.end(), vsampling_sort_t(sprank));
+		sort(m_idx.begin(), m_idx.end(), sort_t(sprank));
 		float factor = 1.0f / static_cast<float>(m_bucket_N) ;
 		float accum = 0.0;
 		int left = 0;
@@ -111,7 +118,97 @@ namespace ukb {
 	}
 
 	///////////////////////////////////////////////
+	// sampling according to strong components
 
+	void vsampling_components_t::debug() {
+		for(size_t i = 0; i < m_intervals.size(); i++) {
+			cerr << "Interval [ " << m_intervals[i].first << ", " << m_intervals[i].second << ") W: "<< std::setprecision(4) << m_compW[i] << " : ";
+			// for (int j = m_intervals[i].first; j != m_intervals[i].second; j++) {
+			// 	string v = Kb::instance().get_vertex_name(m_idx[j]);
+			// 	cerr << v << " ";
+			// }
+			cerr << "\n";
+		}
+	}
+
+	struct vsampling_components_t::sort_t {
+
+		const vector<size_t> & m_components ;
+		const vector<int> & m_comp_sizes ;
+		sort_t(const vector<size_t> & components, const vector<int> & comp_sizes) : m_components(components), m_comp_sizes(comp_sizes) {}
+		int operator()(const int & i, const int & j) {
+			// Descending order
+			size_t comp_i = m_components[i];
+			size_t comp_j = m_components[j];
+			int size_delta = m_comp_sizes[ comp_i ] - m_comp_sizes[ comp_j ];
+			if (size_delta > 0) return true;  // comp_i is bigger that comp_j
+			if (size_delta < 0) return false; // comp_i is smaller that comp_j
+			return comp_i < comp_j; // if equal size, sort descending order
+		}
+	};
+
+	vsampling_components_t::vsampling_components_t() : m_N(0), m_component_N(0) {
+
+		Kb & kb = Kb::instance();
+		m_N = kb.size();
+		if (!m_N) return ;
+		vector<size_t> components;
+		m_component_N = kb.components(components);
+		if (m_component_N == 1) return;
+		vector<int> comp_sizes(m_component_N, 0);
+		for(vector<size_t>::const_iterator it = components.begin(), end = components.end();
+			it != end; ++it) {
+			comp_sizes[*it]++;
+		}
+		vector<int>(m_N).swap(m_idx);
+		for(size_t i = 0; i < m_N; i++) m_idx[i] = i;
+		// sort idx according to component
+		sort(m_idx.begin(), m_idx.end(), sort_t(components, comp_sizes));
+
+		// calculate component intervals
+		// and fill probabilities of components
+		float prob_factor = 1.0f / static_cast<float>(m_N);
+		size_t current_comp = components[ m_idx[0] ];
+		int left = 0;
+		for(size_t i = 1; i < m_N; i++) {
+			size_t new_comp = components[ m_idx[i] ];
+			if (new_comp != current_comp) {
+				m_intervals.push_back(make_pair(left, i));
+				m_compW.push_back(comp_sizes[current_comp] * prob_factor);
+				left = i;
+				current_comp = new_comp;
+			}
+		}
+		m_intervals.push_back(make_pair(left, m_N));
+		m_compW.push_back(comp_sizes[current_comp] * prob_factor);
+		// accumulate component probabilities
+		float accum = 0.0;
+		for(size_t i = 0; i < m_component_N - 1; i++) {
+			accum += m_compW[i];
+			m_compW[i] = accum;
+		}
+		m_compW[m_component_N - 1] = 1.0;
+	}
+
+	// Method to sample a vertex
+	// First, decide which component (according to size), then select one at random from the component
+	int vsampling_components_t::sample() {
+		if (m_component_N < 2) {
+			return rnumber(m_N - 1);
+		}
+		float toss = rnumber_01();
+		size_t comp_i;
+		for(comp_i = 0; comp_i < m_component_N; ++comp_i)
+			if (m_compW[comp_i] > toss) break;
+		assert(comp_i < m_component_N);
+
+		int left = m_intervals[comp_i].first;
+		int m = m_intervals[comp_i].second - left;
+		assert(m > 0);
+		if (m == 1) return m_idx[left];
+		size_t off = rnumber(m - 1);
+		return m_idx[left + off];
+	}
 
 	static bool emit_word_vertex(Kb_vertex_t current, string & emit_word) {
 
@@ -119,7 +216,7 @@ namespace ukb {
 
 		Kb & kb = Kb::instance();
 
-		float toss = rnumber(1.0f);
+		float toss = rnumber_01();
 		if (toss >= glVars::wap::wemit_prob) {
 			emit_word = kb.get_vertex_name(current);
 			return true;
@@ -224,7 +321,7 @@ namespace ukb {
 
 		Kb_vertex_t current = v;  //Start the iteration in the V vertex
 
-		for (float r = rnumber(1.0f); r <= glVars::prank::damping; r = rnumber(1.0f) ) {
+		for (float r = rnumber_01(); r <= glVars::prank::damping; r = rnumber_01() ) {
 			// emit word from current vertex
 			string emit_word;
 			if (emit_word_vertex(current, emit_word))
@@ -255,6 +352,21 @@ namespace ukb {
 	// Main algorithm for walk&print
 
 	bool Wap::next(vector<string> & emited_words) {
+
+		vector<string>().swap(emited_words);
+
+		if (m_i >= m_n) return false;
+
+		int idx = m_vsampler.sample();
+		Kb_vertex_t u(idx);
+		do_complete_mc(u, emited_words);
+		m_i++;
+		return true;
+	}
+
+	// Main algorithm for walk&print
+
+	bool WapComponents::next(vector<string> & emited_words) {
 
 		vector<string>().swap(emited_words);
 
