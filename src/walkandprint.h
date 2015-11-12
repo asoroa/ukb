@@ -15,6 +15,8 @@ namespace ukb {
 	// bucket sampling
 	struct vsampling_t {
 
+		struct vsampling_sort_t; // predicate for sorting
+
 		vsampling_t(size_t buckets = 10);
 		int sample();
 		void debug();

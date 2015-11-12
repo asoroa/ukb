@@ -46,10 +46,10 @@ namespace ukb {
 	///////////////////////////////////////////////
 	// vsampling stuff
 
-	struct vpart_sort_t {
+	struct vsampling_t::vsampling_sort_t {
 
 		const vector<float> & m_v ;
-		vpart_sort_t(const vector<float> & score) : m_v(score) {}
+		vsampling_sort_t(const vector<float> & score) : m_v(score) {}
 		int operator()(const int & i, const int & j) {
 			// Descending order
 			return m_v[i] > m_v[j];
@@ -58,15 +58,15 @@ namespace ukb {
 
 	void vsampling_t::debug() {
 		const vector<float> & sprank = Kb::instance().static_prank();
-		cout << std::setprecision(4) << 1.0f / static_cast<float>(m_bucket_N) << "\n";
+		cerr << std::setprecision(4) << 1.0f / static_cast<float>(m_bucket_N) << "\n";
 		for(size_t i = 0; i < m_intervals.size(); i++) {
-			cout << "Interval " << i << ": ";
+			cerr << "Interval " << i << ": ";
 			for (int j = m_intervals[i].first; j != m_intervals[i].second; j++) {
 				string v = Kb::instance().get_vertex_name(m_idx[j]);
 				float rank = sprank[m_idx[j]];
-				cout << v << ":" << std::setprecision(4) << rank << " ";
+				cerr << v << ":" << std::setprecision(4) << rank << " ";
 			}
-			cout << "\n";
+			cerr << "\n";
 		}
 	}
 
@@ -74,27 +74,26 @@ namespace ukb {
 
 		Kb & kb = Kb::instance();
 		m_N = kb.size();
-		if (!buckets) return ;
+		if (!m_bucket_N) return ;
 		const vector<float> & sprank = kb.static_prank();
 		vector<int>(m_N).swap(m_idx);
 		for(size_t i = 0; i < m_N; i++) m_idx[i] = i;
 		// sort idx according to static prank
-		sort(m_idx.begin(), m_idx.end(), vpart_sort_t(sprank));
+		sort(m_idx.begin(), m_idx.end(), vsampling_sort_t(sprank));
 		float factor = 1.0f / static_cast<float>(m_bucket_N) ;
 		float accum = 0.0;
-		pair<int, int> interval = make_pair(0,0);
+		int left = 0;
 		for(size_t i = 0; i < m_N; i++) {
-			interval.second++;
 			accum += sprank[ m_idx[i] ];
 			if (accum > factor) {
-				m_intervals.push_back(interval);
+				m_intervals.push_back(make_pair(left, i));
 				if (m_intervals.size() == m_bucket_N) break;
-				interval = make_pair(interval.second, interval.second);
+				left = i;
 				accum = 0.0;
 			}
 		}
-		m_intervals.back().second = m_N;
-		m_bucket_N = m_intervals.size();
+		m_intervals.back().second = m_N; // put remaining nodes in last bucket
+		m_bucket_N = m_intervals.size(); // safety measure
 	}
 
 	// Method to sample a vertex
