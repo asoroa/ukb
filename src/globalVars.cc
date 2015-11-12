@@ -26,14 +26,13 @@ namespace ukb {
 		std::vector<std::string> rel_source;
 
 		namespace rnd {
-			boost::random::mt19937 mt;
-			boost::mt19937 rand_generator(static_cast<unsigned int>(std::time(0)));
+			boost::random::mt19937 urng; // uniform random number generator (pseudo-random)
 			void init_random_device() {
-				boost::random::random_device rd;
-				mt.seed(rd());
+				boost::random::random_device rd; // non-deterministic random number generator
+				urng.seed(rd());
 			}
 			void init_random_device(int s) {
-				mt.seed(s);
+				urng.seed(s);
 			}
 		}
 

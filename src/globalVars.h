@@ -18,10 +18,8 @@ namespace ukb {
 		extern char ukb_version[];
 
 		namespace rnd {
+			extern boost::random::mt19937 urng;
 			void init_random_device(); // call me if you want random numbers
-			extern boost::random::mt19937 mt;
-			// for random shuffling
-			extern boost::mt19937 rand_generator;
 			void init_random_device(int s); // using constant seed (for debugging)
 		}
 

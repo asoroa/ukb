@@ -23,24 +23,24 @@ namespace ukb {
 	template<class It>
 	int rnumber_distribution(It beg, It end) {
 		boost::random::discrete_distribution<> dist(beg, end);
-		return dist(glVars::rnd::mt);
+		return dist(glVars::rnd::urng);
 	}
 
 	// generate between 0 and b, both inclusive
 	static int rnumber(int b) {
 		boost::random::uniform_int_distribution<> dist(0, b);
-		return dist(glVars::rnd::mt);
+		return dist(glVars::rnd::urng);
 	}
 
 	// generate between 0 and b, both inclusive
 	static size_t rnumber(size_t b) {
 		boost::random::uniform_int_distribution<> dist(0, b);
-		return dist(glVars::rnd::mt);
+		return dist(glVars::rnd::urng);
 	}
 
 	static float rnumber(float b) {
 		boost::random::uniform_real_distribution<> dist(0.0f, b);
-		return dist(glVars::rnd::mt);
+		return dist(glVars::rnd::urng);
 	}
 
 	///////////////////////////////////////////////
