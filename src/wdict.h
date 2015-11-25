@@ -13,7 +13,7 @@
 #include <vector>
 #include <iosfwd>
 #include <stdexcept>
-#include <tr1/unordered_map>
+#include <boost/unordered_map.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
 ////////////////////////////////////////
@@ -202,8 +202,8 @@ namespace ukb {
 	class WDict {
 
 	public:
-		typedef std::tr1::unordered_map<std::string, wdict_rhs_t > wdict_t;
-		typedef std::tr1::unordered_map<Kb_vertex_t, winvdict_rhs_t > winvdict_t;
+		typedef boost::unordered_map<std::string, wdict_rhs_t > wdict_t;
+		typedef boost::unordered_map<Kb_vertex_t, winvdict_rhs_t > winvdict_t;
 
 		// Singleton
 		static WDict & instance();
@@ -273,6 +273,13 @@ namespace ukb {
 		typedef const std::pair<const std::string, wdict_rhs_t> * pair_ptr_t;
 		std::vector<pair_ptr_t> m_V;
 	};
+
+	// return concept priors:
+	//
+	// P[concept] = freq  ==> how many times 'concept' has been used in the dictionary
+	// N => total number of concept counts
+
+	float concept_priors(boost::unordered_map<Kb_vertex_t, float> & P);
 
 }
 

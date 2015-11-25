@@ -757,6 +757,7 @@ namespace ukb {
 		}
 	}
 
+	////////////////////////////////////////////////////////////////////////////////
 	// WDictHeadwords
 
 	WDictHeadwords::WDictHeadwords(const WDict & wdict) {
@@ -778,4 +779,30 @@ namespace ukb {
 	size_t WDictHeadwords::size() const {
 		return m_V.size();
 	}
+
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Auxiliary (non-class) functions
+
+
+	// return concept priors:
+	//
+	// P[concept] = freq  ==> how many times 'concept' has been used in the dictionary
+	// N => total number of concept counts
+
+	float concept_priors(boost::unordered_map<Kb_vertex_t, float> & P) {
+		boost::unordered_map<Kb_vertex_t, float>().swap(P);
+		WDictHeadwords dicthws(WDict::instance());
+		float N = 0.0f;
+		for(size_t i = 0; i < dicthws.size(); ++i) {
+			WDict_entries concepts(dicthws.rhs(i));
+			for(size_t j = 0; j < concepts.size(); ++j) {
+				float f = concepts.get_freq(j);
+				N += f;
+				P[concepts.get_entry(j)] += static_cast<float>(f);
+			}
+		}
+		return N;
+	}
 }
+

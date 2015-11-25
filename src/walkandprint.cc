@@ -387,12 +387,12 @@ namespace ukb {
 
 		if (m_i >= m_n) return false;
 
-		static std::tr1::unordered_map<const std::string &, float > dweight_cache;
-		std::tr1::unordered_map<const std::string &, float >::iterator dweight_it;
+		static boost::unordered_map<const std::string *, float > dweight_cache;
+		boost::unordered_map<const std::string *, float >::iterator dweight_it;
 		bool P;
 
 		// select synset at random
-		tie(dweight_it, P) = dweight_cache.insert(make_pair(m_seed, 0.0f));
+		tie(dweight_it, P) = dweight_cache.insert(std::make_pair(&m_seed, 0.0f));
 		float & total_weight = dweight_it->second;
 		if (P) {
 			for(size_t i = 0; i < m_synsets.size(); ++i) {
@@ -437,8 +437,8 @@ namespace ukb {
 
 	// 	WDictHeadwords dicthws(WDict::instance());
 
-	// 	static std::tr1::unordered_map<const std::string &, float > dweight_cache;
-	// 	std::tr1::unordered_map<const std::string &, float >::iterator dweight_it;
+	// 	static boost::unordered_map<const std::string &, float > dweight_cache;
+	// 	boost::unordered_map<const std::string &, float >::iterator dweight_it;
 	// 	bool P;
 	// 	size_t m = dicthws.size();
 
