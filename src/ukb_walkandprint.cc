@@ -58,9 +58,10 @@ int main(int argc, char *argv[]) {
 	size_t opt_bucket_size = 0;
 	bool opt_deepwalk = false;
 	size_t opt_deepwalk_gamma = 80; // as for (Perozzi et al., 2014)
-	size_t opt_deepwalk_t = 10; // as for (Perozzi et al., 2014)
+	size_t opt_deepwalk_length = 10; // as for (Perozzi et al., 2014)
 	int opt_srand = 0;
-	bool opt_vcomponents = 0;
+	bool opt_vcomponents = false;
+	bool opt_dictbucket = false;
 
 	using namespace boost::program_options;
 
@@ -91,7 +92,8 @@ int main(int argc, char *argv[]) {
 		("indeg", "Prefer vertices with higher indegree when walking.")
 		("srand", value<int>(), "Seed number for random number generator.")
 		("vsample", "Sample vertices according to static prank.")
-		("vcomponents", "Sample vertices according to graph components.")
+		("dsample", "Sample vertices according to prior calculated from dictionary.")
+		("csample", "Sample vertices according to graph components.")
 		("buckets", value<size_t>(), "Number of buckets used in vertex sampling (default is 10).")
 		("wemit_prob", value<float>(), "Probability to emit a word when on an vertex (emit vertex name instead). Default is 1.0 (always emit word).")
 		("seed_word", value<string>(), "Select concepts associate to the word to start the random walk. Default is start at any vertex at random.")
@@ -192,8 +194,8 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("deepwalk_length")) {
-			opt_deepwalk_t = vm["deepwalk_length"].as<size_t>();
-			if (!opt_deepwalk_t) {
+			opt_deepwalk_length = vm["deepwalk_length"].as<size_t>();
+			if (!opt_deepwalk_length) {
 				cerr << "Error: --deepwalk_length has to be possitive.\n";
 				exit(1);
 			}
@@ -211,11 +213,16 @@ int main(int argc, char *argv[]) {
 			opt_bucket_size = 10 ; // default value
 		}
 
+		if (vm.count("dsample")) {
+			opt_bucket_size = 10 ; // default value
+			opt_dictbucket = true;
+		}
+
 		if (vm.count("buckets")) {
 			opt_bucket_size = vm["buckets"].as<size_t>();
 		}
 
-		if (vm.count("vcomponents")) {
+		if (vm.count("csample")) {
 			opt_vcomponents = true;
 		}
 
@@ -260,19 +267,20 @@ int main(int argc, char *argv[]) {
 		if (!kb_binfile.size()) {
 			cout << po_visible << endl;
 			cout << "Error: no KB file\n";
-			exit(0);
-		}
-		if(opt_deepwalk) {
-			Kb::create_from_binfile(kb_binfile);
-			cout << cmdline << "\n";
-			DeepWalk walker(opt_deepwalk_gamma, opt_deepwalk_t);
-			while(walker.next(ctx))
-				print_ctx(ctx);
-			exit(0);
+			goto END;
 		}
 
 		Kb::create_from_binfile(kb_binfile);
 		cout << cmdline << "\n";
+
+		if(opt_deepwalk) {
+			{
+				DeepWalk walker(opt_deepwalk_gamma, opt_deepwalk_length);
+				while(walker.next(ctx))
+					print_ctx(ctx);
+			}
+			goto END;
+		}
 
 		if (!N_str.size()) {
 			cout << po_visible << endl;
@@ -282,25 +290,56 @@ int main(int argc, char *argv[]) {
 		N = lexical_cast<size_t>(N_str);
 
 		if (seed_word.size()) {
-			WapWord walker(seed_word, N);
-			while(walker.next(ctx)) {
-				if(ctx.size() > 1) {
-					cout << seed_word << "\t";
-					print_ctx(ctx);
+			{
+				WapWord walker(seed_word, N);
+				while(walker.next(ctx)) {
+					if(ctx.size() > 1) {
+						cout << seed_word << "\t";
+						print_ctx(ctx);
+					}
 				}
 			}
-		} else if (opt_vcomponents) {
-			WapComponents walker(N);
-			while(walker.next(ctx))
-				print_ctx(ctx);
-		} else {
+			goto END;
+		}
+
+		if (opt_vcomponents) {
+			{
+				WapComponents walker(N);
+				while(walker.next(ctx))
+					print_ctx(ctx);
+			}
+			goto END;
+		}
+
+		if (opt_dictbucket) {
+			vector<float> Priors(Kb::instance().size());
+			{
+				boost::unordered_map<Kb_vertex_t, float> P;
+				float N = concept_priors(P);
+				for(boost::unordered_map<Kb_vertex_t, float>::iterator it = P.begin(), end = P.end();
+					it != end; ++it) {
+					Priors[ it->first ] = it->second / N;
+				}
+			}
+			{
+				Wap walker(N, opt_bucket_size, Priors);
+				while(walker.next(ctx))
+					print_ctx(ctx);
+			}
+			goto END;
+		}
+
+		{
 			Wap walker(N, opt_bucket_size);
 			while(walker.next(ctx))
 				print_ctx(ctx);
 		}
+		goto END;
+
+	END:
+		(void) 1; // supress "statement has no effect" warning
 	} catch(std::exception& e) {
 		cerr << e.what() << "\n";
 		exit(-1);
 	}
-
 }

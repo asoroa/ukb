@@ -17,10 +17,16 @@ namespace ukb {
 
 		struct sort_t; // predicate for sorting
 
-		vsampling_t(size_t buckets = 10);
+		vsampling_t(size_t buckets);
+		// Create buckets according to ranks vector, which has to be a probability
+		// vector
+
+		vsampling_t(size_t buckets, const std::vector<float> & ranks);
 		int sample();
 		void debug();
 
+	private:
+		void init(const std::vector<float> & ranks);
 		std::vector<int> m_idx;
 		size_t m_N; // size of graph
 		size_t m_bucket_N;
@@ -50,7 +56,9 @@ namespace ukb {
 
 	public:
 
+		Wap(size_t n, size_t bucket_size, std::vector<float> & P) : m_n(n), m_bsize(bucket_size), m_vsampler(bucket_size, P), m_i(0) {}
 		Wap(size_t n, size_t bucket_size) : m_n(n), m_bsize(bucket_size), m_vsampler(bucket_size), m_i(0) {}
+		//Wap(size_t n, size_t bucket_size, const vector<float> & vpriors) : m_n(n), m_bsize(bucket_size), m_vsampler(bucket_size, priors), m_i(0) {}
 		~Wap() {};
 
 		// perform an iteration leaving the result context in C

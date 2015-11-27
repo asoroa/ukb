@@ -67,7 +67,8 @@ namespace ukb {
 		const vector<float> & sprank = Kb::instance().static_prank();
 		cerr << std::setprecision(4) << 1.0f / static_cast<float>(m_bucket_N) << "\n";
 		for(size_t i = 0; i < m_intervals.size(); i++) {
-			cerr << "Interval " << i << ": ";
+			size_t isize = m_intervals[i].second - m_intervals[i].first ;
+			cerr << "Interval (" << isize << ")" << i << ": ";
 			for (int j = m_intervals[i].first; j != m_intervals[i].second; j++) {
 				string v = Kb::instance().get_vertex_name(m_idx[j]);
 				float rank = sprank[m_idx[j]];
@@ -78,20 +79,32 @@ namespace ukb {
 	}
 
 	vsampling_t::vsampling_t(size_t buckets) : m_bucket_N(buckets) {
+		init(Kb::instance().static_prank());
+	}
 
+	// Create buckets according to ranks vector, which has to be a probability
+	// vector
+
+	vsampling_t::vsampling_t(size_t buckets, const vector<float> & ranks) : m_bucket_N(buckets) {
+		init(ranks);
+	}
+
+	// Init buckets according to ranks vector, which has to be a probability
+	// vector
+
+	void vsampling_t::init(const vector<float> & ranks)  {
+		if (!m_bucket_N) return ;
 		Kb & kb = Kb::instance();
 		m_N = kb.size();
-		if (!m_bucket_N) return ;
-		const vector<float> & sprank = kb.static_prank();
 		vector<int>(m_N).swap(m_idx);
 		for(size_t i = 0; i < m_N; i++) m_idx[i] = i;
-		// sort idx according to static prank
-		sort(m_idx.begin(), m_idx.end(), sort_t(sprank));
+		// sort idx according to rank vector
+		sort(m_idx.begin(), m_idx.end(), sort_t(ranks));
 		float factor = 1.0f / static_cast<float>(m_bucket_N) ;
 		float accum = 0.0;
 		int left = 0;
 		for(size_t i = 0; i < m_N; i++) {
-			accum += sprank[ m_idx[i] ];
+			accum += ranks[ m_idx[i] ];
 			if (accum > factor) {
 				m_intervals.push_back(make_pair(left, i));
 				if (m_intervals.size() == m_bucket_N) break;

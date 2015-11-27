@@ -365,6 +365,18 @@ namespace ukb {
 		return o;
 	}
 
+	template<class T>
+	std::ostream & writeM(std::ostream & o, T & m) {
+		typename T::const_iterator it = m.begin();
+		typename T::const_iterator end = m.end();
+		for(; it != end; ++it) {
+			o << it->first;
+			o << "\t";
+			o << it->second;
+			o << "\n";
+		}
+		return o;
+	}
 	///////////////////////////////////////////////////////////////////////
 	// Normalize probability vector
 	//
