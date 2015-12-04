@@ -78,14 +78,18 @@ namespace ukb {
 		}
 	}
 
-	vsampling_t::vsampling_t(size_t buckets) : m_bucket_N(buckets) {
+	vsampling_t::vsampling_t(size_t buckets) :
+        m_N( Kb::instance().size() ), m_bucket_N(buckets) {
+		if (!m_bucket_N) return ;
 		init(Kb::instance().static_prank());
 	}
 
 	// Create buckets according to ranks vector, which has to be a probability
 	// vector
 
-	vsampling_t::vsampling_t(size_t buckets, const vector<float> & ranks) : m_bucket_N(buckets) {
+	vsampling_t::vsampling_t(size_t buckets, const vector<float> & ranks) :
+        m_N( Kb::instance().size() ), m_bucket_N(buckets) {
+		if (!m_bucket_N) return ;
 		init(ranks);
 	}
 
@@ -93,9 +97,6 @@ namespace ukb {
 	// vector
 
 	void vsampling_t::init(const vector<float> & ranks)  {
-		if (!m_bucket_N) return ;
-		Kb & kb = Kb::instance();
-		m_N = kb.size();
 		vector<int>(m_N).swap(m_idx);
 		for(size_t i = 0; i < m_N; i++) m_idx[i] = i;
 		// sort idx according to rank vector
@@ -368,7 +369,7 @@ namespace ukb {
 
 		vector<string>().swap(emited_words);
 
-		if (m_i >= m_n) return false;
+		if (m_n && m_i >= m_n) return false;
 
 		int idx = m_vsampler.sample();
 		Kb_vertex_t u(idx);
@@ -383,7 +384,7 @@ namespace ukb {
 
 		vector<string>().swap(emited_words);
 
-		if (m_i >= m_n) return false;
+		if (m_n && m_i >= m_n) return false;
 
 		int idx = m_vsampler.sample();
 		Kb_vertex_t u(idx);
@@ -398,7 +399,7 @@ namespace ukb {
 
 		vector<string>().swap(emited_words);
 
-		if (m_i >= m_n) return false;
+		if (m_n && m_i >= m_n) return false;
 
 		static boost::unordered_map<const std::string *, float > dweight_cache;
 		boost::unordered_map<const std::string *, float >::iterator dweight_it;

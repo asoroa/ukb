@@ -20,8 +20,8 @@ namespace ukb {
 		vsampling_t(size_t buckets);
 		// Create buckets according to ranks vector, which has to be a probability
 		// vector
-
 		vsampling_t(size_t buckets, const std::vector<float> & ranks);
+
 		int sample();
 		void debug();
 
