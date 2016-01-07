@@ -224,9 +224,8 @@ namespace ukb {
 		return m_idx[left + off];
 	}
 
-	static bool emit_word_vertex(Kb_vertex_t current, string & emit_word) {
-
-		static vector<float> vertex2word_tweight;
+	static bool emit_word_vertex(Kb_vertex_t current, string & emit_word,
+                                 vector<float> & vertex2word_tweight) {
 
 		Kb & kb = Kb::instance();
 
@@ -235,8 +234,6 @@ namespace ukb {
 			emit_word = kb.get_vertex_name(current);
 			return true;
 		}
-
-		if (!vertex2word_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex2word_tweight);
 
 		WInvdict_entries words = WDict::instance().words(current);
 		if (!words.size()) return false;
@@ -259,14 +256,11 @@ namespace ukb {
 		return true;
 	}
 
-	static bool select_next_vertex_prank(Kb_vertex_t & current) {
-
-		static vector<float> vertex_out_tweight;
+	static bool select_next_vertex_prank(Kb_vertex_t & current,
+                                         vector<float> & vertex_out_tweight) {
 
 		Kb & kb = Kb::instance();
 		Kb_vertex_t previous = current;
-
-		if (!vertex_out_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex_out_tweight);
 
 		Kb_out_edge_iter_t out_it, out_end;
 
@@ -290,15 +284,12 @@ namespace ukb {
 		return true;
 	}
 
-	static bool select_next_vertex_degree(Kb_vertex_t & current) {
-
-		static vector<float> vertex_out_tweight;
+	static bool select_next_vertex_degree(Kb_vertex_t & current,
+                                          vector<float> & vertex_out_tweight) {
 
 		Kb & kb = Kb::instance();
 		KbGraph & G = kb.graph();
 		Kb_vertex_t previous = current;
-
-		if (!vertex_out_tweight.size()) vector<float>(kb.size(), 0.0f).swap(vertex_out_tweight);
 
 		Kb_out_edge_iter_t out_it, out_end;
 
@@ -324,30 +315,40 @@ namespace ukb {
 		return true;
 	}
 
-	static bool select_next_vertex(Kb_vertex_t & current) {
-		if (glVars::wap::prefer_indegree) return select_next_vertex_degree(current);
-		return select_next_vertex_prank(current);
+	static bool select_next_vertex(Kb_vertex_t & current,
+                                   vector<float> & vertex_out_tweight) {
+		if (glVars::wap::prefer_indegree) return select_next_vertex_degree(current,
+                                                                           vertex_out_tweight);
+		return select_next_vertex_prank(current,
+                                        vertex_out_tweight);
 	}
 
 	// perform one complete rw starting from v
 
-	static void do_complete_mc(Kb_vertex_t v, vector<string> & emited_words) {
+	static void do_complete_mc(Kb_vertex_t v,
+                               vector<string> & emited_words,
+                               vector<float> & vertex2word_tweight,
+                               vector<float> & vertex_out_tweight) {
 
 		Kb_vertex_t current = v;  //Start the iteration in the V vertex
 
 		for (float r = rnumber_01(); r <= glVars::prank::damping; r = rnumber_01() ) {
 			// emit word from current vertex
 			string emit_word;
-			if (emit_word_vertex(current, emit_word))
+			if (emit_word_vertex(current, emit_word, vertex2word_tweight))
 				emited_words.push_back(emit_word);
 			// Select next vertex to jump
-			if (!select_next_vertex(current)) break;
+			if (!select_next_vertex(current, vertex_out_tweight)) break;
 		}
 	}
 
 	// perform one complete rw starting from v (fixed path length)
 
-	static void do_complete_length(Kb_vertex_t current, size_t t, vector<string> & emited_words) {
+	static void do_complete_length(Kb_vertex_t current,
+                                   size_t t,
+                                   vector<string> & emited_words,
+                                   vector<float> & vertex2word_tweight,
+                                   vector<float> & vertex_out_tweight) {
 
 		if (!t) return;
 
@@ -356,10 +357,10 @@ namespace ukb {
 		for (size_t i = 0; i < t; ++i ) {
 			// emit word from current vertex
 			string emit_word;
-			if (emit_word_vertex(current, emit_word))
+			if (emit_word_vertex(current, emit_word, vertex2word_tweight))
 				emited_words.push_back(emit_word);
 			// Select next vertex to jump
-			if (!select_next_vertex(current)) break;
+			if (!select_next_vertex(current, vertex_out_tweight)) break;
 		}
 	}
 
@@ -373,7 +374,11 @@ namespace ukb {
 
 		int idx = m_vsampler.sample();
 		Kb_vertex_t u(idx);
-		do_complete_mc(u, emited_words);
+		if (!m_vertex2word_tweight.size()) {
+            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
+            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex_out_tweight);
+        }
+		do_complete_mc(u, emited_words, m_vertex2word_tweight, m_vertex_out_tweight);
 		m_i++;
 		return true;
 	}
@@ -388,7 +393,11 @@ namespace ukb {
 
 		int idx = m_vsampler.sample();
 		Kb_vertex_t u(idx);
-		do_complete_mc(u, emited_words);
+		if (!m_vertex2word_tweight.size()) {
+            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
+            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex_out_tweight);
+        }
+		do_complete_mc(u, emited_words, m_vertex2word_tweight, m_vertex_out_tweight);
 		m_i++;
 		return true;
 	}
@@ -422,7 +431,11 @@ namespace ukb {
 			synset = m_synsets.get_entry(i);
 			if (rand_value < w_accum) break;
 		}
-		do_complete_mc(synset, emited_words);
+		if (!m_vertex2word_tweight.size()) {
+            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
+            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex_out_tweight);
+        }
+		do_complete_mc(synset, emited_words, m_vertex2word_tweight, m_vertex_out_tweight);
 		m_i++;
 		return true;
 	}
@@ -437,7 +450,11 @@ namespace ukb {
 		if (m_g >= m_gamma) return false;
 
 		Kb_vertex_t u(m_i);
-		do_complete_length(u, m_t, emited_words);
+		if (!m_vertex2word_tweight.size()) {
+            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
+            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex_out_tweight);
+        }
+		do_complete_length(u, m_t, emited_words, m_vertex2word_tweight, m_vertex_out_tweight);
 		if (++m_i >= m_N) {
 			m_i = 0;
 			m_g++;
