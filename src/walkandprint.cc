@@ -224,16 +224,8 @@ namespace ukb {
 		return m_idx[left + off];
 	}
 
-	static bool emit_word_vertex(Kb_vertex_t current, string & emit_word,
-                                 vector<float> & vertex2word_tweight) {
-
-		Kb & kb = Kb::instance();
-
-		float toss = rnumber_01();
-		if (toss >= glVars::wap::wemit_prob) {
-			emit_word = kb.get_vertex_name(current);
-			return true;
-		}
+	static bool emit_word_vertex_mono(Kb_vertex_t current, string & emit_word,
+                                      vector<float> & vertex2word_tweight) {
 
 		WInvdict_entries words = WDict::instance().words(current);
 		if (!words.size()) return false;
@@ -256,8 +248,108 @@ namespace ukb {
 		return true;
 	}
 
-	static bool select_next_vertex_prank(Kb_vertex_t & current,
-                                         vector<float> & vertex_out_tweight) {
+    static pair<string, bool> xtract_lang(const string & str) {
+        size_t m = str.size();
+        if (m < 3) return make_pair(string(), false);
+        if (str[m-3] != '#')
+            return make_pair(string(), false);
+        return make_pair(string(str, m - 2), true);
+    }
+
+    struct wap_langselect_sort_t {
+        wap_langselect_sort_t() {}
+        int operator()(const pair<string, float> & a, const pair<string, float> & b) {
+            string langA, langB;
+            bool ok;
+            tie(langB, ok) = xtract_lang(b.first);
+            if (!ok) return 1;
+            tie(langA, ok) = xtract_lang(a.first);
+            if (!ok) return 0;
+            return langA < langB;
+		}
+    };
+
+    // select words of one language at random (languages are equiprobable)
+    static pair<vector<pair<string, float> >::iterator,
+                vector<pair<string, float> >::iterator>
+    subvec_language(WInvdict_entries & words,
+                    vector<pair<string, float> > & words_mono)
+    {
+        size_t N = words.size();
+        for(size_t i = 0; i < N; ++i) {
+            words_mono.push_back(make_pair(words.get_word(i), words.get_prob(i)));
+        }
+        sort(words_mono.begin(), words_mono.end(), wap_langselect_sort_t());
+        vector<pair<string, float> >::iterator it = words_mono.begin(), end = words_mono.end();
+        bool ok;
+        string stored_lang, current_lang;
+        tie(stored_lang, ok) = xtract_lang(it->first);
+        if (!ok) return make_pair(words_mono.begin(), end);
+        vector<vector<pair<string, float> >::iterator> lang_idx;
+        lang_idx.push_back(it);
+        ++it;
+        while(it != end) {
+            tie(current_lang, ok) = xtract_lang(it->first);
+            if (!ok) return make_pair(words_mono.begin(), end);
+            if(stored_lang != current_lang) {
+                lang_idx.push_back(it);
+                stored_lang = current_lang;
+            }
+            ++it;
+        }
+        int langN = lang_idx.size();
+        if (langN == 1)
+            return make_pair(words_mono.begin(), end);
+        int idx = rnumber(langN - 1);
+        it = lang_idx[idx];
+        if (idx == langN - 1)
+            end = words_mono.end();
+        else
+            end = lang_idx[idx + 1];
+        return make_pair(it, end);
+    }
+
+    static bool emit_word_vertex_multi(Kb_vertex_t current, string & emit_word) {
+
+		WInvdict_entries words = WDict::instance().words(current);
+		if (!words.size()) return false;
+        vector<pair<string, float> > words_mono;
+        vector<pair<string, float> >::iterator beg, end;
+        tie(beg, end) = subvec_language(words, words_mono);
+        float total_weight = 0.0f;
+        for(vector<pair<string, float> >::iterator it = beg;
+            it != end; ++it) {
+            total_weight += it->second;
+        }
+		if (total_weight == 0.0f) return false; // Should never happen
+
+		float rand_value = rnumber(total_weight);
+		float w_accum = 0;
+        for(; beg != end; ++beg) {
+			w_accum += beg->second;
+			emit_word = beg->first;
+			if (rand_value < w_accum) break;
+        }
+		return true;
+	}
+
+	static bool emit_word_vertex(Kb_vertex_t current, string & emit_word,
+                                 vector<float> & vertex2word_tweight) {
+		Kb & kb = Kb::instance();
+
+		float toss = rnumber_01();
+		if (toss >= glVars::wap::wemit_prob) {
+			emit_word = kb.get_vertex_name(current);
+			return true;
+		}
+        if(glVars::wap::multilang)
+            return emit_word_vertex_multi(current, emit_word);
+        else
+            return emit_word_vertex_mono(current, emit_word, vertex2word_tweight);
+    }
+
+    static bool select_next_vertex_eweight(Kb_vertex_t & current,
+                                           vector<float> & vertex_out_tweight) {
 
 		Kb & kb = Kb::instance();
 		Kb_vertex_t previous = current;
@@ -319,8 +411,8 @@ namespace ukb {
                                    vector<float> & vertex_out_tweight) {
 		if (glVars::wap::prefer_indegree) return select_next_vertex_degree(current,
                                                                            vertex_out_tweight);
-		return select_next_vertex_prank(current,
-                                        vertex_out_tweight);
+		return select_next_vertex_eweight(current,
+                                          vertex_out_tweight);
 	}
 
 	// perform one complete rw starting from v
@@ -374,9 +466,11 @@ namespace ukb {
 
 		int idx = m_vsampler.sample();
 		Kb_vertex_t u(idx);
-		if (!m_vertex2word_tweight.size()) {
-            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
+		if (!m_cache_init) {
+            if (!glVars::wap::multilang)
+                vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
             vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex_out_tweight);
+            m_cache_init = true;
         }
 		do_complete_mc(u, emited_words, m_vertex2word_tweight, m_vertex_out_tweight);
 		m_i++;
@@ -393,9 +487,11 @@ namespace ukb {
 
 		int idx = m_vsampler.sample();
 		Kb_vertex_t u(idx);
-		if (!m_vertex2word_tweight.size()) {
-            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
+		if (!m_cache_init) {
+            if (!glVars::wap::multilang)
+                vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
             vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex_out_tweight);
+            m_cache_init = true;
         }
 		do_complete_mc(u, emited_words, m_vertex2word_tweight, m_vertex_out_tweight);
 		m_i++;
@@ -431,17 +527,16 @@ namespace ukb {
 			synset = m_synsets.get_entry(i);
 			if (rand_value < w_accum) break;
 		}
-		if (!m_vertex2word_tweight.size()) {
-            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
+		if (!m_cache_init) {
+            if (!glVars::wap::multilang)
+                vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
             vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex_out_tweight);
+            m_cache_init = true;
         }
 		do_complete_mc(synset, emited_words, m_vertex2word_tweight, m_vertex_out_tweight);
 		m_i++;
 		return true;
 	}
-
-	DeepWalk::DeepWalk(size_t gamma, size_t t)
-		: m_N(Kb::instance().size()), m_i(0), m_gamma(gamma), m_g(0), m_t(t) {}
 
 	bool DeepWalk::next(vector<string> & emited_words) {
 
@@ -450,9 +545,11 @@ namespace ukb {
 		if (m_g >= m_gamma) return false;
 
 		Kb_vertex_t u(m_i);
-		if (!m_vertex2word_tweight.size()) {
-            vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
+		if (!m_cache_init) {
+            if (!glVars::wap::multilang)
+                vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
             vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex_out_tweight);
+            m_cache_init = true;
         }
 		do_complete_length(u, m_t, emited_words, m_vertex2word_tweight, m_vertex_out_tweight);
 		if (++m_i >= m_N) {

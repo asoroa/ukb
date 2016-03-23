@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
 		("vsample", "Sample vertices according to static prank.")
 		("dsample", "Sample vertices according to prior calculated from dictionary.")
 		("csample", "Sample vertices according to graph components.")
+        ("multilang", "Whether dictionary contains words in many languages.")
 		("buckets", value<size_t>(), "Number of buckets used in vertex sampling (default is 10).")
 		("wemit_prob", value<float>(), "Probability to emit a word when on an vertex (emit vertex name instead). Default is 1.0 (always emit word).")
 		("seed_word", value<string>(), "Select concepts associate to the word to start the random walk. Default is start at any vertex at random.")
@@ -224,6 +225,10 @@ int main(int argc, char *argv[]) {
 
 		if (vm.count("csample")) {
 			opt_vcomponents = true;
+		}
+
+		if (vm.count("multilang")) {
+            glVars::wap::multilang = true;
 		}
 
 		if (vm.count("kb_binfile")) {

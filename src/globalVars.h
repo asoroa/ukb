@@ -110,6 +110,7 @@ namespace ukb {
 
 		// walk and print
 		namespace wap {
+            extern bool multilang; // whether dictionary contains words in many languages
 			extern float wemit_prob; // whether to emit words or synsets
 			extern bool prefer_indegree; // prefer vertex with higher indegree when walking
 		}

@@ -94,6 +94,7 @@ namespace ukb {
 
 		// walk and print
 		namespace wap {
+            bool multilang = false; // whether dictionary contains words in many languages
 			float wemit_prob = 1.0;
 			bool prefer_indegree = false; // prefer vertex with higher indegree when walking
 		}

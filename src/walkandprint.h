@@ -56,8 +56,8 @@ namespace ukb {
 
 	public:
 
-		Wap(size_t n, size_t bucket_size, std::vector<float> & P) : m_n(n), m_bsize(bucket_size), m_vsampler(bucket_size, P), m_i(0) {}
-		Wap(size_t n, size_t bucket_size) : m_n(n), m_bsize(bucket_size), m_vsampler(bucket_size), m_i(0) {}
+		Wap(size_t n, size_t bucket_size, std::vector<float> & P) : m_n(n), m_bsize(bucket_size), m_vsampler(bucket_size, P), m_i(0), m_cache_init(false) {}
+		Wap(size_t n, size_t bucket_size) : m_n(n), m_bsize(bucket_size), m_vsampler(bucket_size), m_i(0), m_cache_init(false) {}
 		//Wap(size_t n, size_t bucket_size, const vector<float> & vpriors) : m_n(n), m_bsize(bucket_size), m_vsampler(bucket_size, priors), m_i(0) {}
 		~Wap() {};
 
@@ -74,6 +74,7 @@ namespace ukb {
 		size_t m_i;     // number of context produced so far
 
         // cache vertex2word
+        bool m_cache_init;
         std::vector<float> m_vertex2word_tweight;
         // cache vertex2vertex
         std::vector<float> m_vertex_out_tweight;
@@ -85,7 +86,7 @@ namespace ukb {
 
 	public:
 
-		WapComponents(size_t n) : m_n(n), m_vsampler(), m_i(0) {}
+		WapComponents(size_t n) : m_n(n), m_vsampler(), m_i(0), m_cache_init(false) {}
 		~WapComponents() {};
 
 		// perform an iteration leaving the result context in C
@@ -100,6 +101,7 @@ namespace ukb {
 		size_t m_i;     // number of context produced so far
 
         // cache vertex2word
+        bool m_cache_init;
         std::vector<float> m_vertex2word_tweight;
         // cache vertex2vertex
         std::vector<float> m_vertex_out_tweight;
@@ -109,7 +111,8 @@ namespace ukb {
 	// Deepwalk algorithm
 	class DeepWalk {
 	public:
-		DeepWalk(size_t gamma, size_t t);
+        DeepWalk(size_t gamma, size_t t)
+            : m_N(Kb::instance().size()), m_i(0), m_gamma(gamma), m_g(0), m_t(t), m_cache_init(false) {}
 		~DeepWalk() {}
 
 		// perform an iteration leaving the result context in C
@@ -125,6 +128,7 @@ namespace ukb {
 		size_t m_t;     // context size
 
         // cache vertex2word
+        bool m_cache_init;
         std::vector<float> m_vertex2word_tweight;
         // cache vertex2vertex
         std::vector<float> m_vertex_out_tweight;
@@ -138,7 +142,7 @@ namespace ukb {
 
 	public:
 
-		WapWord(std::string & hw, size_t n) : m_seed(hw), m_n(n), m_i(0), m_synsets(WDict::instance().get_entries(hw)) {}
+		WapWord(std::string & hw, size_t n) : m_seed(hw), m_n(n), m_i(0), m_synsets(WDict::instance().get_entries(hw)), m_cache_init(false) {}
 		~WapWord() {};
 
 		// perform an iteration leaving the result context in C
@@ -154,6 +158,7 @@ namespace ukb {
 		WDict_entries m_synsets;
 
         // cache vertex2word
+        bool m_cache_init;
         std::vector<float> m_vertex2word_tweight;
         // cache vertex2vertex
         std::vector<float> m_vertex_out_tweight;
