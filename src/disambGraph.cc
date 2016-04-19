@@ -296,22 +296,13 @@ namespace ukb {
 
 	class dfsa_visitor : public default_dfs_visitor {
 	public:
-		dfsa_visitor(Kb_vertex_t s, const set<Kb_vertex_t> & S, const set<Kb_vertex_t> & C,
-					 set<Kb_edge_t> & E)
-			: m_s(s), m_S(S), m_C(C), m_E(E), m_P(list<Kb_edge_t> ()), m_S_end(S.end()), m_C_end(C.end()) {}
+		dfsa_visitor(Kb_vertex_t s, const set<Kb_vertex_t> & S, set<Kb_edge_t> & E)
+			: m_s(s), m_S(S), m_E(E), m_P(list<Kb_edge_t> ()), m_S_end(S.end()) {}
 
 		void discover_vertex(Kb_vertex_t u, const dfsa<KbGraph>& ag) {
 			if (u == m_s) return;
-			if(m_S.find(u) == m_S_end) return; // if u not in S, return
-			// Insert current path m_P into m_E
-			// Do nothing if there are cosenses in path
-			if(m_C.size()) {
-				for(list<Kb_edge_t>::iterator it = m_P.begin(), end = m_P.begin();
-					it != end; ++it) {
-					if(m_C.find(target(*it, ag)) != m_C_end) return; // if edge target is co-sense, do nothing
-				}
-			}
-			m_E.insert(m_P.begin(), m_P.end());
+			if (m_S.find(u) == m_S_end) return; // if u not in S, return
+			m_E.insert(m_P.begin(), m_P.end()); // add path to m_E
 		}
 
 		void finish_vertex(Kb_vertex_t u, const dfsa<KbGraph>& ag) {
@@ -326,55 +317,63 @@ namespace ukb {
 		}
 
 	private:
-		Kb_vertex_t m_s;              // source vertex
-		const set<Kb_vertex_t> & m_S; // set of target synsets
-		const set<Kb_vertex_t> & m_C; // the cosenses of source word
-		set<Kb_edge_t> & m_E;         // the result set of edges
-		list<Kb_edge_t> m_P;          // path of DFS so far
+		Kb_vertex_t m_s;                       // source vertex
+		const set<Kb_vertex_t> & m_S;          // set of target synsets
+		set<Kb_edge_t> & m_E;                  // the result set of edges
+		list<Kb_edge_t> m_P;                   // path of DFS so far
 		set<Kb_vertex_t>::const_iterator m_S_end;
-		set<Kb_vertex_t>::const_iterator m_C_end;
 	};
 
 
 	void fill_disamb_graph_dfs_nocosenses(const CSentence &cs, DisambGraph & dgraph) {
 		set<Kb_vertex_t> S;
-		KbGraph g = Kb::instance().graph();
-		dfsa<KbGraph> ag(g, glVars::dGraph::max_depth);
-		map<string, set<Kb_vertex_t> > coSenses;
+		set<Kb_vertex_t> TW_S;
+		Kb & kb = Kb::instance();
+		dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
+		vector<set<Kb_vertex_t> > coSenses; // coSenses of each word in sentence
 
 		// Init S with all target synsets
-		// Also, update coSense set for target words
 		for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
 			cw_it != cw_end; ++cw_it) {
-			map<string, set<Kb_vertex_t> >::iterator coS_it;
-			if(cw_it->is_tgtword())
-				coS_it = coSenses.insert(make_pair(cw_it->wpos(), set<Kb_vertex_t> ())).first;
+            coSenses.push_back(set<Kb_vertex_t>());
+            set<Kb_vertex_t> & coS = coSenses.back();
 			for(vector<pair<Kb_vertex_t, float> >::const_iterator v_it = cw_it->V_vector().begin(),
 					v_end = cw_it->V_vector().end();
 				v_it != v_end; ++v_it) {
 				S.insert((*v_it).first);
-				if(cw_it->is_tgtword()) (*coS_it).second.insert((*v_it).first);
+                coS.insert((*v_it).first);
+                if(cw_it->is_tgtword()) TW_S.insert((*v_it).first);
 			}
 		}
 
-		std::vector<default_color_type> colors(num_vertices(g));
+		std::vector<default_color_type> colors(kb.size());
 		typedef color_traits<default_color_type> Color;
 
-		for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
-			cw_it != cw_end; ++cw_it) {
-			if (!cw_it->is_tgtword()) continue;
-			set<Kb_vertex_t> & coS = coSenses[cw_it->wpos()];
-			for(vector<pair<Kb_vertex_t, float> >::const_iterator wit = cw_it->V_vector().begin(), wend = cw_it->V_vector().end();
-				wit != wend; ++wit) {
-				set<Kb_edge_t> subg;
-				Kb_vertex_t src = (*wit).first;
-				fill(colors.begin(), colors.end(), Color::white());
-				dfsa_visitor vis(src, S, coS, subg);
-				depth_first_visit(ag, src, vis, &colors[0]);
-				// Now  populate disambGraph with edges in subg
-				dgraph.fill_graph(subg);
-			}
+        set<Kb_edge_t> subg;
+		//for(set<Kb_vertex_t>::iterator it = TW_S.begin(), end = TW_S.end(); it != end; ++it) {
+		for(set<Kb_vertex_t>::iterator it = S.begin(), end = S.end(); it != end; ++it) { // better to start at any S (not just TW_S)
+			fill(colors.begin(), colors.end(), Color::white());
+            dfsa_visitor vis(*it, S, subg);
+			depth_first_visit(ag, *it, vis, &colors[0]);
 		}
+        // Now filter edges and discard (u,v) if they are coSenses
+        set<Kb_edge_t> filtered_subg;
+        for(set<Kb_edge_t>::iterator it = subg.begin(), end = subg.end();
+            it != end; ++it) {
+            Kb_vertex_t u = kb.edge_source(*it);
+            Kb_vertex_t v = kb.edge_target(*it);
+            bool ok = true;
+            for(vector<set<Kb_vertex_t> >::iterator coit = coSenses.begin(), coend = coSenses.end();
+                coit != coend; ++coit) {
+                if(coit->count(u) && coit->count(v)) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) filtered_subg.insert(*it);
+        }
+        // fill the disambGraph with new edges
+        dgraph.fill_graph(filtered_subg);
 	}
 
 	void fill_disamb_graph_dfs(const CSentence &cs, DisambGraph & dgraph) {
@@ -400,7 +399,7 @@ namespace ukb {
 		for(set<Kb_vertex_t>::iterator it = TW_S.begin(), end = TW_S.end(); it != end; ++it) {
 			fill(colors.begin(), colors.end(), Color::white());
 			set<Kb_edge_t> subg;
-			dfsa_visitor vis(*it, S, set<Kb_vertex_t>(), subg);
+			dfsa_visitor vis(*it, S, subg);
 			depth_first_visit(ag, *it, vis, &colors[0]);
 			// Now  populate disambGraph with edges in subg
 			dgraph.fill_graph(subg);
