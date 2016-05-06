@@ -327,7 +327,6 @@ namespace ukb {
 
 	void fill_disamb_graph_dfs_nocosenses(const CSentence &cs, DisambGraph & dgraph) {
 		set<Kb_vertex_t> S;
-		set<Kb_vertex_t> TW_S;
 		Kb & kb = Kb::instance();
 		dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
 		vector<set<Kb_vertex_t> > coSenses; // coSenses of each word in sentence
@@ -342,7 +341,6 @@ namespace ukb {
 				v_it != v_end; ++v_it) {
 				S.insert((*v_it).first);
                 coS.insert((*v_it).first);
-                if(cw_it->is_tgtword()) TW_S.insert((*v_it).first);
 			}
 		}
 
@@ -350,7 +348,6 @@ namespace ukb {
 		typedef color_traits<default_color_type> Color;
 
         set<Kb_edge_t> subg;
-		//for(set<Kb_vertex_t>::iterator it = TW_S.begin(), end = TW_S.end(); it != end; ++it) {
 		for(set<Kb_vertex_t>::iterator it = S.begin(), end = S.end(); it != end; ++it) { // better to start at any S (not just TW_S)
 			fill(colors.begin(), colors.end(), Color::white());
             dfsa_visitor vis(*it, S, subg);
@@ -378,7 +375,6 @@ namespace ukb {
 
 	void fill_disamb_graph_dfs(const CSentence &cs, DisambGraph & dgraph) {
 		set<Kb_vertex_t> S;
-		set<Kb_vertex_t> TW_S;
 		Kb & kb = Kb::instance();
 		dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
 
@@ -389,14 +385,13 @@ namespace ukb {
 					v_end = cw_it->V_vector().end();
 				v_it != v_end; ++v_it) {
 				S.insert((*v_it).first);
-				if(cw_it->is_tgtword()) TW_S.insert((*v_it).first);
 			}
 		}
 
 		std::vector<default_color_type> colors(kb.size());
 		typedef color_traits<default_color_type> Color;
 
-		for(set<Kb_vertex_t>::iterator it = TW_S.begin(), end = TW_S.end(); it != end; ++it) {
+		for(set<Kb_vertex_t>::iterator it = S.begin(), end = S.end(); it != end; ++it) {
 			fill(colors.begin(), colors.end(), Color::white());
 			set<Kb_edge_t> subg;
 			dfsa_visitor vis(*it, S, subg);
