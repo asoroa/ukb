@@ -14,6 +14,10 @@ namespace ukb {
 	using namespace std;
 	using namespace boost;
 
+	static void push_ctx(const vector<string> & ctx,
+						 vector<CWord> & cws,
+						 size_t & tgtN);
+
 	static CWord::cwtype cast_int_cwtype(int i) {
 		CWord::cwtype res;
 
@@ -317,6 +321,22 @@ namespace ukb {
 
 	////////////////////////////////////////////////////////////////
 	// CSentence
+
+	CSentence::CSentence(const std::string & id, const std::string & ctx_str) :
+		m_tgtN(0), m_id(id) {
+		vector<string> ctx;
+		char_separator<char> sep(" \t");
+		tokenizer<char_separator<char> > tok_ctx(ctx_str, sep);
+		copy(tok_ctx.begin(), tok_ctx.end(), back_inserter(ctx));
+		if (ctx.size() == 0) return;
+		try {
+			push_ctx(ctx, m_v, m_tgtN);
+		} catch (ukb::wdict_error & e) {
+			throw e;
+		} catch (std::exception & e) {
+			throw std::runtime_error(string("Context error in constructor\n") + e.what());
+		}
+	}
 
 	struct ctw_parse_t {
 		string lemma;

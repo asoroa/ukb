@@ -1,5 +1,5 @@
 
-ukb needs boost version 1.44 or higher to compile. Specifically, UKB needs the
+ukb needs boost version 1.48 or higher to compile. Specifically, UKB needs the
 following Boost libraries:
 
       * boost graph library

@@ -47,7 +47,7 @@ namespace ukb {
 		size_t N = 0;
 		std::ifstream fh(fname.c_str(), ofstream::in);
 		if(!fh) {
-			throw std::runtime_error(string("Can't open ") + fname);
+			throw std::runtime_error(string("[E] reading dict: can not open ") + fname);
 		}
 		// First pass to count total number of words
 		string line;
@@ -258,8 +258,7 @@ namespace ukb {
 
 		std::ifstream fh(fname.c_str(), ofstream::in);
 		if(!fh) {
-			cerr << "Error: can't open " << fname << endl;
-			exit(-1);
+			throw std::runtime_error("[E] reading dict: can not open" + fname + "\n");
 		}
 		size_t N = 0;
 

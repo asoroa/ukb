@@ -95,17 +95,14 @@ namespace ukb {
 		if (p_instance) return;
 		Kb *tenp = create();
 
+		if (!fname.size())
+			throw std::runtime_error(string("[E] loading KB: no KB name"));
+
 		ifstream fi(fname.c_str(), ifstream::binary|ifstream::in);
-		if (!fi) {
-			cerr << "Error: can't open " << fname << endl;
-			exit(-1);
-		}
-		try {
-			tenp->read_from_stream(fi);
-		} catch(std::exception& e) {
-			cerr << e.what() << "\n";
-			exit(-1);
-		}
+		if (!fi)
+			throw std::runtime_error(string("[E] loading KB: can not open ") + fname);
+
+		tenp->read_from_stream(fi);
 		p_instance = tenp;
 	}
 

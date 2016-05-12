@@ -165,7 +165,7 @@ namespace ukb {
 
 		CSentence() : m_tgtN(0) {};
 		CSentence(const std::vector<std::string> & sent_);
-
+		CSentence(const std::string & id, const std::string & ctx_str);
 		CSentence(const CSentence & cs_) : m_tgtN(0), m_v(cs_.m_v) , m_id(cs_.m_id) {};
 		CSentence & operator=(const CSentence & cs_);
 

@@ -16,6 +16,7 @@ namespace ukb {
 	bool exists_file(const std::string & fname);
 
 	std::string basename(const std::string & fname);
+	std::string get_fname_absolute(const std::string & fname);
 
 	struct File_elem {
 
