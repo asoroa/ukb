@@ -55,6 +55,7 @@ namespace ukb {
 		namespace dict {
 			extern std::string text_fname; // The name of the dictionary file (text file)
 			extern std::string bin_fname; // The name of the dictionary file (compiled version)
+			extern std::string altdict_fname; // Name of alternative dictionary file (text file)
 			extern bool use_weight; // Use weights when linking words to concepts
 			extern float weight_smoothfactor;
 			extern bool use_shuffle; // Use random shuffle at reading words from dictionary
@@ -95,6 +96,7 @@ namespace ukb {
 		}
 
 		namespace kb {
+			extern std::string fname; // Name of the compiled graph
 			extern bool keep_reltypes; // Wether edges locally keep the relation types
 			extern bool v1_kb; // Wether input has v1 format
 			extern bool filter_src; // Wether input relations should be filtered by relation source

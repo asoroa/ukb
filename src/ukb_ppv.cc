@@ -5,10 +5,11 @@
 #include "kbGraph.h"
 #include "disambGraph.h"
 #include "wdict.h"
-
+#include "ukbServer.h"
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <syslog.h>
 
 // Program options
 
@@ -40,7 +41,7 @@ static bool opt_normalize_ranks = true;
 static bool output_control_line = false;
 static bool output_variants_ppv = false;
 static float trunc_ppv = 0.0;
-static bool nozero = false;
+static bool opt_nozero = false;
 static string ppv_prefix;
 static string cmdline("!! -v ");
 
@@ -61,7 +62,9 @@ struct CWSort {
 	const vector<float> & v;
 };
 
-void truncate_ppv(vector<float> & ppv, float thres) {
+// Fill with zero's all values below threshold
+
+void truncate_ppv_with_zeros(vector<float> & ppv, float thres) {
 
 	size_t n = ppv.size();
 	if (n < 100) return;
@@ -90,7 +93,7 @@ void truncate_ppv(vector<float> & ppv, float thres) {
 
 }
 
-// Fill with zero's all values except top k
+// Fill with zero's all values unless top K
 
 void top_k(vector<float> & ppv, size_t k) {
 
@@ -110,39 +113,39 @@ void top_k(vector<float> & ppv, size_t k) {
 		normalize_pvector(ppv);
 }
 
-
-static void output_ppv_stream(const vector<float> & outranks, ostream & os) {
-
-	Kb & kb = Kb::instance();
-
-	vector<float> ranks_trunc;
-	const vector<float> * theranks = &outranks;
+static void post_process_ranks(vector<float> & theranks) {
 
 	if (trunc_ppv > 0.0f) {
-		vector<float>(outranks).swap(ranks_trunc);
-		theranks = &ranks_trunc;
 		if (trunc_ppv < 1.0f)
-			truncate_ppv(ranks_trunc, trunc_ppv);
+			truncate_ppv_with_zeros(theranks, trunc_ppv);
 		else {
 			// For top k calculation
 			//
 			//  - fill with zeros all values except top k
-			//  - set nozero = 1 so only top k are printed
+			//  - set opt_nozero = 1 so only top k are printed
 			//
 			// * could be a problem if top k had zeros in it, as they
 			//   will not be properly printed.
-
-			top_k(ranks_trunc, lexical_cast<size_t>(trunc_ppv));
-			nozero = true;
+			top_k(theranks, lexical_cast<size_t>(trunc_ppv));
+			opt_nozero = true;
 		}
 	}
+}
+
+// write a rank vector to an ostream
+
+static void write_ppv_stream(vector<float> & ranks, ostream & os) {
+
+	Kb & kb = Kb::instance();
+
+	post_process_ranks(ranks);
 
 	if (output_control_line)
 		os << cmdline << "\n";
-	for(size_t i = 0; i < theranks->size(); ++i) {
+	for(size_t i = 0, m = ranks.size(); i < m; ++i) {
 		string sname = kb.get_vertex_name(i);
-		if (nozero && (*theranks) [i] == 0.0) continue;
-		os << sname << "\t" << (*theranks)[i];
+		if (opt_nozero && ranks[i] == 0.0) continue;
+		os << sname << "\t" << ranks[i];
 		if (output_variants_ppv) {
 			os << "\t" << WDict::instance().variant(sname);
 		}
@@ -150,17 +153,22 @@ static void output_ppv_stream(const vector<float> & outranks, ostream & os) {
 	}
 }
 
-static void create_output_ppv(vector<float> & ranks,
-							  const string & filename,
-							  File_elem & fout) {
-	fout.fname = filename;
+static void write_ppv_stream(const vector<float> & outranks, ostream & os) {
+	vector<float> newranks(outranks);
+	write_ppv_stream(newranks, os);
+}
 
-	ofstream fo(fout.get_fname().c_str(),  ofstream::out);
+// Get a filename for an output ppv
+
+static boost::shared_ptr<ofstream> output_ppv_fname(const string & filename,
+													File_elem & fout) {
+
+	fout.fname = filename;
+	boost::shared_ptr<ofstream> fo(new ofstream(fout.get_fname().c_str(), ofstream::out));
 	if (!fo) {
-		cerr << "Error: can't create" << fout.get_fname() << endl;
-		exit(-1);
+		throw std::runtime_error(std::string("[E] Can not create ") + fout.get_fname());
 	}
-	output_ppv_stream(ranks, fo);
+	return fo;
 }
 
 static void maybe_postproc_ranks(vector<float> & ranks) {
@@ -173,57 +181,39 @@ static void maybe_postproc_ranks(vector<float> & ranks) {
 	}
 }
 
-void compute_sentence_vectors(string & out_dir) {
+// Compute ppv given a CSentence
+
+bool compute_cs_ppv(CSentence & cs, vector<float> & ranks) {
+	if (!calculate_kb_ppr(cs,ranks)) return false;
+	maybe_postproc_ranks(ranks);
+	return true;
+}
+
+// Get input from is, compute ppv and create output files under out_dir
+
+void compute_sentence_vectors(istream & is, string & out_dir) {
 
 	File_elem fout("lala", out_dir, ".ppv");
 
-	vector<CSentence> vcs;
 	CSentence cs;
 
 	// Read sentences and compute rank vectors
 	size_t l_n  = 0;
-	while (cs.read_aw(std::cin, l_n)) {
+	while (cs.read_aw(is, l_n)) {
 		// Initialize rank vector
 		vector<float> ranks;
-		bool ok = calculate_kb_ppr(cs,ranks);
-		if (!ok) {
+		if (!compute_cs_ppv(cs, ranks)) {
 			cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
 			continue;
 		}
-		maybe_postproc_ranks(ranks);
-		create_output_ppv(ranks, ppv_prefix + cs.id(), fout);
+
+		boost::shared_ptr<ofstream> fo(output_ppv_fname(ppv_prefix + cs.id(), fout));
+		write_ppv_stream(ranks, *fo);
 		cs = CSentence();
 	}
 }
 
-void compute_sentence_vectors_w2w(string & out_dir) {
-
-	File_elem fout("lala", out_dir, ".ppv");
-
-	vector<CSentence> vcs;
-	CSentence cs;
-
-	// Read sentences and compute rank vectors
-	size_t l_n  = 0;
-	while (cs.read_aw(std::cin, l_n)) {
-		vector<float> ranks;
-		int w_n = 1;
-		for(vector<CWord>::iterator cw_it = cs.begin(), cw_end = cs.end();
-			cw_it != cw_end; ++cw_it, ++w_n) {
-			if(!cw_it->is_tgtword()) continue;
-			bool ok = calculate_kb_ppr_by_word(cs, cw_it, ranks);
-			if (!ok) {
-				cerr << "Error when calculating ranks for word " << cw_it->wpos() << " in csentence " << cs.id() << endl;
-				continue;
-			}
-			maybe_postproc_ranks(ranks);
-			string ofile = cs.id() + "#";
-			ofile += lexical_cast<string>(w_n);
-			create_output_ppv(ranks, ppv_prefix + ofile, fout);
-		}
-		cs = CSentence();
-	}
-}
+// Compute static PPV and write to standard output
 
 void compute_static_ppv() {
 
@@ -231,17 +221,163 @@ void compute_static_ppv() {
 	// Calculate static (static) pageRank over KB
 	const vector<float> & ranks = Kb::instance().static_prank();
 
-	output_ppv_stream(ranks, cout);
+	write_ppv_stream(ranks, cout);
+}
+
+///////////////////////////////////////////////
+// Server/clien functions
+
+// Sends PPV vector through socket
+#ifdef UKB_SERVER
+
+static void output_ppv_stream_socket(vector<float> & ranks,
+									 sSession & session) {
+	Kb & kb = Kb::instance();
+
+	post_process_ranks(ranks);
+	if (output_control_line)
+		session.send(cmdline);
+	for(size_t i = 0, m = ranks.size(); i < m; ++i) {
+		string sname = kb.get_vertex_name(i);
+		if (opt_nozero && ranks[i] == 0.0) continue;
+		ostringstream oss;
+		oss << sname << "\t" << ranks[i];
+		if (output_variants_ppv) {
+			oss << "\t" << WDict::instance().variant(sname);
+		}
+		oss << "\n";
+		session.send(oss.str());
+	}
+}
+
+// Return FALSE means kill server
+
+bool handle_server_read(sSession & session) {
+	string ctx_id;
+	string ctx;
+	try {
+		session.receive(ctx);
+		if (ctx == "stop") return false;
+		// TODO Check command is ppv
+		while(1) {
+			if (!session.receive(ctx_id)) break;
+			if (!session.receive(ctx)) break;
+			CSentence cs(ctx_id, ctx);
+			vector<float> ranks;
+			if (!compute_cs_ppv(cs, ranks)) {
+				// throw "Error when calculating ranks for csentence " << cs.id() << endl;
+				// throw std::runtime_error(std::string("[E] when calculating ranks for csentence ") + cs.id() + ":" + this->error_str());
+				continue;
+			}
+			output_ppv_stream_socket(ranks, session);
+			session.send("--END--PPV");
+		}
+	} catch (std::exception& e)	{
+		// send error and close the session.
+		// Note: the server is still alive for new connections.
+		session.send(e.what());
+	}
+	return true;
+}
+
+// Send contexts to daemon, get output ppv ranks and write to proper files
+
+static void client_copy_output(sClient & client, ostream & o) {
+	string line;
+	while(1) {
+		client.receive(line);
+		if (line == "--END--PPV") break;
+		o << line;
+	}
+}
+
+bool client(istream & is, unsigned int port, const string & out_dir, bool opt_stdout) {
+	// connect to ukb port and send data to it.
+	sClient client("localhost", port);
+	string server_cmd;
+	string go("ppv");
+	if (client.error()) {
+		std::cerr << "Error when connecting: " << client.error_str() << std::endl;
+		return false;
+	}
+	string id, ctx;
+	size_t l_n = 0;
+	File_elem fout("lala", out_dir, ".ppv");
+	try {
+		client.send(go);
+		// TODO Receive ack server is ppv
+		while(read_line_noblank(is, id, l_n)) {
+			if(!read_line_noblank(is, ctx, l_n)) return false;
+			client.send(id);
+			client.send(ctx);
+			if (opt_stdout) {
+				client_copy_output(client, cout);
+				cout << "##END_PPV\n";
+			} else {
+				boost::shared_ptr<ostream> fo(output_ppv_fname(ppv_prefix + id, fout));
+				client_copy_output(client, *fo);
+			}
+		}
+	} catch (std::exception& e)	{
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+
+
+bool client_stop_server(unsigned int port) {
+	// connect to ukb port and tell it to stop
+	sClient client("localhost", port);
+	string stop("stop");
+	if (client.error()) {
+		std::cerr << "Error when connecting: " << client.error_str() << std::endl;
+		return false;
+	}
+	try {
+		client.send(stop);
+	} catch (std::exception& e)	{
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+#endif
+
+void load_kb_and_dict(bool from_daemon) {
+
+	if (from_daemon) {
+		string aux("Loading KB ");
+		aux += glVars::kb::fname;
+		syslog(LOG_INFO | LOG_USER,"%s", aux.c_str());
+	} else if (glVars::verbose) {
+		cout << "Loading KB " + glVars::kb::fname + "\n";
+	}
+	Kb::create_from_binfile(glVars::kb::fname);
+	// Explicitly load dictionary only if:
+	// - there is a dictionary name (textual or binary)
+	// - from_daemon is set
+	if (!from_daemon) return;
+	if (!(glVars::dict::text_fname.size() + glVars::dict::bin_fname.size())) return;
+	string aux("Loading Dict ");
+	aux += glVars::dict::text_fname.size() ? glVars::dict::text_fname : glVars::dict::bin_fname;
+	syslog(LOG_INFO | LOG_USER, "%s", aux.c_str());
+	// looking for "fake_entry" causes dictionary to be loaded in memory
+	WDict_entries fake_entry = WDict::instance().get_entries("kaka", "");
+	if (glVars::dict::altdict_fname.size()) {
+		WDict::instance().read_alternate_file(glVars::dict::altdict_fname);
+	}
 }
 
 int main(int argc, char *argv[]) {
 
 	srand(3);
 
+	bool opt_daemon = false;
 	bool opt_static = false;
-
-	string kb_binfile;
-	string alternative_dict_fname;
+	bool opt_client = false;
+	bool opt_shutdown = false;
+	bool opt_stdout = false;
 
 	cmdline += glVars::ukb_version;
 	for (int i=0; i < argc; ++i) {
@@ -253,6 +389,9 @@ int main(int argc, char *argv[]) {
 	string fullname_in;
 	ifstream input_ifs;
 
+#ifdef UKB_SERVER
+	unsigned int port = 10000;
+#endif
 	size_t iterations = 0;
 	float thresh = 0.0;
 	bool check_convergence = false;
@@ -304,14 +443,23 @@ int main(int argc, char *argv[]) {
 
 	options_description po_desc_output("Output options");
 	po_desc_output.add_options()
+		("control_line,l", "First line in PPV files is control.")
 		("nostatic", "Substract static ppv to final ranks.")
+		("nozero", "Do not return concepts with zero rank.")
+		("prefix,p", value<string>(), "Prefix added to all output ppv files.")
+		("stdout", "Write ppv to stdout instead of a file.")
+		("ranks_nonorm", "Do not normalize ranks even with topK or threshold cuts.")
 		("trunc_ppv", value<float>(), "Truncate PPV threshold. If arg > 1, return top arg nodes.")
 		("trunc_topK", value<size_t>(), "Return top arg nodes.")
-		("nozero", "Do not return concepts with zero rank.")
 		("variants,r", "Write also concept variants in PPV.")
-		("control_line,l", "First line in PPV files is control.")
-		("prefix,p", value<string>(), "Prefix added to all output ppv files.")
-		("ranks_nonorm", "Do not normalize ranks even with topK or threshold cuts.")
+		;
+
+	options_description po_desc_server("Client/Server options");
+	po_desc_server.add_options()
+		("daemon", "Start a daemon listening to port. Assumes --port")
+		("port", value<unsigned int>(), "Port to listen/send information.")
+		("client", "Use client mode to send contexts to the ukb daemon. Bare in mind that the configuration is that of the server.")
+		("shutdown", "Shutdown ukb daemon.")
 		;
 
 	options_description po_hidden("Hidden");
@@ -324,7 +472,7 @@ int main(int argc, char *argv[]) {
 		;
 
 	options_description po_visible(desc_header);
-	po_visible.add(po_desc).add(po_desc_input).add(po_desc_prank).add(po_desc_dict).add(po_desc_output);
+	po_visible.add(po_desc).add(po_desc_input).add(po_desc_prank).add(po_desc_dict).add(po_desc_output).add(po_desc_server);
 
 	options_description po_desc_all("All options");
 	po_desc_all.add(po_visible).add(po_hidden);
@@ -361,7 +509,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("kb_binfile")) {
-			kb_binfile = vm["kb_binfile"].as<string>();
+			glVars::kb::fname = vm["kb_binfile"].as<string>();
 		}
 
 		if (vm.count("nopos")) {
@@ -378,6 +526,10 @@ int main(int argc, char *argv[]) {
 
 		if (vm.count("variants")) {
 			output_variants_ppv = true;
+		}
+
+		if (vm.count("stdout")) {
+			opt_stdout = true;
 		}
 
 		if (vm.count("control_line")) {
@@ -466,7 +618,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("nozero")) {
-			nozero = true;
+			opt_nozero = true;
 		}
 
 		if (vm.count("input-file")) {
@@ -474,7 +626,43 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("altdict")) {
-			alternative_dict_fname = vm["altdict"].as<string>();
+			glVars::dict::altdict_fname = vm["altdict"].as<string>();
+		}
+
+		if (vm.count("daemon")) {
+#ifdef UKB_SERVER
+			opt_daemon = true;
+#else
+		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		exit(1);
+#endif
+		}
+
+		if (vm.count("port")) {
+#ifdef UKB_SERVER
+			port =  vm["port"].as<unsigned int>();
+#else
+		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		exit(1);
+#endif
+		}
+
+		if (vm.count("client")) {
+#ifdef UKB_SERVER
+			opt_client = true;
+#else
+		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		exit(1);
+#endif
+		}
+
+		if (vm.count("shutdown")) {
+#ifdef UKB_SERVER
+			opt_shutdown = true;
+#else
+		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		exit(1);
+#endif
 		}
 
 	}
@@ -483,24 +671,72 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
-	if (check_convergence) set_pr_convergence(iterations, thresh);
 
-	if (opt_static) {
-		if (glVars::verbose)
-			cerr << "Reading binary kb file " << kb_binfile;
-		Kb::create_from_binfile(kb_binfile);
-		if (glVars::verbose)
-			Kb::instance().display_info(cerr);
-		compute_static_ppv();
-		goto END;
+	if(opt_shutdown) {
+#ifdef UKB_SERVER
+		if (client_stop_server(port)) {
+			cerr << "Stopped UKB daemon on port " << lexical_cast<string>(port) << "\n";
+			return 0;
+		} else {
+			cerr << "Can not stop UKB daemon on port " << lexical_cast<string>(port) << "\n";
+			return 1;
+		}
+#endif
 	}
 
-	if(!fullname_in.size()) {
+	// if not daemon, check input files (do it early before loading KB and dictionary)
+	if (!fullname_in.size() and !opt_daemon) {
 		cout << po_visible << endl;
 		cout << "Error: No input" << endl;
 		exit(-1);
 	}
 
+	if (check_convergence) set_pr_convergence(iterations, thresh);
+
+	// if --daemon, fork server process (has to be done before loading KB and dictionary)
+
+	if (opt_daemon) {
+#ifdef UKB_SERVER
+		try {
+			// Get absolute names of KB and dict
+			glVars::kb::fname =  get_fname_absolute(glVars::kb::fname);
+			glVars::dict::text_fname = get_fname_absolute(glVars::dict::text_fname);
+			glVars::dict::altdict_fname = get_fname_absolute(glVars::dict::altdict_fname);
+		} catch(std::exception& e) {
+			cerr << e.what() << "\n";
+			return 1;
+		}
+		if (!glVars::kb::fname.size()) {
+			cerr << "Error: no KB file\n";
+			return 1;
+		}
+		// accept malformed contexts, as we don't want the daemon to die.
+		glVars::input::swallow = true;
+		cout << "Starting UKB PPV daemon on port " << lexical_cast<string>(port) << " ... ";
+		return start_daemon(port, &load_kb_and_dict, &handle_server_read);
+#endif
+	}
+
+	// if not --client, load KB
+	if (!opt_client) {
+		if (!glVars::kb::fname.size()) {
+			cerr << "Error: no KB file\n";
+			exit(1);
+		}
+		try {
+			load_kb_and_dict(false);
+		} catch (std::exception & e) {
+			cerr << e.what() << "\n";
+			return 1;
+		}
+	}
+
+	if (opt_static) {
+		compute_static_ppv();
+		goto END;
+	}
+
+	// create stream from input file
 	if (fullname_in == "-" ) {
 		// read from <STDIN>
 		cmdline += " <STDIN>";
@@ -515,14 +751,14 @@ int main(int argc, char *argv[]) {
 		std::cin.rdbuf(input_ifs.rdbuf());
 	}
 
-	Kb::create_from_binfile(kb_binfile);
-
-	if (alternative_dict_fname.size()) {
-		WDict::instance().read_alternate_file(alternative_dict_fname);
+	if (opt_client) {
+#ifdef UKB_SERVER
+		return !client(std::cin, port, out_dir, opt_stdout);
+#endif
 	}
 
 	try {
-		compute_sentence_vectors(out_dir);
+		compute_sentence_vectors(std::cin, out_dir);
 	} catch(std::exception& e) {
 		cerr << "Errore reading " << fullname_in << "\n" << e.what() << "\n";
 		exit(-1);
@@ -531,10 +767,3 @@ int main(int argc, char *argv[]) {
  END:
 	return 0;
 }
-
-/*
- * Local Variables:
- * mode: c++
- * compile-command: "make"
- * End:
- */

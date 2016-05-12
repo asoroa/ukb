@@ -44,6 +44,7 @@ namespace ukb {
 
 		namespace dict {
 			std::string text_fname;
+			std::string altdict_fname;
 			std::string bin_fname;
 			bool use_weight = false; // Use weights when linking words to concepts
 			float weight_smoothfactor = 1.0;
@@ -81,6 +82,7 @@ namespace ukb {
 		RankAlg rAlg = pageRank;
 
 		namespace kb {
+			std::string fname;
 			bool keep_reltypes = false;
 			bool keep_directed = true;
 			bool v1_kb = true;

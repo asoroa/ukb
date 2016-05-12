@@ -830,7 +830,42 @@ graph:
   Word to synset map file. Useful only when used when querying (--quey or
   --iquery).
 
-* 7. References
+* 7. Running ukb as a server
+
+UKB can be executes on following a client/server architecture, which has the
+obvious advantage of not requiring to initialize the KB and dictionary each
+time it is ran.
+
+** Launching the server
+
+Run the 'ukb_wsd' (or 'ukb_ppv') command using the '--daemon' switch. You
+can also specify the port he will be listening using the '--port'' switch
+(by default the port is 10000). A typical usage could be:
+
+% ukb_wsd --daemon --port 45678 --ppr -K wn17.bin -D wn17_dict.txt
+
+Note that all the parameters and configuration switches which affect the way
+ukb is going to run (the disambiguation algorithm, whether to use POS
+values, whether to use dictionary frequencies, etc) must be set when running
+the server and can not be changed afterwards.
+
+The command can take some time because it does not return the control until
+the KB and dictionary are loaded in memory.
+
+** Using the client
+
+Again, use the 'ukb_wsd' ('ukb_ppv') with the '--cient' switch. For
+instance:
+
+% ukb_wsd --client --port 45678 context.txt
+
+** Shutting down the server
+
+Use the '--shutdown' switch to shut down the server.
+
+% ukb_wsd --shutdown --port 45678
+
+* 8. References
 
 [1] Eneko Agirre and Aitor Soroa. 2009. Personalizing PageRank for Word
     Sense Disambiguation. Proceedings of the 12th conference of the European

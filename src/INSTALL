@@ -40,18 +40,31 @@ $ make
 the ./configure script has some options (./configure --help to see them
  all). The important options are:
 
-#  --prefix
-#             path were the executables will be installed (after 'make
-#             install')
-#
-#  --with-boost-include
-#            path were the Boost include files reside (default is
-#            /usr/include)
-#
-#  --with-boost-lib
-#            path were the Boost library files reside (default is /usr/lib)
-#
-#  --enable-static
-#            Enable static linkage
+  --prefix
 
-After ./configure, just do a typical 'make'
+  path were the executables will be installed (after 'make install')
+
+  --with-boost-include
+
+  path were the Boost include files reside (default is /usr/include)
+
+  --with-boost-lib
+
+  path were the Boost library files reside (default is /usr/lib)
+
+  --enable-static
+
+   Enable static linkage. The binary files that come with the ukb
+   distribution are compiled using this directive. Note that, if static
+   linking is enabled, ukb server can not be compiled (you have to run make
+   with the "UKB_NO_SERVER=1" parameter.
+
+After ./configure, just do a typical 'make'. 
+
+% make
+
+If you want UKB to be compiled without server support, jun run make this
+way:
+
+% make "UKB_NO_SERVER=1"
+

@@ -3,9 +3,13 @@
 #include "globalVars.h"
 #include "kbGraph.h"
 #include "disambGraph.h"
+#include "fileElem.h"
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <syslog.h>
+
+#include "ukbServer.h"
 
 // Basename & friends
 #include <boost/filesystem/operations.hpp>
@@ -42,6 +46,8 @@ dgraph_rank_methods dgraph_rank_method = dstatic;
 bool use_dfs_dgraph = false;
 
 dis_method opt_dmethod = ppr;
+string cmdline;
+bool opt_daemon = false;
 
 // Program options stuff
 
@@ -216,6 +222,113 @@ void dispatch_run(istream & is, ostream & os) {
 	}
 }
 
+///////////////////////////////////////////////
+// Server/clien functions
+
+// Return FALSE means kill server
+
+#ifdef UKB_SERVER
+bool handle_server_read(sSession & session) {
+	string ctx_id;
+	string ctx;
+	try {
+		session.receive(ctx);
+		if (ctx == "stop") return false;
+		session.send(cmdline);
+		while(1) {
+			if (!session.receive(ctx_id)) break;
+			if (!session.receive(ctx)) break;
+			CSentence cs(ctx_id, ctx);
+			dispatch_run_cs(cs);
+			ostringstream oss;
+			cs.print_csent(oss);
+			string oss_str(oss.str());
+			if (!oss_str.length()) oss_str = "#"; // special line if not output
+			session.send(oss_str);
+		}
+	} catch (std::exception& e)	{
+		// send error and close the session.
+		// Note: the server is still alive for new connections.
+		session.send(e.what());
+	}
+	return true;
+}
+
+bool client(istream & is, ostream & os, unsigned int port) {
+	// connect to ukb port and send data to it.
+	sClient client("localhost", port);
+	string server_cmd;
+	string go("go");
+	if (client.error()) {
+		std::cerr << "Error when connecting: " << client.error_str() << std::endl;
+		return false;
+	}
+	string id, ctx, out;
+	size_t l_n = 0;
+	try {
+		client.send(go);
+		client.receive(server_cmd);
+		os << server_cmd << std::endl;
+		while(read_line_noblank(is, id, l_n)) {
+			if(!read_line_noblank(is, ctx, l_n)) return false;
+			client.send(id);
+			client.send(ctx);
+			client.receive(out);
+			if (out == "#") continue; // empty output for that context
+			os << out;
+			os.flush();
+		}
+	} catch (std::exception& e)	{
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+
+
+bool client_stop_server(unsigned int port) {
+	// connect to ukb port and tell it to stop
+	sClient client("localhost", port);
+	string stop("stop");
+	if (client.error()) {
+		std::cerr << "Error when connecting: " << client.error_str() << std::endl;
+		return false;
+	}
+	try {
+		client.send(stop);
+	} catch (std::exception& e)	{
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+#endif
+
+void load_kb_and_dict(bool from_daemon) {
+
+	if (from_daemon) {
+		string aux("Loading KB ");
+		aux += glVars::kb::fname;
+		syslog(LOG_INFO | LOG_USER, "%s", aux.c_str());
+	} else if (glVars::verbose) {
+		cout << "Loading KB " + glVars::kb::fname + "\n";
+	}
+	Kb::create_from_binfile(glVars::kb::fname);
+	// Explicitly load dictionary only if:
+	// - there is a dictionary name (textual or binary)
+	// - from_daemon is set
+	if (!from_daemon) return;
+	if (!(glVars::dict::text_fname.size() + glVars::dict::bin_fname.size())) return;
+	string aux("Loading Dict ");
+	aux += glVars::dict::text_fname.size() ? glVars::dict::text_fname : glVars::dict::bin_fname;
+	syslog(LOG_INFO | LOG_USER, "%s", aux.c_str());
+	// looking for "fake_entry" causes dictionary to be loaded in memory
+	WDict_entries fake_entry = WDict::instance().get_entries("kaka", "");
+	if (glVars::dict::altdict_fname.size()) {
+		WDict::instance().read_alternate_file(glVars::dict::altdict_fname);
+	}
+}
+
 void test() {
 
 	size_t l_n = 0;
@@ -228,7 +341,6 @@ void test() {
 
 int main(int argc, char *argv[]) {
 
-	string kb_binfile("");
 
 	map<string, dgraph_rank_methods> map_dgraph_ranks;
 
@@ -238,8 +350,10 @@ int main(int argc, char *argv[]) {
 	map_dgraph_ranks["static"] = dstatic;
 
 	bool opt_do_test = false;
+	bool opt_client = false;
+	bool opt_shutdown = false;
 
-	string cmdline("!! -v ");
+	cmdline = string("!! -v ");
 	cmdline += glVars::ukb_version;
 	for (int i=0; i < argc; ++i) {
 		cmdline += " ";
@@ -250,8 +364,9 @@ int main(int argc, char *argv[]) {
 	string fullname_in;
 	ifstream input_ifs;
 
-	string alternative_dict_fname;
-
+#ifdef UKB_SERVER
+	unsigned int port = 10000;
+#endif
 	size_t iterations = 0;
 	float thresh = 0.0;
 	bool check_convergence = false;
@@ -324,8 +439,16 @@ int main(int argc, char *argv[]) {
 		("rank_nonorm", "Do not normalize the ranks of target words.")
 		;
 
+	options_description po_desc_server("Client/Server options");
+	po_desc_server.add_options()
+		("daemon", "Start a daemon listening to port. Assumes --port")
+		("port", value<unsigned int>(), "Port to listen/send information.")
+		("client", "Use client mode to send contexts to the ukb daemon. Bare in mind that the configuration is that of the server.")
+		("shutdown", "Shutdown ukb daemon.")
+		;
+
 	options_description po_visible(desc_header);
-	po_visible.add(po_desc).add(po_desc_wsd).add(po_desc_prank).add(po_desc_input).add(po_desc_dict).add(po_desc_output);
+	po_visible.add(po_desc).add(po_desc_wsd).add(po_desc_prank).add(po_desc_input).add(po_desc_dict).add(po_desc_output).add(po_desc_server);
 
 	options_description po_hidden("Hidden");
 	po_hidden.add_options()
@@ -495,11 +618,11 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("bcomp_kb_binfile")) {
-			kb_binfile = vm["bcomp_kb_binfile"].as<string>();
+			glVars::kb::fname = vm["bcomp_kb_binfile"].as<string>();
 		}
 
 		if (vm.count("kb_binfile")) {
-			kb_binfile = vm["kb_binfile"].as<string>();
+			glVars::kb::fname = vm["kb_binfile"].as<string>();
 		}
 
 		if (vm.count("rank_alg")) {
@@ -545,16 +668,64 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("altdict")) {
-			alternative_dict_fname = vm["altdict"].as<string>();
+			glVars::dict::altdict_fname = vm["altdict"].as<string>();
 		}
 
-	}
-	catch(std::exception& e) {
+		if (vm.count("daemon")) {
+#ifdef UKB_SERVER
+			opt_daemon = true;
+#else
+		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		exit(1);
+#endif
+		}
+
+		if (vm.count("port")) {
+#ifdef UKB_SERVER
+			port = vm["port"].as<unsigned int>();;
+#else
+		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		exit(1);
+#endif
+		}
+
+		if (vm.count("client")) {
+#ifdef UKB_SERVER
+			opt_client = true;
+#else
+		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		exit(1);
+#endif
+		}
+
+		if (vm.count("shutdown")) {
+#ifdef UKB_SERVER
+			opt_shutdown = true;
+#else
+		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		exit(1);
+#endif
+		}
+
+	} catch(std::exception& e) {
 		cerr << e.what() << "\n";
 		exit(-1);
 	}
 
-	if (!fullname_in.size()) {
+	if(opt_shutdown) {
+#ifdef UKB_SERVER
+		if (client_stop_server(port)) {
+			cerr << "Stopped UKB daemon on port " << lexical_cast<string>(port) << "\n";
+			return 0;
+		} else {
+			cerr << "Can not stop UKB daemon on port " << lexical_cast<string>(port) << "\n";
+			return 1;
+		}
+#endif
+	}
+
+	// if not daemon, check input files (do it early before loading KB and dictionary)
+	if (!fullname_in.size() and !opt_daemon) {
 		cout << po_visible << endl;
 		cout << "Error: No input" << endl;
 		exit(-1);
@@ -562,6 +733,44 @@ int main(int argc, char *argv[]) {
 
 	if (check_convergence) set_pr_convergence(iterations, thresh);
 
+	// if --daemon, fork server process (has to be done before loading KB and dictionary)
+	if (opt_daemon) {
+#ifdef UKB_SERVER
+		try {
+			// Get absolute names of KB and dict
+			glVars::kb::fname =  get_fname_absolute(glVars::kb::fname);
+			glVars::dict::text_fname = get_fname_absolute(glVars::dict::text_fname);
+			glVars::dict::altdict_fname = get_fname_absolute(glVars::dict::altdict_fname);
+		} catch(std::exception& e) {
+			cerr << e.what() << "\n";
+			return 1;
+		}
+		if (!glVars::kb::fname.size()) {
+			cerr << "Error: no KB file\n";
+			return 1;
+		}
+		// accept malformed contexts, as we don't want the daemon to die.
+		glVars::input::swallow = true;
+		cout << "Starting UKB WSD daemon on port " << lexical_cast<string>(port) << " ... \n";
+		return start_daemon(port, &load_kb_and_dict, &handle_server_read);
+#endif
+	}
+
+	// if not --client, load KB
+	if (!opt_client) {
+		if (!glVars::kb::fname.size()) {
+			cerr << "Error: no KB file\n";
+			exit(1);
+		}
+		try {
+			load_kb_and_dict(false);
+		} catch (std::exception & e) {
+			cerr << e.what() << "\n";
+			return 1;
+		}
+	}
+
+	// create stream from input file
 	if (fullname_in == "-" ) {
 		// read from <STDIN>
 		cmdline += " <STDIN>";
@@ -576,10 +785,13 @@ int main(int argc, char *argv[]) {
 		std::cin.rdbuf(input_ifs.rdbuf());
 	}
 
-	Kb::create_from_binfile(kb_binfile);
-
-	if (alternative_dict_fname.size()) {
-		WDict::instance().read_alternate_file(alternative_dict_fname);
+	if (opt_client) {
+#ifdef UKB_SERVER
+		// TODO :
+		// - check parameters
+		// - cmdline
+		return !client(std::cin, std::cout, port);
+#endif
 	}
 
 	if (opt_do_test) {

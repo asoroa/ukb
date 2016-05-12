@@ -4,8 +4,12 @@ all::
 CCC = @CXX@
 STATIC = @ENABLE_STATIC@
 INCLUDES = -I @BOOST_INCLUDE_DIR@
-LDFLAGS = @LDFLAGS@
+LDFLAGS = @LDFLAGS@ -lpthread
+ifndef UKB_NO_SERVER
+CCFLAGS = @CCFLAGS@ -D UKB_SERVER
+else
 CCFLAGS = @CCFLAGS@
+endif
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -17,7 +21,7 @@ INSTALLDIR = ${bindir}
 EXEC_SRC = ukb_walkandprint.cc ukb_wsd.cc ukb_ppv.cc compile_kb.cc convert2.0.cc
 EXEC = $(notdir $(basename $(EXEC_SRC)))
 
-SOURCES= common.cc globalVars.cc configFile.cc fileElem.cc kbGraph.cc kbGraph_common.cc kbGraph_v16.cc disambGraph.cc csentence.cc wdict.cc  walkandprint.cc
+SOURCES= common.cc globalVars.cc ukbServer.cc configFile.cc fileElem.cc kbGraph.cc kbGraph_common.cc kbGraph_v16.cc disambGraph.cc csentence.cc wdict.cc  walkandprint.cc
 
 MEMBERS=$(SOURCES:.cc=.o)
 
