@@ -119,7 +119,7 @@ namespace ukb {
 			size_t i;
 			if (!n) return; // No synsets
 			for(i = 0; i != n; ++i) {
-                tie(u, P) = g.get_vertex_by_name(m_syns[i]);
+				boost::tie(u, P) = g.get_vertex_by_name(m_syns[i]);
 				m_ranks[i] = P ? rankMap[u] : 0.0f;
             }
 		}
