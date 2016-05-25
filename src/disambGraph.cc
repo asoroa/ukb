@@ -73,7 +73,7 @@ namespace ukb {
 
 	Dis_vertex_t DisambGraph::add_dgraph_vertex(const string & str) {
 
-		map<string, Dis_vertex_t>::iterator map_it;
+		boost::unordered_map<string, Dis_vertex_t>::iterator map_it;
 		bool insertedP;
 		tie(map_it, insertedP) = synsetMap.insert(make_pair(str, Dis_vertex_t()));
 		if (insertedP) {
@@ -148,7 +148,7 @@ namespace ukb {
 
 
 	pair<Dis_vertex_t, bool> DisambGraph::get_vertex_by_name(const std::string & str) const {
-		map<string, Dis_vertex_t>::const_iterator it = synsetMap.find(str);
+		boost::unordered_map<string, Dis_vertex_t>::const_iterator it = synsetMap.find(str);
 		if (it == synsetMap.end()) return make_pair(Dis_vertex_t(), false);
 		return make_pair(it->second, true);
 	}

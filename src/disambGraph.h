@@ -82,7 +82,7 @@ namespace ukb {
 
 		//typedef std::vector<Dis_vertex_t> VertexV;
 		//std::map<std::string, VertexV> w2syns;
-		std::map<std::string, Dis_vertex_t> synsetMap;
+		boost::unordered_map<std::string, Dis_vertex_t> synsetMap;
 
 		DisambG g;
 	};
