@@ -686,40 +686,17 @@ namespace ukb {
 	// Initial V is computed by activating the words of the context
 
 	bool calculate_kb_ppr(const CSentence & cs,
-						  vector<float> & res) {
+						  vector<float> & ranks) {
 
-		Kb & kb = ukb::Kb::instance();
-		vector<float> pv;
-		int aux = pv_from_cs_onlyC(cs, pv, cs.end());
-		if (!aux) return false;
-		// Execute PageRank
-		kb.pageRank_ppv(pv, res);
-		return true;
+		return calculate_kb_ppr_by_word(cs, cs.end(), ranks);
 	}
-
-
-	// Given 2 vectors (va, vb) return the vector going from va to vb
-	// res[i] = vb[i] - va[1]
-
-	struct va2vb {
-		va2vb(const vector<float> & va, const vector<float> & vb) :
-			m_va(va), m_vb(vb) {}
-		float operator[](size_t i) const {
-			return m_vb[i] - m_va[i];
-		}
-		size_t size() const {
-			return m_va.size();
-		}
-	private:
-		const vector<float> & m_va;
-		const vector<float> & m_vb;
-	};
-
 
 	// given a word (pointed by tgtw_it),
 	// 1. put a ppv in the synsets of the rest of words.
 	// 2. Pagerank
-	// 3. use rank for disambiguating word
+	//
+	// Note: tgtw_it can point to end(), effectively turning this function into
+	// a 'standard' PPR
 
 	bool calculate_kb_ppr_by_word(const CSentence & cs,
 								  CSentence::const_iterator tgtw_it,
@@ -727,50 +704,19 @@ namespace ukb {
 
 		Kb & kb = ukb::Kb::instance();
 		vector<float> pv;
-		if (tgtw_it->is_monosemous()) return true;
-
 		int aux = pv_from_cs_onlyC(cs, pv, tgtw_it);
 		// Execute PageRank
 		if (aux) {
 			kb.pageRank_ppv(pv, ranks);
-		}
-		return aux;
-	}
-
-	// given a CSentence
-	// for each target word
-	//   1. put a ppv in the synsets of the rest of words.
-	//   2. Pagerank
-	//   3. use rank for disambiguating word
-
-	int calculate_kb_ppr_by_word_and_disamb(CSentence & cs) {
-
-		size_t tgtN = cs.has_tgtwords();
-		if (!tgtN) return 0; // no target words
-
-		Kb & kb = ukb::Kb::instance();
-		vector<float> ranks;
-		int success_n = 0;
-
-		vector<CWord>::iterator cw_it = cs.begin();
-		vector<CWord>::iterator cw_end = cs.end();
-		for(; cw_it != cw_end; ++cw_it) {
-
-			// Target word must be distinguished.
-			if(!cw_it->is_tgtword()) continue;
-
-			if (calculate_kb_ppr_by_word(cs, cw_it, ranks)) {
-				success_n++;
-				if (glVars::csentence::disamb_minus_static) {
-					struct va2vb newrank(ranks, kb.static_prank());
-					cw_it->rank_synsets(newrank, glVars::csentence::mult_priors);
-				} else {
-					cw_it->rank_synsets(ranks, glVars::csentence::mult_priors);
+			if (glVars::csentence::disamb_minus_static) {
+				const vector<float> & staticV = kb.static_prank();
+				for(size_t i = 0, n = staticV.size();
+					i != n; ++i) {
+					ranks[i] = staticV[i] - ranks[i];
 				}
 			}
-			cw_it->disamb_cword();
 		}
-		return success_n;
+		return aux;
 	}
 
 	//
@@ -828,18 +774,11 @@ namespace ukb {
 
 		if (!cs.has_tgtwords()) return false; // no target words
 
-		Kb & kb = ukb::Kb::instance();
-
 		vector<CWord>::iterator cw_it = cs.begin();
 		vector<CWord>::iterator cw_end = cs.end();
 		for(; cw_it != cw_end; ++cw_it) {
 			if (!cw_it->is_tgtword()) continue;
-			if (glVars::csentence::disamb_minus_static) {
-				struct va2vb newrank(ranks, kb.static_prank());
-				cw_it->rank_synsets(newrank, false);
-			} else {
-				cw_it->rank_synsets(ranks, false);
-			}
+			cw_it->rank_synsets(ranks, false);
 			cw_it->disamb_cword();
 		}
 		return true;

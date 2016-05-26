@@ -92,15 +92,16 @@ namespace ukb {
 
 	// fill dgraph with a sentence
 
-	void fill_disamb_graph(const CSentence & sentence,
-						   DisambGraph & dgraph);
-	void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
-						   const std::vector<float> & ppv_ranks);
+	void build_dgraph_bfs(const CSentence & sentence,
+						  DisambGraph & dgraph);
+	void build_dgraph_bfs(const CSentence & cs, DisambGraph & dgraph,
+						  const std::vector<float> & ppv_ranks);
 
 	// dfs version
 
-	void fill_disamb_graph_dfs(const CSentence &cs, DisambGraph & dgraph);
-	void fill_disamb_graph_dfs_nocosenses(const CSentence &cs, DisambGraph & dgraph);
+	void build_dgraph_dfs(const CSentence &cs, DisambGraph & dgraph);
+	void build_dgraph_dfs_nocosenses(const CSentence &cs, DisambGraph & dgraph);
+
 
 	bool disamb_csentence_dgraph(CSentence & cs, DisambGraph & dgraph,
 								 const std::vector<float> & ranks);
@@ -115,12 +116,16 @@ namespace ukb {
 
 	// PageRank ranking
 
-	bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
-							  std::vector<float> & ranks,
-							  CSentence::const_iterator exclude_word_it);
+	bool dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
+					std::vector<float> & ranks,
+					CSentence::const_iterator exclude_word_it);
 
-	bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
-							  std::vector<float> & ranks);
+	bool dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
+					std::vector<float> & ranks);
+
+	// apply ppr to mention graph
+	bool dgraph_mention_ppr(const CSentence & cs, DisambGraph & dgraph,
+					std::vector<float> & ranks);
 
 	// Degree ranking
 

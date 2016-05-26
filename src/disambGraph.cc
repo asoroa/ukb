@@ -232,7 +232,7 @@ namespace ukb {
 	}
 
 
-	void fill_disamb_graph(const CSentence &cs, DisambGraph & dgraph) {
+	void build_dgraph_bfs(const CSentence &cs, DisambGraph & dgraph) {
 
 		vector<CWord>::const_iterator cw_it = cs.begin();
 		vector<CWord>::const_iterator cw_end = cs.end();
@@ -254,7 +254,7 @@ namespace ukb {
 	// fill dgraph with ppv ranks
 	// using edge weights in kb derived from ppv_rank
 
-	void fill_disamb_graph(const CSentence & cs, DisambGraph & dgraph,
+	void build_dgraph_bfs(const CSentence & cs, DisambGraph & dgraph,
 						   const vector<float> & ppv_ranks) {
 
 
@@ -325,7 +325,7 @@ namespace ukb {
 	};
 
 
-	void fill_disamb_graph_dfs_nocosenses(const CSentence &cs, DisambGraph & dgraph) {
+	void build_dgraph_dfs_nocosenses(const CSentence &cs, DisambGraph & dgraph) {
 		set<Kb_vertex_t> S;
 		Kb & kb = Kb::instance();
 		dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
@@ -373,7 +373,7 @@ namespace ukb {
         dgraph.fill_graph(filtered_subg);
 	}
 
-	void fill_disamb_graph_dfs(const CSentence &cs, DisambGraph & dgraph) {
+	void build_dgraph_dfs(const CSentence &cs, DisambGraph & dgraph) {
 		set<Kb_vertex_t> S;
 		Kb & kb = Kb::instance();
 		dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
@@ -421,9 +421,9 @@ namespace ukb {
 		return k;
 	}
 
-	bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
-							  vector<float> & ranks,
-							  CSentence::const_iterator exclude_word_it) {
+	bool dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
+					vector<float> & ranks,
+					CSentence::const_iterator exclude_word_it) {
 
 		// get pv pointing to KbGraph vertex_t
 		// transform into Dis_vertex_t
@@ -450,9 +450,9 @@ namespace ukb {
 		return true;
 	}
 
-	bool csentence_dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
+	bool dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
 							  vector<float> & ranks) {
-		return csentence_dgraph_ppr(cs, dgraph, ranks, cs.end());
+		return dgraph_ppr(cs, dgraph, ranks, cs.end());
 	}
 
 

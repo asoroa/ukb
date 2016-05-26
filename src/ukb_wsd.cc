@@ -26,26 +26,26 @@ using namespace boost;
 /////////////////////////////////////////////////////////////
 // Global variables
 
-string stra;
-enum dgraph_rank_methods {
-	dppr,
-	dppr_w2w,
-	ddegree,
-	dstatic
+enum main_method {
+	m_ppr,       // ppr, whole graph
+	m_ppr_w2w,   // ppr_w2w, whole graph
+	m_static,    // static, whole graph
+	//	m_degree,    // degree, whole graph
+	m_bfs,       // bfs subgraph
+	m_dfs
 };
 
-enum dis_method {
-	dgraph_bfs,
-	dgraph_dfs,
-	ppr,
-	ppr_w2w,
-	ppr_static
+enum dgraph_rank {
+	r_ppr,
+	r_ppr_w2w,
+	r_static,
+	r_degree
 };
 
-dgraph_rank_methods dgraph_rank_method = dstatic;
-bool use_dfs_dgraph = false;
 
-dis_method opt_dmethod = ppr;
+dgraph_rank dgraph_rank_method = r_ppr;
+
+main_method opt_dmethod = m_ppr;
 string cmdline;
 bool opt_daemon = false;
 bool opt_dump_dgraph = false;
@@ -82,39 +82,55 @@ void option_dependency(const boost::program_options::variables_map& vm,
 
 // Disambiguate using disambiguation graph (dgraph) method
 
-bool rank_dgraph(const CSentence & cs,
-				 DisambGraph & dg,
-				 vector<float> & ranks) {
+static void build_dgraph(CSentence & cs, DisambGraph & dgraph) {
+
+	switch (opt_dmethod) {
+	case m_dfs:
+		if (glVars::dGraph::stopCosenses)
+			build_dgraph_dfs_nocosenses(cs, dgraph);
+		else build_dgraph_dfs(cs, dgraph);
+		break;
+	case m_bfs:
+		build_dgraph_bfs(cs, dgraph);
+		break;
+	default:
+		cerr << "build_dgraph: [E] logic error\n";
+		exit(1);
+	}
+}
+
+static bool rank_dgraph(const CSentence & cs,
+						DisambGraph & dg,
+						vector<float> & ranks) {
 
 	bool ok = false;
 	switch(dgraph_rank_method) {
-	case dppr:
-	case dppr_w2w:
-		ok = csentence_dgraph_ppr(cs, dg, ranks);
+	case r_ppr:
+		//ok = (opt_dmethod == m_mention) ? dgraph_mention_ppr(cs, dg, ranks) : dgraph_ppr(cs, dg, ranks);
+        ok = dgraph_ppr(cs, dg, ranks);
 		break;
-	case ddegree:
+	case r_degree:
 		ok = dgraph_degree(dg, ranks);
 		break;
-	case dstatic:
+	case r_static:
 		ok = dgraph_static(dg, ranks);
+		break;
+	case r_ppr_w2w:
+		cerr << "rank_dgraph: [E] can't use ppr_w2w\n";
+		exit(1);
 		break;
 	}
 	return ok;
 }
 
-
-void fill_dgraph(CSentence & cs, DisambGraph & dgraph) {
-
-	if (use_dfs_dgraph) {
-		if (glVars::dGraph::stopCosenses)
-			fill_disamb_graph_dfs_nocosenses(cs, dgraph);
-		else fill_disamb_graph_dfs(cs, dgraph);
-	}
-	else fill_disamb_graph(cs, dgraph);
-
+static void disamb_dgraph(CSentence & cs,
+						  DisambGraph & dg,
+						  vector<float> & ranks) {
+		disamb_csentence_dgraph(cs, dg, ranks);
 }
 
-void disamb_dgraph_from_corpus_w2w(CSentence & cs) {
+
+void dgraph_w2w_csent(CSentence & cs) {
 
 	// fall back to static if csentence has only one word
 	if (cs.size() == 1) {
@@ -124,15 +140,14 @@ void disamb_dgraph_from_corpus_w2w(CSentence & cs) {
 		disamb_csentence_kb(cs, ranks);
 	} else {
 		DisambGraph dgraph;
-		fill_dgraph(cs, dgraph);
+		build_dgraph(cs, dgraph);
 		vector<float> ranks;
 		for(CSentence::iterator cw_it = cs.begin(), cw_end = cs.end();
 			cw_it != cw_end; ++cw_it) {
 			if(!cw_it->is_tgtword()) continue;
-			bool ok = csentence_dgraph_ppr(cs, dgraph, ranks, cw_it);
-			if (!ok) {
-				std::cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-				std::cerr << "(No word links to KB ?)\n";
+			bool ok = dgraph_ppr(cs, dgraph, ranks, cw_it);
+			if (!ok && glVars::debug::warning) {
+				cerr << "dgraph_w2w_csent: [W] No ranks for sentence " << cs.id() << "\n";
 				return;
 			}
 			disamb_cword_dgraph(cw_it, dgraph, ranks);
@@ -140,10 +155,10 @@ void disamb_dgraph_from_corpus_w2w(CSentence & cs) {
 	}
 }
 
-void disamb_dgraph_from_corpus(CSentence & cs) {
+void dgraph_csent(CSentence & cs) {
 
-	if (dgraph_rank_method == dppr_w2w) {
-		disamb_dgraph_from_corpus_w2w(cs);
+	if (dgraph_rank_method == r_ppr_w2w) {
+		dgraph_w2w_csent(cs);
 		return;
 	}
 
@@ -151,19 +166,18 @@ void disamb_dgraph_from_corpus(CSentence & cs) {
 	if (cs.size() == 1) {
 		if (glVars::debug::warning)
 			cerr << "dis_csent: using static for context " << cs.id() << endl;
-		const vector<float> ranks = Kb::instance().static_prank();
+		const vector<float> & ranks = Kb::instance().static_prank();
 		disamb_csentence_kb(cs, ranks);
 	} else {
 		DisambGraph dgraph;
-		fill_dgraph(cs, dgraph);
+		build_dgraph(cs, dgraph);
 		vector<float> ranks;
 		bool ok = rank_dgraph(cs, dgraph, ranks);
-		if (!ok) {
-			cerr << "Error when calculating ranks for sentence " << cs.id() << "\n";
-			cerr << "(No word links to KB ?)\n";
+		if (!ok && glVars::debug::warning) {
+			cerr << "dgraph_csent: [W] No ranks for sentence " << cs.id() << "\n";
 			return;
 		}
-		disamb_csentence_dgraph(cs, dgraph, ranks);
+		disamb_dgraph(cs, dgraph, ranks);
 	}
 }
 
@@ -171,14 +185,43 @@ void ppr_csent(CSentence & cs) {
 
 	vector<float> ranks;
 	bool ok = calculate_kb_ppr(cs,ranks);
-	if (!ok) {
-		cerr << "Unknown error when calculating ranks for sentence " << cs.id() << "\n";
+	if (!ok && glVars::debug::warning) {
+		std::cerr << "ppr_csent: [W] Error in sentence " << cs.id() << "\n";
 		return;
 	}
 	disamb_csentence_kb(cs, ranks);
 }
 
-void dis_csent_classic_prank(CSentence &cs) {
+// w2w approach
+// for each target word
+//   1. init pv with the synsets of the rest of words
+//   2. run Personalized Pagerank
+//   3. use rank for disambiguating word
+
+void ppr_w2w_csent(CSentence & cs) {
+
+	vector<float> ranks;
+	int success_n = 0;
+
+	vector<CWord>::iterator cw_it = cs.begin();
+	vector<CWord>::iterator cw_end = cs.end();
+	for(; cw_it != cw_end; ++cw_it) {
+		// Target word must be distinguished.
+		if(!cw_it->is_tgtword()) continue;
+		if (!cw_it->is_monosemous() &&
+			calculate_kb_ppr_by_word(cs, cw_it, ranks)) {
+			success_n++;
+			cw_it->rank_synsets(ranks, glVars::csentence::mult_priors);
+		}
+		cw_it->disamb_cword();
+	}
+	if (!success_n && glVars::debug::warning) {
+		std::cerr << "ppr_w2w_csent: [W] Error in sentence " << cs.id() << "\n";
+		return;
+	}
+}
+
+void static_csent(CSentence &cs) {
 
 	static vector<float> ranks;
 	if (!ranks.size()) {
@@ -191,22 +234,18 @@ void dis_csent_classic_prank(CSentence &cs) {
 void dispatch_run_cs(CSentence & cs) {
 
 	switch(opt_dmethod) {
-	case dgraph_bfs:
-		use_dfs_dgraph = false; // use bfs
-		disamb_dgraph_from_corpus(cs);
+	case m_bfs:
+	case m_dfs:
+		dgraph_csent(cs);
 		break;
-	case dgraph_dfs:
-		use_dfs_dgraph = true;
-		disamb_dgraph_from_corpus(cs);
-		break;
-	case ppr:
+	case m_ppr:
 		ppr_csent(cs);
 		break;
-	case ppr_w2w:
-		calculate_kb_ppr_by_word_and_disamb(cs);
+	case m_ppr_w2w:
+		ppr_w2w_csent(cs);
 		break;
-	case ppr_static:
-		dis_csent_classic_prank(cs);
+	case m_static:
+		static_csent(cs);
 		break;
 	};
 }
@@ -292,7 +331,7 @@ bool client_stop_server(unsigned int port) {
 	sClient client("localhost", port);
 	string stop("stop");
 	if (client.error()) {
-		std::cerr << "Error when connecting: " << client.error_str() << std::endl;
+		std::cerr << "client_stop_server: [E] Error when connecting: " << client.error_str() << std::endl;
 		return false;
 	}
 	try {
@@ -343,12 +382,12 @@ void test() {
 int main(int argc, char *argv[]) {
 
 
-	map<string, dgraph_rank_methods> map_dgraph_ranks;
+	map<string, dgraph_rank> map_dgraph_ranks;
 
-	map_dgraph_ranks["ppr"] = dppr;
-	map_dgraph_ranks["ppr_w2w"] = dppr_w2w;
-	map_dgraph_ranks["degree"] = ddegree;
-	map_dgraph_ranks["static"] = dstatic;
+	map_dgraph_ranks["ppr"] = r_ppr;
+	map_dgraph_ranks["ppr_w2w"] = r_ppr_w2w;
+	map_dgraph_ranks["degree"] = r_degree;
+	map_dgraph_ranks["static"] = r_static;
 
 	bool opt_do_test = false;
 	bool opt_client = false;
@@ -417,7 +456,7 @@ int main(int argc, char *argv[]) {
 		("prank_iter", value<size_t>(), "Number of iterations in pageRank. Default is 30.")
 		("prank_threshold", value<float>(), "Threshold for stopping PageRank. Default is zero. Good value is 0.0001.")
 		("prank_damping", value<float>(), "Set damping factor in PageRank equation. Default is 0.85.")
-		("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: static(default), ppr, ppr_w2w, degree.")
+		("dgraph_rank", value<string>(), "Set disambiguation method for dgraphs. Options are: ppr(default), ppr_w2w, coherence, static, degree.")
 		("dgraph_maxdepth", value<size_t>(), "If --dgraph_dfs is set, specify the maximum depth (default is 6).")
 		("dgraph_nocosenses", "If --dgraph_dfs, stop DFS when finding one co-sense of target word in path.")
 		("nibble_epsilon", value<float>(), "Error for approximate pageRank as computed by the nibble algorithm.")
@@ -479,7 +518,6 @@ int main(int argc, char *argv[]) {
 
 		notify(vm);
 
-
 		// If asked for help, don't do anything more
 
 		if (vm.count("help")) {
@@ -505,27 +543,27 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("ppr")) {
-			opt_dmethod = ppr;
+			opt_dmethod = m_ppr;
 		}
 
 		if (vm.count("ppr_w2w")) {
-			opt_dmethod = ppr_w2w;
+			opt_dmethod = m_ppr_w2w;
 		}
 
 		if (vm.count("static")) {
-			opt_dmethod = ppr_static;
+			opt_dmethod = m_static;
 		}
 
 		if (vm.count("dgraph_bfs")) {
-			opt_dmethod = dgraph_bfs;
+			opt_dmethod = m_bfs;
 		}
 
 		if (vm.count("dgraph")) {
-			opt_dmethod = dgraph_bfs;
+			opt_dmethod = m_bfs;
 		}
 
 		if (vm.count("dgraph_dfs")) {
-			opt_dmethod = dgraph_dfs;
+			opt_dmethod = m_dfs;
 		}
 
 		if (vm.count("prank_iter")) {
@@ -575,10 +613,10 @@ int main(int argc, char *argv[]) {
 
 		if (vm.count("dgraph_rank")) {
 			string str = vm["dgraph_rank"].as<string>();
-			map<string, dgraph_rank_methods>::iterator it = map_dgraph_ranks.find(str);
+			map<string, dgraph_rank>::iterator it = map_dgraph_ranks.find(str);
 			if (it == map_dgraph_ranks.end()) {
 				cerr << "Error: invalid dgraph_rank method. Should be one of: ";
-				for(map<string, dgraph_rank_methods>::iterator iit = map_dgraph_ranks.begin();
+				for(map<string, dgraph_rank>::iterator iit = map_dgraph_ranks.begin();
 					iit != map_dgraph_ranks.end(); ++iit)
 					cerr << " " << iit->first;
 				cerr << "\n";
@@ -784,7 +822,7 @@ int main(int argc, char *argv[]) {
 	} else {
 		input_ifs.open(fullname_in.c_str(), ofstream::in);
 		if (!input_ifs) {
-			cerr << "Can't open " << fullname_in << endl;
+			cerr << "[E] Can't open " << fullname_in << endl;
 			exit(-1);
 		}
 		// redirect std::cin to read from file
@@ -810,7 +848,7 @@ int main(int argc, char *argv[]) {
 	try {
 		dispatch_run(std::cin, std::cout);
 	} catch (std::exception & e) {
-		cerr << "Error reading " << fullname_in << "\n" << e.what() << "\n";
+		cerr << "[E] Error reading " << fullname_in << "\n" << e.what() << "\n";
 		return 0;
 	}
 
