@@ -48,6 +48,7 @@ bool use_dfs_dgraph = false;
 dis_method opt_dmethod = ppr;
 string cmdline;
 bool opt_daemon = false;
+bool opt_dump_dgraph = false;
 
 // Program options stuff
 
@@ -437,6 +438,7 @@ int main(int argc, char *argv[]) {
 		("no-monosemous", "Don't output anything for monosemous words.")
 		("ties", "Output also in case of ties.")
 		("rank_nonorm", "Do not normalize the ranks of target words.")
+		("dump_dgraph", "Dump subgraphs using gaphviz format.")
 		;
 
 	options_description po_desc_server("Client/Server options");
@@ -649,6 +651,10 @@ int main(int argc, char *argv[]) {
 
 		if (vm.count("allranks")) {
 			glVars::output::allranks = true;
+		}
+
+		if (vm.count("dump_dgraph")) {
+			opt_dump_dgraph = true;
 		}
 
 		if (vm.count("test")) {
