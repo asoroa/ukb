@@ -95,7 +95,7 @@ namespace ukb {
 
 			typedef const wdict_item_t * value_type;
 
-			freq_const_iterator() : m_current(0) {}
+			freq_const_iterator() : m_current() {}
 			explicit freq_const_iterator(value_type p) : m_current(p) {}
 
 		private:
@@ -169,7 +169,7 @@ namespace ukb {
 		public:
 			typedef winvdict_rhs_t::const_iterator value_type;
 
-			freq_const_iterator() : m_current(0) {}
+			freq_const_iterator() : m_current() {}
 			explicit freq_const_iterator(value_type p) : m_current(p) {}
 
 		private:
