@@ -719,7 +719,7 @@ int main(int argc, char *argv[]) {
 #ifdef UKB_SERVER
 			opt_daemon = true;
 #else
-		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		cerr << "[E] server not available (compile ukb without -DUKB_SERVER switch)\n";
 		exit(1);
 #endif
 		}
@@ -728,7 +728,7 @@ int main(int argc, char *argv[]) {
 #ifdef UKB_SERVER
 			port = vm["port"].as<unsigned int>();;
 #else
-		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
+		cerr << "[E] server not available (compile ukb without -DUKB_SERVER switch)\n";
 		exit(1);
 #endif
 		}
@@ -737,8 +737,8 @@ int main(int argc, char *argv[]) {
 #ifdef UKB_SERVER
 			opt_client = true;
 #else
-		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
-		exit(1);
+			cerr << "[E] server not available (compile ukb without -DUKB_SERVER switch)\n";
+			exit(1);
 #endif
 		}
 
@@ -746,8 +746,8 @@ int main(int argc, char *argv[]) {
 #ifdef UKB_SERVER
 			opt_shutdown = true;
 #else
-		cerr << "[E] compile ukb with -DUKB_SERVER switch\n";
-		exit(1);
+			cerr << "[E] server not available (compile ukb without -DUKB_SERVER switch)\n";
+			exit(1);
 #endif
 		}
 
