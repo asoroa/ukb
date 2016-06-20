@@ -685,7 +685,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// if not daemon, check input files (do it early before loading KB and dictionary)
-	if (!fullname_in.size() and !opt_daemon) {
+	if (!fullname_in.size() and !opt_daemon and !opt_static) {
 		cout << po_visible << endl;
 		cout << "Error: No input" << endl;
 		exit(-1);
