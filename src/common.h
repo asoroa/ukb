@@ -443,6 +443,12 @@ namespace ukb {
 	// trim trailing and leading spaces
 	void trim_spaces(std::string &l);
 
+	// Read context
+
+	std::istream & read_ukb_ctx(std::istream & is, size_t & l_n, std::string & id, std::string & ctx);
+
+	void set_pr_convergence(size_t iterations, float threshold);
+
 	// Common misc. functions
 	void set_pr_convergence(size_t iterations, float threshold);
 

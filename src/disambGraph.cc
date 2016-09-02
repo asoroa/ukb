@@ -234,8 +234,8 @@ namespace ukb {
 
 	void build_dgraph_bfs(const CSentence &cs, DisambGraph & dgraph) {
 
-		vector<CWord>::const_iterator cw_it = cs.begin();
-		vector<CWord>::const_iterator cw_end = cs.end();
+		vector<CWord>::const_iterator cw_it = cs.ubegin();
+		vector<CWord>::const_iterator cw_end = cs.uend();
 
 		//if (cw_it == cw_end) return;
 		//cw_end--;
@@ -261,8 +261,8 @@ namespace ukb {
 		// First, update kb's edge weights
 		ukb::Kb::instance().ppv_weights(ppv_ranks);
 
-		vector<CWord>::const_iterator cw_it = cs.begin();
-		vector<CWord>::const_iterator cw_end = cs.end();
+		vector<CWord>::const_iterator cw_it = cs.ubegin();
+		vector<CWord>::const_iterator cw_end = cs.uend();
 
 		//if (cw_it == cw_end) return;
 		//cw_end--;
@@ -332,7 +332,7 @@ namespace ukb {
 		vector<set<Kb_vertex_t> > coSenses; // coSenses of each word in sentence
 
 		// Init S with all target synsets
-		for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
+		for(vector<CWord>::const_iterator cw_it = cs.ubegin(), cw_end = cs.uend();
 			cw_it != cw_end; ++cw_it) {
             coSenses.push_back(set<Kb_vertex_t>());
             set<Kb_vertex_t> & coS = coSenses.back();
@@ -379,7 +379,7 @@ namespace ukb {
 		dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
 
 		// Init S with all target synsets
-		for(vector<CWord>::const_iterator cw_it = cs.begin(), cw_end = cs.end();
+		for(vector<CWord>::const_iterator cw_it = cs.ubegin(), cw_end = cs.uend();
 			cw_it != cw_end; ++cw_it) {
 			for(vector<pair<Kb_vertex_t, float> >::const_iterator v_it = cw_it->V_vector().begin(),
 					v_end = cw_it->V_vector().end();
@@ -452,7 +452,7 @@ namespace ukb {
 
 	bool dgraph_ppr(const CSentence & cs, DisambGraph & dgraph,
 							  vector<float> & ranks) {
-		return dgraph_ppr(cs, dgraph, ranks, cs.end());
+		return dgraph_ppr(cs, dgraph, ranks, cs.uend());
 	}
 
 
@@ -487,8 +487,8 @@ namespace ukb {
 
 		if (!cs.has_tgtwords()) return false; // no target words
 
-		vector<CWord>::iterator cw_it = cs.begin();
-		vector<CWord>::iterator cw_end = cs.end();
+		vector<CWord>::iterator cw_it = cs.ubegin();
+		vector<CWord>::iterator cw_end = cs.uend();
 		for(; cw_it != cw_end; ++cw_it) {
 			if(!cw_it->is_tgtword()) continue;
 			disamb_cword_dgraph(cw_it, dgraph, ranks);
@@ -504,8 +504,11 @@ namespace ukb {
 
 	ostream & print_complete_csent(ostream & o, CSentence & cs, DisambGraph & dgraph) {
 
-		vector<CWord>::iterator cw_it = cs.begin();
-		vector<CWord>::iterator cw_end = cs.end();
+
+		//TODO: use tokens
+
+		vector<CWord>::iterator cw_it = cs.ubegin();
+		vector<CWord>::iterator cw_end = cs.uend();
 		Dis_vertex_t v;
 		bool P;
 

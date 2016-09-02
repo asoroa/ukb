@@ -199,17 +199,27 @@ void compute_sentence_vectors(istream & is, string & out_dir) {
 
 	// Read sentences and compute rank vectors
 	size_t l_n  = 0;
-	while (cs.read_aw(is, l_n)) {
-		// Initialize rank vector
-		vector<float> ranks;
-		if (!compute_cs_ppv(cs, ranks)) {
-			cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
-			continue;
+	string cid, ctx;
+	while (read_ukb_ctx(is, l_n, cid, ctx)) {
+		try {
+			CSentence cs(cid, ctx);
+			// Initialize rank vector
+			vector<float> ranks;
+			if (!compute_cs_ppv(cs, ranks)) {
+				cerr << "Error when calculating ranks for csentence " << cs.id() << endl;
+				continue;
+			}
+			boost::shared_ptr<ofstream> fo(output_ppv_fname(ppv_prefix + cs.id(), fout));
+			write_ppv_stream(ranks, *fo);
+		} catch (ukb::wdict_error & e) {
+			throw e;
+		} catch (std::logic_error & e) {
+			string msg = "[E] Bad context in line " + lexical_cast<string>(l_n) + "\n" + e.what();
+			if (!glVars::input::swallow) throw std::runtime_error(msg);
+			if (glVars::debug::warning) {
+				cerr << msg << "\n";
+			}
 		}
-
-		boost::shared_ptr<ofstream> fo(output_ppv_fname(ppv_prefix + cs.id(), fout));
-		write_ppv_stream(ranks, *fo);
-		cs = CSentence();
 	}
 }
 

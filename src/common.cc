@@ -1,6 +1,10 @@
 #include "common.h"
 #include "globalVars.h"
 
+// Tokenizer
+#include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include <boost/numeric/conversion/cast.hpp>
 
 namespace ukb {
@@ -89,6 +93,24 @@ namespace ukb {
 			trim_spaces(line);
 			l_n++;
 		} while(is && !line.size());
+		return is;
+	}
+
+	std::istream & read_ukb_ctx(std::istream & is, size_t & l_n, std::string & id, std::string & ctx) {
+		std::string line;
+		id.clear();
+		ctx.clear();
+		if(read_line_noblank(is, line, l_n)) {
+			// first line is id
+			boost::char_separator<char> sep(" \t");
+			std::vector<std::string> v;
+			boost::tokenizer<boost::char_separator<char> > tok_id(line, sep);
+			copy(tok_id.begin(), tok_id.end(), back_inserter(v));
+			if (v.size() == 0) return is; // blank line or EOF
+			id = v[0];
+			// next comes the context
+			read_line_noblank(is, ctx, l_n);
+		}
 		return is;
 	}
 

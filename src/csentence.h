@@ -52,7 +52,7 @@ namespace ukb {
 		typedef std::vector<std::string>::value_type value_type;
 		typedef std::vector<std::string>::size_type size_type;
 
-		explicit CWord() : m_pos(0), m_weight(1.0), m_linkw_factor(1.0), m_type(cw_error), m_disamb(false) {};
+		explicit CWord() : m_weight(1.0), m_linkw_factor(1.0), m_type(cw_error), m_disamb(false) {};
 		CWord(const std::string & w_, const std::string & id, const std::string & pos, cwtype type, float wght_ = 1.0);
 		CWord & operator=(const CWord & cw_);
 		~CWord() {};
@@ -86,7 +86,7 @@ namespace ukb {
 		float get_linkw_factor() const { return m_linkw_factor; }
 		void set_weight(float w) { m_weight = w;}
 
-		bool is_tgtword() const { return (m_type == cw_tgtword || m_type == cw_tgtword_nopv); }
+		bool is_tgtword() const;
 		bool is_disambiguated() const { return m_disamb; }
 		bool is_monosemous() const { return (1 == m_syns.size()); }
 		bool is_synset() const { return m_type == cw_concept; }
@@ -127,12 +127,16 @@ namespace ukb {
 		void disamb_cword();
 
 		friend std::ostream& operator<<(std::ostream & o, const CWord & cw_);
-		std::ostream & print_cword(std::ostream & o) const;
+		std::ostream & write(std::ostream & o, const std::string & id_, cwtype t_) const;
+
+		std::ostream & print_cword(std::ostream & o, const std::string & id) const;
 		friend class CSentence;
 
 		// Debug
 
 		std::ostream & debug(std::ostream & o) const;
+
+		void swap(CWord & o);
 
 	private:
 
@@ -163,37 +167,21 @@ namespace ukb {
 		typedef std::vector<CWord>::value_type value_type;
 		typedef std::vector<CWord>::size_type size_type;
 
-		CSentence() : m_tgtN(0) {};
-		CSentence(const std::vector<std::string> & sent_);
+		CSentence() : m_tgtN(0), m_weight(0.0f), m_w_factor(0.0f) {};
 		CSentence(const std::string & id, const std::string & ctx_str);
-		CSentence(const CSentence & cs_) : m_tgtN(0), m_v(cs_.m_v) , m_id(cs_.m_id) {};
 		CSentence & operator=(const CSentence & cs_);
 
-		void append(const CSentence & cs_);
+		// These iterators work in the unique vector, that is, without repeated words
+		iterator ubegin() {return m_vuniq.begin();}
+		const_iterator ubegin() const {return m_vuniq.begin();}
+		iterator uend() {return m_vuniq.end();}
+		const_iterator uend() const {return m_vuniq.end();}
 
-		iterator begin() {return m_v.begin();}
-		const_iterator begin() const {return m_v.begin();}
-		iterator end() {return m_v.end();}
-		const_iterator end() const {return m_v.end();}
-		void push_back(const CWord & cw_) { m_v.push_back(cw_); }
-		reference back() {return m_v.back();}
-		const_reference back() const {return m_v.back();}
-
-		const CWord & operator[]( int i ) const {
-			return m_v[i];
-		}
-
-		CWord & operator[]( int i ) {
-			return m_v[i];
-		}
-
-		size_type size() const {return m_v.size();}
+		size_type usize() const {return m_vuniq.size();}
+		size_type size() const {return m_vuniq.size();}
 		size_type has_tgtwords() const { return m_tgtN; }
 		std::string id() const {return m_id;}
-
-		void distinguished_synsets(std::vector<std::string> & res) const;
-
-		std::istream & read_aw(std::istream & is, size_t & l_n);
+		float weigth_factor() const { return m_w_factor; }
 
 		void write_to_binfile (const std::string & fName) const;
 		void read_from_binfile (const std::string & fName);
@@ -201,8 +189,25 @@ namespace ukb {
 		std::ostream & print_csent(std::ostream & o) const;
 		std::ostream & debug(std::ostream & o) const;
 	private:
+
+		void push_ctx(const std::vector<std::string> & ctx);
+		void push_cw(CWord & new_cw,
+					 std::map<std::string, size_t > & CW,
+					 bool is_nopv);
+
+		struct cwtoken_t {
+			std::string id;
+			CWord::cwtype t;
+			size_t idx;
+			cwtoken_t(const std::string & _id, CWord::cwtype _t, size_t _idx) :
+				id(_id), t(_t), idx(_idx) {}
+		};
+
 		size_t m_tgtN; // number of target words in Csentence
-		std::vector<CWord> m_v;
+		float m_weight;
+		float m_w_factor;
+		std::vector<CWord> m_vuniq; // unique CWords in the context
+		std::vector<cwtoken_t > m_tokens; // original tokens with (possible) repetitions
 		std::string m_id;
 	};
 

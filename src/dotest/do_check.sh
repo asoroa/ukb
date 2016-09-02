@@ -5,19 +5,21 @@ then
   exit 65 # E_BADARGS
 fi
 
-dirA=$1
-dirB=$2
+dirA=$(echo $1 | sed -e "s/\/$//")
+dirB=$(echo $2 | sed -e "s/\/$//")
 
 function ddif {
 	fileA=$1
+	bname=$(basename ${fileA})
 	fileB=$(echo $fileA | sed -e "s|^${dirA}|${dirB}|")
 	tmpA=$(mktemp)
 	egrep -v "^!!" $1 > ${tmpA}
 	tmpB=$(mktemp)
 	egrep -v "^!!" $fileB > ${tmpB}
-	#echo -n "${fileA} ${fileB} "
-	echo -n $(basename ${fileA}) " "
-	diff -pu ${tmpA} ${tmpB} | wc -l
+	dout=$(diff -pu ${tmpA} ${tmpB} | wc -l)
+	if [ $dout -gt 0 ] ; then
+		echo ${bname} " " ${dout}
+	fi
 	rm ${tmpA}
 	rm ${tmpB}
 }

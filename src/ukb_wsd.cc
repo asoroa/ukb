@@ -142,7 +142,7 @@ void dgraph_w2w_csent(CSentence & cs) {
 		DisambGraph dgraph;
 		build_dgraph(cs, dgraph);
 		vector<float> ranks;
-		for(CSentence::iterator cw_it = cs.begin(), cw_end = cs.end();
+		for(CSentence::iterator cw_it = cs.ubegin(), cw_end = cs.uend();
 			cw_it != cw_end; ++cw_it) {
 			if(!cw_it->is_tgtword()) continue;
 			bool ok = dgraph_ppr(cs, dgraph, ranks, cw_it);
@@ -203,8 +203,8 @@ void ppr_w2w_csent(CSentence & cs) {
 	vector<float> ranks;
 	int success_n = 0;
 
-	vector<CWord>::iterator cw_it = cs.begin();
-	vector<CWord>::iterator cw_end = cs.end();
+	vector<CWord>::iterator cw_it = cs.ubegin();
+	vector<CWord>::iterator cw_end = cs.uend();
 	for(; cw_it != cw_end; ++cw_it) {
 		// Target word must be distinguished.
 		if(!cw_it->is_tgtword()) continue;
@@ -253,12 +253,21 @@ void dispatch_run_cs(CSentence & cs) {
 void dispatch_run(istream & is, ostream & os) {
 
 	size_t l_n = 0;
-
-	CSentence cs;
-	while (cs.read_aw(is, l_n)) {
-		dispatch_run_cs(cs);
-		cs.print_csent(os);
-		cs = CSentence();
+	string cid, ctx;
+	while (read_ukb_ctx(is, l_n, cid, ctx)) {
+		try {
+			CSentence cs(cid, ctx);
+			dispatch_run_cs(cs);
+			cs.print_csent(os);
+		} catch (ukb::wdict_error & e) {
+			throw e;
+		} catch (std::logic_error & e) {
+			string msg = "[E] Bad context in line " + lexical_cast<string>(l_n) + "\n" + e.what();
+			if (!glVars::input::swallow) throw std::runtime_error(msg);
+			if (glVars::debug::warning) {
+				cerr << msg << "\n";
+			}
+		}
 	}
 }
 
@@ -374,8 +383,9 @@ void test() {
 	size_t l_n = 0;
 
 	glVars::dict::use_shuffle = false;
-	CSentence cs;
-	cs.read_aw(cin, l_n);
+	string cid, ctx;
+	read_ukb_ctx(cin, l_n, cid, ctx);
+	CSentence cs(cid, ctx);
 	cs.debug(cerr);
 }
 
