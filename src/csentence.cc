@@ -209,25 +209,14 @@ namespace ukb {
 
 	ostream & CWord::debug(ostream & o) const  {
 
-		o << "w: " << m_w << " \n";
-		o <<  "m_id: " << m_id << string(" \n");
-		o << "m_pos: "  << m_pos << string(" \n");
-		o << "m_weight: "  << lexical_cast<string>(m_weight) << string(" \n");
-		o << "m_distinguished: "  << lexical_cast<int>(m_type) << string(" \n");
-		o << "m_disamb: "  << lexical_cast<bool>(m_disamb) << string(" \n");
-		o << "m_syns: ";
-		writeV(o, m_syns);
-		o << string(" \n");
-		o << "m_linkw_factor: "  << lexical_cast<string>(m_linkw_factor) << string(" \n");
-		o << "m_V: ";
-		for(vector<pair<Kb_vertex_t, float> >::const_iterator it = m_V.begin(), end = m_V.end();
-			it != end; ++it) {
-			o << "[" << it->first << ", " << it->second << "], ";
+		o << m_w << "#";
+		if (m_pos.size())
+			o << m_pos;
+		o << "#" << m_id << "#" << m_type;
+		o << "#" << lexical_cast<string>(m_weight) << "#" << lexical_cast<string>(m_linkw_factor) << "\t";
+		for(size_t i = 0; i < m_syns.size(); i++) {
+			o << "[" << m_syns[i] << ", " << m_V[i].first << ", " << m_V[i].second << "] ";
 		}
-		o << string(" \n");
-		o << "m_ranks: ";
-		writeV(o, m_ranks);
-		o << string(" \n");
 		return o;
 	}
 
@@ -561,8 +550,9 @@ namespace ukb {
 		o << m_id << endl;
 		for(vector<CWord>::const_iterator it = m_v.begin(), end=m_v.end();
 			it != end; ++it) {
-			o << "**CWord" << endl;
+			o << "  ";
 			it->debug(o);
+			o << endl;
 		}
 		return o;
 	}
