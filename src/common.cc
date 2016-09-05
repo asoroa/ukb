@@ -117,4 +117,14 @@ namespace ukb {
 			}
 		}
 	}
+
+	std::ostream & writeV_pv(std::ostream & o, const std::vector<float> & pv) {
+		o << "(";
+		for (size_t i = 0; i < pv.size(); ++i) {
+			if (pv[i] == 0.0f) continue;
+			o << " " << i << ":" << pv[i];
+		}
+		o << ")" << std::endl;
+		return o;
+	}
 }
