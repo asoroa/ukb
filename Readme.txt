@@ -70,7 +70,7 @@ Getting the resources
 http://ixa2.si.ehu.es/ukb/lkb_sources.tar.bz2
 
 - Spanish WordNet is here:
-http://ixa2.si.ehu.es/ukb/lkb_sources.tar.bz2
+http://ixa2.si.ehu.es/ukb/lkb_sources_es.tar.bz2
 
 - More WordNet versions can be converted to UKB format using the scripts in
   "scripts/" directory.
