@@ -245,8 +245,9 @@ static void output_ppv_stream_socket(vector<float> & ranks,
 	Kb & kb = Kb::instance();
 
 	post_process_ranks(ranks);
-	if (output_control_line)
-		session.send(cmdline);
+	if (output_control_line) {
+		session.send(cmdline + "\n");
+	}
 	for(size_t i = 0, m = ranks.size(); i < m; ++i) {
 		string sname = kb.get_vertex_name(i);
 		if (opt_nozero && ranks[i] == 0.0) continue;
