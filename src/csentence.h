@@ -113,15 +113,15 @@ namespace ukb {
 		// Used in disambGraph
 		template <typename G, typename Map>
 		void rank_synsets(G & g, Map rankMap) {
-            typename G::vertex_t u;
-            bool P;
+			typename G::vertex_t u;
+			bool P;
 			size_t n = m_syns.size();
 			size_t i;
 			if (!n) return; // No synsets
 			for(i = 0; i != n; ++i) {
 				boost::tie(u, P) = g.get_vertex_by_name(m_syns[i]);
 				m_ranks[i] = P ? rankMap[u] : 0.0f;
-            }
+			}
 		}
 
 		void disamb_cword();
