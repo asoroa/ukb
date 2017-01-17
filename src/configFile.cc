@@ -49,7 +49,7 @@ namespace ukb {
 
 	}
 
-	bool parse_csv(const string & str, 
+	bool parse_csv(const string & str,
 				   vector<string> & V) {
 
 		char_separator<char> sep(" \t,");
@@ -58,13 +58,13 @@ namespace ukb {
 		return (V.size() > 0);
 	}
 
-	void parseVarValue(string & variable, const string & value, 
+	void parseVarValue(string & variable, const string & value,
 					   int isValue) {
 
 		bool is_negated = false;
 		string::const_iterator sit = variable.begin();
 		string::const_iterator sit_end = variable.end();
-  
+
 		if (sit == sit_end) return;
 		if (*sit == '!') {
 			is_negated = true;
@@ -127,7 +127,7 @@ namespace ukb {
 
 		// If the first character is not a number, it is a config parameter
 		return !isdigit(str[0]);
-  
+
 	}
 
 

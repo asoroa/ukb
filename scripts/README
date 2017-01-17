@@ -1,22 +1,16 @@
 
-This directory contains scripts for converting WordNet from the original
-format to UKB format. There are two scripts:
+This directory contains scripts for converting different lexical KBs from
+the original format to UKB format. Currently, it supports conversions from
+WordNet, Czech Wordnet and GermaNet.
 
-* wnindex2ukbdict.pl for creating the dictionary. It asks for the
-  index.sense file in the WordNet distribution. Usage:
+There are the following scripts:
 
-  ./wnindex2ukbdict.pl [-v] index.sense
-       -v               Be verbose
+- wnet2dict.pl: create dictionary for English WordNet.
+- wndb2graph.pl: create graph for English WordNet.
+- czwordnet2ukb.pl: create dictionaty and graph for Czech WordNet.
+- gnet2ukb.pl: create dictionaty and graph for GermaNet.
 
-* wndb2ukbrel.pl for creating the graph. It needs all the files under the
-  dict/ directory of WordNet distribution. Usage:
-
- ./wndb2ukbrel.pl [-s src_name] [-d] [-v] wn_data_file1 ...
-	-s source_name	Name of the source
-	-d		Create a directed graph
-	-v		Be verbose
-
-* Example
+* Example with WordNet
 
 Say we want convert WordNet 2.0 to ukb. You have to follow these steps:
 
@@ -25,6 +19,6 @@ Say we want convert WordNet 2.0 to ukb. You have to follow these steps:
 3. download latest ukb from http://ixa2.si.ehu.es/ukb
 4. go to 'scripts' directory
 5. create graph file with:
-   % ./wndb2ukbrel.pl path_to_wn2.0/dict/* > wn20_rel.txt
+   % ./wnet2graph.pl path_to_wn2.0/dict/* > wn20_rel.txt
 6. create dictionary
-   % ./wnindex2ukbdict.pl path_to_wn2.0/dict/index.sense > wn20.lex
+   % ./wnet2dict.pl path_to_wn2.0/dict/index.sense > wn20.lex

@@ -1,4 +1,3 @@
-
 #include "wdict.h"
 #include "globalVars.h"
 #include "common.h"
@@ -804,4 +803,3 @@ namespace ukb {
 		return N;
 	}
 }
-

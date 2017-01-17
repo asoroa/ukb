@@ -334,43 +334,43 @@ namespace ukb {
 		// Init S with all target synsets
 		for(vector<CWord>::const_iterator cw_it = cs.ubegin(), cw_end = cs.uend();
 			cw_it != cw_end; ++cw_it) {
-            coSenses.push_back(set<Kb_vertex_t>());
-            set<Kb_vertex_t> & coS = coSenses.back();
+			coSenses.push_back(set<Kb_vertex_t>());
+			set<Kb_vertex_t> & coS = coSenses.back();
 			for(vector<pair<Kb_vertex_t, float> >::const_iterator v_it = cw_it->V_vector().begin(),
 					v_end = cw_it->V_vector().end();
 				v_it != v_end; ++v_it) {
 				S.insert((*v_it).first);
-                coS.insert((*v_it).first);
+				coS.insert((*v_it).first);
 			}
 		}
 
 		std::vector<default_color_type> colors(kb.size());
 		typedef color_traits<default_color_type> Color;
 
-        set<Kb_edge_t> subg;
+		set<Kb_edge_t> subg;
 		for(set<Kb_vertex_t>::iterator it = S.begin(), end = S.end(); it != end; ++it) { // better to start at any S (not just TW_S)
 			fill(colors.begin(), colors.end(), Color::white());
-            dfsa_visitor vis(*it, S, subg);
+			dfsa_visitor vis(*it, S, subg);
 			depth_first_visit(ag, *it, vis, &colors[0]);
 		}
-        // Now filter edges and discard (u,v) if they are coSenses
-        set<Kb_edge_t> filtered_subg;
-        for(set<Kb_edge_t>::iterator it = subg.begin(), end = subg.end();
-            it != end; ++it) {
-            Kb_vertex_t u = kb.edge_source(*it);
-            Kb_vertex_t v = kb.edge_target(*it);
-            bool ok = true;
-            for(vector<set<Kb_vertex_t> >::iterator coit = coSenses.begin(), coend = coSenses.end();
-                coit != coend; ++coit) {
-                if(coit->count(u) && coit->count(v)) {
-                    ok = false;
-                    break;
-                }
-            }
-            if (ok) filtered_subg.insert(*it);
-        }
-        // fill the disambGraph with new edges
-        dgraph.fill_graph(filtered_subg);
+		// Now filter edges and discard (u,v) if they are coSenses
+		set<Kb_edge_t> filtered_subg;
+		for(set<Kb_edge_t>::iterator it = subg.begin(), end = subg.end();
+			it != end; ++it) {
+			Kb_vertex_t u = kb.edge_source(*it);
+			Kb_vertex_t v = kb.edge_target(*it);
+			bool ok = true;
+			for(vector<set<Kb_vertex_t> >::iterator coit = coSenses.begin(), coend = coSenses.end();
+				coit != coend; ++coit) {
+				if(coit->count(u) && coit->count(v)) {
+					ok = false;
+					break;
+				}
+			}
+			if (ok) filtered_subg.insert(*it);
+		}
+		// fill the disambGraph with new edges
+		dgraph.fill_graph(filtered_subg);
 	}
 
 	void build_dgraph_dfs(const CSentence &cs, DisambGraph & dgraph) {

@@ -5,14 +5,14 @@ author: Eneko Agirre and Aitor Soroa
 
 If you use this software in writing scientific papers, or you use this
 software in any other medium serving scientists or students (e.g. web-sites,
-CD-ROMs) please include the citation [1]
+CD-ROMs) please include the citation [1] or [2]
 
 * 0. Introduction
 
 This is a collection of programs for performing graph-based Word Sense
 Disambiguation and lexical similarity/relatedness using a pre-existing
-knowledge base. The details of the method are described in [1]. The
-collection comprises four applications:
+knowledge base. The details of the method are described in [1] and [2]. The
+collection comprises several applications:
 
 - compile_kb: creates a machine dependant serialization of a KB graph which
     	      is then used by the rest of the programs.
@@ -23,6 +23,9 @@ collection comprises four applications:
 
 - convert2.0: utility to convert old (pre 2.0) binary serialization graphs
               to 2.0 format.
+
+- ukb_walkandprint: create pseudo-corpus by following random walks. This
+                    method is explained in [3].
 
 Overall, the ukb_wsd and ukb_ppv applications need three information
 sources:
@@ -47,11 +50,11 @@ between two vertices (concepts) on the KB. Specifically, lines of source KB
 file follow a key-value syntax. The keys are the following:
 
    u: the source vertex (concept) of the relation. (required)
-   v: the target vertex (concept) of the relation. (required)
+   v: the target vertex (concept) of the relation (required)
    d: whether the relation is directed (optional)
-   t: relation type. (optional)
+   t: relation type (optional)
    s: source of relation. (optional)
-   w: relation weight (Must be positive). (optional)
+   w: relation weight (Must be positive) (optional)
 
 for instance, the following line:
 
@@ -98,7 +101,7 @@ The 'ukb_wsd' and 'ukb_ppv' applications require a compiled binary image of
 the KB, so you first need to compile the input KB text file into a
 platform-dependent binary serialization. The compilation is performed by the
 'compile_kb' application, and must be run just once (for every KB and on
-every different platform the application is expected to work on, that is).
+every platform the application is expected to work on, that is).
 
 For example, given an input text file "wn17.txt" which looks like:
 
@@ -179,7 +182,7 @@ The dictionary is just a text file which associates headwords (typically,
 lemmas) to concepts on the KB. Each line is a dictionary entry, and has the
 following syntax:
 
-wordform concept_id(:weight)+
+wordform (concept_id(:weight)?)+
 
 For instance, the following line:
 
@@ -191,10 +194,10 @@ instance:
 
 band 02784732-n:3 02785191-n:1 02784998-n:1 01297401-v:0
 
-creates an entry fir 'attach' and attaches four concepts to it (three noun
-concepts and one verb concept). Besides, the links have weights, relecting the
-fact that some senses are more frequent than others for a particular word. Some
-notes about dictionary weight:
+associates the headword 'band' awith four concepts (three noun concepts and
+one verb concept). Besides, the links have weights, relecting the fact that
+some senses are more frequent than others for a particular word. Some notes
+about dictionary weight:
 
 - the command line option --dict_weight has to be set to actually use the
   dictionary weights in the computations.
@@ -203,7 +206,7 @@ notes about dictionary weight:
   "--smooth_dict_weight" option.
 
 - the values of the weights are normalized so that all link weights of
-  particular headword sum to one.
+  particular headword (and pos tag, unless --nopos is given) sum to one.
 
 - the script 'wnindex2ukbdict.pl' extracts a dictionary given a WordNet
   'index.sense' file. The script also attaches weights to concepts, according to
@@ -222,7 +225,7 @@ length of the context can be variable, but must be greater than one
 Words in the context must have an entry on the dictionary. Otherwise, the
 system won't be able to relate the context word to KB concepts, and the word
 will not be used for WSD purposes. Therefore, contexts are usually formed by
-content-words, i.e., prepositions, pronouns etc. are not used.
+content-words, i.e., prepositions, pronouns etc. are usually discarded.
 
 Each context is represented by 2 consecutive lines in the file. The first
 line contains just a token which indicates the context identifier whereas
@@ -233,12 +236,14 @@ ctx_01
 man#n#w1#1 kill#v#w2#1 cat#n#w3#1 hammer#n#w4#1
 
 Each of the elements on a context has 4 mandatory fields, and possibly one fifth
-field, separated by the '#' character. The five fields are:
+field, separated by the '#' character: 
 
 lemma#pos#id#d#w
 
+The meaning of the fields is the following:
+
 - lemma: the lemma of the word (either a headword in the dictionary or a graph
-	 concept identifier. See below). Mandatory.
+	  concept identifier. See below). Mandatory.
 
 - pos: part of speech.
 
@@ -247,9 +252,9 @@ lemma#pos#id#d#w
        a -> adjective
        r -> adverb
 
-  The pos field is mandatory unless '--nopos' option is set (or the word is
-  a KB concept. See below). If so, the field must be empty, i.e., something
-  like "man##w1#1" or "08249817-n##id#2".
+  The POS field is mandatory unless '--nopos' option is set (or the word is
+  a KB concept. See below). If so, the field must be empty, i.e.,
+  "man##w1#1" or "08249817-n##id#2".
 
 - id: the word's id. Mandatory.
 
@@ -293,23 +298,23 @@ man   man1-n man2-n man3-n
 ctx_01
 man#n#w1#3 man1-n##c1#2#0.6 man2-n##c2#2#0.3 man3-n##c3#2#0.1
 
-       in this case, the fourth field of word 'man' is 3, meaning that we want
-       do disambiguate 'man' but we don't want to activate in PageRank, because
-       all its concepts are already in the context with the desired
-       weights.
+       in this case, the fourth field of the first word in the context,
+       'man', is 3, meaning that we want do disambiguate 'man' but we don't
+       want to activate in PageRank, because all its concepts are already in
+       the context with the desired weights.
 
 	   Some notes regarding elements with control number '3' (or '4', see below)
 
 	   - when such an element appears in a context, the dictionary is not
-	   	 actually used. Instead of linking the word to the corrersponding
+	   	 actually used. Instead of linking the word to the corresponding
 	   	 concepts as specified by the dictionary, the word is attached to the
 	   	 concept elements (i.e., those with control number '2') inmediatelly
 	   	 following the word in the context. This process continues until a
 	   	 non-concept element appears.
 
 	   - the weight of the concepts are normalized w.r.t the words they are
-         attached to. In other words, the sum of all concepts linked to the same
-         word is always 1.
+         attached to. In other words, the sum of the weights of all concepts
+         linked to the same word is always 1.
 
 	   the order of elements is very important. Because the dictionary is not
        used to attach concepts to that word, only the concept elements (i.e.,
@@ -832,25 +837,25 @@ graph:
 
 * 7. Running ukb as a server
 
-UKB can be executes on following a client/server architecture, which has the
+UKB can be executed following a client/server architecture, which has the
 obvious advantage of not requiring to initialize the KB and dictionary each
-time it is ran.
+time it is executed.
 
 ** Launching the server
 
 Run the 'ukb_wsd' (or 'ukb_ppv') command using the '--daemon' switch. You
-can also specify the port he will be listening using the '--port'' switch
-(by default the port is 10000). A typical usage could be:
+can also specify the listening port using the '--port'' switch (by default
+the port is 10000). A typical usage could be:
 
 % ukb_wsd --daemon --port 45678 --ppr -K wn17.bin -D wn17_dict.txt
 
-Note that all the parameters and configuration switches which affect the way
-ukb is going to run (the disambiguation algorithm, whether to use POS
-values, whether to use dictionary frequencies, etc) must be set when running
-the server and can not be changed afterwards.
+Note that all the parameters and configuration switches which affect ukb's
+behavior (the disambiguation algorithm, whether to use POS values, whether
+to use dictionary frequencies, etc) must be set when running the server and
+can not be changed afterwards.
 
-The command can take some time because it does not return the control until
-the KB and dictionary are loaded in memory.
+The command can take some time because it does not return the control to the
+user until the KB and dictionary are loaded into memory.
 
 ** Using the client
 
@@ -867,10 +872,18 @@ Use the '--shutdown' switch to shut down the server.
 
 * 8. References
 
-[1] Eneko Agirre and Aitor Soroa. 2009. Personalizing PageRank for Word
+[1] Eneko Agirre, Oier Lopez de Lacalle, and Aitor Soroa. 2014. Random walks for
+	knowledge-based word sense disambiguation. Comput. Linguist. 40, 1 (March
+	2014), 57-84. DOI=http://dx.doi.org/10.1162/COLI_a_00164
+
+[2] Eneko Agirre and Aitor Soroa. 2009. Personalizing PageRank for Word
     Sense Disambiguation. Proceedings of the 12th conference of the European
     chapter of the Association for Computational Linguistics
     (EACL-2009). Athens, Greece.
+
+[3] Josu Goikoetxea, Eneko Agirre and Aitor Soroa. 2015. Random Walks and
+    Neural Network Language Models on Knowledge Bases. Proceedings of
+    NAACL-HLT. Denver, USA.
 
 See also
 

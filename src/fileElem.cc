@@ -98,12 +98,12 @@ namespace ukb {
 
 	// bool exists_file(const string & fname) {
 
-	// 	namespace fs = boost::filesystem;
+	//	namespace fs = boost::filesystem;
 
-	// 	fs::path full_path( fs::initial_path() );
+	//	fs::path full_path( fs::initial_path() );
 
-	// 	full_path = fs::system_complete( fs::path( fname, fs::native ) );
-	// 	return exists(full_path);
+	//	full_path = fs::system_complete( fs::path( fname, fs::native ) );
+	//	return exists(full_path);
 	// }
 
 
@@ -111,13 +111,13 @@ namespace ukb {
 
 	// string basename(const string & fname) {
 
-	// 	namespace fs = boost::filesystem;
+	//	namespace fs = boost::filesystem;
 
-	// 	fs::path full_path( fs::initial_path() );
+	//	fs::path full_path( fs::initial_path() );
 
-	// 	full_path = fs::system_complete( fs::path( fname, fs::native ) );
+	//	full_path = fs::system_complete( fs::path( fname, fs::native ) );
 
-	// 	return full_path.leaf();
+	//	return full_path.leaf();
 	// }
 
 

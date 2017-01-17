@@ -57,7 +57,7 @@ bool opt_dump_dgraph = false;
 /* Function used to check that 'opt1' and 'opt2' are not specified
    at the same time. */
 void conflicting_options(const boost::program_options::variables_map& vm,
-                         const char* opt1, const char* opt2)
+						 const char* opt1, const char* opt2)
 {
 	if (vm.count(opt1) && !vm[opt1].defaulted()
 		&& vm.count(opt2) && !vm[opt2].defaulted())
@@ -107,7 +107,7 @@ static bool rank_dgraph(const CSentence & cs,
 	switch(dgraph_rank_method) {
 	case r_ppr:
 		//ok = (opt_dmethod == m_mention) ? dgraph_mention_ppr(cs, dg, ranks) : dgraph_ppr(cs, dg, ranks);
-        ok = dgraph_ppr(cs, dg, ranks);
+		ok = dgraph_ppr(cs, dg, ranks);
 		break;
 	case r_degree:
 		ok = dgraph_degree(dg, ranks);

@@ -572,7 +572,7 @@ namespace ukb {
 	// For each v pointed in V, (i.e., cw->v should be in the graph), init the PV with:
 	//
 	// PV[v] += normalized_cw_w * e[cw->v] / Sum_{cw->u}(e[cw->u]) =
-    //        = factor * e[cw->v]
+	//        = factor * e[cw->v]
 	//
 	// Note:
 	//

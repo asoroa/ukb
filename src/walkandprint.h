@@ -73,13 +73,13 @@ namespace ukb {
 		vsampling_t m_vsampler; // sampling from buckets
 		size_t m_i;     // number of context produced so far
 
-        // cache vertex2word
-        bool m_cache_init;
-        std::vector<float> m_vertex2word_tweight;
-        // cache vertex2vertex
-        std::vector<float> m_vertex_out_tweight;
+		// cache vertex2word
+		bool m_cache_init;
+		std::vector<float> m_vertex2word_tweight;
+		// cache vertex2vertex
+		std::vector<float> m_vertex_out_tweight;
 
-    };
+	};
 
 	// Walk&Print class
 	class WapComponents {
@@ -100,19 +100,19 @@ namespace ukb {
 		vsampling_components_t m_vsampler; // sampling from buckets
 		size_t m_i;     // number of context produced so far
 
-        // cache vertex2word
-        bool m_cache_init;
-        std::vector<float> m_vertex2word_tweight;
-        // cache vertex2vertex
-        std::vector<float> m_vertex_out_tweight;
+		// cache vertex2word
+		bool m_cache_init;
+		std::vector<float> m_vertex2word_tweight;
+		// cache vertex2vertex
+		std::vector<float> m_vertex_out_tweight;
 	};
 
 
 	// Deepwalk algorithm
 	class DeepWalk {
 	public:
-        DeepWalk(size_t gamma, size_t t)
-            : m_N(Kb::instance().size()), m_i(0), m_gamma(gamma), m_g(0), m_t(t), m_cache_init(false) {}
+		DeepWalk(size_t gamma, size_t t)
+			: m_N(Kb::instance().size()), m_i(0), m_gamma(gamma), m_g(0), m_t(t), m_cache_init(false) {}
 		~DeepWalk() {}
 
 		// perform an iteration leaving the result context in C
@@ -127,13 +127,13 @@ namespace ukb {
 		float m_g;      // number of gamma iterations so far
 		size_t m_t;     // context size
 
-        // cache vertex2word
-        bool m_cache_init;
-        std::vector<float> m_vertex2word_tweight;
-        // cache vertex2vertex
-        std::vector<float> m_vertex_out_tweight;
+		// cache vertex2word
+		bool m_cache_init;
+		std::vector<float> m_vertex2word_tweight;
+		// cache vertex2vertex
+		std::vector<float> m_vertex_out_tweight;
 
-    };
+	};
 
 
 
@@ -157,12 +157,12 @@ namespace ukb {
 		size_t m_i;     // number of context produced so far
 		WDict_entries m_synsets;
 
-        // cache vertex2word
-        bool m_cache_init;
-        std::vector<float> m_vertex2word_tweight;
-        // cache vertex2vertex
-        std::vector<float> m_vertex_out_tweight;
-    };
+		// cache vertex2word
+		bool m_cache_init;
+		std::vector<float> m_vertex2word_tweight;
+		// cache vertex2vertex
+		std::vector<float> m_vertex_out_tweight;
+	};
 
 	// Walk&Print starting from a word
 	void wap_do_mc_word(const std::string & hw, size_t n);

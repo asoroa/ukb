@@ -643,9 +643,9 @@ namespace ukb {
 
 		m_g.reset(new_g);
 		// add_edges(csr_pre.E.begin(), csr_pre.E.end(),
-		// 		  // csr_pre.eProp.begin(),
-		// 		  // csr_pre.eProp.end(),
-		// 		  g);
+		//		  // csr_pre.eProp.begin(),
+		//		  // csr_pre.eProp.end(),
+		//		  g);
 
 		BGL_FORALL_VERTICES(v, *m_g, Kb::boost_graph_t) {
 			(*m_g)[v].name = csr_pre.vProp[v].name;
