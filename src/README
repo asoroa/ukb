@@ -397,12 +397,13 @@ choosing the concept associated to a word with maximum rank.
   --ppr
 
   Given an input context, disambiguate the target words using Personalized
-  PageRank method. This is the default method.
+  PageRank method. This was the default for ukb prior version 3.0.
 
   --ppr_w2w
 
   Given an input context, disambiguate the target words using Personalized
-  PageRank method word by word.
+  PageRank method word by word. This is the default for ukb version 3.0 and
+  higher.
 
   --static
 
@@ -525,7 +526,13 @@ criterium is met. Note that this is the default scenarion, where
 
   --dict_weight
 
-  Use weights when linking words to concepts.
+  Use weights when linking words to concepts. This is the default for ukb
+  version 3.0 and higher.
+
+  --nodict_weight
+
+  Do not use weights when linking words to concepts. This was the default for ukb
+  prior version 3.0.
 
   --dict_weight_smooth arg
 

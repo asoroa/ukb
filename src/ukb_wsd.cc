@@ -45,7 +45,7 @@ enum dgraph_rank {
 
 dgraph_rank dgraph_rank_method = r_ppr;
 
-main_method opt_dmethod = m_ppr;
+main_method opt_dmethod = m_ppr_w2w;
 string cmdline;
 bool opt_daemon = false;
 bool opt_dump_dgraph = false;
@@ -108,7 +108,7 @@ static bool rank_dgraph(const CSentence & cs,
 	case r_ppr:
 		//ok = (opt_dmethod == m_mention) ? dgraph_mention_ppr(cs, dg, ranks) : dgraph_ppr(cs, dg, ranks);
 		ok = dgraph_ppr(cs, dg, ranks);
-		break;
+	break;
 	case r_degree:
 		ok = dgraph_degree(dg, ranks);
 		break;
@@ -481,7 +481,8 @@ int main(int argc, char *argv[]) {
 	options_description po_desc_dict("Dictionary options");
 	po_desc_dict.add_options()
 		("altdict", value<string>(), "Provide an alternative dictionary overriding the values of default dictionary.")
-		("dict_weight", "Use weights when linking words to concepts (dict file has to have weights).")
+		("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). This is the default setting.")
+		("nodict_weight", "Do not use weights when linking words to concepts.")
 		("smooth_dict_weight", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
 		("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
 		;
@@ -667,6 +668,10 @@ int main(int argc, char *argv[]) {
 
 		if (vm.count("dict_weight")) {
 			glVars::dict::use_weight = true;
+		}
+
+		if (vm.count("nodict_weight")) {
+			glVars::dict::use_weight = false;
 		}
 
 		if (vm.count("smooth_dict_weight")) {

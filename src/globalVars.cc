@@ -46,7 +46,7 @@ namespace ukb {
 			std::string text_fname;
 			std::string altdict_fname;
 			std::string bin_fname;
-			bool use_weight = false; // Use weights when linking words to concepts
+			bool use_weight = true; // Use weights when linking words to concepts
 			float weight_smoothfactor = 1.0;
 			bool use_shuffle = false; // Use random shuffle at reading words from dictionary
 			bool swallow = true;
