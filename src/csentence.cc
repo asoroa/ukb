@@ -334,7 +334,7 @@ namespace ukb {
 	// CSentence
 
 	CSentence::CSentence(const std::string & id, const std::string & ctx_str) :
-		m_tgtN(0), m_weight(0.0), m_id(id) {
+		m_tgtN(0), m_weight(0.0), m_w_factor(0.0f), m_id(id) {
 		if (m_id.empty()) throw std::runtime_error(string("empty id"));
 		vector<string> ctx;
 		vector<CWord> V;
@@ -504,9 +504,11 @@ namespace ukb {
 				}
 			}
 		}
-		if (m_weight == 0.0)
-			throw std::logic_error(string("Context with zero weight"));
-		m_w_factor = 1.0 / m_weight;
+		if (m_vuniq.size()) {
+			if (m_weight == 0.0)
+				throw std::logic_error(string("Context with zero weight"));
+			m_w_factor = 1.0 / m_weight;
+		}
 	}
 
 	std::ostream& operator<<(std::ostream & o, const CSentence & cs_) {

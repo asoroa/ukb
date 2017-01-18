@@ -257,8 +257,14 @@ void dispatch_run(istream & is, ostream & os) {
 	while (read_ukb_ctx(is, l_n, cid, ctx)) {
 		try {
 			CSentence cs(cid, ctx);
-			dispatch_run_cs(cs);
-			cs.print_csent(os);
+			if(ctx.size()) {
+				dispatch_run_cs(cs);
+				cs.print_csent(os);
+			} else {
+				if (glVars::debug::warning) {
+					cerr << "[W] empty context " << cs.id() + " in line " + lexical_cast<string>(l_n) + "\n";
+				}
+			}
 		} catch (ukb::wdict_error & e) {
 			throw e;
 		} catch (std::logic_error & e) {
