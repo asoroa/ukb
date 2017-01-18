@@ -42,7 +42,7 @@ USG
 }
 
 my %opts;
-getopts('hcdD:R:', \%opts);
+getopts('hcdD:R:s:', \%opts);
 &usage() if $opts{'h'};
 &usage("Error: Missing directory") unless @ARGV;
 
