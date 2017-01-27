@@ -38,11 +38,11 @@ namespace ukb {
 	};
 
 	struct wdict_item_t {
-		Kb_vertex_t m_syn;
+		Kb::vertex_descriptor m_syn;
 		float m_count;
 
 		wdict_item_t() {}
-		wdict_item_t(Kb_vertex_t syn, float count) : m_syn(syn), m_count(count) {}
+		wdict_item_t(Kb::vertex_descriptor syn, float count) : m_syn(syn), m_count(count) {}
 
 		void swap(wdict_item_t & o) {
 			std::swap(m_syn, o.m_syn);
@@ -76,7 +76,7 @@ namespace ukb {
 		const wdict_item_t *begin() const;
 		const wdict_item_t *end() const;
 		size_t size() const;
-		Kb_vertex_t get_entry(size_t i) const;
+		Kb::vertex_descriptor get_entry(size_t i) const;
 		const std::string & get_entry_str(size_t i) const;
 		float get_freq(size_t i) const;
 		const std::string & get_pos(size_t i) const;
@@ -203,7 +203,7 @@ namespace ukb {
 
 	public:
 		typedef boost::unordered_map<std::string, wdict_rhs_t > wdict_t;
-		typedef boost::unordered_map<Kb_vertex_t, winvdict_rhs_t > winvdict_t;
+		typedef boost::unordered_map<Kb::vertex_descriptor, winvdict_rhs_t > winvdict_t;
 
 		// Singleton
 		static WDict & instance();
@@ -217,9 +217,9 @@ namespace ukb {
 		//const std::vector<std::string> & headwords() const { return m_words; }
 
 		std::string variant(std::string &concept_id) const;
-		std::string variant(Kb_vertex_t v) const;
+		std::string variant(Kb::vertex_descriptor v) const;
 
-		WInvdict_entries words(Kb_vertex_t u) const;
+		WInvdict_entries words(Kb::vertex_descriptor u) const;
 		WInvdict_entries words(const std::string & ustr) const;
 
 		void read_alternate_file(const std::string & fname);
@@ -279,7 +279,7 @@ namespace ukb {
 	// P[concept] = freq  ==> how many times 'concept' has been used in the dictionary
 	// N => total number of concept counts
 
-	float concept_priors(boost::unordered_map<Kb_vertex_t, float> & P);
+	float concept_priors(boost::unordered_map<Kb::vertex_descriptor, float> & P);
 
 }
 

@@ -224,7 +224,7 @@ namespace ukb {
 		return m_idx[left + off];
 	}
 
-	static bool emit_word_vertex_mono(Kb_vertex_t current, string & emit_word,
+	static bool emit_word_vertex_mono(Kb::vertex_descriptor current, string & emit_word,
 									  vector<float> & vertex2word_tweight) {
 
 		WInvdict_entries words = WDict::instance().words(current);
@@ -309,7 +309,7 @@ namespace ukb {
 		return make_pair(it, end);
 	}
 
-	static bool emit_word_vertex_multi(Kb_vertex_t current, string & emit_word) {
+	static bool emit_word_vertex_multi(Kb::vertex_descriptor current, string & emit_word) {
 
 		WInvdict_entries words = WDict::instance().words(current);
 		if (!words.size()) return false;
@@ -333,7 +333,7 @@ namespace ukb {
 		return true;
 	}
 
-	static bool emit_word_vertex(Kb_vertex_t current, string & emit_word,
+	static bool emit_word_vertex(Kb::vertex_descriptor current, string & emit_word,
 								 vector<float> & vertex2word_tweight) {
 		Kb & kb = Kb::instance();
 
@@ -348,19 +348,19 @@ namespace ukb {
 			return emit_word_vertex_mono(current, emit_word, vertex2word_tweight);
 	}
 
-	static bool select_next_vertex_eweight(Kb_vertex_t & current,
+	static bool select_next_vertex_eweight(Kb::vertex_descriptor & current,
 										   vector<float> & vertex_out_tweight) {
 
 		Kb & kb = Kb::instance();
-		Kb_vertex_t previous = current;
+		Kb::vertex_descriptor previous = current;
 
-		Kb_out_edge_iter_t out_it, out_end;
+		Kb::out_edge_iterator out_it, out_end;
 
 		tie(out_it, out_end) = kb.out_neighbors(previous);
 		float & total_weight = vertex_out_tweight[previous];
 		if (total_weight == 0.0f) {
 			float T = 0.0f;
-			for(Kb_out_edge_iter_t auxit = out_it; auxit < out_end; ++auxit) {
+			for(Kb::out_edge_iterator auxit = out_it; auxit < out_end; ++auxit) {
 				T += kb.get_edge_weight(*out_it);
 			}
 			total_weight = T;
@@ -376,21 +376,21 @@ namespace ukb {
 		return true;
 	}
 
-	static bool select_next_vertex_degree(Kb_vertex_t & current,
+	static bool select_next_vertex_degree(Kb::vertex_descriptor & current,
 										  vector<float> & vertex_out_tweight) {
 
 		Kb & kb = Kb::instance();
-		KbGraph & G = kb.graph();
-		Kb_vertex_t previous = current;
+		Kb::boost_graph_t & G = kb.graph();
+		Kb::vertex_descriptor previous = current;
 
-		Kb_out_edge_iter_t out_it, out_end;
+		Kb::out_edge_iterator out_it, out_end;
 
 		tie(out_it, out_end) = kb.out_neighbors(previous);
 		float & total_weight = vertex_out_tweight[previous];
 		if (total_weight == 0.0f) {
 			float T = 0.0f;
-			for(Kb_out_edge_iter_t auxit = out_it; auxit < out_end; ++auxit) {
-				Kb_vertex_t uu = kb.edge_target(*auxit);
+			for(Kb::out_edge_iterator auxit = out_it; auxit < out_end; ++auxit) {
+				Kb::vertex_descriptor uu = kb.edge_target(*auxit);
 				T += in_degree(uu, G);
 			}
 			total_weight = T;
@@ -399,7 +399,7 @@ namespace ukb {
 		float rand_value = rnumber(total_weight);
 		float w_accum = 0.0f;
 		for(; out_it < out_end; ++out_it) {
-			Kb_vertex_t uu = kb.edge_target(*out_it);
+			Kb::vertex_descriptor uu = kb.edge_target(*out_it);
 			w_accum += in_degree(uu, G);
 			current = uu;
 			if (rand_value < w_accum) break;
@@ -407,7 +407,7 @@ namespace ukb {
 		return true;
 	}
 
-	static bool select_next_vertex(Kb_vertex_t & current,
+	static bool select_next_vertex(Kb::vertex_descriptor & current,
 								   vector<float> & vertex_out_tweight) {
 		if (glVars::wap::prefer_indegree) return select_next_vertex_degree(current,
 																		   vertex_out_tweight);
@@ -417,12 +417,12 @@ namespace ukb {
 
 	// perform one complete rw starting from v
 
-	static void do_complete_mc(Kb_vertex_t v,
+	static void do_complete_mc(Kb::vertex_descriptor v,
 							   vector<string> & emited_words,
 							   vector<float> & vertex2word_tweight,
 							   vector<float> & vertex_out_tweight) {
 
-		Kb_vertex_t current = v;  //Start the iteration in the V vertex
+		Kb::vertex_descriptor current = v;  //Start the iteration in the V vertex
 
 		for (float r = rnumber_01(); r <= glVars::prank::damping; r = rnumber_01() ) {
 			// emit word from current vertex
@@ -436,7 +436,7 @@ namespace ukb {
 
 	// perform one complete rw starting from v (fixed path length)
 
-	static void do_complete_length(Kb_vertex_t current,
+	static void do_complete_length(Kb::vertex_descriptor current,
 								   size_t t,
 								   vector<string> & emited_words,
 								   vector<float> & vertex2word_tweight,
@@ -465,7 +465,7 @@ namespace ukb {
 		if (m_n && m_i >= m_n) return false;
 
 		int idx = m_vsampler.sample();
-		Kb_vertex_t u(idx);
+		Kb::vertex_descriptor u(idx);
 		if (!m_cache_init) {
 			if (!glVars::wap::multilang)
 				vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
@@ -486,7 +486,7 @@ namespace ukb {
 		if (m_n && m_i >= m_n) return false;
 
 		int idx = m_vsampler.sample();
-		Kb_vertex_t u(idx);
+		Kb::vertex_descriptor u(idx);
 		if (!m_cache_init) {
 			if (!glVars::wap::multilang)
 				vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
@@ -521,7 +521,7 @@ namespace ukb {
 		if (total_weight == 0.0f) return false;; // word has no attached vertices
 		float rand_value = rnumber(total_weight);
 		float w_accum = 0;
-		Kb_vertex_t synset = 0;
+		Kb::vertex_descriptor synset = 0;
 		for(size_t i = 0; i < m_synsets.size(); ++i) {
 			w_accum += m_synsets.get_freq(i);
 			synset = m_synsets.get_entry(i);
@@ -544,7 +544,7 @@ namespace ukb {
 
 		if (m_g >= m_gamma) return false;
 
-		Kb_vertex_t u(m_i);
+		Kb::vertex_descriptor u(m_i);
 		if (!m_cache_init) {
 			if (!glVars::wap::multilang)
 				vector<float>(Kb::instance().size(), 0.0f).swap(m_vertex2word_tweight);
@@ -585,7 +585,7 @@ namespace ukb {
 	//		}
 	//		float rand_value = rnumber(total_weight);
 	//		float w_accum = 0;
-	//		Kb_vertex_t synset = 0;
+	//		Kb::vertex_descriptor synset = 0;
 	//		for(size_t i = 0; i < synsets.size(); ++i) {
 	//			w_accum += synsets.get_freq(i);
 	//			synset = synsets.get_entry(i);

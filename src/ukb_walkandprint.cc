@@ -324,9 +324,9 @@ int main(int argc, char *argv[]) {
 		if (opt_dictbucket) {
 			vector<float> Priors(Kb::instance().size());
 			{
-				boost::unordered_map<Kb_vertex_t, float> P;
+				boost::unordered_map<Kb::vertex_descriptor, float> P;
 				float N = concept_priors(P);
-				for(boost::unordered_map<Kb_vertex_t, float>::iterator it = P.begin(), end = P.end();
+				for(boost::unordered_map<Kb::vertex_descriptor, float>::iterator it = P.begin(), end = P.end();
 					it != end; ++it) {
 					Priors[ it->first ] = it->second / N;
 				}

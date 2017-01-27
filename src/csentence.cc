@@ -50,7 +50,7 @@ namespace ukb {
 
 	void CWord::empty_synsets() {
 		std::vector<std::string>().swap(m_syns);
-		std::vector<std::pair<Kb_vertex_t, float> >().swap(m_V);
+		std::vector<std::pair<Kb::vertex_descriptor, float> >().swap(m_V);
 		std::vector<float>().swap(m_ranks);
 		m_linkw_factor = 1;
 		m_disamb = false;
@@ -73,7 +73,7 @@ namespace ukb {
 
 		size_t new_c = 0;
 
-		set<Kb_vertex_t> syns_S;
+		set<Kb::vertex_descriptor> syns_S;
 		for(size_t i = 0, m = m_V.size(); i < m; ++i) {
 			syns_S.insert(m_V[i].first);
 		}
@@ -93,7 +93,7 @@ namespace ukb {
 
 		for(size_t i= 0, m = sidxV.size(); i < m; ++i) {
 			size_t idx = sidxV[i];
-			Kb_vertex_t syn_v = entries.get_entry(idx);
+			Kb::vertex_descriptor syn_v = entries.get_entry(idx);
 			if (!syns_S.insert(syn_v).second) continue; // Synset previously there
 			const string & syn_str = entries.get_entry_str(idx);
 			float syn_freq = entries.get_freq(idx);
@@ -106,7 +106,7 @@ namespace ukb {
 
 		// (Re)calculate m_linkw_factor
 		float wlink = 0.0;
-		for(vector<pair<Kb_vertex_t, float> >::iterator it = m_V.begin(), end = m_V.end();
+		for(vector<pair<Kb::vertex_descriptor, float> >::iterator it = m_V.begin(), end = m_V.end();
 			it != end; ++it) wlink += it->second;
 		if (wlink == 0) return 0;
 		m_linkw_factor = 1.0 / wlink;
@@ -122,7 +122,7 @@ namespace ukb {
 		string empty_str;
 
 		if (m_type == cw_concept) {
-			Kb_vertex_t u;
+			Kb::vertex_descriptor u;
 			bool P;
 			tie(u, P) = ukb::Kb::instance().get_vertex_by_name(m_w);
 			if (!P) {
@@ -167,8 +167,8 @@ namespace ukb {
 	size_t CWord::set_concepts(map<string, float> & C) {
 
 		std::vector<std::string> syns;
-		std::vector<std::pair<Kb_vertex_t, float> > V;
-		Kb_vertex_t u;
+		std::vector<std::pair<Kb::vertex_descriptor, float> > V;
+		Kb::vertex_descriptor u;
 		bool P;
 		float total_w = 0.0f;
 		size_t N = 0;
@@ -278,7 +278,7 @@ namespace ukb {
 
 	std::ostream& operator<<(std::ostream & o, const CWord & cw_) {
 
-		//KbGraph & g = ukb::Kb::instance().graph();
+		//Kb::boost_graph_t & g = ukb::Kb::instance().graph();
 
 		return cw_.write(o, cw_.m_id, cw_.m_type);
 	}
@@ -581,7 +581,7 @@ namespace ukb {
 	// Can not be used when glVars::prank::poslightw is set
 
 
-	size_t update_pv_cw(const vector<pair<Kb_vertex_t, float> > & m_V,
+	size_t update_pv_cw(const vector<pair<Kb::vertex_descriptor, float> > & m_V,
 						float factor,
 						vector<float> & pv) {
 
@@ -589,7 +589,7 @@ namespace ukb {
 
 		size_t inserted = 0;
 		// Uppdate PV
-		for(vector<pair<Kb_vertex_t, float> >::const_iterator it = m_V.begin(), end = m_V.end();
+		for(vector<pair<Kb::vertex_descriptor, float> >::const_iterator it = m_V.begin(), end = m_V.end();
 			it != end; ++it) {
 			inserted++;
 			pv[it->first] += it->second * factor;
@@ -611,7 +611,7 @@ namespace ukb {
 			vector<float> (kb.size(), 0.0).swap(pv);
 		}
 
-		Kb_vertex_t u;
+		Kb::vertex_descriptor u;
 		int inserted_i = 0;
 
 		// put pv to the synsets of words
@@ -698,7 +698,7 @@ namespace ukb {
 		float K = 0.0;
 		for(; cw_it != cw_end; ++cw_it) {
 			for(size_t i = 0; i != cw_it->size(); ++i) {
-				Kb_vertex_t u;
+				Kb::vertex_descriptor u;
 				tie(u, aux) = kb.get_vertex_by_name(cw_it->syn(i));
 				if (aux) {
 					ppv[u] = cw_it->rank(i);

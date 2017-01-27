@@ -40,22 +40,20 @@ using boost::edge_weight;
 
 namespace ukb {
 
-	typedef compressed_sparse_row_graph<boost::bidirectionalS,
-										vertex_prop_t,
-										edge_prop_t> KbGraph;
-
-	typedef graph_traits<KbGraph>::vertex_descriptor Kb_vertex_t;
-	typedef graph_traits<KbGraph>::vertex_iterator Kb_vertex_iter_t;
-	typedef graph_traits<KbGraph>::vertices_size_type Kb_vertex_size_t;
-	typedef graph_traits<KbGraph>::edge_descriptor Kb_edge_t;
-	typedef graph_traits<KbGraph>::out_edge_iterator Kb_out_edge_iter_t;
-	typedef graph_traits<KbGraph>::in_edge_iterator Kb_in_edge_iter_t;
 
 	class Kb {
 
 	public:
 
-		typedef KbGraph boost_graph_t; // the underlying graph type
+		typedef compressed_sparse_row_graph<boost::bidirectionalS,
+											vertex_prop_t,
+											edge_prop_t> boost_graph_t;
+
+		typedef graph_traits<boost_graph_t>::vertex_descriptor vertex_descriptor;
+		typedef graph_traits<boost_graph_t>::vertex_iterator vertex_iterator;
+		typedef graph_traits<boost_graph_t>::edge_descriptor edge_descriptor;
+		typedef graph_traits<boost_graph_t>::out_edge_iterator out_edge_iterator;
+		typedef graph_traits<boost_graph_t>::in_edge_iterator in_edge_iterator;
 
 		// Singleton
 		static Kb & instance();
@@ -123,44 +121,44 @@ namespace ukb {
 		// graph
 		// Get the underlying boost graph
 
-		KbGraph & graph() {return *m_g;}
+		boost_graph_t & graph() {return *m_g;}
 
 		// Add relation type to edge
 
-		void edge_add_reltype(Kb_edge_t e, const std::string & rel);
+		void edge_add_reltype(edge_descriptor e, const std::string & rel);
 
 		// Ask for a node
 
-		std::pair<Kb_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
+		std::pair<vertex_descriptor, bool> get_vertex_by_name(const std::string & str) const;
 
 		// ask for node properties
 
-		std::string & get_vertex_name(Kb_vertex_t u) {return (*m_g)[u].name;}
-		const std::string & get_vertex_name(Kb_vertex_t u) const {return (*m_g)[u].name;}
-		//std::string  get_vertex_gloss(Kb_vertex_t u) const {return get(vertex_gloss, g, u);}
+		std::string & get_vertex_name(vertex_descriptor u) {return (*m_g)[u].name;}
+		const std::string & get_vertex_name(vertex_descriptor u) const {return (*m_g)[u].name;}
+		//std::string  get_vertex_gloss(vertex_descriptor u) const {return get(vertex_gloss, g, u);}
 
 		// Get vertices iterator
 
-		std::pair<Kb_vertex_iter_t, Kb_vertex_iter_t> get_vertices() { return boost::vertices(*m_g); }
+		std::pair<vertex_iterator, vertex_iterator> get_vertices() { return boost::vertices(*m_g); }
 
 		// Get out-edges for vertex u
 
-		std::pair<Kb_out_edge_iter_t, Kb_out_edge_iter_t> out_neighbors(Kb_vertex_t u);
-		std::pair<Kb_in_edge_iter_t, Kb_in_edge_iter_t> in_neighbors(Kb_vertex_t u);
+		std::pair<out_edge_iterator, out_edge_iterator> out_neighbors(vertex_descriptor u);
+		std::pair<in_edge_iterator, in_edge_iterator> in_neighbors(vertex_descriptor u);
 
-		bool exists_edge(Kb_vertex_t u, Kb_vertex_t v) const {
+		bool exists_edge(vertex_descriptor u, vertex_descriptor v) const {
 			return edge(u, v, *m_g).second;
 		}
 
-		Kb_vertex_t edge_source(Kb_edge_t e) const { return source(e, *m_g); }
-		Kb_vertex_t edge_target(Kb_edge_t e) const { return target(e, *m_g); }
+		vertex_descriptor edge_source(edge_descriptor e) const { return source(e, *m_g); }
+		vertex_descriptor edge_target(edge_descriptor e) const { return target(e, *m_g); }
 
 		// ask for edge preperties
 
-		std::vector<std::string> edge_reltypes(Kb_edge_t e) const;
+		std::vector<std::string> edge_reltypes(edge_descriptor e) const;
 
-		float get_edge_weight(Kb_edge_t e) const;
-		void set_edge_weight(Kb_edge_t e, float w);
+		float get_edge_weight(edge_descriptor e) const;
+		void set_edge_weight(edge_descriptor e, float w);
 
 		// get static pageRank
 
@@ -209,13 +207,13 @@ namespace ukb {
 
 		// Get a random vertex
 
-		Kb_vertex_t get_random_vertex() const;
+		vertex_descriptor get_random_vertex() const;
 
 		// Graph algorithms
 
-		bool bfs (Kb_vertex_t source_synset, std::vector<Kb_vertex_t> & synv) const ;
+		bool bfs (vertex_descriptor source_synset, std::vector<vertex_descriptor> & synv) const ;
 
-		bool dijkstra (Kb_vertex_t src, std::vector<Kb_vertex_t> & parents) const;
+		bool dijkstra (vertex_descriptor src, std::vector<vertex_descriptor> & parents) const;
 
 		void pageRank_ppv(const std::vector<float> & ppv_map,
 						  std::vector<float> & ranks);
@@ -259,14 +257,14 @@ namespace ukb {
 		Kb &operator=(const Kb &);
 		~Kb() {};
 
-		Kb_vertex_t InsertNode(const std::string & name, unsigned char flags);
+		vertex_descriptor InsertNode(const std::string & name, unsigned char flags);
 
 		void read_from_stream (std::istream & o);
 		std::ostream & write_to_stream(std::ostream & o) const;
 		// Private members
-		std::auto_ptr<KbGraph> m_g;
+		std::auto_ptr<boost_graph_t> m_g;
 		std::set<std::string> m_relsSource;              // Relation sources
-		std::map<std::string, Kb_vertex_t> m_synsetMap; // synset name to vertex id
+		std::map<std::string, vertex_descriptor> m_synsetMap; // synset name to vertex id
 
 		// Registered relation types
 

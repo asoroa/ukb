@@ -121,10 +121,10 @@ namespace ukb {
 			precsr16.insert_edge(ustr, vstr, get(edge_weight, oldg, *eit), get(edge_rtype, oldg, *eit));
 		}
 
-		KbGraph *new_g = new KbGraph(boost::edges_are_unsorted_multi_pass,
-									 precsr16.E.begin(), precsr16.E.end(),
-									 precsr16.eProp.begin(),
-									 precsr16.m_vsize);
+		boost_graph_t *new_g = new boost_graph_t(boost::edges_are_unsorted_multi_pass,
+												 precsr16.E.begin(), precsr16.E.end(),
+												 precsr16.eProp.begin(),
+												 precsr16.m_vsize);
 
 		tenp->m_g.reset(new_g);
 
@@ -165,23 +165,23 @@ namespace ukb {
 
 	struct kb_bfs_init:public base_visitor<kb_bfs_init> {
 	public:
-		kb_bfs_init(Kb_vertex_t *v):m_v(v) { }
+		kb_bfs_init(Kb::vertex_descriptor *v):m_v(v) { }
 		typedef on_initialize_vertex event_filter;
-		inline void operator()(Kb_vertex_t u, const KbGraph & g)
+		inline void operator()(Kb::vertex_descriptor u, const Kb::boost_graph_t & g)
 		{
 			m_v[u] = u;
 		}
-		Kb_vertex_t *m_v;
+		Kb::vertex_descriptor *m_v;
 	};
 
 	struct kb_bfs_pred:public base_visitor<kb_bfs_pred> {
 	public:
-		kb_bfs_pred(Kb_vertex_t *v):m_v(v) { }
+		kb_bfs_pred(Kb::vertex_descriptor *v):m_v(v) { }
 		typedef on_tree_edge event_filter;
-		inline void operator()(Kb_edge_t e, const KbGraph & g) {
+		inline void operator()(Kb::edge_descriptor e, const Kb::boost_graph_t & g) {
 			m_v[target(e, g)] = source(e, g);
 		}
-		Kb_vertex_t *m_v;
+		Kb::vertex_descriptor *m_v;
 	};
 
 
@@ -190,14 +190,14 @@ namespace ukb {
 	// after bfs, if (parents[v] == v) and (v != u), then u and v are not
 	// connected in the graph.
 
-	bool Kb::bfs(Kb_vertex_t src,
-				 std::vector<Kb_vertex_t> & parents) const {
+	bool Kb::bfs(Kb::vertex_descriptor src,
+				 std::vector<Kb::vertex_descriptor> & parents) const {
 
 		size_t m = num_vertices(*m_g);
 		if(parents.size() == m) {
-			std::fill(parents.begin(), parents.end(), Kb_vertex_t());
+			std::fill(parents.begin(), parents.end(), Kb::vertex_descriptor());
 		} else {
-			vector<Kb_vertex_t>(m).swap(parents);  // reset parents
+			vector<Kb::vertex_descriptor>(m).swap(parents);  // reset parents
 		}
 
 		breadth_first_search(*m_g,
@@ -209,14 +209,14 @@ namespace ukb {
 	}
 
 
-	bool Kb::dijkstra (Kb_vertex_t src,
-					   std::vector<Kb_vertex_t> & parents) const {
+	bool Kb::dijkstra (Kb::vertex_descriptor src,
+					   std::vector<Kb::vertex_descriptor> & parents) const {
 
 		size_t m = num_vertices(*m_g);
 		if(parents.size() == m) {
-			std::fill(parents.begin(), parents.end(), Kb_vertex_t());
+			std::fill(parents.begin(), parents.end(), Kb::vertex_descriptor());
 		} else {
-			vector<Kb_vertex_t>(m).swap(parents);  // reset parents
+			vector<Kb::vertex_descriptor>(m).swap(parents);  // reset parents
 		}
 
 		// Hack to remove const-ness
@@ -244,24 +244,24 @@ namespace ukb {
 	class bfs_subg_terminate : public std::exception {};
 
 	struct subg {
-		vector<Kb_vertex_t> V;
-		vector<vector<Kb_vertex_t> > E;
+		vector<Kb::vertex_descriptor> V;
+		vector<vector<Kb::vertex_descriptor> > E;
 	};
 
 
 	class bfs_subg_visitor : public default_bfs_visitor {
 
 	public:
-		bfs_subg_visitor(subg & s_, Kb_vertex_t u, int limit)
+		bfs_subg_visitor(subg & s_, Kb::vertex_descriptor u, int limit)
 			: m_sg(s_), m_idx(), m_i(0), m_t(0), m_max(limit) {
 			add_v(u);
 		}
 
-		void tree_edge(Kb_edge_t e, const KbGraph & g)
+		void tree_edge(Kb::edge_descriptor e, const Kb::boost_graph_t & g)
 		{
 
-			Kb_vertex_t u = source(e,g);
-			Kb_vertex_t v = target(e,g);
+			Kb::vertex_descriptor u = source(e,g);
+			Kb::vertex_descriptor v = target(e,g);
 
 			// vertex v is new, but yet undiscovered
 			int v_i = add_v(v);
@@ -269,13 +269,13 @@ namespace ukb {
 			int u_i = get_v(u);
 			add_e(u_i, v_i);
 
-			Kb_edge_t aux;
+			Kb::edge_descriptor aux;
 			bool existsP;
 			tie(aux, existsP) = edge(v, u, g);
 			if (existsP) add_e(v_i, u_i); // as this edge is no more traversed.
 		}
 
-		void non_tree_edge(Kb_edge_t e, const KbGraph & g)
+		void non_tree_edge(Kb::edge_descriptor e, const Kb::boost_graph_t & g)
 		{
 			// cross edge. source is previously stored for sure. target probably
 			// is, unless max limit was reached
@@ -286,25 +286,25 @@ namespace ukb {
 			add_e(u_i, v_i);
 		}
 
-		void discover_vertex(Kb_vertex_t u, const KbGraph & g)
+		void discover_vertex(Kb::vertex_descriptor u, const Kb::boost_graph_t & g)
 		{
 			if (m_t == m_max) throw bfs_subg_terminate();
 			++m_t;
 		}
 
-		int add_v(Kb_vertex_t v)
+		int add_v(Kb::vertex_descriptor v)
 		{
 			if(m_i == m_max) return -1;
 			m_sg.V.push_back(v);
 			m_idx[v] = m_i;
-			m_sg.E.push_back(vector<Kb_vertex_t>());
+			m_sg.E.push_back(vector<Kb::vertex_descriptor>());
 			int res = m_i;
 			++m_i;
 			return res;
 		}
 
-		int get_v(Kb_vertex_t v) {
-			map<Kb_vertex_t, int>::iterator it=m_idx.find(v);
+		int get_v(Kb::vertex_descriptor v) {
+			map<Kb::vertex_descriptor, int>::iterator it=m_idx.find(v);
 			if(it == m_idx.end()) return -1;
 			return it->second;
 		}
@@ -315,7 +315,7 @@ namespace ukb {
 
 	private:
 		subg & m_sg;
-		map<Kb_vertex_t, int> m_idx;
+		map<Kb::vertex_descriptor, int> m_idx;
 		int m_i; // num of inserted vertices
 		int m_t; // time
 		int m_max;
@@ -327,7 +327,7 @@ namespace ukb {
 						  vector<vector<string> > & E,
 						  size_t limit) {
 
-		Kb_vertex_t u;
+		Kb::vertex_descriptor u;
 		bool aux;
 		tie(u,aux) = get_vertex_by_name(src);
 		if(!aux) return;
@@ -357,8 +357,8 @@ namespace ukb {
 	bool Kb::get_shortest_paths(const std::string & src,
 								const std::vector<std::string> & targets,
 								std::vector<std::vector<std::string> > & paths) {
-		vector<Kb_vertex_t> parents;
-		Kb_vertex_t u;
+		vector<Kb::vertex_descriptor> parents;
+		Kb::vertex_descriptor u;
 		bool aux;
 		tie(u,aux) = get_vertex_by_name(src);
 		if(!aux) return false;
@@ -366,7 +366,7 @@ namespace ukb {
 		this->bfs(u, parents);
 		for(std::vector<std::string>::const_iterator it = targets.begin(), end = targets.end();
 			it != end; ++it) {
-			Kb_vertex_t v;
+			Kb::vertex_descriptor v;
 			tie(v,aux) = get_vertex_by_name(*it);
 			if (!aux) continue;
 			if (parents[v] == v) continue; // either (u == v) or v is not connected to u.
@@ -388,36 +388,36 @@ namespace ukb {
 	////////////////////////////////////////////////////////////////////////////////
 	// strings <-> vertex_id
 
-	pair<Kb_vertex_t, bool> Kb::get_vertex_by_name(const std::string & str) const {
-		map<string, Kb_vertex_t>::const_iterator it;
+	pair<Kb::vertex_descriptor, bool> Kb::get_vertex_by_name(const std::string & str) const {
+		map<string, Kb::vertex_descriptor>::const_iterator it;
 
 		it = m_synsetMap.find(str);
 		if (it != m_synsetMap.end()) return make_pair(it->second, true);
-		return make_pair(Kb_vertex_t(), false);
+		return make_pair(Kb::vertex_descriptor(), false);
 	}
 
-	void Kb::edge_add_reltype(Kb_edge_t e, const string & rel) {
+	void Kb::edge_add_reltype(Kb::edge_descriptor e, const string & rel) {
 		m_rtypes.add_type(rel, (*m_g)[e].etype);
 	}
 
-	std::vector<std::string> Kb::edge_reltypes(Kb_edge_t e) const {
+	std::vector<std::string> Kb::edge_reltypes(Kb::edge_descriptor e) const {
 		return m_rtypes.tvector((*m_g)[e].etype);
 	}
 
-	float Kb::get_edge_weight(Kb_edge_t e) const {
+	float Kb::get_edge_weight(Kb::edge_descriptor e) const {
 		if (!glVars::prank::use_weight) return 1.0f;
 		return (*m_g)[e].weight;
 	}
 
-	void Kb::set_edge_weight(Kb_edge_t e, float w) {
+	void Kb::set_edge_weight(Kb::edge_descriptor e, float w) {
 		(*m_g)[e].weight = w;
 	}
 
-	std::pair<Kb_out_edge_iter_t, Kb_out_edge_iter_t> Kb::out_neighbors(Kb_vertex_t u) {
+	std::pair<Kb::out_edge_iterator, Kb::out_edge_iterator> Kb::out_neighbors(Kb::vertex_descriptor u) {
 		return out_edges(u, *m_g);
 	}
 
-	std::pair<Kb_in_edge_iter_t, Kb_in_edge_iter_t> Kb::in_neighbors(Kb_vertex_t u) {
+	std::pair<Kb::in_edge_iterator, Kb::in_edge_iterator> Kb::in_neighbors(Kb::vertex_descriptor u) {
 		return in_edges(u, *m_g);
 	}
 
@@ -431,21 +431,21 @@ namespace ukb {
 	//   2 -> only concepts
 
 
-	void vname_filter(const map<string, Kb_vertex_t> & theMap,
+	void vname_filter(const map<string, Kb::vertex_descriptor> & theMap,
 					  const vector<float> & ranks,
-					  const KbGraph & g,
+					  const Kb::boost_graph_t & g,
 					  vector<float> & outranks,
 					  vector<string> & vnames) {
 
 		size_t v_m = theMap.size();
 
-		vector<Kb_vertex_t> V(v_m);
+		vector<Kb::vertex_descriptor> V(v_m);
 		// empty output vectors
 		vector<float>(v_m).swap(outranks);
 		vector<string>(v_m).swap(vnames);
 
-		map<string, Kb_vertex_t>::const_iterator m_it = theMap.begin();
-		map<string, Kb_vertex_t>::const_iterator m_end = theMap.end();
+		map<string, Kb::vertex_descriptor>::const_iterator m_it = theMap.begin();
+		map<string, Kb::vertex_descriptor>::const_iterator m_end = theMap.end();
 		size_t v_i = 0;
 
 		// Fill vertices index vector
@@ -497,7 +497,7 @@ namespace ukb {
 	////////////////////////////////////////////////////////////////////////////////
 	// Random
 
-	Kb_vertex_t Kb::get_random_vertex() const {
+	Kb::vertex_descriptor Kb::get_random_vertex() const {
 
 		int r = g_randTarget(num_vertices(*m_g));
 
@@ -636,10 +636,10 @@ namespace ukb {
 			}
 		}
 
-		KbGraph *new_g = new KbGraph(boost::edges_are_unsorted_multi_pass,
-									 csr_pre.E.begin(), csr_pre.E.end(),
-									 csr_pre.eProp.begin(),
-									 csr_pre.m_vsize);
+		Kb::boost_graph_t *new_g = new Kb::boost_graph_t(boost::edges_are_unsorted_multi_pass,
+														 csr_pre.E.begin(), csr_pre.E.end(),
+														 csr_pre.eProp.begin(),
+														 csr_pre.m_vsize);
 
 		m_g.reset(new_g);
 		// add_edges(csr_pre.E.begin(), csr_pre.E.end(),
@@ -698,7 +698,7 @@ namespace ukb {
 
 		size_t d = 0;
 
-		graph_traits<KbGraph>::vertex_iterator it, end;
+		graph_traits<Kb::boost_graph_t>::vertex_iterator it, end;
 		tie(it, end) = vertices(*m_g);
 		for(; it != end; ++it) {
 			d = in_degree(*it, *m_g);
@@ -715,7 +715,7 @@ namespace ukb {
 
 		size_t d;
 
-		graph_traits<KbGraph>::vertex_iterator it, end;
+		graph_traits<Kb::boost_graph_t>::vertex_iterator it, end;
 		tie(it, end) = vertices(*m_g);
 		for(; it != end; ++it) {
 			d = out_degree(*it, *m_g);
@@ -731,7 +731,7 @@ namespace ukb {
 		vector<size_t> v(num_vertices(*m_g));
 		boost::iterator_property_map<
 			std::vector<size_t>::iterator,
-			boost::property_map<KbGraph, boost::vertex_index_t>::type> pm(v.begin(), get(boost::vertex_index, *m_g));
+			boost::property_map<Kb::boost_graph_t, boost::vertex_index_t>::type> pm(v.begin(), get(boost::vertex_index, *m_g));
 
 		int i = boost::strong_components(*m_g, pm);
 
@@ -744,7 +744,7 @@ namespace ukb {
 		vector<size_t> (num_vertices(*m_g)).swap(v);
 		boost::iterator_property_map<
 			std::vector<size_t>::iterator,
-			boost::property_map<KbGraph, boost::vertex_index_t>::type> pm(v.begin(), get(boost::vertex_index, *m_g));
+			boost::property_map<Kb::boost_graph_t, boost::vertex_index_t>::type> pm(v.begin(), get(boost::vertex_index, *m_g));
 
 		int i = boost::strong_components(*m_g, pm);
 
@@ -754,7 +754,7 @@ namespace ukb {
 
 	void Kb::ppv_weights(const vector<float> & ppv) {
 
-		graph_traits<KbGraph>::edge_iterator it, end;
+		graph_traits<Kb::boost_graph_t>::edge_iterator it, end;
 
 		tie(it, end) = edges(*m_g);
 		for(; it != end; ++it) {
@@ -771,7 +771,7 @@ namespace ukb {
 	void Kb::pageRank_ppv(const vector<float> & ppv_map,
 						  vector<float> & ranks) {
 
-		typedef graph_traits<KbGraph>::edge_descriptor edge_descriptor;
+		typedef graph_traits<Kb::boost_graph_t>::edge_descriptor edge_descriptor;
 		property_map<Kb::boost_graph_t, float edge_prop_t::*>::type weight_map = get(&edge_prop_t::weight, *m_g);
 		prank::constant_property_map <edge_descriptor, float> cte_weight(1.0); // always return 1
 
@@ -826,11 +826,11 @@ namespace ukb {
 		o << "Sources: ";
 		writeS(o, m_relsSource);
 		o << endl;
-		graph_traits<KbGraph>::vertex_iterator it, end;
+		graph_traits<Kb::boost_graph_t>::vertex_iterator it, end;
 		tie(it, end) = vertices(*m_g);
 		for(;it != end; ++it) {
 			o << (*m_g)[*it].name;
-			graph_traits<KbGraph>::out_edge_iterator e, e_end;
+			graph_traits<Kb::boost_graph_t>::out_edge_iterator e, e_end;
 			tie(e, e_end) = out_edges(*it, *m_g);
 			if (e != e_end)
 				o << "\n";
@@ -879,7 +879,7 @@ namespace ukb {
 		size_t vertex_n;
 		size_t edge_n;
 		size_t id;
-		KbGraph *new_g;
+		Kb::boost_graph_t *new_g;
 
 		try {
 			read_atom_from_stream(is, id);
@@ -905,7 +905,7 @@ namespace ukb {
 			if (id != magic_id_csr) {
 				throw runtime_error("Invalid id after reading graph sizes");
 			}
-			new_g = new KbGraph();
+			new_g = new Kb::boost_graph_t();
 
 			new_g->m_forward.m_rowstart.resize(0);
 			read_vector_from_stream(is, new_g->m_forward.m_rowstart);
@@ -1018,7 +1018,7 @@ namespace ukb {
 
 	ostream & Kb::write_to_textstream(ostream & o) const {
 
-		graph_traits<KbGraph>::edge_iterator it, end;
+		graph_traits<Kb::boost_graph_t>::edge_iterator it, end;
 		tie(it, end) = edges(*m_g);
 		for(;it != end; ++it) {
 			const string & u_str = (*m_g)[source(*it, *m_g)].name;

@@ -58,7 +58,7 @@ namespace ukb {
 		if (u == v)
 			throw runtime_error("Can't insert self loop !");
 
-		map<Kb_vertex_t, Dis_vertex_t>::iterator it;
+		map<Kb::vertex_descriptor, Dis_vertex_t>::iterator it;
 
 		tie(e, existP) = edge(u, v, g);
 		if(!existP) {
@@ -84,9 +84,9 @@ namespace ukb {
 		return map_it->second;
 	}
 
-	void DisambGraph::fill_graph(Kb_vertex_t src,
-								 Kb_vertex_t tgt,
-								 const std::vector<Kb_vertex_t> & parents) {
+	void DisambGraph::fill_graph(Kb::vertex_descriptor src,
+								 Kb::vertex_descriptor tgt,
+								 const std::vector<Kb::vertex_descriptor> & parents) {
 
 		//   if (tgt == 81369) {
 		//     int deb=0;
@@ -94,7 +94,7 @@ namespace ukb {
 		//   }
 
 		vector<string> path_str;
-		Kb_vertex_t pred;
+		Kb::vertex_descriptor pred;
 		Kb & kb = ukb::Kb::instance();
 
 		pred = parents[tgt];
@@ -130,12 +130,12 @@ namespace ukb {
 	}
 
 
-	void DisambGraph::fill_graph(const set<Kb_edge_t> & E) {
+	void DisambGraph::fill_graph(const set<Kb::edge_descriptor> & E) {
 		Kb & kb = Kb::instance();
-		for(set<Kb_edge_t>::const_iterator it = E.begin(), end = E.end();
+		for(set<Kb::edge_descriptor>::const_iterator it = E.begin(), end = E.end();
 			it != end; ++it) {
-			Kb_vertex_t uu = kb.edge_source(*it);
-			Kb_vertex_t vv = kb.edge_target(*it);
+			Kb::vertex_descriptor uu = kb.edge_source(*it);
+			Kb::vertex_descriptor vv = kb.edge_target(*it);
 			if (uu == vv) continue;
 			Dis_vertex_t u = add_dgraph_vertex(kb.get_vertex_name(uu));
 			Dis_vertex_t v = add_dgraph_vertex(kb.get_vertex_name(vv));
@@ -172,10 +172,10 @@ namespace ukb {
 								DisambGraph & dgraph) {
 
 		//bfs from src
-		std::vector<Kb_vertex_t> parents;
+		std::vector<Kb::vertex_descriptor> parents;
 		Kb & kb = ukb::Kb::instance();
 		bool existP;
-		Kb_vertex_t src, tgt;
+		Kb::vertex_descriptor src, tgt;
 
 		tie(src, existP) = kb.get_vertex_by_name(src_str);
 		assert(existP);
@@ -204,10 +204,10 @@ namespace ukb {
 									 vector<CWord>::const_iterator s_end,
 									 DisambGraph & dgraph) {
 
-		std::vector<Kb_vertex_t> parents;
+		std::vector<Kb::vertex_descriptor> parents;
 		Kb & kb = ukb::Kb::instance();
 		bool existP;
-		Kb_vertex_t src, tgt;
+		Kb::vertex_descriptor src, tgt;
 
 		tie(src, existP) = kb.get_vertex_by_name(src_str);
 		assert(existP);
@@ -296,47 +296,47 @@ namespace ukb {
 
 	class dfsa_visitor : public default_dfs_visitor {
 	public:
-		dfsa_visitor(Kb_vertex_t s, const set<Kb_vertex_t> & S, set<Kb_edge_t> & E)
-			: m_s(s), m_S(S), m_E(E), m_P(list<Kb_edge_t> ()), m_S_end(S.end()) {}
+		dfsa_visitor(Kb::vertex_descriptor s, const set<Kb::vertex_descriptor> & S, set<Kb::edge_descriptor> & E)
+			: m_s(s), m_S(S), m_E(E), m_P(list<Kb::edge_descriptor> ()), m_S_end(S.end()) {}
 
-		void discover_vertex(Kb_vertex_t u, const dfsa<KbGraph>& ag) {
+		void discover_vertex(Kb::vertex_descriptor u, const dfsa<Kb::boost_graph_t>& ag) {
 			if (u == m_s) return;
 			if (m_S.find(u) == m_S_end) return; // if u not in S, return
 			m_E.insert(m_P.begin(), m_P.end()); // add path to m_E
 		}
 
-		void finish_vertex(Kb_vertex_t u, const dfsa<KbGraph>& ag) {
+		void finish_vertex(Kb::vertex_descriptor u, const dfsa<Kb::boost_graph_t>& ag) {
 			if (u == m_s) return;
-			const_cast<dfsa<KbGraph>&>(ag).dec_depth(); // decrease depth
+			const_cast<dfsa<Kb::boost_graph_t>&>(ag).dec_depth(); // decrease depth
 			m_P.pop_back();
 		}
 
-		void tree_edge(Kb_edge_t e, const dfsa<KbGraph> & ag) {
-			const_cast<dfsa<KbGraph>&>(ag).inc_depth(); // increase depth
+		void tree_edge(Kb::edge_descriptor e, const dfsa<Kb::boost_graph_t> & ag) {
+			const_cast<dfsa<Kb::boost_graph_t>&>(ag).inc_depth(); // increase depth
 			m_P.push_back(e);
 		}
 
 	private:
-		Kb_vertex_t m_s;                       // source vertex
-		const set<Kb_vertex_t> & m_S;          // set of target synsets
-		set<Kb_edge_t> & m_E;                  // the result set of edges
-		list<Kb_edge_t> m_P;                   // path of DFS so far
-		set<Kb_vertex_t>::const_iterator m_S_end;
+		Kb::vertex_descriptor m_s;                       // source vertex
+		const set<Kb::vertex_descriptor> & m_S;          // set of target synsets
+		set<Kb::edge_descriptor> & m_E;                  // the result set of edges
+		list<Kb::edge_descriptor> m_P;                   // path of DFS so far
+		set<Kb::vertex_descriptor>::const_iterator m_S_end;
 	};
 
 
 	void build_dgraph_dfs_nocosenses(const CSentence &cs, DisambGraph & dgraph) {
-		set<Kb_vertex_t> S;
+		set<Kb::vertex_descriptor> S;
 		Kb & kb = Kb::instance();
-		dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
-		vector<set<Kb_vertex_t> > coSenses; // coSenses of each word in sentence
+		dfsa<Kb::boost_graph_t> ag(kb.graph(), glVars::dGraph::max_depth);
+		vector<set<Kb::vertex_descriptor> > coSenses; // coSenses of each word in sentence
 
 		// Init S with all target synsets
 		for(vector<CWord>::const_iterator cw_it = cs.ubegin(), cw_end = cs.uend();
 			cw_it != cw_end; ++cw_it) {
-			coSenses.push_back(set<Kb_vertex_t>());
-			set<Kb_vertex_t> & coS = coSenses.back();
-			for(vector<pair<Kb_vertex_t, float> >::const_iterator v_it = cw_it->V_vector().begin(),
+			coSenses.push_back(set<Kb::vertex_descriptor>());
+			set<Kb::vertex_descriptor> & coS = coSenses.back();
+			for(vector<pair<Kb::vertex_descriptor, float> >::const_iterator v_it = cw_it->V_vector().begin(),
 					v_end = cw_it->V_vector().end();
 				v_it != v_end; ++v_it) {
 				S.insert((*v_it).first);
@@ -347,20 +347,20 @@ namespace ukb {
 		std::vector<default_color_type> colors(kb.size());
 		typedef color_traits<default_color_type> Color;
 
-		set<Kb_edge_t> subg;
-		for(set<Kb_vertex_t>::iterator it = S.begin(), end = S.end(); it != end; ++it) { // better to start at any S (not just TW_S)
+		set<Kb::edge_descriptor> subg;
+		for(set<Kb::vertex_descriptor>::iterator it = S.begin(), end = S.end(); it != end; ++it) { // better to start at any S (not just TW_S)
 			fill(colors.begin(), colors.end(), Color::white());
 			dfsa_visitor vis(*it, S, subg);
 			depth_first_visit(ag, *it, vis, &colors[0]);
 		}
 		// Now filter edges and discard (u,v) if they are coSenses
-		set<Kb_edge_t> filtered_subg;
-		for(set<Kb_edge_t>::iterator it = subg.begin(), end = subg.end();
+		set<Kb::edge_descriptor> filtered_subg;
+		for(set<Kb::edge_descriptor>::iterator it = subg.begin(), end = subg.end();
 			it != end; ++it) {
-			Kb_vertex_t u = kb.edge_source(*it);
-			Kb_vertex_t v = kb.edge_target(*it);
+			Kb::vertex_descriptor u = kb.edge_source(*it);
+			Kb::vertex_descriptor v = kb.edge_target(*it);
 			bool ok = true;
-			for(vector<set<Kb_vertex_t> >::iterator coit = coSenses.begin(), coend = coSenses.end();
+			for(vector<set<Kb::vertex_descriptor> >::iterator coit = coSenses.begin(), coend = coSenses.end();
 				coit != coend; ++coit) {
 				if(coit->count(u) && coit->count(v)) {
 					ok = false;
@@ -374,14 +374,14 @@ namespace ukb {
 	}
 
 	void build_dgraph_dfs(const CSentence &cs, DisambGraph & dgraph) {
-		set<Kb_vertex_t> S;
+		set<Kb::vertex_descriptor> S;
 		Kb & kb = Kb::instance();
-		dfsa<KbGraph> ag(kb.graph(), glVars::dGraph::max_depth);
+		dfsa<Kb::boost_graph_t> ag(kb.graph(), glVars::dGraph::max_depth);
 
 		// Init S with all target synsets
 		for(vector<CWord>::const_iterator cw_it = cs.ubegin(), cw_end = cs.uend();
 			cw_it != cw_end; ++cw_it) {
-			for(vector<pair<Kb_vertex_t, float> >::const_iterator v_it = cw_it->V_vector().begin(),
+			for(vector<pair<Kb::vertex_descriptor, float> >::const_iterator v_it = cw_it->V_vector().begin(),
 					v_end = cw_it->V_vector().end();
 				v_it != v_end; ++v_it) {
 				S.insert((*v_it).first);
@@ -391,9 +391,9 @@ namespace ukb {
 		std::vector<default_color_type> colors(kb.size());
 		typedef color_traits<default_color_type> Color;
 
-		for(set<Kb_vertex_t>::iterator it = S.begin(), end = S.end(); it != end; ++it) {
+		for(set<Kb::vertex_descriptor>::iterator it = S.begin(), end = S.end(); it != end; ++it) {
 			fill(colors.begin(), colors.end(), Color::white());
-			set<Kb_edge_t> subg;
+			set<Kb::edge_descriptor> subg;
 			dfsa_visitor vis(*it, S, subg);
 			depth_first_visit(ag, *it, vis, &colors[0]);
 			// Now  populate disambGraph with edges in subg
@@ -401,7 +401,7 @@ namespace ukb {
 		}
 	}
 
-	// Convert a pv vector of Kb_vertex_t to the equivalent for Dis_vertex_t
+	// Convert a pv vector of Kb::vertex_descriptor to the equivalent for Dis_vertex_t
 
 	size_t pv_to_dgraph(DisambGraph & dgraph,
 						const vector<float> & pv,
@@ -425,7 +425,7 @@ namespace ukb {
 					vector<float> & ranks,
 					CSentence::const_iterator exclude_word_it) {
 
-		// get pv pointing to KbGraph vertex_t
+		// get pv pointing to Kb::boost_graph_t vertex_t
 		// transform into Dis_vertex_t
 
 		if (!cs.has_tgtwords()) return false; // no target words
@@ -434,7 +434,7 @@ namespace ukb {
 		size_t  pv_m = pv_from_cs_onlyC(cs, pv, exclude_word_it);
 		if (!pv_m) return false;
 
-		// create pv_dgraph (map Kb_vertex_t to Dis_vertex_t)
+		// create pv_dgraph (map Kb::vertex_descriptor to Dis_vertex_t)
 		vector<float> pv_dgraph(dgraph.size(), 0.0);
 		size_t pv_dgraph_m = pv_to_dgraph(dgraph, pv, pv_dgraph);
 		if (!pv_dgraph_m) return false;

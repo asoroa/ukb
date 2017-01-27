@@ -96,7 +96,7 @@ namespace ukb {
 		cwtype type() const { return m_type; }
 
 		void empty_synsets();
-		const std::vector<std::pair<Kb_vertex_t, float> > & V_vector() const { return m_V; }
+		const std::vector<std::pair<Kb::vertex_descriptor, float> > & V_vector() const { return m_V; }
 
 		template <typename Map>
 		void rank_synsets(Map rankMap, bool use_prior) {
@@ -148,7 +148,7 @@ namespace ukb {
 		std::string m_pos; // 'n', 'v', 'a', 'r' or 0 (no pos)
 		float m_weight;     // Initial weight for PPV
 		std::vector<std::string> m_syns;
-		std::vector<std::pair<Kb_vertex_t, float> > m_V;
+		std::vector<std::pair<Kb::vertex_descriptor, float> > m_V;
 		std::vector<float> m_ranks;
 		float m_linkw_factor; // 1 / (sum of all link weights)
 		cwtype m_type;

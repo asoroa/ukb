@@ -28,10 +28,10 @@ static bool opt_variants = false;
 void query (const string & str) {
 
 	Kb & kb = Kb::instance();
-	KbGraph & g = kb.graph();
+	Kb::boost_graph_t & g = kb.graph();
 
 	bool aux;
-	Kb_vertex_t u;
+	Kb::vertex_descriptor u;
 
 	tie(u, aux) = kb.get_vertex_by_name(str);
 	if (aux) {
@@ -71,7 +71,7 @@ void set_source_rels(const string & str,
 
 }
 
-void print_iquery_v(KbGraph & g, Kb_vertex_t u, float w = 0, int sp = 0) {
+void print_iquery_v(Kb::boost_graph_t & g, Kb::vertex_descriptor u, float w = 0, int sp = 0) {
 
 	string hw(g[u].name);
 
@@ -88,10 +88,10 @@ void print_iquery_v(KbGraph & g, Kb_vertex_t u, float w = 0, int sp = 0) {
 void show_bfs_path(string & str) {
 
 	Kb & kb = Kb::instance();
-	KbGraph & g = kb.graph();
+	Kb::boost_graph_t & g = kb.graph();
 	bool aux;
-	Kb_vertex_t u, v;
-	vector<Kb_vertex_t> p;
+	Kb::vertex_descriptor u, v;
+	vector<Kb::vertex_descriptor> p;
 	vector<string> path_str;
 
 	path_str = split(str, " ");
@@ -111,7 +111,7 @@ void show_bfs_path(string & str) {
 		return;
 	}
 	kb.bfs(u, p);
-	Kb_vertex_t w = v;
+	Kb::vertex_descriptor w = v;
 	while(w != u) {
 		print_iquery_v(g, w, 0, 1);
 		w = p[w];
@@ -122,11 +122,11 @@ void show_bfs_path(string & str) {
 void show_neighbours(string & str) {
 
 	Kb & kb = Kb::instance();
-	KbGraph & g = kb.graph();
+	Kb::boost_graph_t & g = kb.graph();
 
 	bool inv = false;
 	bool aux;
-	Kb_vertex_t u;
+	Kb::vertex_descriptor u;
 
 	if (str.substr(0, 2) == "i:") {
 		inv=true;

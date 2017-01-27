@@ -53,11 +53,11 @@ namespace ukb {
 		size_t size() const {return num_vertices(g); }
 		std::pair<Dis_vertex_t, bool> get_vertex_by_name(const std::string & str) const;
 
-		void fill_graph(Kb_vertex_t src,
-						Kb_vertex_t tgt,
-						const std::vector<Kb_vertex_t> & parents);
+		void fill_graph(Kb::vertex_descriptor src,
+						Kb::vertex_descriptor tgt,
+						const std::vector<Kb::vertex_descriptor> & parents);
 
-		void fill_graph(const std::set<Kb_edge_t> & E);
+		void fill_graph(const std::set<Kb::edge_descriptor> & E);
 
 		Dis_vertex_t add_dgraph_vertex(const std::string & str);
 		void add_dgraph_edge(Dis_vertex_t u, Dis_vertex_t v, float w = 1.0);
