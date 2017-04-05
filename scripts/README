@@ -6,7 +6,8 @@ WordNet, Czech Wordnet and GermaNet.
 There are the following scripts:
 
 - wnet2dict.pl: create dictionary for English WordNet.
-- wndb2graph.pl: create graph for English WordNet.
+- wnet2graph.pl: create graph for English WordNet.
+- wnetgloss2graph.pl: create gloss relations for WordNet
 - czwordnet2ukb.pl: create dictionaty and graph for Czech WordNet.
 - gnet2ukb.pl: create dictionaty and graph for GermaNet.
 
