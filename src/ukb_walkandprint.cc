@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 	options_description po_desc_dict("Dictionary options");
 	po_desc_dict.add_options()
 		("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). This is the default setting.")
-		("nodict_weight", "Do not use weights when linking words to concepts.")
+		("dict_noweight", "Do not use weights when linking words to concepts.")
 		("smooth_dict_weight", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
 		("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
 		;
@@ -119,6 +119,7 @@ int main(int argc, char *argv[]) {
 	options_description po_hidden("Hidden");
 	po_hidden.add_options()
 		("test,t", "(Internal) Do a test.")
+		("nodict_weight", "alias of --dict_noweight")
 		("N",value<string>(), "Number of RW.")
 		;
 	options_description po_all("All options");
@@ -177,6 +178,10 @@ int main(int argc, char *argv[]) {
 
 		if (vm.count("dict_weight")) {
 			glVars::dict::use_weight = true;
+		}
+
+		if (vm.count("dict_noweight")) {
+			glVars::dict::use_weight = false;
 		}
 
 		if (vm.count("nodict_weight")) {

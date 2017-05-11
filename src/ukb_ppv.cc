@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
 	po_desc_dict.add_options()
 		("altdict", value<string>(), "Provide an alternative dictionary overriding the values of default dictionary.")
 		("dict_weight", "Use weights when linking words to concepts (dict file has to have weights). This is the default setting.")
-		("nodict_weight", "Do not use weights when linking words to concepts.")
+		("dict_noweight", "Do not use weights when linking words to concepts.")
 		("dict_weight_smooth", value<float>(), "Smoothing factor to be added to every weight in dictionary concepts. Default is 1.")
 		("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
 		;
@@ -485,6 +485,7 @@ int main(int argc, char *argv[]) {
 		("only_ctx_words,C", "Backward compatibility with -C.")
 		("only_synsets", "Output only (normalized) PPVs for synsets.")
 		("concept_graph,G", "Backward compatibility with -G.")
+		("nodict_weight", "alias of --dict_noweight")
 		("input-file",value<string>(), "Input file.")
 		("output-file",value<string>(), "Output file.")
 		;
@@ -576,6 +577,10 @@ int main(int argc, char *argv[]) {
 
 		if (vm.count("dict_weight")) {
 			glVars::dict::use_weight = true;
+		}
+
+		if (vm.count("dict_noweight")) {
+			glVars::dict::use_weight = false;
 		}
 
 		if (vm.count("nodict_weight")) {
