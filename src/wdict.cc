@@ -166,7 +166,7 @@ namespace ukb {
 							   vector<string> & fields) {
 
 		string line;
-		bool res = read_line_noblank(fh, line, line_number);
+		bool res = (bool)read_line_noblank(fh, line, line_number);
 		if (!res) return 0; // EOF
 		char_separator<char> sep(" \t");
 		tokenizer<char_separator<char> > tok(line, sep);
