@@ -518,9 +518,11 @@ namespace ukb {
 
 		cw_end--;
 		for(; cw_it != cw_end; ++cw_it) {
-			o << cs_.m_vuniq[cw_it->idx].write(o, cw_it->id, cw_it->t) << " ";
+			cs_.m_vuniq[cw_it->idx].write(o, cw_it->id, cw_it->t);
+			o << " ";
 		}
-		o << cs_.m_vuniq[cw_end->idx].write(o, cw_end->id, cw_end->t) << " ";
+		cs_.m_vuniq[cw_end->idx].write(o, cw_end->id, cw_end->t);
+		o << " ";
 		return o;
 	}
 

@@ -705,7 +705,7 @@ namespace ukb {
 			if (d > M) M = d;
 			if (d < m) m = d;
 		}
-		return make_pair<size_t, size_t>(M, m);
+		return make_pair(M, m);
 	}
 
 	std::pair<size_t, size_t> Kb::outdeg_maxmin() const {
@@ -722,7 +722,7 @@ namespace ukb {
 			if (d > M) M = d;
 			if (d < m) m = d;
 		}
-		return make_pair<size_t, size_t>(M, m);
+		return make_pair(M, m);
 	}
 
 
