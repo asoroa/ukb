@@ -287,7 +287,7 @@ bool handle_server_read(sSession & session) {
 	string ctx_id;
 	string ctx;
 	try {
-		session.receive(ctx);
+		if (!session.receive(ctx)) return true;
 		if (ctx == "stop") return false;
 		session.send(cmdline);
 		while(1) {
