@@ -5,21 +5,63 @@ WordNet, Czech Wordnet and GermaNet.
 
 There are the following scripts:
 
-- wnet2dict.pl: create dictionary for English WordNet.
-- wnet2graph.pl: create graph for English WordNet.
-- wnetgloss2graph.pl: create gloss relations for WordNet
-- czwordnet2ukb.pl: create dictionaty and graph for Czech WordNet.
-- gnet2ukb.pl: create dictionaty and graph for GermaNet.
+- wnet2dict.pl create dictionary for English WordNet.
+- wnet2graph.pl create graph for English WordNet.
+- wnetgloss2graph.pl create gloss relations for WordNet
+- czwordnet2ukb.pl create dictionaty and graph for Czech WordNet.
+- gnet2ukb.pl create dictionaty and graph for GermaNet.
+- wsdeval/ set of scripts for reproducing UKB results in the WSD Evaluation
+  		   Framework. See wsdeval/README for details
 
-* Example with WordNet
+
+Example with WordNet 3.1 with glosses
+=============================================
+
+Follow these instructions to create a graph and dictionary from WordNet 3.1
+(including gloss relations). The obtained graph relations and dictionary can
+be directly downloaded from
+[here](http://ixa2.si.ehu.es/ukb/graphs/wnet30_eng.tar.bz2)
+
+1. download wordnet 3.1 and uncompress
+```
+% wget http://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz
+% tar xzf WordNet-3.0.tar.gz
+```
+2. Get and uncompress gloss relations
+```
+% wget http://wordnetcode.princeton.edu/glosstag-files/WordNet-3.0-glosstag.tar.bz2
+% tar xjf WordNet-3.0-glosstag.tar.bz2
+```
+3. create graph relations file
+```
+% ./wnet2graph.pl WordNet-3.0/dict/* > wn30_rel.txt
+```
+4. Create gloss relations file
+```
+% ./wnetgloss2graph.pl WordNet-3.0/dict/index.sense WordNet-3.0/glosstag/merged > wn30_gloss_rel.txt
+```
+5. compile the graph
+```
+% cat wn30_rel.txt wn30_gloss_rel.txt | path_to_ukb/compile_kb -o wn30g.bin --note "wn30_rel.txt wn30_gloss_rel.txt" -
+```
+6. create dictionary
+```
+% ./wnet2dict.pl WordNet-3.0/dict/index.sense > wn30_dict.txt
+```
+
+You can then run ukb using the graph and dictionaty like this:
+```
+% path_to_ukb/ukb_wsd -K wn30g.bin -D wn30_dict.txt ...
+```
+
+Example with WordNet 2.0
+==============================
 
 Say we want convert WordNet 2.0 to ukb. You have to follow these steps:
 
 1. download wordnet 2.0 from http://wordnetcode.princeton.edu/2.0/WordNet-2.0.tar.gz
 2. uncompress to path_to_wn2.0
-3. download latest ukb from http://ixa2.si.ehu.es/ukb
-4. go to 'scripts' directory
-5. create graph file with:
+3. create graph file with:
    % ./wnet2graph.pl path_to_wn2.0/dict/* > wn20_rel.txt
-6. create dictionary
+4. create dictionary
    % ./wnet2dict.pl path_to_wn2.0/dict/index.sense > wn20.lex

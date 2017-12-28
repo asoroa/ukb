@@ -1,0 +1,74 @@
+This folder contains the scripts for running UKB over the WSD eval dataset
+([1]).
+
+
+Requisites
+==========
+
+You will need the following packages installed:
+
+- Java compiler (javac)
+- perl XML::LibXML library
+
+If you downloaded the source from github you'll need to compile UKB (see
+instructions in "src/INSTALL"). Besides, you need to edit
+"download_and_prepare_data.sh" (line 5) and "run_experiments.sh" (line 9),
+and fill the appropriate path for UKB binaries.
+
+Summary
+=======
+
+To reproduce the experiments, run the following scripts:
+
+./download_and_prepare_data.sh
+./run_experiments.sh
+./evaluate.sh
+
+If you want to run additional experiments (using different algorithms and
+parameters), give a parameter to "./run_experiments.sh", for example:
+
+./run_experiments.sh all
+
+Find below the expected output of the process.
+
+More detailed explanation
+=========================
+
+The "./download_and_prepare_data.sh" script prepares all the required data:
+WordNet related files (graph, dictionary, etc) in folder "wn30/" and the
+files of WSD Eval feramework into "wsdeval_src/". After the script has
+finished, these are the important files used in subsequent processes (you
+can safely remove the rest):
+
+   wn30/wn30g.bin      Compiled graph of WN3.0 + gloss relations
+   wn30/wn30_dict.txt  WN3.0 dictionary
+   wn30/id2lc.map      Mapping between WN database ids and lexicographic codes
+   wsdeval_src/		   The WSD Unified Evaluation Datasets
+
+The "./run_experiments.sh" runs UKB in various configurations and leave the
+results into the "Key/raw" folder.
+
+The "./evaluate.sh" script converts ukb outputs in "Keys/raw" into a
+suitable form for WSDeval, leaving the converted keyfiles in the "Keys/"
+folder. Then, it runs the official scorer and report the results.
+
+Expected output
+===============
+
+For convenience, this is the expected output of the process. Note that this
+is the default configuration of UKB:
+
+* pprw2w
+	ALL P= 67.3% R= 67.3% F1= 67.3%
+	semeval2007 P= 53.0% R= 53.0% F1= 53.0%
+	semeval2013 P= 68.8% R= 68.8% F1= 68.8%
+	semeval2015 P= 70.3% R= 70.3% F1= 70.3%
+	senseval2 P= 68.8% R= 68.8% F1= 68.8%
+	senseval3 P= 66.1% R= 66.1% F1= 66.1%
+
+References
+==========
+
+[1] Alessandro Raganato, Jose Camacho-Collados and Roberto Navigli. Word
+	Sense Disambiguation: A Unified Evaluation Framework and Empirical
+	Comparison.  Proceedings of EACL 2017, Valencia, Spain

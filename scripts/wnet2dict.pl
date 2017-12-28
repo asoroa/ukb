@@ -32,7 +32,7 @@ while (<$fh>) {
   $sense_n--; # start at 0
   my ($word, $pos) = &split_kl($kl);
   my $cid_str = "$offset-$pos";
-  $cid_str .= ":$f" if $f;
+  $cid_str .= $f ? ":$f" : ":0";
   my $wref = $H{$word};
   if (defined($wref)) {
     warn "Synset redefined: $kl in line $.\n" if $opt_v and defined $wref->{$pos}->[$sense_n];

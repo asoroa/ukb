@@ -133,7 +133,7 @@ sub parse_line {
     my $tgt_pos = shift @rest;
     shift @rest;
     my $rel = &rel_sym_name($ptr_symbol, $src_pos);
-    print "u:$src_cid v:$tgt_offset-$tgt_pos t:$rel";
+    print "u:$src_cid v:$tgt_offset-$tgt_pos s:$rel";
     print " s:$opt_srcname" if $opt_srcname;
     print " d:1" if $opt_d;
     print "\n";

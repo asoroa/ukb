@@ -58,6 +58,8 @@ bin/                    Statically compiled binaries for x86-64 linux
                         platforms.
 UKBsim/                 Scripts for similarity. See README, INSTALL, LICENSE.
 scripts/                Scripts for converting Wordnet to ukb input files
+wsdeval/                Scripts for replicating UKB results on the WSD
+		 				Evaluation Framework dataset.
 
 Check README files in the respective catalogue.
 
@@ -79,3 +81,10 @@ http://ixa2.si.ehu.es/ukb/lkb_sources_es.tar.bz2
 
 - A graph derived from Wikipedia (dump 04 April 2013) is here:
 http://ixa2.si.ehu.eus/ukb/ukb-wiki.tar.bz2
+
+Replicating UKB results
+***********************
+
+The "wsdeval/" directory contains the scripts to reproduce UKB results
+evaluated in the WSD Evaluation Framework dataset. See "wsdeval/README" and
+follow the instructions.
