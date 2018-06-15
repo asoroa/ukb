@@ -284,6 +284,9 @@ bool handle_server_read(sSession & session) {
 			if (!compute_cs_ppv(cs, ranks)) {
 				// throw "Error when calculating ranks for csentence " << cs.id() << endl;
 				// throw std::runtime_error(std::string("[E] when calculating ranks for csentence ") + cs.id() + ":" + this->error_str());
+				string aux("Error processing context " + ctx_id);
+				syslog(LOG_INFO | LOG_USER,"%s", aux.c_str());
+				session.send("--END--PPV");
 				continue;
 			}
 			output_ppv_stream_socket(ranks, session);
@@ -739,7 +742,7 @@ int main(int argc, char *argv[]) {
 		}
 		// accept malformed contexts, as we don't want the daemon to die.
 		glVars::input::swallow = true;
-		cout << "Starting UKB PPV daemon on port " << lexical_cast<string>(port) << " ... ";
+		cout << "Starting UKB PPV daemon on port " << lexical_cast<string>(port) << " ...\n";
 		return start_daemon(port, &load_kb_and_dict, &handle_server_read);
 #endif
 	}
