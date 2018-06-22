@@ -1275,7 +1275,8 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
---enable-static enable static linkage
+  --enable-static enable static linkage
+
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2818,11 +2819,15 @@ fi
 
 # Check whether --enable-static was given.
 if test "${enable_static+set}" = set; then :
-  enableval=$enable_static; ENABLE_STATIC="--static"
-else
-  ENABLE_STATIC=""
+  enableval=$enable_static;
 fi
 
+
+if test "x$enable_static" = "xyes"; then
+	ENABLE_STATIC="--static"
+else
+	ENABLE_STATIC=""
+fi
 
 
 

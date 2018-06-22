@@ -14,10 +14,14 @@ AC_PROG_MAKE_SET
 AC_HEADER_STDC
 
 dnl check for static linking
-AC_ARG_ENABLE(static,
-	[--enable-static enable static linkage],
-	ENABLE_STATIC="--static",
-	ENABLE_STATIC="")
+AC_ARG_ENABLE([static],
+	AC_HELP_STRING([--enable-static] [enable static linkage]))
+
+if test "x$enable_static" = "xyes"; then
+	ENABLE_STATIC="--static"
+else
+	ENABLE_STATIC=""
+fi
 AC_SUBST(ENABLE_STATIC)
 
 dnl BOOST include lib
