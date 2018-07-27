@@ -69,10 +69,11 @@ namespace ukb {
 	class WDict_entries {
 
 	public:
-		WDict_entries(const wdict_rhs_t & item);
-		WDict_entries(const wdict_rhs_t & item, const std::string & pos);
-		~WDict_entries() {}
 
+		friend class WDict;
+		friend class WDictHeadwords;
+
+		~WDict_entries() {}
 		const wdict_item_t *begin() const;
 		const wdict_item_t *end() const;
 		size_t size() const;
@@ -120,6 +121,11 @@ namespace ukb {
 		};
 
 	private:
+
+		WDict_entries(const wdict_rhs_t & item);
+		WDict_entries(const wdict_rhs_t & item, const std::string & pos);
+
+
 		const wdict_rhs_t & m_rhs;
 		std::string m_pos;
 		size_t m_left;
@@ -148,6 +154,7 @@ namespace ukb {
 	class WInvdict_entries {
 
 	public:
+
 		WInvdict_entries(const winvdict_rhs_t & item) : m_rhs(item) {};
 		~WInvdict_entries() {}
 

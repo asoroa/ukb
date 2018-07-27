@@ -132,12 +132,8 @@ namespace ukb {
 			m_V.push_back(make_pair(u, 1.0f));
 			m_ranks.push_back(0.0f);
 			m_linkw_factor = 1.0;
-			m_pos.swap(empty_str); // concepts have no POS
 			return;
 		}
-		// empty POS string when no pos filtering
-		if(!glVars::input::filter_pos)
-			m_pos.swap(empty_str);
 		m_linkw_factor = 0;
 
 		if (m_type == cw_tgtword_nopv or m_type == cw_ctxword_nopv) return; // if nopv we are done
@@ -155,9 +151,9 @@ namespace ukb {
 			throw std::logic_error("CWord::attach_lemma error: can't attach lemma to an empty CWord.");
 		if (m_type == cw_concept)
 			throw std::logic_error("CWord::attach_lemma error: can't attach lemma to a CWord of type cw_concept.");
-		if (glVars::input::filter_pos && !pos.size())
-			throw std::logic_error("CWord::attach_lemma error: no POS.");
-		link_dict_concepts(lemma, pos);
+		std::string npos = pos;
+		if (!npos.size()) npos = std::string("#");
+		link_dict_concepts(lemma, npos);
 	}
 
 	// (Re)Set cword and link it to new concepts.
@@ -379,6 +375,7 @@ namespace ukb {
 		}
 		res.lemma = fields[0];
 		res.pos = fields[1];
+		if (!glVars::input::filter_pos || !res.pos.size()) res.pos = std::string("#");
 		res.id = fields[2];
 		try {
 			res.dist = lexical_cast<int>(fields[3]);
@@ -450,14 +447,9 @@ namespace ukb {
 				if (ctwp.lemma.size() == 0) {
 					throw std::logic_error(*it + " has no lemma.");
 				}
-				string pos("");
 				CWord::cwtype cw_type = cast_int_cwtype(ctwp.dist);
 				if (cw_type == CWord::cw_error) {
 					throw std::logic_error(*it + " fourth field is invalid.");
-				}
-				if (glVars::input::filter_pos & (cw_type == CWord::cw_ctxword || cw_type == CWord::cw_tgtword)) {
-					if (!ctwp.pos.size()) throw std::logic_error(*it + " has no POS.");
-					pos = ctwp.pos;
 				}
 				if(!glVars::input::weight)
 					ctwp.w = 1.0;
@@ -480,7 +472,7 @@ namespace ukb {
 				}
 
 				// last_is_nopv == false
-				CWord new_cw(ctwp.lemma, ctwp.id, pos, cw_type, ctwp.w);
+				CWord new_cw(ctwp.lemma, ctwp.id, ctwp.pos, cw_type, ctwp.w);
 				if (cw_type == CWord::cw_tgtword_nopv or cw_type == CWord::cw_ctxword_nopv) {
 					// New nopv cword
 					new_cw.swap(last_nopv);

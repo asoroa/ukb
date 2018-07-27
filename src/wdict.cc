@@ -95,10 +95,11 @@ namespace ukb {
 
 	// given a concept id "concept-pos", extract pos
 	static string xtract_pos_cid(const string & str) {
+		if (!glVars::input::filter_pos) return string("#");
 		std::string::size_type m = str.length();
 		std::string::size_type idx = str.find_last_of("-");
 		if (idx == string::npos || idx == m - 1)
-			throw ukb::wdict_error("Dictionary concept " + str + " has no POS");
+			return string("#");
 		return str.substr(idx + 1);
 	}
 
@@ -120,7 +121,7 @@ namespace ukb {
 	//
 	//  cp.str -> the concept without the weight
 	//  cp.u   -> vertex id correspondding to concept_str
-	//  cp.pos -> the POS (empty if no pos filtering)
+	//  cp.pos -> the POS ("#" if not pos)
 	//  cp.w   -> the weight (1 if no weight)
 
 	// return code
@@ -139,9 +140,7 @@ namespace ukb {
 		tie(cp.u, aux) = Kb::instance().get_vertex_by_name(cp.str);
 		if (!aux) return 1; // not in KB
 		// POS stuff
-		if(glVars::input::filter_pos) {
-			cp.pos = xtract_pos_cid(cp.str);
-		}
+		cp.pos = xtract_pos_cid(cp.str);
 		// Weight stuff
 		if (glVars::dict::use_weight) {
 			cp.w += glVars::dict::weight_smoothfactor;
@@ -218,8 +217,7 @@ namespace ukb {
 
 	static void fill_wdict_hw(wdict_rhs_t & rhs,
 							  vector<concept_parse_t> & V) {
-		if(glVars::input::filter_pos)
-			sort(V.begin(), V.end(), pos_order());
+		sort(V.begin(), V.end(), pos_order());
 		vector<wdict_item_t> items;
 		vector<wdict_range_t> pos_ranges;
 		set<Kb::vertex_descriptor> U;
@@ -245,10 +243,7 @@ namespace ukb {
 		// swap vectors from temporary, so they don't take more space than neccesary
 		//vector<wdict_item_t> (items).swap(rhs.m_items);
 		rhs.m_items.assign(items);
-		if(glVars::input::filter_pos) {
-			//vector<wdict_range_t> (pos_ranges).swap(rhs.m_pos_ranges);
-			rhs.m_pos_ranges.assign(pos_ranges);
-		}
+		rhs.m_pos_ranges.assign(pos_ranges);
 	}
 
 	static size_t read_dictfile_1pass(const string & fname,
@@ -427,7 +422,7 @@ namespace ukb {
 		Kb & kb = Kb::instance();
 
 		string hw_prefix = hw + "#";
-		if (pos.size()) hw_prefix += pos + "#";
+		if (pos.size() && pos != "#" ) hw_prefix += pos + "#";
 		size_t v_idx = 1;
 		for(size_t i = left; i < right; ++i, ++v_idx) {
 
@@ -550,6 +545,7 @@ namespace ukb {
 		static wdict_rhs_t null_entry;
 		wdict_t::const_iterator map_value_it = m_wdict.find(word);
 		if (map_value_it == m_wdict.end()) return WDict_entries(null_entry);
+		if (!pos.size() || pos == "#") return WDict_entries(map_value_it->second); // if word has no pos, consider all RHS as possible synsets
 		return WDict_entries(map_value_it->second, pos);
 		//return WDict_entries(m_wdict[&word]);
 	}
@@ -571,16 +567,11 @@ namespace ukb {
 
 	WDict_entries::WDict_entries(const wdict_rhs_t & rhs, const std::string & pos)
 		: m_rhs(rhs), m_pos(pos), m_left(0), m_right(0) {
-		if (!glVars::input::filter_pos || !pos.size()) {
-			string().swap(m_pos);
-			m_right = rhs.m_items.size();
-		} else {
-			const wdict_range_t * end = rhs.m_pos_ranges.end();
-			const wdict_range_t * it = std::find_if(rhs.m_pos_ranges.begin(), end, wdict_range_pos_P(pos));
-			if (it != end) {
-				m_left = it->left;
-				m_right = it->right;
-			}
+		const wdict_range_t * end = rhs.m_pos_ranges.end();
+		const wdict_range_t * it = std::find_if(rhs.m_pos_ranges.begin(), end, wdict_range_pos_P(pos));
+		if (it != end) {
+			m_left = it->left;
+			m_right = it->right;
 		}
 	}
 
