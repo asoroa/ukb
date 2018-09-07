@@ -1,9 +1,9 @@
 AC_PREREQ(2.59)
-AC_INIT(ukb, 3.1)
+AC_INIT(ukb, 3.2)
 
 dnl global flags
 
-AC_SUBST(CCFLAGS,["-O3 -Wall -Wno-deprecated"])
+AC_SUBST(CCFLAGS,["-O2 -Wall -Wno-deprecated"])
 
 dnl C++ compiler
 AC_PROG_CXX

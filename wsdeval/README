@@ -11,9 +11,11 @@ You will need the following packages installed:
 - perl XML::LibXML library
 
 If you downloaded the source from github you'll need to compile UKB (see
-instructions in "src/INSTALL"). Besides, you need to edit
-"download_and_prepare_data.sh" (line 5) and "run_experiments.sh" (line 9),
-and fill the appropriate path for UKB binaries.
+instructions in "src/INSTALL").
+
+Besides, you need to edit "download_and_prepare_data.sh" (line 5) and
+"run_experiments.sh" (line 9), and fill the appropriate path for UKB
+binaries.
 
 Summary
 =======

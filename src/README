@@ -91,9 +91,9 @@ pos: part of speech
     a -> adjective
     r -> adverb
 
-However, if the application is called with the '--nopos' command line
-switch, concept ids may have any format (excluding the '#' character and
-whitespaces. See program options).
+The POS tag of the synset. This part is optional, and will not be used if the
+'--nopos' switch is set. In this case, concept ids can have any format
+(excluding the '#' character and whitespaces. See program options).
 
 ** 1.2 Compiling the KB
 
@@ -206,7 +206,7 @@ about dictionary weight:
   "--smooth_dict_weight" option.
 
 - the values of the weights are normalized so that all link weights of
-  particular headword (and pos tag, unless --nopos is given) sum to one.
+  particular headword (and pos tag, if given) sum to one.
 
 - the script 'wnindex2ukbdict.pl' extracts a dictionary given a WordNet
   'index.sense' file. The script also attaches weights to concepts, according to
@@ -252,9 +252,11 @@ The meaning of the fields is the following:
        a -> adjective
        r -> adverb
 
-  The POS field is mandatory unless '--nopos' option is set (or the word is
-  a KB concept. See below). If so, the field must be empty, i.e.,
-  "man##w1#1" or "08249817-n##id#2".
+  The POS tag of the token, so that the lemma will only be linked to concepts
+  belonging to the same category. This field can be empty, but beware that
+  lemmas with no POS tags will not be linked to concepts that contain POS tags
+  (i.e. 08249817-n). Use '--nopos' to discard POS information entirely (that is,
+  to link the lemma to all the synsets regardless of the POS values).
 
 - id: the word's id. Mandatory.
 
