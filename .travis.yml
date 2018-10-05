@@ -1,0 +1,23 @@
+language: cpp
+compiler: gcc
+
+os:
+  - linux
+  - osx
+
+addons:
+  apt:
+    packages:
+      - libboost-all-dev
+
+before_install:
+  # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update        ; fi
+  # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install boost; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export BOOST_LIB_DIR=/usr/lib ; export BOOST_INCLUDE_DIR=/usr/include ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export BOOST_LIB_DIR=/usr/local/lib ; export BOOST_INCLUDE_DIR=/usr/local/include ; fi
+
+script:
+ - cd src
+ - ./configure --with-boost-lib=$BOOST_LIB_DIR --with-boost-include=$BOOST_INCLUDE_DIR
+ - make
+
