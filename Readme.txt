@@ -1,4 +1,8 @@
 UKB: Graph Based Word Sense Disambiguation and Similarity
+*********************************************************
+
+[![Build Status](https://travis-ci.org/asoroa/ukb.svg?branch=master)](https://travis-ci.org/asoroa/ukb)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 UKB is a collection of programs for performing graph-based Word Sense
 Disambiguation and lexical similarity/relatedness using a pre-existing
