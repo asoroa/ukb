@@ -6,7 +6,7 @@ UKB: Graph Based Word Sense Disambiguation and Similarity
 
 UKB is a collection of programs for performing graph-based Word Sense
 Disambiguation and lexical similarity/relatedness using a pre-existing
-knowledge base.
+knowledge base. Currently, UKB compiles in **linux** and **macos**.
 
 UKB has been developed by the IXA group in the University of the Basque
 Country. UKB applies the so-called Personalized PageRank on a Lexical
