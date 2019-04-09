@@ -10,6 +10,7 @@
 
 // For srand & friends
 
+#define BOOST_ALLOW_DEPRECATED_HEADERS // fix annoying warning in boost 1.69.0
 #include <boost/random/mersenne_twister.hpp>
 
 namespace ukb {

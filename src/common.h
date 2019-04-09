@@ -33,6 +33,7 @@
 
 // Stuff for generating random numbers
 
+#define BOOST_ALLOW_DEPRECATED_HEADERS // fix annoying warning in boost 1.69.0
 #include <boost/random.hpp>
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_int.hpp>
