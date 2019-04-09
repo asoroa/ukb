@@ -505,6 +505,7 @@ namespace ukb {
 		vector<string>().swap(emited_words);
 
 		if (m_n && m_i >= m_n) return false;
+		emited_words.push_back(m_seed);
 
 		static boost::unordered_map<const std::string *, float > dweight_cache;
 		boost::unordered_map<const std::string *, float >::iterator dweight_it;

@@ -1,8 +1,11 @@
 #include "globalVars.h"
 #include "walkandprint.h"
+#include "fileElem.h"
+#include "ukbServer.h"
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <syslog.h>
 
 /*
   #include "wdict.h"
@@ -23,7 +26,22 @@ using namespace ukb;
 using namespace std;
 using namespace boost;
 
-static void print_ctx(const vector<string> & emited_words) {
+// Lots of global variables
+// (I should fix this)
+
+bool opt_deepwalk = false;
+size_t opt_deepwalk_gamma = 80; // as for (Perozzi et al., 2014)
+size_t opt_deepwalk_length = 10; // as for (Perozzi et al., 2014)
+string seed_word;
+bool opt_vcomponents = false;
+bool opt_dictbucket = false;
+size_t opt_bucket_size = 0;
+
+bool opt_daemon = false;
+IWap * walker = 0;
+string cmdline;
+
+static void print_ctx(const vector<string> & emited_words, ostream & o) {
 
 	if(emited_words.size() > 1) {
 		vector<string>::const_iterator it = emited_words.begin();
@@ -31,18 +49,146 @@ static void print_ctx(const vector<string> & emited_words) {
 		if (it != end) {
 			--end;
 			for(;it != end; ++it) {
-				cout << *it << " ";
+				o << *it << " ";
 			}
-			cout << *end << "\n";
+			o << *end << "\n";
 		}
+	}
+}
+
+IWap *create_walker(size_t N) {
+	if(opt_deepwalk) return new DeepWalk(opt_deepwalk_gamma, opt_deepwalk_length);
+	if (seed_word.size()) return new WapWord(seed_word, N);
+	if (opt_vcomponents) return new WapComponents(N);
+	if (opt_dictbucket) {
+		vector<float> Priors(Kb::instance().size());
+		{
+			boost::unordered_map<Kb::vertex_descriptor, float> P;
+			float N = concept_priors(P);
+			for(boost::unordered_map<Kb::vertex_descriptor, float>::iterator it = P.begin(), end = P.end();
+				it != end; ++it) {
+				Priors[ it->first ] = it->second / N;
+			}
+		}
+		return new Wap(N, opt_bucket_size, Priors);
+	}
+	return new Wap(N, opt_bucket_size);
+}
+
+///////////////////////////////////////////////
+// Server/client functions
+
+// Return FALSE means kill server
+
+#ifdef UKB_SERVER
+bool handle_server_read(sSession & session) {
+	string ctx;
+	vector<string> rwctx;
+	try {
+		if (!session.receive(ctx)) return true;
+		if (ctx == "stop") {
+			// release walker
+			if (walker) delete walker;
+			walker = 0;
+			return false;
+		}
+		if (!walker) {
+			syslog(LOG_DEBUG | LOG_USER, "%s", "UKB daemon: creating walker");
+			walker = create_walker(0);
+		}
+		session.send(cmdline);
+		while(1) {
+			if (!session.receive(ctx)) break;
+			vector<string>().swap(rwctx);
+			walker->next(rwctx);
+			ostringstream oss;
+			print_ctx(rwctx, oss);
+			string oss_str(oss.str());
+			if (!oss_str.length()) oss_str = "#"; // special line if not output
+			session.send(oss_str);
+		}
+	} catch (std::exception& e)	{
+		// send error and close the session.
+		// Note: the server is still alive for new connections.
+		session.send(e.what());
+	}
+	return true;
+}
+
+bool client(istream & is, ostream & os, unsigned int port, size_t N) {
+	// connect to ukb port and send data to it.
+	sClient client("localhost", port);
+	string server_cmd;
+	string go("go");
+	if (client.error()) {
+		std::cerr << "Error when connecting: " << client.error_str() << std::endl;
+		return false;
+	}
+	string id, ctx, out;
+	try {
+		client.send(go);
+		client.receive(server_cmd);
+		os << server_cmd << std::endl;
+		while(N--) {
+			client.send(go);
+			client.receive(out);
+			if (out == "#") continue; // empty output for that context
+			os << out;
+			os.flush();
+		}
+	} catch (std::exception& e)	{
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+
+
+bool client_stop_server(unsigned int port) {
+	// connect to ukb port and tell it to stop
+	sClient client("localhost", port);
+	string stop("stop");
+	if (client.error()) {
+		std::cerr << "client_stop_server: [E] Error when connecting: " << client.error_str() << std::endl;
+		return false;
+	}
+	try {
+		client.send(stop);
+	} catch (std::exception& e)	{
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return true;
+}
+#endif
+
+void load_kb_and_dict(bool from_daemon) {
+	if (from_daemon) {
+		string aux("Loading KB ");
+		aux += glVars::kb::fname;
+		syslog(LOG_INFO | LOG_USER, "%s", aux.c_str());
+	} else if (glVars::verbose) {
+		cout << "Loading KB " + glVars::kb::fname + "\n";
+	}
+	Kb::create_from_binfile(glVars::kb::fname);
+	// Explicitly load dictionary only if:
+	// - there is a dictionary name
+	// - from_daemon is set
+	if (!from_daemon) return;
+	if (!(glVars::dict::text_fname.size() + glVars::dict::bin_fname.size())) return;
+	string aux("Loading Dict ");
+	aux += glVars::dict::text_fname.size() ? glVars::dict::text_fname : glVars::dict::bin_fname;
+	syslog(LOG_INFO | LOG_USER, "%s", aux.c_str());
+	// looking for "fake_entry" causes dictionary to be loaded in memory
+	WDict_entries fake_entry = WDict::instance().get_entries("kaka", "");
+	if (glVars::dict::altdict_fname.size()) {
+		WDict::instance().read_alternate_file(glVars::dict::altdict_fname);
 	}
 }
 
 int main(int argc, char *argv[]) {
 
-	string kb_binfile("");
-
-	string cmdline("!! -v ");
+	cmdline = ("!! -v ");
 	cmdline += glVars::ukb_version;
 	for (int i=0; i < argc; ++i) {
 		cmdline += " ";
@@ -51,17 +197,16 @@ int main(int argc, char *argv[]) {
 
 	vector<string> input_files;
 	string N_str;
-	size_t N;
 	ifstream input_ifs;
 
 	glVars::input::filter_pos = false;
-	size_t opt_bucket_size = 0;
-	bool opt_deepwalk = false;
-	size_t opt_deepwalk_gamma = 80; // as for (Perozzi et al., 2014)
-	size_t opt_deepwalk_length = 10; // as for (Perozzi et al., 2014)
 	int opt_srand = 0;
-	bool opt_vcomponents = false;
-	bool opt_dictbucket = false;
+
+	bool opt_client = false;
+	bool opt_shutdown = false;
+#ifdef UKB_SERVER
+	unsigned int port = 10000;
+#endif
 
 	using namespace boost::program_options;
 
@@ -74,7 +219,6 @@ int main(int argc, char *argv[]) {
 	//options_description po_desc(desc_header);
 
 	options_description po_desc("General");
-	string seed_word;
 
 	po_desc.add_options()
 		("help,h", "This page")
@@ -113,8 +257,16 @@ int main(int argc, char *argv[]) {
 		("dict_strict", "Be strict when reading the dictionary and stop when any error is found.")
 		;
 
+	options_description po_desc_server("Client/Server options");
+	po_desc_server.add_options()
+		("daemon", "Start a daemon listening to port. Assumes --port")
+		("port", value<unsigned int>(), "Port to listen/send information.")
+		("client", "Use client mode to send contexts to the ukb daemon. Bare in mind that the configuration is that of the server.")
+		("shutdown", "Shutdown ukb daemon.")
+		;
+
 	options_description po_visible(desc_header);
-	po_visible.add(po_desc).add(po_desc_waprint).add(po_desc_prank).add(po_desc_dict);
+	po_visible.add(po_desc).add(po_desc_waprint).add(po_desc_prank).add(po_desc_dict).add(po_desc_server);
 
 	options_description po_hidden("Hidden");
 	po_hidden.add_options()
@@ -242,7 +394,8 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (vm.count("kb_binfile")) {
-			kb_binfile = vm["kb_binfile"].as<string>();
+			glVars::kb::fname = vm["kb_binfile"].as<string>();
+
 		}
 
 		if (vm.count("seed_word")) {
@@ -265,6 +418,41 @@ int main(int argc, char *argv[]) {
 		if (vm.count("test")) {
 			//opt_do_test = true;
 		}
+		if (vm.count("daemon")) {
+#ifdef UKB_SERVER
+			opt_daemon = true;
+#else
+		cerr << "[E] server not available (compile ukb without -DUKB_SERVER switch)\n";
+		exit(1);
+#endif
+		}
+
+		if (vm.count("port")) {
+#ifdef UKB_SERVER
+			port = vm["port"].as<unsigned int>();;
+#else
+		cerr << "[E] server not available (compile ukb without -DUKB_SERVER switch)\n";
+		exit(1);
+#endif
+		}
+
+		if (vm.count("client")) {
+#ifdef UKB_SERVER
+			opt_client = true;
+#else
+			cerr << "[E] server not available (compile ukb without -DUKB_SERVER switch)\n";
+			exit(1);
+#endif
+		}
+
+		if (vm.count("shutdown")) {
+#ifdef UKB_SERVER
+			opt_shutdown = true;
+#else
+			cerr << "[E] server not available (compile ukb without -DUKB_SERVER switch)\n";
+			exit(1);
+#endif
+		}
 	} catch(std::exception& e) {
 		cerr << e.what() << "\n";
 		exit(-1);
@@ -276,83 +464,85 @@ int main(int argc, char *argv[]) {
 		glVars::rnd::init_random_device(static_cast<int>(opt_srand));
 	}
 
-	vector<string> ctx;
+	if(opt_shutdown) {
+#ifdef UKB_SERVER
+		if (client_stop_server(port)) {
+			cerr << "Stopped UKB daemon on port " << lexical_cast<string>(port) << "\n";
+			return 0;
+		} else {
+			cerr << "Can not stop UKB daemon on port " << lexical_cast<string>(port) << "\n";
+			return 1;
+		}
+#endif
+	}
 
-	try {
-		if (!kb_binfile.size()) {
-			cout << po_visible << endl;
+	// if --daemon, fork server process (has to be done before loading KB and dictionary)
+	if (opt_daemon) {
+#ifdef UKB_SERVER
+		if (opt_deepwalk) {
+			cerr << "[E] deepwalk not supported as client/server (sorry)\n";
+			exit(1);
+		}
+		try {
+			// Get absolute names of KB and dict
+			glVars::kb::fname =  get_fname_absolute(glVars::kb::fname);
+			glVars::dict::text_fname = get_fname_absolute(glVars::dict::text_fname);
+			glVars::dict::altdict_fname = get_fname_absolute(glVars::dict::altdict_fname);
+		} catch(std::exception& e) {
+			cerr << e.what() << "\n";
+			return 1;
+		}
+		if (!glVars::kb::fname.size()) {
+			cerr << "Error: no KB file\n";
+			return 1;
+		}
+		// accept malformed contexts, as we don't want the daemon to die.
+		glVars::input::swallow = true;
+		cout << "Starting UKB walk&print daemon on port " << lexical_cast<string>(port) << " ... \n";
+		return start_daemon(port, &load_kb_and_dict, &handle_server_read);
+#endif
+	}
+
+	// if not --client, load KB
+	if (!opt_client) {
+		if (!glVars::kb::fname.size()) {
+			cerr << po_visible << endl;
 			cout << "Error: no KB file\n";
-			goto END;
+			exit(1);
 		}
-
-		Kb::create_from_binfile(kb_binfile);
-		cout << cmdline << "\n";
-
-		if(opt_deepwalk) {
-			{
-				DeepWalk walker(opt_deepwalk_gamma, opt_deepwalk_length);
-				while(walker.next(ctx))
-					print_ctx(ctx);
-			}
-			goto END;
+		try {
+			load_kb_and_dict(false);
+		} catch (std::exception & e) {
+			cerr << e.what() << "\n";
+			return 1;
 		}
-
+	}
+	size_t N = 0;
+	if (opt_client) {
+#ifdef UKB_SERVER
 		if (!N_str.size()) {
 			cout << po_visible << endl;
 			cout << "Please specify the number of random walks" << endl;
 			exit(-1);
 		}
-		N = lexical_cast<size_t>(N_str);
+		return !client(std::cin, std::cout, port, lexical_cast<size_t>(N_str));
+#endif
+	}
 
-		if (seed_word.size()) {
-			{
-				WapWord walker(seed_word, N);
-				while(walker.next(ctx)) {
-					if(ctx.size() > 1) {
-						cout << seed_word << "\t";
-						print_ctx(ctx);
-					}
-				}
+	try {
+		cout << cmdline << "\n";
+		if (!opt_deepwalk) {
+			if (!N_str.size()) {
+				cout << po_visible << endl;
+				cout << "Please specify the number of random walks" << endl;
+				exit(-1);
 			}
-			goto END;
+			N = lexical_cast<size_t>(N_str);
 		}
-
-		if (opt_vcomponents) {
-			{
-				WapComponents walker(N);
-				while(walker.next(ctx))
-					print_ctx(ctx);
-			}
-			goto END;
-		}
-
-		if (opt_dictbucket) {
-			vector<float> Priors(Kb::instance().size());
-			{
-				boost::unordered_map<Kb::vertex_descriptor, float> P;
-				float N = concept_priors(P);
-				for(boost::unordered_map<Kb::vertex_descriptor, float>::iterator it = P.begin(), end = P.end();
-					it != end; ++it) {
-					Priors[ it->first ] = it->second / N;
-				}
-			}
-			{
-				Wap walker(N, opt_bucket_size, Priors);
-				while(walker.next(ctx))
-					print_ctx(ctx);
-			}
-			goto END;
-		}
-
-		{
-			Wap walker(N, opt_bucket_size);
-			while(walker.next(ctx))
-				print_ctx(ctx);
-		}
-		goto END;
-
-	END:
-		(void) 1; // supress "statement has no effect" warning
+		walker = create_walker(N);
+		vector<string> ctx;
+		while(walker->next(ctx))
+			print_ctx(ctx, cout);
 	} catch(std::exception& e) {
 		cerr << e.what() << "\n";
 		exit(-1);
